@@ -21,8 +21,6 @@ open import cedille-core-parser
 open import Prelude
 open import Prelude.Strings
 
-open import Debug.Trace
-
 module ConversionInternals {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
   private
     {-# TERMINATING #-} -- findOutermostConstructor returns a list of smaller terms
