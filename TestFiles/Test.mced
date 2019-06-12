@@ -1,0 +1,10 @@
+import TestFiles/Quote.
+
+import TestFiles/Example.
+import TestFiles/Example2.
+
+import TestFiles/LambdaCalc.
+import TestFiles/LambdaCalcExample.
+
+import TestFiles/Induction.
+import TestFiles/ListTest.

@@ -1,0 +1,80 @@
+
+let SigmaC := λ A : * λ B : Π _ : A * ∀ C : * Π _ : Π a : A Π _ : [B a] C C : Π A : * Π B : Π _ : A * *.
+let pairC := Λ A : * Λ B : Π _ : A * λ a : A λ b : [B a] Λ C : * λ c : Π a' : A Π _ : [B a'] C [[c a] b].
+let SigmaCInductive := λ A : * λ B : Π _ : A * λ s : [[SigmaC A] B] ∀ P : Π _ : [[SigmaC A] B] * Π _ : Π a : A Π b : [B a] [P [[<<pairC A> B> a] b]] [P s] : Π A : * Π B : Π _ : A * Π s : ∀ C : * Π _ : Π a : A Π _ : [B a] C C *.
+let Sigma := λ A : * λ B : Π _ : A * (ι s : [[SigmaC A] B] [[[SigmaCInductive A] B] s]) : Π A : * Π B : Π _ : A * *.
+let pair := Λ A : * Λ B : Π _ : A * λ a : A λ b : [B a] { [[<<pairC A> B> a] b] , Λ P : Π _ : [[SigmaC A] B] * λ p : Π a' : A Π b' : [B a'] [P [[<<pairC A> B> a'] b']] [[p a] b] s . [[[SigmaCInductive A] B] s] }.
+let elimSigma := Λ A : * Λ B : Π _ : A * Λ P : Π _ : [[Sigma A] B] * λ p : Π a : A Π b : [B a] [P [[<<pair A> B> a] b]] λ s : [[Sigma A] B] [<[<ψ s (λ sC : [[SigmaC A] B] ∀ C : * Π _ : Π s' : [[Sigma A] B] ∀ _ : = sC s' Π _ : [P s'] C C)> (λ a : A λ b : [B a] Λ C : * λ c : Π s' : [[Sigma A] B] ∀ _ : = [[pairC a] b] s' Π _ : [P s'] C [<[c [[<<pair A> B> a] b]] ρ β [[pair a] b] λ x-x : * x-x x-x . = [[pairC a] b] x-x β [[pairC a] b] λ x-x : * x-x> [[p a] b]])] [P s]> (λ s' : [[Sigma A] B] Λ q : = s s' λ p' : [P s'] ρ q x . [P x] p')].
+let foldSigma := Λ A : * Λ B : Π _ : A * Λ C : * <<<elimSigma A> B> (λ s : [[Sigma A] B] C)>.
+let proj1 := Λ A : * Λ B : Π _ : A * λ s : [[Sigma A] B] [<π s A> (λ a : A λ _ : [B a] a)].
+let proj2 := Λ A : * Λ B : Π _ : A * λ s : [[Sigma A] B] [[<<<elimSigma A> B> (λ s' : [[Sigma A] B] [B [<<proj1 A> B> s']])> (λ a : A λ b : [B a] b)] s].
+
+let IdCod := λ A : * λ B : * λ a : A [[Sigma B] (λ b : B = b a)] : Π A : * Π B : * Π a : A *.
+let Id := λ A : * λ B : * Π a : A [[[IdCod A] B] a] : Π _ : * Π B : * *.
+let elimId := Λ A : * Λ B : * Λ c : [[Id A] B] λ a : A φ [<<proj2 B> (λ b : B = b a)> [c a]] [<<proj1 B> (λ b : B = b a)> [c a]] a.
+let IdMapping := λ F : Π _ : * * ∀ X : * ∀ Y : * ∀ _ : [[Id X] Y] [[Id [F X]] [F Y]] : Π _ : Π _ : * * *.
+
+let AlgM := λ F' : Π _ : * * λ A : * ∀ R : * Π _ : Π _ : R A Π _ : [F' R] A : Π F' : Π _ : * * Π _ : * *.
+let FixM := λ F' : Π _ : * * ∀ X : * Π _ : [[AlgM F'] X] X : Π F' : Π _ : * * *.
+let foldM := Λ F' : Π _ : * * Λ A : * λ alg : [[AlgM F'] A] λ x : [FixM F'] [<x A> alg].
+let inM := Λ F' : Π _ : * * λ xs : [F' [FixM F']] Λ A : * λ alg : [[AlgM F'] A] [[<alg [FixM F']> [<<foldM F'> A> alg]] xs].
+let foldMHom := Λ F' : Π _ : * * Λ A : * λ alg : [[AlgM F'] A] λ rs : [F' [FixM F']] ρ β [[alg [foldM alg]] rs] λ x-x : * x-x x-x . = [[foldM alg] [inM rs]] x-x β [[foldM alg] [inM rs]] λ x-x : * x-x.
+
+let IdPlusCod := λ A : * λ B : * λ P : Π _ : B * λ a : A [[Sigma B] (λ b : B [[Sigma = b a] (λ q : = b a [P φ q b a])])] : Π A : * Π B : * Π P : Π _ : B * Π a : A *.
+let IdPlus := λ R : * λ A : * λ B : * λ P : Π _ : B * λ c : [[Id R] A] Π r : R [[[[IdPlusCod A] B] P] [<<<elimId R> A> c> r]] : Π R : * Π A : * Π B : * Π P : Π _ : B * Π c : Π a : R [[[IdCod R] A] a] *.
+let elimIdPlusId := Λ R : * Λ A : * Λ B : * Λ P : Π _ : B * Λ c : [[Id R] A] λ ih : [[[[[IdPlus R] A] B] P] c] λ r : R [[<<pair B> (λ b : B = b r)> [<<proj1 B> (λ b : B [[Sigma = b [elimId r]] (λ q : = b [elimId r] [P φ q b [elimId r]])])> [ih r]]] [<<proj1 = [proj1 [ih r]] r> (λ q : = [proj1 [ih r]] [elimId r] [P φ q [<<proj1 B> (λ b : B [[Sigma = b [elimId r]] (λ q' : = b [elimId r] [P φ q' b [elimId r]])])> [ih r]] [elimId r]])> [<<proj2 B> (λ b : B [[Sigma = b [elimId r]] (λ q : = b [elimId r] [P φ q b [elimId r]])])> [ih r]]]].
+let elimIdPlus := Λ R : * Λ A : * Λ B : * Λ P : Π _ : B * Λ c : [[Id R] A] Λ ih : [[[[[IdPlus R] A] B] P] c] <<<elimId R> B> [<<<<<elimIdPlusId R> A> B> P> c> ih]>.
+let elimIdPlusIH := Λ R : * Λ A : * Λ B : * Λ P : Π _ : B * Λ c : [[Id R] A] λ ih : [[[[[IdPlus R] A] B] P] c] λ r : R [<<proj2 = [proj1 [ih r]] [elimId r]> (λ q : = [proj1 [ih r]] [elimId r] [P φ q [<<proj1 B> (λ b : B [[Sigma = b [elimId r]] (λ q' : = b [elimId r] [P φ q' b [elimId r]])])> [ih r]] [elimId r]])> [<<proj2 B> (λ b : B [[Sigma = b [elimId r]] (λ q : = b [elimId r] [P φ q b [elimId r]])])> [ih r]]].
+
+let PrfAlgM := λ F : Π _ : * * λ imap : [IdMapping F] λ X : * λ P : Π _ : X * λ alg : Π _ : [F X] X ∀ R : * ∀ c : [[Id R] X] Π ih : Π r : R [P [<<<elimId R> X> c> r]] Π rs : [F R] [P [alg [<<<elimId [F R]> [F X]> <<<imap R> X> c>> rs]]] : Π F : Π _ : * * Π imap : [IdMapping F] Π X : * Π P : Π _ : X * Π alg : Π _ : [F X] X *.
+let InductiveM := λ F : Π _ : * * λ imap : [IdMapping F] λ x : [FixM F] ∀ P : Π _ : [FixM F] * Π _ : [[[[[PrfAlgM F] imap] [FixM F]] P] <inM F>] [P x] : Π F : Π _ : * * Π imap : [IdMapping F] Π _ : ∀ X : * Π _ : [[AlgM F] X] X *.
+let FixIndM := λ F : Π _ : * * λ imap : [IdMapping F] (ι x : [FixM F] [[[InductiveM F] imap] x]) : Π F : Π _ : * * Π imap : [IdMapping F] *.
+let inIndM1 := Λ F : Π _ : * * Λ imap : [IdMapping F] λ xs : [F [[FixIndM F] imap]] [<inM F> [<<<elimId [F [[FixIndM F] imap]]> [F [FixM F]]> <<<imap [[FixIndM F] imap]> [FixM F]> (λ x : [[FixIndM F] imap] [[<<pair [FixM F]> (λ b : [FixM F] = b x)> π x] ρ β x λ x-x : * x-x x-x . = x x-x β x λ x-x : * x-x])>> xs]].
+
+let inIndM2 := Λ F : Π _ : * * Λ imap : [IdMapping F] λ xs : [F [[FixIndM F] imap]] Λ P : Π _ : [FixM F] * λ c : [[[[[PrfAlgM F] imap] [FixM F]] P] <inM F>] [[<<c [[FixIndM F] imap]> (λ x : [[FixIndM F] imap] [[<<pair [FixM F]> (λ b : [FixM F] = b x)> π x] β x x])> (λ x : [[FixIndM F] imap] [<ψ x P> c])] xs].
+
+let inIndM := Λ F : Π _ : * * Λ imap : [IdMapping F] λ xs : [F [[FixIndM F] imap]] { [<<inIndM1 F> imap> xs] , [<<inIndM2 F> imap> xs] x . [[[InductiveM F] imap] x] }.
+
+let lowerPrfAlg := Λ F : Π _ : * * Λ imap : [IdMapping F] Λ P : Π _ : [[FixIndM F] imap] * λ alg : [[[[[PrfAlgM F] imap] [[FixIndM F] imap]] P] <<inIndM F> imap>] Λ R : * Λ c : [[Id R] [FixM F]] λ ih : Π r : R [[[[IdPlusCod [FixM F]] [[FixIndM F] imap]] P] [<<<elimId R> [FixM F]> c> r]] λ rs : [F R] [[<<pair [[FixIndM F] imap]> (λ b : [[FixIndM F] imap] [[Sigma = b [inM [elimId rs]]] (λ q : = b [inM [elimId rs]] [P φ q b [inM [elimId rs]]])])> [<<inIndM F> imap> [<<<elimId [F R]> [F [[FixIndM F] imap]]> <<<imap R> [[FixIndM F] imap]> [<<<<<elimIdPlusId R> [FixM F]> [[FixIndM F] imap]> P> c> ih]>> rs]]] [[<<pair = [inIndM [elimId rs]] [inM [elimId rs]]> (λ q : = [inIndM [elimId rs]] [inM [elimId rs]] [P φ q [<<inIndM F> imap> [<<<elimId [F R]> [F [[FixIndM F] imap]]> <<<imap R> [[FixIndM F] imap]> [<<<<<elimIdPlusId R> [FixM F]> [[FixIndM F] imap]> P> c> ih]>> rs]] [inM [elimId rs]]])> ρ β [inM [elimId rs]] λ x-x : * x-x x-x . = [inIndM [elimId rs]] x-x β [inIndM [elimId rs]] λ abcdef : * abcdef] [[<<alg R> [<<<<<elimIdPlusId R> [FixM F]> [[FixIndM F] imap]> P> c> ih]> [<<<<<elimIdPlusIH R> [FixM F]> [[FixIndM F] imap]> P> c> ih]] rs]]].
+
+let inductionM := Λ F : Π _ : * * Λ imap : [IdMapping F] Λ P : Π _ : [[FixIndM F] imap] * λ alg : [[[[[PrfAlgM F] imap] [[FixIndM F] imap]] P] <<inIndM F> imap>] λ x : [[FixIndM F] imap] [<<proj2 = [proj1 [x [lowerPrfAlg alg]]] x> (λ q : = [proj1 [x [lowerPrfAlg alg]]] x [P φ q [<<proj1 [[FixIndM F] imap]> (λ b : [[FixIndM F] imap] [[Sigma = b x] (λ q' : = b x [P φ q' b x])])> [<ψ x [[[IdPlusCod [FixM F]] [[FixIndM F] imap]] P]> [<<<lowerPrfAlg F> imap> P> alg]]] x])> [<<proj2 [[FixIndM F] imap]> (λ b : [[FixIndM F] imap] [[Sigma = b x] (λ q : = b x [P φ q b x])])> [<ψ x [[[IdPlusCod [FixM F]] [[FixIndM F] imap]] P]> [<<<lowerPrfAlg F> imap> P> alg]]]].
+let outIndM := Λ F : Π _ : * * Λ imap : [IdMapping F] λ x : [[FixIndM F] imap] [[<<<inductionM F> imap> (λ x' : [[FixIndM F] imap] [F [[FixIndM F] imap]])> (Λ R : * Λ c : [[Id R] [[FixIndM F] imap]] λ ih : Π _ : R [F [[FixIndM F] imap]] λ rs : [F R] [<<<elimId [F R]> [F [[FixIndM F] imap]]> <<<imap R> [[FixIndM F] imap]> c>> rs])] x].
+let lambekM1 := Λ F : Π _ : * * Λ imap : [IdMapping F] λ xs : [F [[FixIndM F] imap]] ρ β xs λ x-x : * x-x x-x . = [outIndM [inIndM xs]] x-x β [outIndM [inIndM xs]] λ x-x : * x-x.
+let lambekM2 := Λ F : Π _ : * * Λ imap : [IdMapping F] λ x : [[FixIndM F] imap] [[<<<inductionM F> imap> (λ x' : [[FixIndM F] imap] = [inIndM [outIndM x']] x')> (Λ R : * Λ c : [[Id R] [[FixIndM F] imap]] λ ih : Π r : R = [inIndM [outIndM [elimId r]]] [elimId r] λ rs : [F R] ρ β [inIndM [elimId rs]] λ x-x : * x-x x-x . = [inIndM [outIndM [inIndM [elimId rs]]]] x-x β [inIndM [outIndM [inIndM [elimId rs]]]] λ x-x : * x-x)] x].
+
+let Functor' := λ F' : Π _ : * * [[Sigma (∀ A : * ∀ B : * Π _ : Π _ : A B Π _ : [F' A] [F' B])] (λ fmap : ∀ A : * ∀ B : * Π _ : Π _ : A B Π _ : [F' A] [F' B] = [fmap (λ x : * x)] λ x : * x)] : Π _ : Π _ : * * *.
+let fmap := Λ F' : Π _ : * * λ fun : [Functor' F'] [<<proj1 (∀ A : * ∀ B : * Π _ : Π _ : A B Π _ : [F' A] [F' B])> (λ fmap : ∀ A : * ∀ B : * Π _ : Π _ : A B Π _ : [F' A] [F' B] = [fmap (λ x : * x)] λ x : * x)> fun].
+let introId := Λ A : * Λ B : * λ f : Π _ : A B λ eq : = f λ x : * x λ x : A [[<<pair B> (λ b : B = b x)> [f x]] ρ eq x' . = [x' x] x ρ β x λ x-x : * x-x x-x . = [(λ x' : * x') x] x-x β [(λ x' : * x') x] λ x-x : * x-x].
+let Functor'Id := Λ F' : Π _ : * * λ fun : [Functor' F'] Λ X : * Λ Y : * Λ id : [[Id X] Y] [[<<introId [F' X]> [F' Y]> [<<[<fmap F'> fun] X> Y> <<<elimId X> Y> id>]] ρ [<<proj2 (∀ A : * ∀ B' : * Π _ : Π _ : A B' Π _ : [F' A] [F' B'])> (λ fmap' : ∀ A : * ∀ B : * Π _ : Π _ : A B Π _ : [F' A] [F' B] = [fmap' (λ x : * x)] λ x : * x)> fun] x . = x λ x' : * x' ρ β (λ x' : * x') λ x-x : * x-x x-x . = λ x : * x x-x β (λ x : * x) λ x-x : * x-x].
+let cSum := λ A : * λ B : * ∀ X : * Π _ : Π _ : A X Π _ : Π _ : B X X : Π _ : * Π B : * *.
+let cin1 := Λ A : * Λ B : * λ a : A Λ X : * λ ca : Π _ : A X λ cb : Π _ : B X [ca a].
+let cin2 := Λ A : * Λ B : * λ b : B Λ X : * λ ca : Π _ : A X λ cb : Π _ : B X [cb b].
+let param-Sum := λ A : * λ B : * λ x : [[cSum A] B] ∀ X : * ∀ P : Π _ : X * ∀ ca : Π _ : A X ∀ cb : Π _ : B X Π _ : Π a : A [P [ca a]] Π _ : Π b : B [P [cb b]] [P [[<x X> ca] cb]] : Π A : * Π B : * Π x : ∀ X : * Π _ : Π _ : A X Π _ : Π _ : B X X *.
+let Sum := λ A : * λ B : * (ι x : [[cSum A] B] (ι _ : = [[x cin1] cin2] x [[[param-Sum A] B] x])) : Π _ : * Π B : * *.
+let in1 := Λ A : * Λ B : * λ a : A { [<<cin1 A> B> a] , { β [[[cin1 a] cin1] cin2] [cin1 a] , Λ X : * Λ P : Π _ : X * Λ ca : Π _ : A X Λ cb : Π _ : B X λ pa : Π a' : A [P [ca a']] λ pb : Π b : B [P [cb b]] [pa a] _ . [[[param-Sum A] B] [<<cin1 A> B> a]] } x . (ι _ : = [[x cin1] cin2] x [[[param-Sum A] B] x]) }.
+let in2 := Λ A : * Λ B : * λ b : B { [<<cin2 A> B> b] , { β [[[cin2 b] cin1] cin2] [cin2 b] , Λ X : * Λ P : Π _ : X * Λ ca : Π _ : A X Λ cb : Π _ : B X λ pa : Π a : A [P [ca a]] λ pb : Π b' : B [P [cb b']] [pb b] _ . [[[param-Sum A] B] [<<cin2 A> B> b]] } x . (ι _ : = [[x cin1] cin2] x [[[param-Sum A] B] x]) }.
+let indSum := Λ A : * Λ B : * λ x : [[Sum A] B] Λ P : Π _ : [[Sum A] B] * λ pa : Π a : A [P [<<in1 A> B> a]] λ pb : Π b : B [P [<<in2 A> B> b]] ρ σ π ψ x x' . [P x'] [[<<<<ψ ψ x [[Sum A] B]> P> <<in1 A> B>> <<in2 A> B>> pa] pb].
+let elimSum := Λ A : * Λ B : * Λ P : Π _ : [[Sum A] B] * λ p1 : Π a : A [P [<<in1 A> B> a]] λ p2 : Π b : B [P [<<in2 A> B> b]] λ s : [[Sum A] B] [[<[<<indSum A> B> s] P> p1] p2].
+let cUnit := ∀ X : * Π _ : X X : *.
+let cunit := Λ X : * λ x : X x.
+let param-Unit := λ x : cUnit ∀ X : * ∀ P : Π _ : X * ∀ cu : X Π _ : [P cu] [P [<x X> cu]] : Π _ : ∀ X : * Π _ : X X *.
+let Unit := (ι x : cUnit (ι _ : = [x cunit] x [param-Unit x])) : *.
+let tt := { cunit , { β [cunit cunit] cunit , Λ X : * Λ P : Π _ : X * Λ cu : X λ u : [P cu] u _ . [param-Unit cunit] } x . (ι _ : = [x cunit] x [param-Unit x]) }.
+let ind-Unit := λ x : Unit Λ P : Π _ : Unit * λ u : [P tt] ρ σ π ψ x x' . [P x'] [<<<ψ ψ x Unit> P> tt> u].
+let eta-Unit := λ x : Unit [<[ind-Unit x] (λ x' : Unit = x' tt)> ρ β tt λ x-x : * x-x x-x . = tt x-x β tt λ x-x : * x-x].
+let pairProjId := Λ A : * Λ B : Π _ : A * λ x : [[Sigma A] B] [[<<<elimSigma A> B> (λ x' : [[Sigma A] B] = [[pair [proj1 x']] [proj2 x']] x')> (λ a : A λ b : [B a] ρ β [[pair a] b] λ x-x : * x-x x-x . = [[pair [proj1 [[pair a] b]]] [proj2 [[pair a] b]]] x-x β [[pair [proj1 [[pair a] b]]] [proj2 [[pair a] b]]] λ x-x : * x-x)] x].
+
+let ListF := λ A : * λ X : * [[Sum Unit] [[Sigma A] (λ _ : A X)]] : Π _ : * Π X : * *.
+let ListId := Λ A : * Λ X : * Λ Y : * Λ id : [[Id X] Y] λ x : [[ListF A] X] [[<[<<indSum Unit> [[Sigma A] (λ _ : A X)]> x] (λ x' : [[ListF A] X] [[[IdCod [[ListF A] X]] [[ListF A] Y]] x'])> (λ tt' : Unit [[<<pair [[ListF A] Y]> (λ b : [[ListF A] Y] = b [in1 tt'])> [<<in1 Unit> [[Sigma A] (λ _ : A Y)]> tt']] ρ β [in1 tt'] λ x-x : * x-x x-x . = [in1 tt'] x-x β [in1 tt'] λ x-x : * x-x])] (λ y : [[Sigma A] (λ _ : A X)] [[<<pair [[ListF A] Y]> (λ b : [[ListF A] Y] = b [in2 y])> [<<in2 Unit> [[Sigma A] (λ _ : A Y)]> [[<<pair A> (λ _ : A Y)> [<<proj1 A> (λ _ : A X)> y]] [<<<elimId X> Y> id> [<<proj2 A> (λ _ : A X)> y]]]]] ρ [<<pairProjId A> (λ _ : A X)> y] x' . = [in2 x'] [in2 y] ρ β [in2 y] λ x-x : * x-x x-x . = [in2 y] x-x β [in2 y] λ x-x : * x-x])].
+let List := λ A : * [[FixIndM [ListF A]] <ListId A>] : Π _ : * *.
+let nil := Λ A : * [<<inIndM [ListF A]> <ListId A>> [<<in1 Unit> [[Sigma A] (λ _ : A [[FixIndM [ListF A]] <ListId A>])]> tt]].
+let cons := Λ A : * λ a : A λ l : [List A] [<<inIndM [ListF A]> <ListId A>> [<<in2 Unit> [[Sigma A] (λ _ : A [[FixIndM [ListF A]] <ListId A>])]> [[<<pair A> (λ _ : A [[FixIndM [ListF A]] <ListId A>])> a] l]]].
+let consEq := Λ A : * Λ R : * λ x : [[Sigma A] (λ _ : A R)] [[<<<elimSigma A> (λ _ : A R)> (λ x' : [[Sigma A] (λ _ : A R)] = [inIndM [elimId [in2 x']]] [[cons [proj1 x']] [elimId [proj2 x']]])> (λ a : A λ b : R ρ β [[cons [proj1 [[pair a] b]]] [elimId [proj2 [[pair a] b]]]] λ x-x : * x-x x-x . = [inIndM [elimId [in2 [[pair a] b]]]] x-x β [inIndM [elimId [in2 [[pair a] b]]]] λ x-x : * x-x)] x].
+let inductionList := Λ A : * Λ P : Π _ : [List A] * λ pnil : [P <nil A>] λ pcons : Π x : A Π xs : [List A] Π _ : [P xs] [P [[<cons A> x] xs]] [<<<inductionM [ListF A]> <ListId A>> P> (Λ R : * Λ c : [[Id R] [[FixIndM [ListF A]] <ListId A>]] λ ih : Π r : R [P [<<<elimId R> [[FixIndM [ListF A]] <ListId A>]> c> r]] λ rs : [[ListF A] R] [[<[<<indSum Unit> [[Sigma A] (λ _ : A R)]> rs] (λ rs' : [[ListF A] R] [P [<<inIndM [ListF A]> <ListId A>> [<<<elimId [[ListF A] R]> [[ListF A] [[FixIndM [ListF A]] <ListId A>]]> <<<<ListId A> R> [[FixIndM [ListF A]] <ListId A>]> c>> rs']]])> (λ q : Unit ρ [eta-Unit q] x . [P [inIndM [elimId [in1 x]]]] pnil)] (λ q : [[Sigma A] (λ _ : A R)] ρ [<<consEq A> R> q] x . [P x] [[[pcons [<<proj1 A> (λ _ : A R)> q]] [<<<elimId R> [List A]> c> [<<proj2 A> (λ _ : A R)> q]]] [ih [<<proj2 A> (λ _ : A R)> q]]])])].
+
+let NatF := λ X : * [[Sum Unit] X] : Π _ : * *.
+let NatId := Λ X : * Λ Y : * Λ id : [[Id X] Y] λ x : [NatF X] [[<[<<indSum Unit> X> x] (λ x' : [NatF X] [[[IdCod [NatF X]] [NatF Y]] x'])> (λ a : Unit [[<<pair [NatF Y]> (λ b : [NatF Y] = b [in1 a])> [<<in1 Unit> Y> a]] ρ β [in1 a] λ x-x : * x-x x-x . = [in1 a] x-x β [in1 a] λ x-x : * x-x])] (λ b : X [[<<pair [NatF Y]> (λ b' : [NatF Y] = b' [in2 b])> [<<in2 Unit> Y> [<<<elimId X> Y> id> b]]] ρ β [in2 b] λ x-x : * x-x x-x . = [in2 [elimId b]] x-x β [in2 [elimId b]] λ x-x : * x-x])].
+let Nat := [[FixIndM NatF] NatId] : *.
+let zero := [<<inIndM NatF> NatId> [<<in1 Unit> [[FixIndM NatF] NatId]> tt]].
+let suc := λ n : Nat [<<inIndM NatF> NatId> [<<in2 Unit> [[FixIndM NatF] NatId]> n]].
+let inductionNat := Λ P : Π _ : Nat * λ pzero : [P zero] λ psuc : Π n : Nat Π _ : [P n] [P [suc n]] [<<<inductionM NatF> NatId> P> (Λ R : * Λ c : [[Id R] [[FixIndM NatF] NatId]] λ ih : Π r : R [P [<<<elimId R> [[FixIndM NatF] NatId]> c> r]] λ rs : [NatF R] [[<[<<indSum Unit> R> rs] (λ rs' : [NatF R] [P [<<inIndM NatF> NatId> [<<<elimId [NatF R]> [NatF [[FixIndM NatF] NatId]]> <<<NatId R> [[FixIndM NatF] NatId]> c>> rs']]])> (λ q : Unit ρ [eta-Unit q] x . [P [inIndM [elimId [in1 x]]]] pzero)] (λ q : R [[psuc [<<<elimId R> Nat> c> q]] [ih q]])])].

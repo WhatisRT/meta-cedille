@@ -1,0 +1,17 @@
+λ-let ycomb := λ t. [λ x. [t [x x]] λ x. [t [x x]]].
+
+λ-let cZero := λ z. λ f. z.
+λ-let cSuc := λ n. λ z. λ f. [f [[n z] f]].
+
+λ-let cOne := [cSuc cZero].
+λ-let cTwo := [cSuc cOne].
+λ-let cThree := [cSuc cTwo].
+λ-let cFour := [cSuc cThree].
+λ-let cFive := [cSuc cFour].
+λ-let cSix := [cSuc cFive].
+λ-let cSeven := [cSuc cSix].
+λ-let cEight := [cSuc cSeven].
+λ-let cNine := [cSuc cEight].
+
+λ-let cAdd := λ a. λ b. [[b a] cSuc].
+λ-let cMult := λ a. λ b. [[b cZero] [cAdd a]].

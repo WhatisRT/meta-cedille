@@ -1,0 +1,18 @@
+let Top := (= (λ x : * x) (λ x : * x)).
+let quoteId := [[[quote$lambda [[quote$name quote$x] init$name'$]] quote$ast] [quote$var [[quote$name quote$x] init$name'$]]] : init$term.
+let quoteTop := [quote$var [[quote$name quote$T] [[quote$ncons quote$o] [[quote$ncons quote$p] init$name'$]]]] : init$term.
+
+let lambdaTermToTerm := [quote$beta quoteId] : Π _ : init$term init$term.
+
+let init$lambdaTerm := ∀ X : * Π _ : (Π _ : init$name X) Π _ : (Π _ : X Π _ : X X) Π _ : (Π _ : init$name Π _ : X X) X.
+let init$lambdaTerm$_name_ := quote$var : Π _ : init$name init$term.
+let init$lambdaTerm$=lsquare=_space'__lambdaTerm__space__lambdaTerm__space'_=rsquare= := λ _ : init$space' λ t : init$term λ _ : init$space λ t' : init$term λ _ : init$space' [[quote$square t] t'] : Π _ : init$space' Π _ : init$term Π _ : init$space Π _ : init$term Π _ : init$space' init$term.
+let init$lambdaTerm$=lambda=_space__name__space'_=dot=_space'__lambdaTerm_ := λ _ : init$space λ name : init$name λ _ : init$space' λ _ : init$space' λ t : init$term [[[quote$lambda name] quote$ast] t] : Π _ : init$space Π _ : init$name Π _ : init$space' Π _ : init$space' Π _ : init$term init$term.
+
+let init$lambdaStmt$let_space__name__space'_=colon==equal=_space'__lambdaTerm__space'_=dot= := λ _ : init$space λ name : init$name λ _ : init$space' λ _ : init$space' λ t : init$term λ _ : init$space' [[init$stmt$_space'__stmt'_ quote$noSpace] [init$stmt'$let_let_ [[[[[[[init$let$_space__name__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] name] quote$noSpace] quote$noSpace] [lambdaTermToTerm t]] quote$noSpace] [[[init$lettail$=colon=_space'__term__space'_=dot= init$space'$] quoteTop] quote$noSpace]]]] : Π _ : init$space Π _ : init$name Π _ : init$space' Π _ : init$space' Π _ : init$term Π _ : init$space' init$stmt.
+
+let init$lambdaStmt$normalize_space__lambdaTerm__space'_=dot= := λ _ : init$space λ t : init$term λ _ : init$space' [[init$stmt$_space'__stmt'_ quote$noSpace] [[[init$stmt'$normalize_space__term__space'_=dot= quote$singleSpace] [lambdaTermToTerm t]] quote$noSpace]] : Π _ : init$space Π _ : init$term Π _ : init$space' init$stmt.
+
+let init$stmt$=lambda==minus=_lambdaStmt_ := λ x : init$stmt x : Π _ : init$stmt init$stmt.
+
+seteval eval init stmt.

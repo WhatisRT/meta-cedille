@@ -1,0 +1,8 @@
+let init$proj := ∀ X : * (Π _ : (Π _ : init$term X) (Π _ : (Π _ : init$term X) X)) : *.
+
+let init$term$=alpha=_proj_ := λ p : init$proj [[<p init$term> λ t : init$term [[init$term$=pi=_space__term_ [init$space$=space=_space'_ init$space'$]] t]] λ t : init$term [[init$term$=psi=_space__term_ [init$space$=space=_space'_ init$space'$]] t]] : Π _ : init$proj init$term.
+
+let init$proj$1_space__term_ := λ _ : init$space λ x : init$term Λ X : * λ t : (Π _ : init$term X) λ t' : (Π _ : init$term 2) [t x] : Π _ : init$space (Π _ : init$term init$proj).
+let init$proj$2_space__term_ := λ _ : init$space λ x : init$term Λ X : * λ t : (Π _ : init$term X) λ t' : (Π _ : init$term 2) [t' x] : Π _ : init$space (Π _ : init$term init$proj).
+
+seteval eval init stmt.

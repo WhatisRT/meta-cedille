@@ -1,0 +1,45 @@
+module Data.List.Instance where
+
+open import Class.Equality
+open import Class.Monad
+open import Class.Monoid
+open import Class.Show
+open import Class.Traversable
+open import Data.List hiding (concat)
+open import Data.String using (String; concat)
+open import Data.String.Instance
+open import Relation.Binary.PropositionalEquality
+open import Relation.Nullary
+
+instance
+  List-Eq : ∀ {A} {{_ : Eq A}} -> Eq (List A)
+  List-Eq {A} = record { _≟_ = helper }
+    where
+      helper : (l l' : List A) -> Dec (l ≡ l')
+      helper [] [] = yes refl
+      helper [] (x ∷ l') = no (λ ())
+      helper (x ∷ l) [] = no (λ ())
+      helper (x ∷ l) (x₁ ∷ l') with x ≟ x₁
+      helper (x ∷ l) (x₁ ∷ l') | yes p with helper l l'
+      ... | yes p₁ rewrite p | p₁ = yes refl
+      ... | no ¬p = no λ { refl -> ¬p refl }
+      helper (x ∷ l) (x₁ ∷ l') | no ¬p = no λ { refl -> ¬p refl }
+
+  List-Monoid : ∀ {a} {A : Set a} -> Monoid (List A)
+  List-Monoid = record { mzero = [] ; _+_ = _++_ }
+
+  List-Traversable : ∀ {a} -> Traversable {a} (List {a})
+  List-Traversable = record { sequence = helper }
+    where
+      helper : ∀ {a} {M : Set a → Set a} ⦃ _ : Monad M ⦄ {A : Set a} → List (M A) → M (List A)
+      helper [] = return []
+      helper (x ∷ xs) = do
+        x' <- x
+        xs' <- helper xs
+        return (x' ∷ xs')
+
+  List-Show : ∀ {a} {A : Set a} {{_ : Show A}} -> Show (List A)
+  List-Show = record { show = showList show }
+    where
+      showList : ∀ {a} {A : Set a} -> (A -> String) -> List A -> String
+      showList showA l = "[" + concat (intersperse "," (map showA l)) + "]"

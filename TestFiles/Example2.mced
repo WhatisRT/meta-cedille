@@ -1,0 +1,18 @@
+let False := ∀ X : * X.
+let CBool := ∀ X : * (Π _ : X (Π _ : X X)).
+let ct  := Λ X : * (λ t : X (λ f : X t)) : CBool.
+let cf  := Λ X : * (λ t : X (λ f : X f)) : CBool.
+let contra := λ eq : (= ct cf) δ False eq : Π _ : (= ct cf) False.
+let indCBool := λ b : CBool (∀ P : (Π _ : CBool *) (Π _ : [P ct] (Π _ : [P cf] [P b]))) : Π _ : CBool *.
+
+let Bool := ι b : CBool [indCBool b].
+let t := { ct , Λ P : (Π _ : CBool *) (λ Pt : [P ct] (λ Pf : [P cf] Pt)) x . [indCBool x] } : Bool.
+let f := { cf , Λ P : (Π _ : CBool *) (λ Pt : [P ct] (λ Pf : [P cf] Pf)) x . [indCBool x] } : Bool.
+
+let toBool := λ b : CBool [[<b Bool> t] f] : Π _ : CBool Bool.
+let boolReflection := λ b : Bool ([[<α2 b (λ b' : CBool (= [[<b' Bool> t] f] b'))> β t tt] β f tt]) : Π b : Bool (= [toBool α1 b] b).
+
+let boolInd := λ b : Bool (Λ P : (Π _ : Bool *) (λ Pt : [P t] (λ Pf : [P f] ρ (σ [boolReflection b]) x . [P x] [[<(α2 b) (λ b' : CBool [P [toBool b']])> Pt] Pf])))
+    : Π b : Bool (∀ P : (Π _ : Bool *) (Π _ : [P t] (Π _ : [P f] [P b]))).
+
+let ifthenelse := Λ X : * λ b : Bool λ ift : X λ iff : X [[<[boolInd b] λ _ : Bool X> ift] iff] : ∀ X : * Π _ : Bool Π _ : X Π _ : X X.

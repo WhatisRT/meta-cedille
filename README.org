@@ -1,0 +1,6 @@
+* Meta Cedille
+This is the reference implementation for a version of cedille that supports metaprogramming.
+* Building
+`Agda 2.6` and the agda standard library are required. If those are setup correctly, just use the makefile.
+* Testing
+The file `TestFiles/Test.mced` contains the current tests. Run `meta-cedille` and execute the command `import TestFiles/Test.mced.`. If there is no error, the test was successful.

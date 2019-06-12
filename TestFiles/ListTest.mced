@@ -1,0 +1,44 @@
+let length := Λ X : * λ l : [List X] [[[<<inductionList X> λ _ : [List X] Nat> zero] λ x : X λ xs : [List X] λ n : Nat [suc n]] l] : ∀ X : * Π _ : [List X] Nat.
+
+let nilLength := Λ X : * β zero zero : ∀ X : * = zero [<length X> <nil X>].
+
+let init$bindigit$0 := f : Bool.
+let init$bindigit$1 := t : Bool.
+
+let init$binnat'$_bindigit__binnat'_ := λ b : Bool λ bs : [List Bool] [[<cons Bool> b] bs] : Π b : Bool Π bs : [List Bool] [List Bool].
+let init$binnat'$ := <nil Bool> : [List Bool].
+
+let init$binnat$_bindigit__binnat'_ := λ b : Bool λ bs : [List Bool] [[<cons Bool> b] bs] : Π b : Bool Π bs : [List Bool] [List Bool].
+
+let quoteBoolT := [quote$var [[quote$name quote$t] quote$nnil]] : init$term.
+let quoteBoolF := [quote$var [[quote$name quote$f] quote$nnil]] : init$term.
+let quoteBool := [quote$var [[quote$name quote$B] [[quote$ncons quote$o] [[quote$ncons quote$o] [[quote$ncons
+quote$l] quote$nnil]]]]] : init$term.
+
+let quoteNil := [quote$var [[quote$name quote$n] [[quote$ncons quote$i] [[quote$ncons quote$l] quote$nnil]]]] : init$term.
+let quoteCons := [quote$var [[quote$name quote$c] [[quote$ncons quote$o] [[quote$ncons quote$n] [[quote$ncons quote$s] quote$nnil]]]]] : init$term.
+let quoteNilBool := [[quote$angle quoteNil] quoteBool] : init$term.
+let quoteConsBool := [[quote$angle quoteCons] quoteBool] : init$term.
+
+let quoteBoolFun := λ b : Bool [[[<ifthenelse init$term> b] quoteBoolT] quoteBoolF] : Π _ : Bool init$term.
+
+let quoteListBool := [[<<inductionList Bool> λ _ : [List Bool] init$term> quoteNilBool] λ b : Bool λ bs : [List Bool] λ rec : init$term [[quote$square [[quote$square quoteConsBool] [quoteBoolFun b]]] rec]] : Π _ : [List Bool] init$term.
+
+let one := [suc zero].
+let two := [suc one].
+let add := λ n : Nat λ m : Nat [[[<inductionNat λ _ : Nat Nat> n] λ _ : Nat λ rec : Nat [suc rec]] m] : Π _ : Nat Π _ : Nat Nat.
+let mul := λ n : Nat λ m : Nat [[[<inductionNat λ _ : Nat Nat> zero] λ _ : Nat λ rec : Nat [[add rec] n]] m] : Π _ : Nat Π _ : Nat Nat.
+
+let pureList := Λ X : * λ x : X [[<cons X> x] <nil X>] : ∀ X : * Π _ : X [List X].
+let app := Λ X : * λ l1 : [List X] λ l2 : [List X] [[[<<inductionList X> λ _ : [List X] [List X]> l2] λ x : X λ _ : [List X] λ rec : [List X] [[<cons X> x] rec]] l1] : ∀ X : * Π _ : [List X] Π _ : [List X] [List X].
+let snoc := Λ X : * λ x : X λ xs : [List X] [[<app X> xs] [<pureList X> x]] : ∀ X : * Π _ : X Π _ : [List X] [List X].
+let reverse := Λ X : * [[<<inductionList X> λ _ : [List X] [List X]> <nil X>] λ x : X λ _ : [List X] λ rec : [List X] [[<snoc X> x] rec]] : ∀ X : * Π _ : [List X] [List X].
+
+let boolToNat := λ b : Bool [[[<ifthenelse Nat> b] one] zero] : Π _ : Bool Nat.
+let boolListToNat := λ bs : [List Bool] [[[<<inductionList Bool> λ _ : [List Bool] Nat> zero] λ b : Bool λ _ : [List Bool] λ rec : Nat [[add [[mul rec] two]] [boolToNat b]]] [<reverse Bool> bs]] : Π _ : [List Bool] Nat.
+
+let quoteBoolListToNat := [quote$var [[quote$name quote$b] [[quote$ncons quote$o] [[quote$ncons quote$o] [[quote$ncons quote$l] [[quote$ncons quote$L] [[quote$ncons quote$i] [[quote$ncons quote$s] [[quote$ncons quote$t] [[quote$ncons quote$T] [[quote$ncons quote$o] [[quote$ncons quote$N] [[quote$ncons quote$a] [[quote$ncons quote$t] quote$nnil]]]]]]]]]]]]]] : init$term.
+
+let init$term$=nu=_binnat_ := λ bs : [List Bool] [[quote$square quoteBoolListToNat] [quoteListBool bs]] : Π _ : [List Bool] init$term.
+
+seteval eval init stmt.
