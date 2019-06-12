@@ -1,3 +1,11 @@
+--------------------------------------------------------------------------------
+-- This file contains the definition of a context-free grammar, as well as a
+-- parser for those grammars that are actually of LL1 type. There is currently
+-- no check if the grammar is actually a LL1 grammar, so the parser might loop
+-- indefinitely or return an error message in certain cases, even if the string
+-- actually matches the grammar.
+--------------------------------------------------------------------------------
+
 {-# OPTIONS --type-in-type #-}
 
 module Parser where

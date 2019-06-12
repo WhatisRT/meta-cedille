@@ -1,3 +1,8 @@
+--------------------------------------------------------------------------------
+-- This file provides the generateCFG function that turns a list of strings of
+-- the current syntax for grammars into a grammar as defined in Parser.agda
+--------------------------------------------------------------------------------
+
 {-# OPTIONS --type-in-type #-}
 
 module ParserGenerator where
@@ -149,6 +154,7 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       parseRuleTable = sequenceRuleTable
         λ v x → ruleToParseRule $ lookup (fromList $ proj₂ (lookup rules v)) x
 
+  -- The first parameter describes the non-terminal the grammar should start with
   generateCFG : List Char -> List (List Char) -> M Grammar
   generateCFG start l = do
     x <- preParseCFG (map convertToMarked l)

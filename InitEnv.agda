@@ -1,3 +1,8 @@
+--------------------------------------------------------------------------------
+-- This file generates the environment that the interpreter starts with. In
+-- particular, it contains the grammar that is loaded initially.
+--------------------------------------------------------------------------------
+
 module InitEnv where
 
 import Data.Maybe

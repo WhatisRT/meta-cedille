@@ -1,3 +1,8 @@
+--------------------------------------------------------------------------------
+-- This file contains functions to turn the tree of parse results into the agda
+-- data structures they represent.
+--------------------------------------------------------------------------------
+
 {-# OPTIONS --type-in-type #-}
 
 module cedille-core-parser where

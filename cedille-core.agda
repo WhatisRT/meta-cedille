@@ -1,8 +1,12 @@
+--------------------------------------------------------------------------------
+-- This file provides the data structures and functions for the theory of
+-- cedille core extended with the constructs for metaprogramming.
+--------------------------------------------------------------------------------
+
 {-# OPTIONS --type-in-type #-}
 
 module cedille-core where
 
-import Data.Nat.Show
 import Data.Product
 open import Class.Map
 open import Class.Monad.Except
@@ -76,7 +80,7 @@ instance
   Name-Show = record { show = helper }
     where
       helper : Name -> String
-      helper (Bound x) = Data.Nat.Show.show x
+      helper (Bound x) = show x
       helper (Free x) = x
 
 data PureTerm : Set where
