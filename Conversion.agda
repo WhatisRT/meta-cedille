@@ -14,9 +14,9 @@ open import Data.String using (fromList; toList)
 open import Data.Tree
 open import Data.Word32
 
+open import CoreTheory
 open import InitEnv
-open import cedille-core
-open import cedille-core-parser
+open import ParseTreeConvert
 
 open import Prelude
 open import Prelude.Strings

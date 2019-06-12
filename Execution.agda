@@ -26,10 +26,10 @@ open import IO.Instance
 open import Monads.Except
 
 open import Conversion
-open import Parser
+open import CoreTheory
 open import InitEnv
-open import cedille-core
-open import cedille-core-parser
+open import ParseTreeConvert
+open import Parser
 open import ParserGenerator
 
 open import Prelude

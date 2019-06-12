@@ -16,11 +16,11 @@ open import Relation.Unary
 open import Prelude
 open import Prelude.Strings
 
+open import CoreTheory
 open import Execution
 open import InitEnv
+open import ParseTreeConvert
 open import Profiling
-open import cedille-core
-open import cedille-core-parser
 
 record EvalFlags : Set where
   field

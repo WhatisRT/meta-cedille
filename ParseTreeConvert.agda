@@ -5,7 +5,7 @@
 
 {-# OPTIONS --type-in-type #-}
 
-module cedille-core-parser where
+module ParseTreeConvert where
 
 import Data.Product
 open import Agda.Builtin.Nat using (_-_)
@@ -23,9 +23,9 @@ open import Relation.Nullary
 open import Prelude
 open import Prelude.Strings
 
-open import Parser
-open import cedille-core
+open import CoreTheory
 open import InitEnv
+open import Parser
 open import ParserGenerator
 
 continueIfInit : ∀ {a} {A : Set a} -> List Char -> List Char -> (List Char -> A) -> Maybe A

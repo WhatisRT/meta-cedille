@@ -5,7 +5,7 @@
 
 {-# OPTIONS --type-in-type #-}
 
-module cedille-core where
+module CoreTheory where
 
 import Data.Product
 open import Class.Map
