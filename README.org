@@ -1,5 +1,5 @@
 * Meta Cedille
-This is the reference implementation for a version of cedille that supports metaprogramming. More information and documentation coming soon.
+This is the reference implementation for a version of cedille that supports metaprogramming. The [[https://github.com/WhatisRT/meta-cedille/wiki][wiki]] contains some information and documentation.
 * Building
 `Agda 2.6` and the agda standard library are required. If those are setup correctly, just use the makefile.
 * Testing
