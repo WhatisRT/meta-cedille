@@ -1,6 +1,9 @@
 module Data.Sum.Instance where
 
 open import Class.Equality
+open import Class.Monoid
+open import Class.Show
+open import Data.String.Instance
 open import Data.Sum
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
@@ -18,3 +21,6 @@ instance
       helper (inj₂ y₁) (inj₂ y) with y ≟ y₁
       ... | yes refl = yes refl
       ... | no ¬p = no λ { refl -> ¬p refl }
+
+  Sum-Show : {A B : Set} -> {{_ : Show A}} -> {{_ : Show B}} -> Show (A ⊎ B)
+  Sum-Show = record { show = λ { (inj₁ x) → "inj₁ " + show x ; (inj₂ y) → "inj₂ " + show y } }

@@ -690,12 +690,12 @@ synthType' :
 synthType Γ t =
   appendIfError
     (synthType' Γ t)
-    ("\n\nWhile synthesizing type for " + show t + " in context:\n" + show Γ)
+    ("\n\nWhile synthesizing type for " + show t + " in context:\n" + show {{Context-Show}} Γ)
 
 synthType' Γ (Var-A x) =
   maybeToError
     (mapMaybe typeOfDef $ lookupInContext x Γ)
-    ("Lookup failed: " + show x + " in context " + show Γ)
+    ("Lookup failed: " + show x + " in context " + show {{Context-Show}} Γ)
 synthType' Γ (Sort-A ⋆) = return $ Sort-A □
 synthType' Γ (Sort-A □) = throwError "Cannot synthesize type for the superkind"
 
@@ -785,7 +785,7 @@ synthType' Γ (∀-A t t₁) = do
         { (Sort-A ⋆) -> return $ Sort-A ⋆
         ; v -> throwError $
           "The type family in forall should have type star, while it has type "
-          + show v + " (" + show t₁ + ")\nContext: " + show Γ' }
+          + show v + " (" + show t₁ + ")\nContext: " + show {{Context-Show}} Γ' }
     ; _ -> throwError "The type of the parameter type in forall should be star or square" }
 
 synthType' Γ (Π t t₁) = do

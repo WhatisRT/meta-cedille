@@ -2,7 +2,9 @@ module Data.Product.Instance where
 
 open import Class.Equality
 open import Class.Monoid
+open import Class.Show
 open import Data.Product
+open import Data.String.Instance
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
 
@@ -20,3 +22,6 @@ instance
   Product-Monoid = record
     { mzero = mzero , mzero
     ; _+_ = λ { (x1 , x2) (y1 , y2) -> (x1 + y1) , (x2 + y2) } }
+
+  Product-Show : ∀ {a} {A B : Set a} {{_ : Show A}} {{_ : Show B}} -> Show (A × B)
+  Product-Show = record { show = λ { (a , b) -> "(" + show a + ", " + show b + ")" } }

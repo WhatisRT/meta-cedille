@@ -10,6 +10,8 @@ open import Data.Bool hiding (_≟_) public
 open import Data.Bool.Instance public
 open import Data.Char using (Char) public
 open import Data.Char.Instance public
+open import Data.Empty public
+open import Data.Empty.Instance public
 open import Data.List using (List; []; [_]; _∷_; drop; boolFilter; reverse; _++_; zipWith; foldl) public
 open import Data.List.Exts public
 open import Data.List.Instance public

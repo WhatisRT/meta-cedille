@@ -1,6 +1,7 @@
 module Data.Bool.Instance where
 
 open import Class.Equality
+open import Class.Show
 open import Data.Bool
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
@@ -14,3 +15,6 @@ instance
       helper false true = no (λ ())
       helper true false = no (λ ())
       helper true true = yes refl
+
+  Bool-Show : Show Bool
+  Bool-Show = record { show = λ { false → "false" ; true → "true" } }
