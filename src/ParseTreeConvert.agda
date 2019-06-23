@@ -28,6 +28,10 @@ open import InitEnv
 open import Parser
 open import ParserGenerator
 
+-- accepts the head and tail of a string and returns the head of the full string without escape symbols
+unescape : Char -> List Char -> Char
+unescape c r = if ⌊ c ≟ '\\' ⌋ then (case r of λ { [] → c ; (x ∷ x₁) → x}) else c
+
 continueIfInit : ∀ {a} {A : Set a} -> List Char -> List Char -> (List Char -> A) -> Maybe A
 continueIfInit {A = A} init s = helper init s
   where

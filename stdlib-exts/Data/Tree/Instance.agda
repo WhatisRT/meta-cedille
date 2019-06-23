@@ -10,7 +10,6 @@ open import Data.List.Instance
 open import Data.String using (String)
 open import Data.String.Instance
 open import Data.Tree.Base
-open import Misc
 
 instance
   {-# TERMINATING #-}

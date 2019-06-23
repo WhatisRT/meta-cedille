@@ -33,5 +33,3 @@ open import Function public
 open import Relation.Nullary.Decidable using (⌊_⌋) public
 open import Relation.Nullary.Negation public
 open import Relation.Binary.PropositionalEquality using (_≡_; refl) public
-
-open import Misc public

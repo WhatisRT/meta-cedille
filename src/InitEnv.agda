@@ -17,6 +17,23 @@ open import Data.Word32
 open import Prelude
 open import Prelude.Strings
 
+nameSymbols : List Char
+nameSymbols = "$='-/!@"
+
+nameInits : List Char
+nameInits = letters ++ "_"
+
+nameTails : List Char
+nameTails = nameInits ++ nameSymbols ++ digits
+
+groupEscaped : List Char -> List (List Char)
+groupEscaped = helper false
+  where
+    helper : Bool -> List Char -> List (List Char)
+    helper b [] = []
+    helper false (x ∷ l) = if ⌊ x ≟ '\\' ⌋ then helper true l else [ x ] ∷ helper false l
+    helper true (x ∷ l) = ('\\' ∷ [ x ]) ∷ helper false l
+
 data ConstrData' : Set where
   Self : ConstrData'
   Other : String -> ConstrData'

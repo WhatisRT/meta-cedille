@@ -9,7 +9,6 @@ open import Data.String using (String; concat)
 open import Data.String.Instance
 open import Data.Unit
 open import Function
-open import Misc
 
 data Tree (A : Set) : Set where
   Node : A -> List (Tree A) -> Tree A
