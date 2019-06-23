@@ -44,7 +44,7 @@ translationTable =
   ("lparen" , '(') ∷ ("rparen" , ')') ∷ ("lbrace" , '{') ∷ ("rbrace" , '}') ∷
   ("lsquare" , '[') ∷ ("rsquare" , ']') ∷ ("langle" , '<') ∷ ("rangle" , '>') ∷
   ("equal" , '=') ∷ ("dot" , '.') ∷ ("comma" , ',') ∷ ("colon" , ':') ∷ ("semicolon" , ';') ∷
-  ("question" , '?') ∷ ("exclamation" , '!') ∷ ("at" , '@') ∷
+  ("question" , '?') ∷ ("exclamation" , '!') ∷ ("at" , '@') ∷ ("doublequote" , '"') ∷
   ("underscore" , '_') ∷ ("dollar" , '$') ∷ ("minus" , '-') ∷ ("forall" , '∀') ∷ ("exists" , '∃') ∷
   ("alpha" , 'α') ∷ ("beta" , 'β') ∷ ("gamma" , 'γ') ∷ ("delta" , 'δ') ∷ ("epsilon" , 'ε') ∷
   ("zeta" , 'ζ') ∷ ("eta" , 'η') ∷ ("theta" , 'θ') ∷ ("iota" , 'ι') ∷ ("kappa" , 'κ') ∷
@@ -207,7 +207,7 @@ charData =
 stringData : InductiveData
 stringData =
   ("init$string"
-  , ("init$string$nil" , []) ∷ ("init$string$cons" , (Other "init$char" ∷ Self ∷ [])) ∷ [])
+  , ("init$string$cons" , (Other "init$char" ∷ Self ∷ [])) ∷ ("init$string$nil" , []) ∷ [])
 
 stringListData : InductiveData
 stringListData =
@@ -227,8 +227,9 @@ metaResultData =
 name'Data : InductiveData
 name'Data =
   ("init$name'"
-  , ("init$name'$_nameTailChar__name'_"
-    , ((Other "init$char") ∷ Self ∷ [])) ∷ ("init$name'$" , []) ∷ [])
+  , ("init$name'$_nameTailChar__name'_" , ((Other "init$char") ∷ Self ∷ [])) ∷
+    ("init$name'$" , []) ∷
+    [])
 
 nameData : InductiveData
 nameData =
