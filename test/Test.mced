@@ -2,6 +2,7 @@ import test/Comment.
 import test/CommentTest.
 
 import test/Quote.
+import test/String.
 
 import test/Example.
 import test/Example2.

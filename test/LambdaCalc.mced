@@ -1,6 +1,6 @@
 let Top := (= (λ x : * x) (λ x : * x)).
 let quoteId := [[[quote$lambda [[quote$name quote$x] init$name'$]] quote$ast] [quote$var [[quote$name quote$x] init$name'$]]] : init$term.
-let quoteTop := [quote$var [[quote$name quote$T] [[quote$ncons quote$o] [[quote$ncons quote$p] init$name'$]]]] : init$term.
+let quoteTop := [[quote$stringToVar quote$T] "op"] : init$term.
 
 let lambdaTermToTerm := [quote$beta quoteId] : Π _ : init$term init$term.
 

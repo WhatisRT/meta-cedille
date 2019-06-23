@@ -1,0 +1,34 @@
+let bitFalse := init$bit$false.
+let bitTrue := init$bit$true.
+let byteBits := init$byte$bits.
+let charBytes := init$char$bytes.
+let stringNil := init$string$nil.
+let stringCons := init$string$cons.
+
+let quote$bitFalse := [quote$var [[quote$name quote$b] [[quote$ncons quote$i] [[quote$ncons quote$t] [[quote$ncons quote$F] [[quote$ncons quote$a] [[quote$ncons quote$l] [[quote$ncons quote$s] [[quote$ncons quote$e] quote$nnil]]]]]]]]] : init$term.
+let quote$bitTrue := [quote$var [[quote$name quote$b] [[quote$ncons quote$i] [[quote$ncons quote$t] [[quote$ncons quote$T] [[quote$ncons quote$r] [[quote$ncons quote$u] [[quote$ncons quote$e] quote$nnil]]]]]]]] : init$term.
+let quote$byteBits := [quote$var [[quote$name quote$b] [[quote$ncons quote$y] [[quote$ncons quote$t] [[quote$ncons quote$e] [[quote$ncons quote$B] [[quote$ncons quote$i] [[quote$ncons quote$t] [[quote$ncons quote$s] quote$nnil]]]]]]]]] : init$term.
+let quote$charBytes := [quote$var [[quote$name quote$c] [[quote$ncons quote$h] [[quote$ncons quote$a] [[quote$ncons quote$r] [[quote$ncons quote$B] [[quote$ncons quote$y] [[quote$ncons quote$t] [[quote$ncons quote$e] [[quote$ncons quote$s] quote$nnil]]]]]]]]]] : init$term.
+
+let quote$stringNil := [quote$var [[quote$name quote$s] [[quote$ncons quote$t] [[quote$ncons quote$r] [[quote$ncons quote$i] [[quote$ncons quote$n] [[quote$ncons quote$g] [[quote$ncons quote$N] [[quote$ncons quote$i] [[quote$ncons quote$l] quote$nnil]]]]]]]]]] : init$term.
+let quote$stringCons := [quote$var [[quote$name quote$s] [[quote$ncons quote$t] [[quote$ncons quote$r] [[quote$ncons quote$i] [[quote$ncons quote$n] [[quote$ncons quote$g] [[quote$ncons quote$C] [[quote$ncons quote$o] [[quote$ncons quote$n] [[quote$ncons quote$s] quote$nnil]]]]]]]]]]] : init$term.
+
+let quote$bit := λ b : init$bit [[<b init$term> quote$bitTrue] quote$bitFalse] : Π _ : init$bit init$term.
+let quote$byte := λ b : init$byte [<b init$term> λ x1 : init$bit λ x2 : init$bit λ x3 : init$bit λ x4 : init$bit λ x5 : init$bit λ x6 : init$bit λ x7 : init$bit λ x8 : init$bit [[quote$square [[quote$square [[quote$square [[quote$square [[quote$square [[quote$square [[quote$square [[quote$square quote$byteBits] [quote$bit x1]]] [quote$bit x2]]] [quote$bit x3]]] [quote$bit x4]]] [quote$bit x5]]] [quote$bit x6]]] [quote$bit x7]]] [quote$bit x8]]] : Π _ : init$byte init$term.
+let quote$char := λ c : init$char [<c init$term> λ x1 : init$byte λ x2 : init$byte λ x3 : init$byte λ x4 : init$byte [[quote$square [[quote$square [[quote$square [[quote$square quote$charBytes] [quote$byte x1]]] [quote$byte x2]]] [quote$byte x3]]] [quote$byte x4]]] : Π _ : init$char init$term.
+
+let quote$String := λ s : init$string [[<s init$term> λ c : init$char λ rec : init$term [[quote$square [[quote$square quote$stringCons] [quote$char c]]] rec]] quote$stringNil] : Π _ : init$string init$term.
+
+let init$stringchar$!=doublequote=! := λ c : init$char c.
+
+let init$newstring$ := init$string$nil : init$string.
+let init$newstring$_stringchar__newstring_ := init$string$cons : Π _ : init$char Π _ : init$string init$string.
+
+--let init$term$=singlequote=_stringchar_=singlequote= := quote$char : Π _ : init$char init$term.
+let init$term$=doublequote=_newstring_=doublequote= := quote$String : Π _ : init$string init$term.
+
+let stringToName' := λ s : init$string [[<s init$name'> λ c : init$char λ rec : init$name' [[quote$ncons c] rec]] quote$nnil].
+
+let quote$stringToVar := λ c : init$char λ s : init$string [quote$var [[quote$name c] [stringToName' s]]].
+
+seteval eval init stmt.
