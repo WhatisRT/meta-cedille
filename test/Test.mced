@@ -1,3 +1,6 @@
+import test/Comment.
+import test/CommentTest.
+
 import test/Quote.
 
 import test/Example.

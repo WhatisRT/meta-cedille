@@ -104,11 +104,13 @@ getParserNamespace Γ n = map (drop $ suc $ length n) $
 -- Folds a tree of constructors back into a term by properly applying the
 -- constructors and prefixing the namespace
 {-# TERMINATING #-}
-parseResultToConstrTree : List Char -> Tree (List Char) -> AnnTerm
-parseResultToConstrTree namespace (Node x x₁) = foldl
-  (λ t t' -> App-A t t')
-  (Var-A (Free (fromList (namespace ++ "$" ++ ruleToConstr x))))
-  (map (parseResultToConstrTree namespace) x₁)
+parseResultToConstrTree : List Char -> Tree (List Char ⊎ Char) -> AnnTerm
+parseResultToConstrTree namespace (Node x x₁) =
+  foldl (λ t t' -> App-A t t') (ruleToTerm x) (map (parseResultToConstrTree namespace) x₁)
+    where
+      ruleToTerm : List Char ⊎ Char -> AnnTerm
+      ruleToTerm (inj₁ x) = Var-A (Free (fromList (namespace ++ "$" ++ ruleToConstr x)))
+      ruleToTerm (inj₂ y) = charToTerm y
 
 module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
   {{_ : MonadExcept M String}} {{_ : MonadState M MetaContext}}

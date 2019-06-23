@@ -91,8 +91,9 @@ module ConversionInternals {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M 
 
     -- converts a normalized term to an appropriate agda term, if possible
     constrsToAgda : {A : Set} -> List Char -> (Tree (List Char) -> M A) -> Context -> PureTerm -> M A
-    constrsToAgda init toTerm Γ t =
-      ((extractConstrIdTree $ buildConstructorTree Γ t) >>= (λ t -> maybeToError (ℕTreeToSyntaxTree init t) "Error while generating syntax tree")) >>= toTerm
+    constrsToAgda init toTerm Γ t = do
+      t' <- extractConstrIdTree $ buildConstructorTree Γ t
+      maybeToError (ℕTreeToSyntaxTree init t') "Error while generating syntax tree" >>= toTerm
 
   constrsToStmt : Context -> PureTerm -> M Stmt
   constrsToStmt = constrsToAgda "stmt" (λ t -> maybeToError (toStmt t) "Error while converting to stmt")
@@ -118,8 +119,8 @@ private
     foldl App-A (Var-A $ Free "init$char$bytes")
       ((byteToTerm x0) ∷ (byteToTerm x1) ∷ (byteToTerm x2) ∷ (byteToTerm x3) ∷ [])
 
-  charToTerm : Char -> AnnTerm
-  charToTerm c = word32ToTerm (charToWord32 c)
+charToTerm : Char -> AnnTerm
+charToTerm c = word32ToTerm (charToWord32 c)
 
 charListToTerm : List Char -> AnnTerm
 charListToTerm [] = Var-A (Free "init$string$nil")

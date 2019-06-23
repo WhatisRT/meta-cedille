@@ -8,6 +8,7 @@
 module ParseTreeConvert where
 
 import Data.Product
+import Data.Sum
 open import Agda.Builtin.Nat using (_-_)
 open import Class.Monad.Except
 open import Class.Traversable
@@ -371,23 +372,29 @@ module CoreParser-Internal {M} {{_ : Monad M}} {{_ : MonadExcept M String}} wher
   preCoreGrammar : M Grammar
   preCoreGrammar = generateCFG "stmt" coreGrammarGenerator
 
-  parse' : Grammar -> String -> M (Tree (List Char) × String)
+  parse' : Grammar -> String -> M (Tree (List Char ⊎ Char) × String)
   parse' (fst , fst₁ , snd) s = do
-    res <- LL1Parser.parse fst₁ (fromList ∘ proj₂ snd) M s
-    return (Data.Product.map (fmap {{Tree-Functor}} (proj₁ snd)) id res)
+    res <- LL1Parser.parse (fromList ∘ proj₂ snd) matchMulti show fst₁ M s
+    return (Data.Product.map₁ (fmap {{Tree-Functor}} (Data.Sum.map₁ (proj₁ snd))) res)
 
-  parse : String -> M (Tree (List Char) × String)
+  parse : String -> M (Tree (List Char ⊎ Char) × String)
   parse s = do
     G <- preCoreGrammar
     parse' G s
 
+  synTreeHasNoMultiChar : Tree (List Char ⊎ Char) -> M (Tree (List Char))
+  synTreeHasNoMultiChar t = sequence $ fmap {{Tree-Functor}} (λ
+    { (inj₁ x) → return x
+    ; (inj₂ y) → throwError "Tree had a multi char"}) t
+
   parseStmt : String -> M (Stmt × String)
   parseStmt s = do
-    (y , rest) <- parse s
+    (y' , rest) <- parse s
+    y <- synTreeHasNoMultiChar y'
     case toStmt y of λ
       { (just x) → return (x , rest)
       ; nothing →
         throwError ("Error while converting syntax tree to statement: "
-          + (show {{Tree-Show {{Char-Show}}}} y)) }
+          + show {{Tree-Show {{CharList-Show}}}} y) }
 
 open CoreParser-Internal public

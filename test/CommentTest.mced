@@ -1,0 +1,5 @@
+let mydefinition := -- this is a test comment to demonstrate unicode: ∀ ⊗ Γ
+  unit. -- another test comment
+-- comments can appear anywhere where whitespace is allowed
+
+let mydefinition' := mydefinition. -- just another test

@@ -1,0 +1,10 @@
+let unit := ∀ X : * Π _ : X X.
+let pt := Λ X : * λ x : X x.
+let unitId := λ u : unit u.
+
+let init$linecomment'$=newline= := pt : unit.
+let init$linecomment'$!=newline=!_linecomment'_ := λ _ : init$char unitId : Π _ : init$char Π _ : unit unit.
+
+let init$space'$=minus==minus=_linecomment'__space'_ := λ _ : unit λ s : init$space' s : Π _ : unit Π _ : init$space' init$space'.
+
+seteval eval init stmt.

@@ -14,6 +14,7 @@ open import Data.Fin hiding (_≟_; _+_)
 open import Data.Fin.Instance
 open import Data.Fin.Map
 open import Data.List hiding (lookup; _[_]%=_)
+open import Data.List.NonEmpty using (List⁺; uncons)
 open import Data.String using (toList) renaming (fromList to fromListS)
 open import Data.Vec using (Vec; lookup; fromList; []; _∷_; _[_]%=_)
 open import Data.Vec.Exts
@@ -28,6 +29,36 @@ open import Prelude.Strings
 data Marker : Set where
   NonTerminalBracket : Marker
   NameDivider : Marker
+  BlacklistWildcardBracket : Marker
+  WhitelistWildcardBracket : Marker
+  WildcardSeparator : Marker
+
+instance
+  Marker-Show : Show Marker
+  Marker-Show = record { show = λ
+    { NonTerminalBracket → "NonTerminalBracket"
+    ; NameDivider → "NameDivider"
+    ; BlacklistWildcardBracket → "BlacklistWildcardBracket"
+    ; WhitelistWildcardBracket → "WhitelistWildcardBracket"
+    ; WildcardSeparator → "WildcardSeparator"} }
+
+enumerateMarkers : List Marker
+enumerateMarkers =
+  NonTerminalBracket ∷
+  NameDivider ∷
+  BlacklistWildcardBracket ∷
+  WhitelistWildcardBracket ∷
+  WildcardSeparator ∷ []
+
+markerRepresentation : Marker -> Char
+markerRepresentation NonTerminalBracket = '_'
+markerRepresentation NameDivider = '$'
+markerRepresentation BlacklistWildcardBracket = '!'
+markerRepresentation WhitelistWildcardBracket = '@'
+markerRepresentation WildcardSeparator = '&'
+-- other good candidates: &*#~%
+
+escapeMarker = '\\'
 
 MarkedChar = Char ⊎ Marker
 MarkedString = List MarkedChar
@@ -37,26 +68,79 @@ instance
   Marker-Eq = record { _≟_ = λ
     { NonTerminalBracket NonTerminalBracket → yes refl
     ; NonTerminalBracket NameDivider → no (λ ())
+    ; NonTerminalBracket BlacklistWildcardBracket → no (λ ())
+    ; NonTerminalBracket WhitelistWildcardBracket → no (λ ())
+    ; NonTerminalBracket WildcardSeparator → no (λ ())
     ; NameDivider NonTerminalBracket → no (λ ())
-    ; NameDivider NameDivider → yes refl } }
+    ; NameDivider NameDivider → yes refl
+    ; NameDivider BlacklistWildcardBracket → no (λ ())
+    ; NameDivider WhitelistWildcardBracket → no (λ ())
+    ; NameDivider WildcardSeparator → no (λ ())
+    ; BlacklistWildcardBracket NonTerminalBracket → no (λ ())
+    ; BlacklistWildcardBracket NameDivider → no (λ ())
+    ; BlacklistWildcardBracket BlacklistWildcardBracket → yes refl
+    ; BlacklistWildcardBracket WhitelistWildcardBracket → no (λ ())
+    ; BlacklistWildcardBracket WildcardSeparator → no (λ ())
+    ; WhitelistWildcardBracket NonTerminalBracket → no (λ ())
+    ; WhitelistWildcardBracket NameDivider → no (λ ())
+    ; WhitelistWildcardBracket BlacklistWildcardBracket → no (λ ())
+    ; WhitelistWildcardBracket WhitelistWildcardBracket → yes refl
+    ; WhitelistWildcardBracket WildcardSeparator → no (λ ())
+    ; WildcardSeparator NonTerminalBracket → no (λ ())
+    ; WildcardSeparator NameDivider → no (λ ())
+    ; WildcardSeparator BlacklistWildcardBracket → no (λ ())
+    ; WildcardSeparator WhitelistWildcardBracket → no (λ ())
+    ; WildcardSeparator WildcardSeparator → yes refl} }
+
+MultiCharGroup : Set
+MultiCharGroup = ⊥
+
+MultiChar' : Set
+MultiChar' = List (Char ⊎ MultiCharGroup)
+
+MultiChar : Set
+MultiChar = MultiChar' × Bool
+
+showMultiChar : MultiChar -> String
+showMultiChar = show
+
+multiCharFromString : List⁺ Char -> MultiChar'
+multiCharFromString (head List⁺.∷ []) = [ inj₁ head ]
+multiCharFromString (head List⁺.∷ x ∷ tail) = []
+
+multiChar'FromList : List (List Char) -> MultiChar'
+multiChar'FromList [] = []
+multiChar'FromList (l ∷ l₁) =
+  (maybe (λ l' -> multiCharFromString l') [] $ Data.List.NonEmpty.fromList l) ++
+  multiChar'FromList l₁
+
+multiCharFromList : List (List Char) -> MultiChar
+multiCharFromList l = (multiChar'FromList l , true)
+
+negateMultiChar : MultiChar -> MultiChar
+negateMultiChar = Data.Product.map₂ not
+
+matchMulti : Char -> MultiChar -> Bool
+matchMulti c (fst , snd) = not (snd xor (and $ map (helper c) fst))
+  where
+    helper : Char -> Char ⊎ MultiCharGroup -> Bool
+    helper c (inj₁ x) = c ≣ x
+    helper c (inj₂ ())
 
 -- Grammar with show functions for rules and non-terminals
-Grammar = ∃[ n ] Σ (CFG (Fin (suc n))) (λ G -> (Rules G -> List Char) × (Fin (suc n) -> List Char))
-
-escapeMarker = '\\'
-nonTerminalMarker = '_'
-nameMarker = '$'
--- other good candidates: =&*:@#~%
+Grammar = ∃[ n ]
+  Σ (CFG (Fin (suc n)) MultiChar) (λ G -> (Rules G -> List Char) × (Fin (suc n) -> List Char))
 
 showMarkedString : MarkedString -> List Char
 showMarkedString [] = []
-showMarkedString (inj₁ x ∷ s) = decCase x of
-  (escapeMarker , escapeMarker ∷ [ escapeMarker ]) ∷
-  (nonTerminalMarker , escapeMarker ∷ [ nonTerminalMarker ]) ∷
-  (nameMarker , escapeMarker ∷ [ nameMarker ]) ∷ []
-  default [ x ] ++ showMarkedString s
-showMarkedString (inj₂ NonTerminalBracket ∷ s) = nonTerminalMarker ∷ showMarkedString s
-showMarkedString (inj₂ NameDivider ∷ s) = nameMarker ∷ showMarkedString s
+showMarkedString (inj₁ x ∷ s) =
+  decCase x of
+    map (λ x → (x , escapeMarker ∷ [ x ])) $
+      -- if we find anything in this list, escape it
+      escapeMarker ∷ map markerRepresentation enumerateMarkers
+    default [ x ]
+  ++ showMarkedString s
+showMarkedString (inj₂ x ∷ s) = markerRepresentation x ∷ showMarkedString s
 
 convertToMarked : List Char -> MarkedString
 convertToMarked = helper false
@@ -64,13 +148,10 @@ convertToMarked = helper false
     helper : Bool -> List Char -> MarkedString
     helper escaped [] = []
     helper false (x ∷ l) =
-      if ⌊ x ≟ escapeMarker ⌋
-        then helper true l
-        else (if ⌊ x ≟ nonTerminalMarker ⌋
-                 then inj₂ NonTerminalBracket ∷ helper false l
-                 else (if ⌊ x ≟ nameMarker ⌋
-                          then inj₂ NameDivider ∷ helper false l
-                          else inj₁ x ∷ helper false l))
+      decCase x of
+        (escapeMarker , helper true l) ∷
+        map (λ x → (markerRepresentation x , inj₂ x ∷ helper false l)) enumerateMarkers
+        default (inj₁ x ∷ helper false l)
     helper true (x ∷ l) = inj₁ x ∷ helper false l
 
 checkRuleName : List Char -> List Char × List MarkedString -> Set
@@ -86,6 +167,24 @@ checkRuleNameDec (x ∷ s) (x₁ ∷ fst , snd) with x ≟ x₁ | checkRuleNameD
 ... | no ¬p | H' = no λ { refl -> ¬p refl }
 
 module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
+
+  bracketHelper : Marker -> MarkedString -> M (List⁺ (List Char) × MarkedString)
+  bracketHelper m [] = throwError "Unexpected end of string! Expected a marker!"
+  bracketHelper m (inj₁ x ∷ s) = do
+    (res , rest) <- bracketHelper m s
+    case Data.List.NonEmpty.uncons res of λ
+      { (head , tail) → return ((x ∷ head) List⁺.∷ tail , rest) }
+  bracketHelper m (inj₂ x ∷ s) =
+    if x ≣ m
+      then return (Data.List.NonEmpty.[ [] ] , s)
+      else
+        if (m ≣ BlacklistWildcardBracket) ∨ (m ≣ WhitelistWildcardBracket)
+          then if x ≣ WildcardSeparator
+            then (do
+              (res , rest) <- bracketHelper m s
+              return ([] List⁺.∷ Data.List.NonEmpty.toList res , rest))
+            else throwError "Unexpected marker in a wildcard"
+          else throwError "This function must be applied with a wildcard bracket"
 
   removeMarks : MarkedString -> M (List Char)
   removeMarks [] = return []
@@ -105,6 +204,7 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
         { (just x) → -, rules [ x ]%= Data.Product.map id (rule ∷_)
         ; nothing → -, (showMarkedString name , [ rule ]) ∷ rules}
 
+  {-# TERMINATING #-}
   generateCFG' : ∀ {n : ℕ} -> List Char -> (rules : Vec (List Char × List MarkedString) (suc n))
     -> M Grammar
   generateCFG' {n} start rules = do
@@ -131,28 +231,45 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       RuleTable T = DepFinMap (suc n) (λ v -> (FinMap (numOfRules v) T))
 
       RuleString : Set
-      RuleString = List (Fin (suc n) ⊎ Char)
+      RuleString = List (Fin (suc n) ⊎ MultiChar ⊎ Char)
 
       sequenceRuleTable : ∀ {A} -> RuleTable (M A) -> M (RuleTable A)
       sequenceRuleTable f = sequenceDepFinMap λ v → sequenceDepFinMap (f v)
 
-      ruleToParseRule : MarkedString -> M RuleString
-      ruleToParseRule s =
-        (sequence $ map removeMarks $ splitMulti (inj₂ NonTerminalBracket) s) >>= helper
-        where
-          helper : List (List Char) -> M RuleString
-          helper [] = return []
-          helper (l ∷ []) = return (map inj₂ l)
-          helper (l ∷ l₁ ∷ l₂) = do
-            s <- maybeToError
-              (findIndex (checkRuleNameDec l₁) rules)
-              ("Couldn't find a non-terminal named '" + fromListS l₁ + "'")
-            rest <- helper l₂
-            return (map inj₂ l ++ [ inj₁ s ] ++ rest)
+      markedStringToRule : MarkedString -> M RuleString
+      markedStringToRule [] = return []
+      markedStringToRule (inj₁ x ∷ s) = do
+        res <- markedStringToRule s
+        return (inj₂ (inj₂ x) ∷ res)
+      -- this terminates because 'rest' is shorter than 's'
+      markedStringToRule (inj₂ NonTerminalBracket ∷ s) = do
+        (nonTerm' , rest) <- bracketHelper NonTerminalBracket s
+        case nonTerm' of λ
+          { (nonTerm List⁺.∷ tail) → do
+            res <- markedStringToRule rest
+            nonTerm' <- maybeToError
+              (findIndex (checkRuleNameDec nonTerm) rules)
+              ("Couldn't find a non-terminal named '" + fromListS nonTerm + "'")
+            return (inj₁ nonTerm' ∷ res) }
+      markedStringToRule (inj₂ NameDivider ∷ s) =
+        throwError "The rule cannot contain a name divider!"
+      markedStringToRule (inj₂ BlacklistWildcardBracket ∷ s) = do
+        (multiChar , rest) <- bracketHelper BlacklistWildcardBracket s
+        res <- markedStringToRule rest
+        return
+          ((inj₂ $ inj₁ $ negateMultiChar $ multiCharFromList $
+            Data.List.NonEmpty.toList multiChar) ∷ res)
+      markedStringToRule (inj₂ WhitelistWildcardBracket ∷ s) = do
+        (multiChar , rest) <- bracketHelper WhitelistWildcardBracket s
+        res <- markedStringToRule rest
+        return ((inj₂ $ inj₁ $ multiCharFromList $ Data.List.NonEmpty.toList multiChar) ∷ res)
+      markedStringToRule (inj₂ WildcardSeparator ∷ s) =
+        throwError "Wildcard separator outside of a wildcard!"
 
       parseRuleTable : M (RuleTable RuleString)
       parseRuleTable = sequenceRuleTable
-        λ v x → ruleToParseRule $ lookup (fromList $ proj₂ (lookup rules v)) x
+        λ v x → let y = lookup (fromList $ proj₂ (lookup rules v)) x in do
+          appendIfError (markedStringToRule y) (" In: " + show y)
 
   -- The first parameter describes the non-terminal the grammar should start with
   generateCFG : List Char -> List (List Char) -> M Grammar
