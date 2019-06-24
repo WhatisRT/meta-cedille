@@ -1,0 +1,7 @@
+let length := Λ X : * [[<<inductionList X> λ _ : [List X] Nat> zero] λ x : X λ xs : [List X] λ n : Nat [suc n]] : ∀ X : * Π _ : [List X] Nat.
+
+let nilLength := Λ X : * β zero zero : ∀ X : * = zero [<length X> <nil X>].
+
+let isNil := Λ X : * [[<<inductionList X> λ _ : [List X] Bool> t] λ _ : X λ _ : [List X] λ _ : Bool f] : ∀ X : * Π _ : [List X] Bool.
+
+let listEq := Λ X : * λ eqX : Π _ : X Π _ : X Bool [[<<inductionList X> λ _ : [List X] Π _ : [List X] Bool> <isNil X>] λ x : X λ xs : [List X] λ rec : Π _ : [List X] Bool [[<<inductionList X> λ _ : [List X] Bool> f] λ y : X λ ys : [List X] λ _ : Bool [[and [[eqX x] y]] [rec ys]]]] : ∀ X : * Π eqX : Π _ : X Π _ : X Bool Π _ : [List X] Π _ : [List X] Bool.

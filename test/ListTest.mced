@@ -1,7 +1,3 @@
-let length := Λ X : * λ l : [List X] [[[<<inductionList X> λ _ : [List X] Nat> zero] λ x : X λ xs : [List X] λ n : Nat [suc n]] l] : ∀ X : * Π _ : [List X] Nat.
-
-let nilLength := Λ X : * β zero zero : ∀ X : * = zero [<length X> <nil X>].
-
 let init$bindigit$0 := f : Bool.
 let init$bindigit$1 := t : Bool.
 

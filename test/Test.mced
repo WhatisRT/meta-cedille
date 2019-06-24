@@ -1,14 +1,18 @@
 import test/Comment.
 import test/CommentTest.
 
+import test/Bool.
+
 import test/Quote.
 import test/String.
 
 import test/Example.
-import test/Example2.
 
 import test/LambdaCalc.
 import test/LambdaCalcExample.
 
 import test/Induction.
+import test/List.
 import test/ListTest.
+
+import test/StringHelpers.
