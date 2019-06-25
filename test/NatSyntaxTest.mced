@@ -1,0 +1,11 @@
+import test/Comment.
+
+import test/Bool.
+
+import test/Quote.
+import test/String.
+
+import test/Induction.
+import test/List.
+import test/Nat.
+import test/NatSyntax.
