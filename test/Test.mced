@@ -13,6 +13,7 @@ import test/LambdaCalcExample.
 
 import test/Induction.
 import test/List.
-import test/ListTest.
+import test/Nat.
+import test/NatSyntax.
 
 import test/StringHelpers.
