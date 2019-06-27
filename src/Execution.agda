@@ -133,7 +133,7 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
 
   {-# NON_TERMINATING #-}
   -- Execute a term of type M t for some t
-  executeTerm : AnnTerm -> M MetaResult
+  executeTerm : PureTerm -> M (MetaResult × PureTerm)
   executeStmt : Stmt -> M MetaResult
   -- Parse and execute a string in the pre-meta language
   tryExecute' : String -> M MetaResult
@@ -221,17 +221,19 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
 
   executeStmt Empty = return (strResult "")
 
-  executeTerm (μ t t₁) = do
+  executeTerm (Mu-P t t₁) = do
     Γ <- getContext
-    t' <- executeTerm (hnfNorm Γ t)
-    executeTerm (App-A t₁ $ embedMetaResult t')
+    (res , t') <- executeTerm (hnfNormPure Γ t)
+    (res' , resTerm) <- executeTerm (App-P t₁ t')
+    return (res + res' , resTerm)
 
-  executeTerm (ε t) = return ([] , [ t ])
+  executeTerm (Epsilon-P t) = return (([] , []) , t)
 
-  executeTerm (Ev-A t) = do
+  executeTerm (Ev-P t) = do
     Γ <- getContext
-    stmt <- appendIfError (constrsToStmt Γ $ normalizePure Γ $ Erase t) ("Error with term: " + (show $ Erase t))
-    executeStmt stmt
+    stmt <- appendIfError (constrsToStmt Γ $ normalizePure Γ t) ("Error with term: " + show t)
+    res <- executeStmt stmt
+    return (res , (Erase $ embedMetaResult res))
   {-# CATCHALL #-}
   executeTerm t =
     throwError ("Error: " + show t + " is not a term that can be evaluated!")
@@ -254,9 +256,9 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
         T <- profileCall ("TypecheckEval" , [ show exec ]) $ synthType Γ exec
         case (hnfNorm Γ T) of λ
           { (M-A _) -> do
-            res <- profileCall ("Execute" , [ show exec ]) $
+            (res , _) <- profileCall ("Execute" , [ show exec ]) $
               appendIfError
-                (executeTerm (hnfNorm Γ exec))
+                (executeTerm (hnfNormPure Γ $ Erase exec))
                 ("\n\nError while executing input: " + s + "\nThe corresponding term is: " + show exec)
             res' <- if strNull snd then return mzero else tryExecute snd
             return (res + res')
