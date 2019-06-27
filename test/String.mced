@@ -29,6 +29,7 @@ let init$term$=doublequote=_newstring_=doublequote= := quote$String : Π _ : ini
 
 let stringToName' := λ s : init$string [[<s init$name'> λ c : init$char λ rec : init$name' [[quote$ncons c] rec]] quote$nnil].
 
-let quote$stringToVar := λ c : init$char λ s : init$string [quote$var [[quote$name c] [stringToName' s]]].
+let quote$stringToName := λ c : init$char λ s : init$string [[quote$name c] [stringToName' s]].
+let quote$stringToVar := λ c : init$char λ s : init$string [quote$var [[quote$stringToName c] s]].
 
 seteval eval init stmt.

@@ -11,3 +11,5 @@ let pureList := Λ X : * λ x : X [[<cons X> x] <nil X>] : ∀ X : * Π _ : X [L
 let app := Λ X : * λ l1 : [List X] λ l2 : [List X] [[[<<inductionList X> λ _ : [List X] [List X]> l2] λ x : X λ _ : [List X] λ rec : [List X] [[<cons X> x] rec]] l1] : ∀ X : * Π _ : [List X] Π _ : [List X] [List X].
 let snoc := Λ X : * λ x : X λ xs : [List X] [[<app X> xs] [<pureList X> x]] : ∀ X : * Π _ : X Π _ : [List X] [List X].
 let reverse := Λ X : * [[<<inductionList X> λ _ : [List X] [List X]> <nil X>] λ x : X λ _ : [List X] λ rec : [List X] [[<snoc X> x] rec]] : ∀ X : * Π _ : [List X] [List X].
+
+let filter := Λ X : * λ f : Π _ : X Bool [[<<inductionList X> λ _ : [List X] [List X]> <nil X>] λ x : X λ _ : [List X] λ rec : [List X] [[[<ifthenelse [List X]> [f x]] [[<cons X> x] rec]] rec]] : ∀ X : * Π f : Π _ : X Bool Π _ : [List X] [List X].

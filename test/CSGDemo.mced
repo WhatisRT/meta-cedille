@@ -1,0 +1,17 @@
+let countOccurencesChar := λ c : init$char λ l : [List init$char] [<length init$char> [[<filter init$char> [charEq c]] l]].
+let natEqTriple := λ l : Nat λ m : Nat λ n : Nat [[and [[natEq l] m]] [[natEq m] n]] : Π _ : Nat Π _ : Nat Π _ : Nat Bool.
+let abcEqual := λ l : [List init$char] [[[natEqTriple [[countOccurencesChar quote$a] l]] [[countOccurencesChar quote$b] l]] [[countOccurencesChar quote$c] l]] : Π _ : [List init$char] Bool.
+
+let dummyName := [[quote$stringToName quote$d] "ummy"] : init$name.
+let triggerError := [[quote$simpleLet dummyName] [quote$var dummyName]].
+
+let csgdemo$char$a := quote$a : init$char.
+let csgdemo$char$b := quote$b : init$char.
+let csgdemo$char$c := quote$c : init$char.
+
+let csgdemo$str := [List init$char].
+let csgdemo$str$_char__str_ := λ c : init$char λ cs : [List init$char] [[<cons init$char> c] cs].
+let csgdemo$str$ := <nil init$char>.
+let csgdemoeval := λ l : [List init$char] [[[<ifthenelse ω Nat> [abcEqual l]] ε [[countOccurencesChar quote$a] l]] μ [eval triggerError] λ _ : init$metaResult ε zero] : Π _ : [List init$char] ω Nat.
+
+seteval csgdemoeval csgdemo str.
