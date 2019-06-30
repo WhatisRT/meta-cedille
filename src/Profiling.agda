@@ -47,6 +47,10 @@ filterByLength n (fst , snd) = ⌊ length fst <? n ⌋
 filterByTime : {A : Set} -> ℕ -> (List A) × ℕ -> Bool
 filterByTime n (fst , snd) = Agda.Builtin.Nat._<_ n snd
 
+-- return the first non-empty line, or an empty string if none exists
+filterNewlines : String -> String
+filterNewlines s = maybe fromList "" $ head $ boolDropWhile null $ splitMulti '\n' (toList s)
+
 -- turn absolute times into relative times
 accumulateInfo : {A : Set} -> List (A × ℕ) -> List (A × ℕ)
 accumulateInfo [] = []
@@ -64,7 +68,7 @@ showProfilingInfo flags = print ∘ (filterInfo profilingFilter) ∘ accumulateI
     printProfilingIdentification : String × List String -> String
     printProfilingIdentification (fst , snd) = fst + (if printDetailedProfiling flags
       then "` (" + (concat $ intersperse ", " $
-        map (shortenString (detailedPrintingCutoff flags)) snd) + ")"
+        map (shortenString (detailedPrintingCutoff flags) ∘ filterNewlines) snd) + ")"
       else "")
 
     print : List (List (String × List String) × ℕ) -> String

@@ -36,13 +36,13 @@ initFlagsDefault : EvalFlags
 initFlagsDefault = record
   { printAnything = false
   ; printProfiling = false
-  ; writeProfiling = just "initProfiling"
+  ; writeProfiling = nothing -- just "initProfiling"
   ; printInfo = false
   ; profilingFlags =
     record
       { printDetailedProfiling = true
-      ; detailedPrintingCutoff = 200
-      ; profilingTreeDepth = 10
+      ; detailedPrintingCutoff = 500
+      ; profilingTreeDepth = 50
       ; profilingMinDuration = 0
       } }
 
@@ -50,13 +50,13 @@ runtimeFlagsDefault : EvalFlags
 runtimeFlagsDefault = record
   { printAnything = true
   ; printProfiling = false
-  ; writeProfiling = just "runProfiling"
+  ; writeProfiling = nothing -- just "runProfiling"
   ; printInfo = true
   ; profilingFlags =
     record
       { printDetailedProfiling = true
-      ; detailedPrintingCutoff = 200
-      ; profilingTreeDepth = 10
+      ; detailedPrintingCutoff = 500
+      ; profilingTreeDepth = 50
       ; profilingMinDuration = 0
       } }
 

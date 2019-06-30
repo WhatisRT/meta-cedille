@@ -231,7 +231,8 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
 
   executeTerm (Ev-P t) = do
     Γ <- getContext
-    stmt <- appendIfError (constrsToStmt Γ $ normalizePure Γ t) ("Error with term: " + show t)
+    normStmt <- profileCall ("NormalizeStmt" , []) $ return $ normalizePure Γ t
+    stmt <- profileCall ("GenerateStmt" , []) $ appendIfError (constrsToStmt Γ normStmt) ("Error with term: " + show t)
     res <- executeStmt stmt
     return (res , (Erase $ embedMetaResult res))
   {-# CATCHALL #-}
@@ -250,15 +251,16 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
     m@(_ , _ , interpreter) <- getMeta
     case interpreter of λ
       { (Sort-A □') -> tryExecute' s -- this is the default interpreter that gets used to start the language
-      ; _ -> do
+      ; _ -> profileCall ("TryExecute" , [ s ]) $ do
         (fst , snd) <- profileCall ("ParseMeta" , [ s ]) $ parseMeta m s
         let exec = App-A interpreter fst
         T <- profileCall ("TypecheckEval" , [ show exec ]) $ synthType Γ exec
         case (hnfNorm Γ T) of λ
           { (M-A _) -> do
+            execHnf <- profileCall ("HNF" , [ show exec ]) $ return $ hnfNormPure Γ $ Erase exec
             (res , _) <- profileCall ("Execute" , [ show exec ]) $
               appendIfError
-                (executeTerm (hnfNormPure Γ $ Erase exec))
+                (executeTerm execHnf)
                 ("\n\nError while executing input: " + s + "\nThe corresponding term is: " + show exec)
             res' <- if strNull snd then return mzero else tryExecute snd
             return (res + res')
