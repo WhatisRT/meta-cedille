@@ -1,0 +1,1 @@
+let init$term$=lparen=_term_=rparen= := λ t : init$term t.

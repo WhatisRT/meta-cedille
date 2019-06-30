@@ -1,0 +1,4 @@
+import test/basic/Comment.
+import test/basic/Parens.
+
+seteval eval init stmt.

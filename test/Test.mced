@@ -1,5 +1,5 @@
-import test/Comment.
-import test/CommentTest.
+import test/Basic.
+import test/BasicTest.
 
 import test/Bool.
 

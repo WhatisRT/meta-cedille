@@ -95,9 +95,6 @@ toTerm = helper []
   where
     helper : List (List Char) -> Tree (List Char) -> Maybe AnnTerm
     helper accu (Node x x₁) = join $ continueIfInit "term$" x λ rest ->
-      addMaybe (join $ continueIfInit "(" rest (λ _ -> case x₁ of λ
-        { (y ∷ []) -> helper accu y ; _ -> nothing })) $
-
       addMaybe (join $ continueIfInit "_var_" rest λ _ ->
         maybe (λ { (Node y (n ∷ [])) ->
           maybe (λ t ->

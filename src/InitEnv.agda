@@ -128,7 +128,6 @@ grammar =
 
   "sort$=ast=" ∷ "sort$=sq=" ∷
 
-  "term$=lparen=_term_=rparen=" ∷
   "term$_var_" ∷
   "term$_sort_" ∷
   "term$=pi=_space__term_" ∷
