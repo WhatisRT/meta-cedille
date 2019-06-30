@@ -1,0 +1,48 @@
+module Datatypes.
+
+data Nat : ★ =
+| zero : Nat
+| suc : Nat ➔ Nat.
+
+inductionNat : ∀ P : Nat ➔ ★. P zero ➔ (Π n : Nat. P n ➔ P (suc n)) ➔ Π n : Nat. P n =
+             Λ P. λ pzero. λ psuc. λ n. μ ind. n @P
+             { zero ➔ pzero
+             | suc n' ➔ psuc (to/Nat · Type/ind -isType/ind n') (ind n')
+             }.
+
+data List (A : ★) : ★ =
+| nil : List
+| cons : A ➔ List ➔ List.
+
+inductionList :
+              ∀ A : ★. ∀ P : List · A ➔ ★.
+              P (nil · A) ➔ (Π a : A. Π x : List · A. P x ➔ P (cons a x)) ➔ Π x : List · A. P x =
+              Λ A. Λ P. λ pnil. λ pcons. λ x. μ ind. x @P
+              { nil ➔ pnil
+              | cons a as' ➔ pcons a (to/List · A · Type/ind -isType/ind as') (ind as')
+              }.
+
+data Sexp (Atom : ★) : ★ =
+| Nil : Sexp
+| ConsSexp : Sexp ➔ Sexp ➔ Sexp
+| ConsAtom : Atom ➔ Sexp ➔ Sexp
+| ConsAtomE : Atom ➔ Sexp ➔ Sexp.
+
+inductionSexp :
+              ∀ Atom : ★. ∀ P : Sexp · Atom ➔ ★.
+              P (Nil · Atom)
+              ➔ (Π s : Sexp · Atom. Π s' : Sexp · Atom. P s ➔ P s' ➔ P (ConsSexp · Atom s s'))
+              ➔ (Π a : Atom. Π s : Sexp · Atom. P s ➔ P (ConsAtom · Atom a s))
+              ➔ (Π a : Atom. Π s : Sexp · Atom. P s ➔ P (ConsAtomE · Atom a s))
+              ➔ Π sexp : Sexp · Atom. P sexp =
+              Λ Atom. Λ P. λ pnil. λ pcsexp. λ pcatom. λ pcatome. λ sexp. μ ind. sexp @P
+              { Nil ➔ pnil
+              | ConsSexp s s' ➔
+                pcsexp
+                  (to/Sexp · Atom · Type/ind -isType/ind s)
+                  (to/Sexp · Atom · Type/ind -isType/ind s')
+                  (ind s)
+                  (ind s')
+              | ConsAtom a s ➔ pcatom a (to/Sexp · Atom · Type/ind -isType/ind s) (ind s)
+              | ConsAtomE a s ➔ pcatome a (to/Sexp · Atom · Type/ind -isType/ind s) (ind s)
+              }.

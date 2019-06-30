@@ -8,10 +8,11 @@ import test/String.
 
 import test/Example.
 
+import test/Datatypes.
+
 import test/LambdaCalc.
 import test/LambdaCalcExample.
 
-import test/Induction.
 import test/List.
 import test/Nat.
 import test/NatSyntax.
