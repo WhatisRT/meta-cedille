@@ -1,0 +1,5 @@
+let Char := init$char.
+let String := [List Char].
+
+let Unit := ∀ X : * Π _ : X X.
+let tt := Λ X : * λ x : X x.

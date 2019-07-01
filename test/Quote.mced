@@ -18,6 +18,8 @@ let quote$angle := λ t : init$term λ t' : init$term [[[[[init$term$=langle=_sp
 
 let quote$simpleLet := λ n : init$name λ t : init$term [[init$stmt$_space'__stmt'_ quote$noSpace] [init$stmt'$let_let_ [[[[[[[init$let$_space__name__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] n] quote$noSpace] quote$noSpace] t] quote$noSpace] init$lettail$=dot=]]] : Π _ : init$name Π _ : init$term init$stmt.
 
+let quote$Pi := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=Pi=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
+
 let quote$A := init$nameInitChar$A.
 let quote$B := init$nameInitChar$B.
 let quote$C := init$nameInitChar$C.

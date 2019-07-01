@@ -1,18 +1,18 @@
 import test/Basic.
 import test/BasicTest.
 
-import test/Bool.
+import test/Datatypes.
+import test/DatatypesRedef.
 
 import test/Quote.
 import test/String.
 
 import test/Example.
 
-import test/Datatypes.
-
 import test/LambdaCalc.
 import test/LambdaCalcExample.
 
+import test/Bool.
 import test/List.
 import test/Nat.
 import test/NatSyntax.

@@ -1,13 +1,13 @@
-let init$bindigit$0 := f : Bool.
-let init$bindigit$1 := t : Bool.
+let init$bindigit$0 := false : Bool.
+let init$bindigit$1 := true : Bool.
 
 let init$binnat'$_bindigit__binnat'_ := <cons Bool> : Π _ : Bool Π _ : [List Bool] [List Bool].
 let init$binnat'$ := <nil Bool> : [List Bool].
 
 let init$binnat$_bindigit__binnat'_ := <cons Bool> : Π _ : Bool Π _ : [List Bool] [List Bool].
 
-let quoteBoolT := [quote$var [[quote$name quote$t] quote$nnil]] : init$term.
-let quoteBoolF := [quote$var [[quote$name quote$f] quote$nnil]] : init$term.
+let quoteBoolT := [[quote$stringToVar quote$t] "rue"] : init$term.
+let quoteBoolF := [[quote$stringToVar quote$f] "alse"] : init$term.
 let quoteBool := [[quote$stringToVar quote$B] "ool"] : init$term.
 
 let quoteNil := [[quote$stringToVar quote$n] "il"] : init$term.

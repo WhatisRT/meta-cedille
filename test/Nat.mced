@@ -4,6 +4,6 @@ let two := [suc one].
 let add := λ n : Nat λ m : Nat [[[<inductionNat λ _ : Nat Nat> n] λ _ : Nat λ rec : Nat [suc rec]] m] : Π _ : Nat Π _ : Nat Nat.
 let mul := λ n : Nat λ m : Nat [[[<inductionNat λ _ : Nat Nat> zero] λ _ : Nat λ rec : Nat [[add rec] n]] m] : Π _ : Nat Π _ : Nat Nat.
 
-let isZero := [[<inductionNat λ _ : Nat Bool> t] λ _ : Nat λ _ : Bool f] : Π _ : Nat Bool.
+let isZero := [[<inductionNat λ _ : Nat Bool> true] λ _ : Nat λ _ : Bool false] : Π _ : Nat Bool.
 
-let natEq := [[<inductionNat λ _ : Nat Π _ : Nat Bool> isZero] λ _ : Nat λ rec : Π _ : Nat Bool [[<inductionNat λ _ : Nat Bool> f] λ n : Nat λ _ : Bool [rec n]]] : Π _ : Nat Π _ : Nat Bool.
+let natEq := [[<inductionNat λ _ : Nat Π _ : Nat Bool> isZero] λ _ : Nat λ rec : Π _ : Nat Bool [[<inductionNat λ _ : Nat Bool> false] λ n : Nat λ _ : Bool [rec n]]] : Π _ : Nat Π _ : Nat Bool.
