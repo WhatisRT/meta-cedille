@@ -12,13 +12,21 @@ let quote$beta := λ t : init$term [[[init$term$=beta=_space__term__space__term_
 
 let quote$lambda := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=lambda=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
 
+let quote$Lambda := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=Lambda=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
+
+let quote$forall := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=forall=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
+
+let quote$Pi := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=Pi=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
+
 let quote$square := λ t : init$term λ t' : init$term [[[[[init$term$=lsquare=_space'__term__space__term__space'_=rsquare= quote$noSpace] t] quote$singleSpace] t'] quote$noSpace] : Π _ : init$term Π _ : init$term init$term.
 
 let quote$angle := λ t : init$term λ t' : init$term [[[[[init$term$=langle=_space'__term__space__term__space'_=rangle= quote$noSpace] t] quote$singleSpace] t'] quote$noSpace] : Π _ : init$term Π _ : init$term init$term.
 
-let quote$simpleLet := λ n : init$name λ t : init$term [[init$stmt$_space'__stmt'_ quote$noSpace] [init$stmt'$let_let_ [[[[[[[init$let$_space__name__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] n] quote$noSpace] quote$noSpace] t] quote$noSpace] init$lettail$=dot=]]] : Π _ : init$name Π _ : init$term init$stmt.
+let quote$simpleLet := λ n : init$name λ t : init$term [[init$stmt$_space'__stmt'_ quote$noSpace] [[[[[[[init$stmt'$let_space__name__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] n] quote$noSpace] quote$noSpace] t] quote$noSpace] init$lettail$=dot=]] : Π _ : init$name Π _ : init$term init$stmt.
 
-let quote$Pi := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=Pi=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
+let quote$annotatedLet := λ n : init$name λ t : init$term λ t' : init$term [[init$stmt$_space'__stmt'_ quote$noSpace] [[[[[[[init$stmt'$let_space__name__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] n] quote$noSpace] quote$noSpace] t] quote$noSpace] [[[init$lettail$=colon=_space'__term__space'_=dot= quote$noSpace] t'] quote$noSpace]]] : Π _ : init$name Π _ : init$term Π _ : init$term init$stmt.
+
+let quote$normalize := λ t : init$term [[init$stmt$_space'__stmt'_ quote$noSpace] [[[init$stmt'$normalize_space__term__space'_=dot= quote$singleSpace] t] quote$noSpace]] : Π _ : init$term init$stmt.
 
 let quote$A := init$nameInitChar$A.
 let quote$B := init$nameInitChar$B.

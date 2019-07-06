@@ -152,15 +152,14 @@ grammar =
   "term$=zeta=_space__term_" ∷ -- this is ev
 
   "lettail$=dot=" ∷ "lettail$=colon=_space'__term__space'_=dot=" ∷
-  "let$_space__name__space'_=colon==equal=_space'__term__space'__lettail_" ∷
 
+  "stmt'$let_space__name__space'_=colon==equal=_space'__term__space'__lettail_" ∷
+  "stmt'$ass_space__name__space'_=colon=_space'__term__space'_=dot=" ∷
   "stmt'$normalize_space__term__space'_=dot=" ∷
   "stmt'$hnf_space__term__space'_=dot=" ∷
-  "stmt'$let_let_" ∷
-  "stmt'$ass_space__name__space'_=colon=_space'__term__space'_=dot=" ∷
+  "stmt'$erase_space__term__space'_=dot=" ∷
   "stmt'$test_space__term__space'_=dot=" ∷
   "stmt'$seteval_space__term__space__name__space__name__space'_=dot=" ∷
-  "stmt'$erase_space__term__space'_=dot=" ∷
   "stmt'$import_space__name__space'_=dot=" ∷
   "stmt'$cmd_space__term__space'_=dot=" ∷
   "stmt'$" ∷

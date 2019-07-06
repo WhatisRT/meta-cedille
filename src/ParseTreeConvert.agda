@@ -10,15 +10,18 @@ module ParseTreeConvert where
 import Data.Product
 import Data.Sum
 open import Agda.Builtin.Nat using (_-_)
+open import Class.Map
 open import Class.Monad.Except
 open import Class.Traversable
 open import Data.Char using (toNat)
 open import Data.Fin.Instance
-open import Data.List
+open import Data.List hiding (lookup)
 open import Data.Maybe using () renaming (_<∣>_ to addMaybe)
+open import Data.SimpleMap
 open import Data.String using (fromList)
 open import Data.Tree
 open import Data.Tree.Instance
+open import Data.Word32
 open import Relation.Nullary
 
 open import Prelude
@@ -43,217 +46,292 @@ continueIfInit {A = A} init s = helper init s
     ... | yes p = helper init s f
     ... | no ¬p = nothing
 
-toSort : Tree (List Char) -> Maybe Sort
-toSort (Node x x₁) = join $ continueIfInit "sort$" x (λ rest →
-  if rest ≣ "*"
-    then return ⋆
-    else (if rest ≣ "□"
-      then return □
-      else nothing))
+ruleId : List Char -> List Char -> Maybe ℕ
+ruleId nonterm rule = do
+  rules <- lookup nonterm parseRuleMap
+  findIndexList (_≟ (nonterm + "$" + rule)) rules
 
-toName : Tree (List Char) -> Maybe (List Char)
+toSort : Tree ℕ -> Maybe Sort
+toSort (Node x x₁) = do
+  if x ≣ (from-just $ ruleId "sort" "*")
+    then return ⋆
+    else (if x ≣ (from-just $ ruleId "sort" "□")
+      then return □
+      else nothing)
+
+toName : Tree ℕ -> Maybe (List Char)
 toName (Node x x₁) = case x₁ of λ
   { (y ∷ y' ∷ _) -> do
     c <- toChar y
-    n <- toName y'
+    n <- toName' y'
     return (c ∷ n)
-  ; [] -> addMaybe (join $ continueIfInit "name$" x λ { [] -> return [] ; _ -> nothing }) $
-    join $ continueIfInit "name'$" x λ { [] -> return [] ; _ -> nothing }
   ; _ -> nothing }
   where
-    toChar : Tree (List Char) -> Maybe Char
-    toChar (Node c c₁) =
-      addMaybe (join $ continueIfInit "nameInitChar$" c λ
-        { [] → nothing ; (c' ∷ r) → just (unescape c' r) }) $
-      addMaybe (join $ continueIfInit "nameTailChar$" c λ
-        { [] → nothing ; (c' ∷ r) → just (unescape c' r) }) $
-      join $ continueIfInit "char$" c λ
-        { [] → nothing ; (c' ∷ r) → just (unescape c' r) }
+    treeToWord32 : Tree ℕ -> Maybe Word32
+    treeToWord32 (Node x (x0 ∷ x1 ∷ x2 ∷ x3 ∷ [])) = do
+      y0 <- treeToByte x0
+      y1 <- treeToByte x1
+      y2 <- treeToByte x2
+      y3 <- treeToByte x3
+      return (mkWord32 y0 y1 y2 y3)
+      where
+        treeToByte : Tree ℕ -> Maybe Byte
+        treeToByte (Node x (
+          (Node x0 _) ∷ (Node x1 _) ∷ (Node x2 _) ∷ (Node x3 _) ∷
+          (Node x4 _) ∷ (Node x5 _) ∷ (Node x6 _) ∷ (Node x7 _) ∷ []))
+          = do
+          y0 <- ℕtoBit x0
+          y1 <- ℕtoBit x1
+          y2 <- ℕtoBit x2
+          y3 <- ℕtoBit x3
+          y4 <- ℕtoBit x4
+          y5 <- ℕtoBit x5
+          y6 <- ℕtoBit x6
+          y7 <- ℕtoBit x7
+          return (mkByte y0 y1 y2 y3 y4 y5 y6 y7)
+          where
+            ℕtoBit : ℕ -> Maybe Bool
+            ℕtoBit zero = return false
+            ℕtoBit (suc zero) = return true
+            ℕtoBit (suc (suc x)) = nothing
+        {-# CATCHALL #-}
+        treeToByte _ = nothing
+    {-# CATCHALL #-}
+    treeToWord32 _ = nothing
 
-toIndex : Tree (List Char) -> Maybe ℕ
+    toChar : Tree ℕ -> Maybe Char
+    toChar = mmap bytesToChar ∘ treeToWord32
+
+    toName' : Tree ℕ -> Maybe (List Char)
+    toName' (Node x x₁) = case x₁ of λ
+      { (y ∷ y' ∷ _) -> do
+        c <- toChar y
+        n <- toName' y'
+        return (c ∷ n)
+      ; [] -> (if x ≣ (from-just $ ruleId "name'" "")
+          then return []
+          else nothing)
+      ; _ -> nothing }
+
+toIndex : Tree ℕ -> Maybe ℕ
 toIndex t = do
   res <- helper t
   foldl {A = Maybe ℕ} (λ x c → do
     x' <- x
-    c' <- charToDigit c
-    return $ 10 * x' + c') (just 0) res
+    return $ 10 * x' + c) (just 0) res
   where
-    helper : Tree (List Char) -> Maybe (List Char)
-    helper (Node x x₁) = addMaybe (join $ continueIfInit "index$" x λ
-      { [] → nothing
-      ; (x ∷ r) → case x₁ of λ { (t ∷ _) -> helper t >>= (return ∘ (x ∷_)) ; _ -> nothing } }) $
-      join $ continueIfInit "index'$" x λ
-        { [] → return []
-        ; (x ∷ r) → case x₁ of λ { (t ∷ _) -> helper t >>= (return ∘ (x ∷_)) ; _ -> nothing } }
+    helper' : Tree ℕ -> Maybe (List ℕ)
+    helper' (Node x []) =
+      if x ≣ (from-just $ ruleId "index'" "")
+        then return []
+        else nothing
+    helper' (Node x (x₁ ∷ _)) = do
+      rest <- helper' x₁
+      decCase x of
+        ((from-just $ ruleId "index'" "0_index'_") , return (0 ∷ rest)) ∷
+        ((from-just $ ruleId "index'" "1_index'_") , return (1 ∷ rest)) ∷
+        ((from-just $ ruleId "index'" "2_index'_") , return (2 ∷ rest)) ∷
+        ((from-just $ ruleId "index'" "3_index'_") , return (3 ∷ rest)) ∷
+        ((from-just $ ruleId "index'" "4_index'_") , return (4 ∷ rest)) ∷
+        ((from-just $ ruleId "index'" "5_index'_") , return (5 ∷ rest)) ∷
+        ((from-just $ ruleId "index'" "6_index'_") , return (6 ∷ rest)) ∷
+        ((from-just $ ruleId "index'" "7_index'_") , return (7 ∷ rest)) ∷
+        ((from-just $ ruleId "index'" "8_index'_") , return (8 ∷ rest)) ∷
+        ((from-just $ ruleId "index'" "9_index'_") , return (9 ∷ rest)) ∷ []
+        default nothing
 
-    charToDigit : Char -> Maybe ℕ
-    charToDigit c with toNat c
-    ... | n = if ⌊ 47 <? n ⌋ ∧ ⌊ n <? 58 ⌋ then just (n - 48) else nothing
+    helper : Tree ℕ -> Maybe (List ℕ)
+    helper (Node x []) = nothing
+    helper (Node x (x₁ ∷ _)) = do
+      rest <- helper' x₁
+      decCase x of
+        ((from-just $ ruleId "index" "0_index'_") , return (0 ∷ rest)) ∷
+        ((from-just $ ruleId "index" "1_index'_") , return (1 ∷ rest)) ∷
+        ((from-just $ ruleId "index" "2_index'_") , return (2 ∷ rest)) ∷
+        ((from-just $ ruleId "index" "3_index'_") , return (3 ∷ rest)) ∷
+        ((from-just $ ruleId "index" "4_index'_") , return (4 ∷ rest)) ∷
+        ((from-just $ ruleId "index" "5_index'_") , return (5 ∷ rest)) ∷
+        ((from-just $ ruleId "index" "6_index'_") , return (6 ∷ rest)) ∷
+        ((from-just $ ruleId "index" "7_index'_") , return (7 ∷ rest)) ∷
+        ((from-just $ ruleId "index" "8_index'_") , return (8 ∷ rest)) ∷
+        ((from-just $ ruleId "index" "9_index'_") , return (9 ∷ rest)) ∷ []
+        default nothing
 
-toTerm : Tree (List Char) -> Maybe AnnTerm
+toTerm : Tree ℕ -> Maybe AnnTerm
 toTerm = helper []
   where
-    helper : List (List Char) -> Tree (List Char) -> Maybe AnnTerm
-    helper accu (Node x x₁) = join $ continueIfInit "term$" x λ rest ->
-      addMaybe (join $ continueIfInit "_var_" rest λ _ ->
-        maybe (λ { (Node y (n ∷ [])) ->
-          maybe (λ t ->
-            addMaybe
-              (join $ continueIfInit "var$_name_" y λ _ -> do
-                n' <- toName n
-                case findIndexList (n' ≟_) accu of (λ
-                  { (just x) → return $ Var-A $ Bound x
-                  ; nothing → return $ Var-A $ Free (fromList n') }))
-              (join $ continueIfInit "var$_index_" y λ _ -> do
-                n' <- toIndex n
-                return $ Var-A $ Bound n')
-                ) nothing (head x₁) ; _ -> nothing }) nothing (head x₁)) $
+    helper : List (List Char) -> Tree ℕ -> Maybe AnnTerm
+    helper accu (Node x x₁) =
+      decCase x of
+        ((from-just $ ruleId "term" "_var_") ,
+          head x₁ >>=
+            λ { (Node y (n ∷ [])) ->
+                decCase y of
+                  ((from-just $ ruleId "var" "_name_") , do
+                    n' <- toName n
+                    case findIndexList (n' ≟_) accu of (λ
+                      { (just x) → return $ Var-A $ Bound x
+                      ; nothing → return $ Var-A $ Free (fromList n') })) ∷
+                  ((from-just $ ruleId "var" "_index_") , do
+                    n' <- toIndex n
+                    return $ Var-A $ Bound n') ∷ []
+                default nothing
+              ; _ -> nothing }) ∷
 
-      addMaybe (join $ continueIfInit "_sort_" rest λ _ -> case x₁ of λ
-        { (y ∷ []) -> toSort y >>= λ y' -> return (Sort-A y') ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "_sort_") , do
+          s <- head x₁ >>= toSort
+          return (Sort-A s)) ∷
 
-      addMaybe (join $ continueIfInit "π" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ []) -> do
-          y' <- helper accu y
-          return (y' ∙1)
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "π_space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ []) -> do
+            y' <- helper accu y
+            return (y' ∙1)
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "ψ" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ []) -> do
-          y' <- helper accu y
-          return (y' ∙2)
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "ψ_space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ []) -> do
+            y' <- helper accu y
+            return (y' ∙2)
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "β" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ _ ∷ y' ∷ []) -> do
-          t <- helper accu y
-          t' <- helper accu y'
-          return $ β t t'
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "β_space__term__space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ _ ∷ y' ∷ []) -> do
+            t <- helper accu y
+            t' <- helper accu y'
+            return $ β t t'
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "δ" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ _ ∷ y' ∷ []) -> do
-          t <- helper accu y
-          t' <- helper accu y'
-          return $ δ t t'
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "δ_space__term__space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ _ ∷ y' ∷ []) -> do
+            t <- helper accu y
+            t' <- helper accu y'
+            return $ δ t t'
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "σ" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ []) -> helper accu y >>= λ y' -> return (ς y') ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "σ_space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ []) -> helper accu y >>= λ y' -> return (ς y') ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "[" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ []) -> do
-          t <- helper accu y
-          t' <- helper accu y'
-          return $ App-A t t'
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "[_space'__term__space__term__space'_]") , (case x₁ of λ
+          { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ []) -> do
+            t <- helper accu y
+            t' <- helper accu y'
+            return $ App-A t t'
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "<" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ []) -> do
-          t <- helper accu y
-          t' <- helper accu y'
-          return $ AppE-A t t'
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "<_space'__term__space__term__space'_>") , (case x₁ of λ
+          { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ []) -> do
+            t <- helper accu y
+            t' <- helper accu y'
+            return $ AppE-A t t'
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "ρ" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ _ ∷ n' ∷ _ ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) -> do
-          t <- helper accu y
-          n <- toName n'
-          t' <- helper (n ∷ accu) y'
-          t'' <- helper accu y''
-          return $ ρ t ∶ t' - t''
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term"
+          "ρ_space__term__space__name__space'_._space'__term__space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ _ ∷ n' ∷ _ ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) -> do
+            t <- helper accu y
+            n <- toName n'
+            t' <- helper (n ∷ accu) y'
+            t'' <- helper accu y''
+            return $ ρ t ∶ t' - t''
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "∀" rest λ _ -> case x₁ of λ
-        { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
-          n <- toName n'
-          t <- helper accu y
-          t' <- helper (n ∷ accu) y'
-          return $ ∀-A t t'
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term"
+          "∀_space__name__space'_:_space'__term__space__term_") , (case x₁ of λ
+          { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
+            n <- toName n'
+            t <- helper accu y
+            t' <- helper (n ∷ accu) y'
+            return $ ∀-A t t'
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "Π" rest λ _ -> case x₁ of λ
-        { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
-          n <- toName n'
-          t <- helper accu y
-          t' <- helper (n ∷ accu) y'
-          return $ Π t t'
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term"
+          "Π_space__name__space'_:_space'__term__space__term_") , (case x₁ of λ
+          { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
+            n <- toName n'
+            t <- helper accu y
+            t' <- helper (n ∷ accu) y'
+            return $ Π t t'
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "ι" rest λ _ -> case x₁ of λ
-        { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
-          n <- toName n'
-          t <- helper accu y
-          t' <- helper (n ∷ accu) y'
-          return $ ι t t'
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term"
+          "ι_space__name__space'_:_space'__term__space__term_") , (case x₁ of λ
+          { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
+            n <- toName n'
+            t <- helper accu y
+            t' <- helper (n ∷ accu) y'
+            return $ ι t t'
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "λ" rest λ _ -> case x₁ of λ
-        { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
-          n <- toName n'
-          t <- helper accu y
-          t' <- helper (n ∷ accu) y'
-          return $ λ-A t t'
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term"
+          "λ_space__name__space'_:_space'__term__space__term_") , (case x₁ of λ
+          { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
+            n <- toName n'
+            t <- helper accu y
+            t' <- helper (n ∷ accu) y'
+            return $ λ-A t t'
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "Λ" rest λ _ -> case x₁ of λ
-        { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
-          n <- toName n'
-          t <- helper accu y
-          t' <- helper (n ∷ accu) y'
-          return $ Λ t t'
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term"
+          "Λ_space__name__space'_:_space'__term__space__term_") , (case x₁ of λ
+          { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
+            n <- toName n'
+            t <- helper accu y
+            t' <- helper (n ∷ accu) y'
+            return $ Λ t t'
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "{" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ _ ∷ _ ∷ y' ∷ _ ∷ n' ∷ _ ∷ _ ∷ y'' ∷ _ ∷ []) -> do
-          t <- helper accu y
-          t' <- helper accu y'
-          n <- toName n'
-          t'' <- helper (n ∷ accu) y''
-          return [ t , t' ∙ t'' ]
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term"
+          "{_space'__term__space'_,_space'__term__space__name__space'_._space'__term__space'_}") ,
+          (case x₁ of λ
+          { (_ ∷ y ∷ _ ∷ _ ∷ y' ∷ _ ∷ n' ∷ _ ∷ _ ∷ y'' ∷ _ ∷ []) -> do
+            t <- helper accu y
+            t' <- helper accu y'
+            n <- toName n'
+            t'' <- helper (n ∷ accu) y''
+            return [ t , t' ∙ t'' ]
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "φ" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) -> do
-          t <- helper accu y
-          t' <- helper accu y'
-          t'' <- helper accu y''
-          return $ φ t t' t''
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "φ_space__term__space__term__space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) -> do
+            t <- helper accu y
+            t' <- helper accu y'
+            t'' <- helper accu y''
+            return $ φ t t' t''
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "=" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ _ ∷ y' ∷ []) -> do
-          t <- helper accu y
-          t' <- helper accu y'
-          return $ t ≃ t'
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "=_space__term__space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ _ ∷ y' ∷ []) -> do
+            t <- helper accu y
+            t' <- helper accu y'
+            return $ t ≃ t'
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "ω" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ []) -> do
-          t <- helper accu y
-          return $ M-A t
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "ω_space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ []) -> do
+            t <- helper accu y
+            return $ M-A t
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "μ" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ _ ∷ y' ∷ []) -> do
-          t <- helper accu y
-          t' <- helper accu y'
-          return $ μ t t'
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "μ_space__term__space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ _ ∷ y' ∷ []) -> do
+            t <- helper accu y
+            t' <- helper accu y'
+            return $ μ t t'
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "ε" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ []) -> do
-          t <- helper accu y
-          return $ ε t
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "term" "ε_space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ []) -> do
+            t <- helper accu y
+            return $ ε t
+          ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "ζ" rest λ _ -> case x₁ of λ
-        { (_ ∷ y ∷ []) -> do
-          t <- helper accu y
-          return $ Ev-A t
-        ; _ -> nothing }) $
-
-      nothing
+        ((from-just $ ruleId "term" "ζ_space__term_") , (case x₁ of λ
+          { (_ ∷ y ∷ []) -> do
+            t <- helper accu y
+            return $ Ev-A t
+          ; _ -> nothing })) ∷
+        []
+        default nothing
 
 data Stmt : Set where
   Let : GlobalName -> AnnTerm -> Maybe AnnTerm -> Stmt
@@ -284,82 +362,99 @@ instance
       helper (Shell x) = "shell \"" + show x + "\""
       helper Empty = "Empty"
 
-toStmt : Tree (List Char) -> Maybe Stmt
-toStmt (Node x x₁) = join $ continueIfInit "stmt$" x λ _ -> case x₁ of λ
-  { (_ ∷ (Node x' x₂) ∷ []) ->
-    join $ continueIfInit "stmt'$" x' λ rest ->
-      addMaybe (join $ continueIfInit "let" rest (λ _ -> case x₂ of λ
-        { (y ∷ []) → toLet y
-        ; _ -> nothing })) $
+toStmt : Tree ℕ -> Maybe Stmt
+toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
+  if (x ≣ (from-just $ ruleId "stmt" "_space'__stmt'_"))
+    then
+      decCase x' of
+        ((from-just $ ruleId "stmt'" "let_space__name__space'_:=_space'__term__space'__lettail_") ,
+          (case x₂ of λ
+            { (_ ∷ y ∷ _ ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) → do
+              n <- toName y
+              t <- toTerm y'
+              return (Let (Global (fromList n)) t (toLetTail y''))
+            ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "ass" rest λ _ -> case x₂ of λ
-        { (_ ∷ y ∷ _ ∷ _ ∷ y₁ ∷ _ ∷ []) -> do
-          n <- toName y
-          t <- toTerm y₁
-          return (Ass (Global (fromList n)) t)
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "stmt'"
+          "ass_space__name__space'_:_space'__term__space'_.") ,
+          (case x₂ of λ
+            { (_ ∷ y ∷ _ ∷ _ ∷ y₁ ∷ _ ∷ []) -> do
+              n <- toName y
+              t <- toTerm y₁
+              return (Ass (Global (fromList n)) t)
+            ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "normalize" rest λ _ -> case x₂ of λ
-        { (_ ∷ y ∷ _ ∷ []) -> do
-          t <- toTerm y
-          return (Normalize t)
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "stmt'" "normalize_space__term__space'_.") ,
+          (case x₂ of λ
+            { (_ ∷ y ∷ _ ∷ []) -> do
+              t <- toTerm y
+              return (Normalize t)
+            ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "hnf" rest λ _ -> case x₂ of λ
-        { (_ ∷ y ∷ _ ∷ []) -> do
-          t <- toTerm y
-          return (HeadNormalize t)
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "stmt'" "hnf_space__term__space'_.") ,
+          (case x₂ of λ
+            { (_ ∷ y ∷ _ ∷ []) -> do
+              t <- toTerm y
+              return (HeadNormalize t)
+            ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "erase" rest λ _ -> case x₂ of λ
-        { (_ ∷ y ∷ _ ∷ []) -> do
-          t <- toTerm y
-          return (EraseSt t)
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "stmt'" "erase_space__term__space'_.") ,
+          (case x₂ of λ
+            { (_ ∷ y ∷ _ ∷ []) -> do
+              t <- toTerm y
+              return (EraseSt t)
+            ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "test" rest λ _ -> case x₂ of λ
-        { (_ ∷ y ∷ _ ∷ []) -> do
-          t <- toTerm y
-          return (Test t)
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "stmt'" "test_space__term__space'_.") ,
+          (case x₂ of λ
+            { (_ ∷ y ∷ _ ∷ []) -> do
+              t <- toTerm y
+              return (Test t)
+            ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "seteval" rest λ _ -> case x₂ of λ
-        { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ y'' ∷ _ ∷ []) -> do
-          t <- toTerm y
-          n <- toName y'
-          n' <- toName y''
-          return (SetEval t (fromList n) (fromList n'))
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "stmt'" "seteval_space__term__space__name__space__name__space'_.") ,
+          (case x₂ of λ
+            { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ y'' ∷ _ ∷ []) -> do
+              t <- toTerm y
+              n <- toName y'
+              n' <- toName y''
+              return (SetEval t (fromList n) (fromList n'))
+            ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "import" rest λ _ -> case x₂ of λ
-        { (_ ∷ y ∷ _ ∷ []) -> do
-          n <- toName y
-          return $ Import (fromList n)
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "stmt'" "import_space__name__space'_.") ,
+          (case x₂ of λ
+            { (_ ∷ y ∷ _ ∷ []) -> do
+              n <- toName y
+              return $ Import (fromList n)
+            ; _ -> nothing })) ∷
 
-      addMaybe (join $ continueIfInit "cmd" rest λ _ -> case x₂ of λ
-        { (_ ∷ y ∷ _ ∷ []) -> do
-          t <- toTerm y
-          return (Shell t)
-        ; _ -> nothing }) $
+        ((from-just $ ruleId "stmt'" "cmd_space__term__space'_.") ,
+          (case x₂ of λ
+            { (_ ∷ y ∷ _ ∷ []) -> do
+              t <- toTerm y
+              return (Shell t)
+            ; _ -> nothing })) ∷
 
-      if rest ≣ "" then return Empty else nothing
-  ; _ -> nothing }
+        ((from-just $ ruleId "stmt'" "") ,
+          return Empty) ∷
+
+        []
+      default nothing
+    else nothing
+
   where
-    toLet : Tree (List Char) -> Maybe Stmt
-    toLet (Node x x₁) = join $ continueIfInit "let$" x λ _ -> case x₁ of λ
-      { (_ ∷ y ∷ _ ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) -> do
-        n <- toName y
-        t <- toTerm y'
-        return $ Let (Global (fromList n)) t (toLetTail y'')
-      ; _ -> nothing}
-        where
-          toLetTail : Tree (List Char) -> Maybe AnnTerm
-          toLetTail (Node x x₁) = join $ continueIfInit "lettail$" x λ rest ->
-            addMaybe (join $ continueIfInit "." rest λ _ -> nothing)
-              (join $ continueIfInit ":" rest λ _ -> case x₁ of λ
-                { (_ ∷ y ∷ _ ∷ []) -> toTerm y
-                ; _ -> nothing })
+    toLetTail : Tree ℕ -> Maybe AnnTerm
+    toLetTail (Node x x₁) =
+      decCase x of
+        ((from-just $ ruleId "lettail" ":_space'__term__space'_.") ,
+          (case x₁ of λ
+            { (_ ∷ y ∷ _ ∷ []) -> toTerm y
+            ; _ -> nothing })) ∷
+        []
+      default nothing
+
+{-# CATCHALL #-}
+toStmt _ = nothing
 
 coreGrammarGenerator : List (List Char)
 coreGrammarGenerator = from-just $ sequence $ map translate grammarWithChars
@@ -384,14 +479,51 @@ module CoreParser-Internal {M} {{_ : Monad M}} {{_ : MonadExcept M String}} wher
     { (inj₁ x) → return x
     ; (inj₂ y) → throwError "Tree had a multi char"}) t
 
+  {-# TERMINATING #-} -- cannot just use sequence here because of the char special case
+  synTreeToℕTree : Tree (List Char) -> M (Tree ℕ)
+  synTreeToℕTree t@(Node x x₁) =
+    case convertIfChar t of λ
+      { (just t') → return t'
+      ; nothing → do
+        id <- fullRuleId x
+        ids <- sequence $ map synTreeToℕTree x₁
+        return (Node id ids)
+      }
+    where
+      fullRuleId : List Char -> M ℕ
+      fullRuleId l with break (_≟ '$') l -- split at '$'
+      ... | (x , []) = throwError "No '$' character found!"
+      ... | (x , _ ∷ y) = maybeToError (ruleId x y) ("Rule " + (fromList l) + "doesn't exist!")
+
+      charToℕTree : Char -> Tree ℕ
+      charToℕTree c with charToWord32 c
+      ... | mkWord32 x1 x2 x3 x4 =
+        Node 0 ((byteToℕTree x1) ∷ (byteToℕTree x2) ∷ (byteToℕTree x3) ∷ (byteToℕTree x4) ∷ [])
+        where
+          bitToℕTree : Bool -> Tree ℕ
+          bitToℕTree false = Node 0 []
+          bitToℕTree true = Node 1 []
+
+          byteToℕTree : Byte -> Tree ℕ
+          byteToℕTree (mkByte x1 x2 x3 x4 x5 x6 x7 x8) =
+            Node 0 ((bitToℕTree x1) ∷ (bitToℕTree x2) ∷ (bitToℕTree x3) ∷ (bitToℕTree x4) ∷
+                    (bitToℕTree x5) ∷ (bitToℕTree x6) ∷ (bitToℕTree x7) ∷ (bitToℕTree x8) ∷ [])
+
+      convertIfChar : Tree (List Char) -> Maybe (Tree ℕ)
+      convertIfChar (Node x x₁) =
+        addMaybe
+          (join $ continueIfInit "nameInitChar$" x λ { [] → nothing ; (c ∷ x) → just $ charToℕTree (unescape c x) }) $
+          join $ continueIfInit "nameTailChar$" x λ { [] → nothing ; (c ∷ x) → just $ charToℕTree (unescape c x) }
+
   parseStmt : String -> M (Stmt × String)
   parseStmt s = do
     (y' , rest) <- parse s
-    y <- synTreeHasNoMultiChar y'
+    y'' <- synTreeHasNoMultiChar y'
+    y <- synTreeToℕTree y''
     case toStmt y of λ
       { (just x) → return (x , rest)
       ; nothing →
         throwError ("Error while converting syntax tree to statement: "
-          + show {{Tree-Show {{CharList-Show}}}} y) }
+          + show {{Tree-Show {{CharList-Show}}}} y'') }
 
 open CoreParser-Internal public

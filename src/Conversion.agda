@@ -41,59 +41,27 @@ module ConversionInternals {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M 
       y' <- sequence (map extractConstrIdTree y)
       return $ Node x' y'
 
-    treeToWord32 : Tree ℕ -> Maybe Word32
-    treeToWord32 (Node x (x0 ∷ x1 ∷ x2 ∷ x3 ∷ [])) = do
-      y0 <- treeToByte x0
-      y1 <- treeToByte x1
-      y2 <- treeToByte x2
-      y3 <- treeToByte x3
-      return (mkWord32 y0 y1 y2 y3)
-      where
-        treeToByte : Tree ℕ -> Maybe Byte
-        treeToByte (Node x (
-          (Node x0 _) ∷ (Node x1 _) ∷ (Node x2 _) ∷ (Node x3 _) ∷
-          (Node x4 _) ∷ (Node x5 _) ∷ (Node x6 _) ∷ (Node x7 _) ∷ []))
-          = do
-          y0 <- ℕtoBit x0
-          y1 <- ℕtoBit x1
-          y2 <- ℕtoBit x2
-          y3 <- ℕtoBit x3
-          y4 <- ℕtoBit x4
-          y5 <- ℕtoBit x5
-          y6 <- ℕtoBit x6
-          y7 <- ℕtoBit x7
-          return (mkByte y0 y1 y2 y3 y4 y5 y6 y7)
-          where
-            ℕtoBit : ℕ -> Maybe Bool
-            ℕtoBit zero = return false
-            ℕtoBit (suc zero) = return true
-            ℕtoBit (suc (suc x)) = nothing
-        {-# CATCHALL #-}
-        treeToByte _ = nothing
-    {-# CATCHALL #-}
-    treeToWord32 _ = nothing
+    -- charConvert : Tree ℕ -> Maybe (Tree (List Char))
+    -- charConvert t = do
+    --   w <- treeToWord32 t
+    --   return (Node ("char$" ++ [ bytesToChar w ]) [])
 
-    charConvert : Tree ℕ -> Maybe (Tree (List Char))
-    charConvert t = do
-      w <- treeToWord32 t
-      return (Node ("char$" ++ [ bytesToChar w ]) [])
-
-    {-# TERMINATING #-}
-    ℕTreeToSyntaxTree : List Char -> Tree ℕ -> Maybe (Tree (List Char))
-    ℕTreeToSyntaxTree init t@(Node x x₁) =
-      if init ≣ "nameInitChar" ∨ init ≣ "nameTailChar"
-        then charConvert t
-        else do
-          rules <- lookup init parseRuleMap
-          rule <- lookupMaybe x rules
-          rest <- sequence $ zipWith ℕTreeToSyntaxTree (parseConstrToNonTerminals' rule) x₁
-          return $ Node rule rest
+    -- {-# TERMINATING #-}
+    -- ℕTreeToSyntaxTree : List Char -> Tree ℕ -> Maybe (Tree (List Char))
+    -- ℕTreeToSyntaxTree init t@(Node x x₁) =
+    --   if init ≣ "nameInitChar" ∨ init ≣ "nameTailChar"
+    --     then charConvert t
+    --     else do
+    --       rules <- lookup init parseRuleMap
+    --       rule <- lookupMaybe x rules
+    --       rest <- sequence $ zipWith ℕTreeToSyntaxTree (parseConstrToNonTerminals' rule) x₁
+    --       return $ Node rule rest
 
     -- converts a normalized term to an appropriate agda term, if possible
-    constrsToAgda : {A : Set} -> List Char -> (Tree (List Char) -> M A) -> Context -> PureTerm -> M A
+    constrsToAgda : {A : Set} -> List Char -> (Tree ℕ -> M A) -> Context -> PureTerm -> M A
     constrsToAgda init toTerm Γ t = do
       t' <- extractConstrIdTree $ buildConstructorTree Γ t
-      maybeToError (ℕTreeToSyntaxTree init t') "Error while generating syntax tree" >>= toTerm
+      toTerm t'
 
   constrsToStmt : Context -> PureTerm -> M Stmt
   constrsToStmt = constrsToAgda "stmt" (λ t -> maybeToError (toStmt t) "Error while converting to stmt")
