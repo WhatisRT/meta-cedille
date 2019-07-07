@@ -111,7 +111,7 @@ module LL1Parser {V : Set} {{_ : Eq V}} (showV : V -> String) {a}
         else (throwError $
           "Mismatch while parsing characters: tried to parse " + showCharOrMulti y +
           " but got '" + showChar x + "'\nRemaining:\n" + showChar x + s')
-      ... | nothing = throwError "Unexpected end of input"
+      ... | nothing = throwError ("Unexpected end of input while trying to parse " + showCharOrMulti y)
 
       resToTree' : List (Rule ⊎ Char) -> Maybe (SynTree × List (Rule ⊎ Char))
       resToTree' [] = nothing

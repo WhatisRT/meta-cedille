@@ -121,11 +121,12 @@ negateMultiChar : MultiChar -> MultiChar
 negateMultiChar = Data.Product.map₂ not
 
 matchMulti : Char -> MultiChar -> Bool
-matchMulti c (fst , snd) = not (snd xor (and $ map (helper c) fst))
+matchMulti c (fst , snd) with or $ map (helper c) fst
   where
     helper : Char -> Char ⊎ MultiCharGroup -> Bool
     helper c (inj₁ x) = c ≣ x
     helper c (inj₂ ())
+... | matches = not (snd xor matches) -- true iff 'snd' equals 'matches'
 
 -- Grammar with show functions for rules and non-terminals
 Grammar = ∃[ n ]

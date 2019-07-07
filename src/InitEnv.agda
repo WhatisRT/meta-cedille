@@ -18,7 +18,7 @@ open import Prelude
 open import Prelude.Strings
 
 nameSymbols : List Char
-nameSymbols = "$='-/!@"
+nameSymbols = "$='-/!@&"
 
 nameInits : List Char
 nameInits = letters ++ "_"
@@ -45,6 +45,7 @@ translationTable =
   ("lsquare" , '[') ∷ ("rsquare" , ']') ∷ ("langle" , '<') ∷ ("rangle" , '>') ∷
   ("equal" , '=') ∷ ("dot" , '.') ∷ ("comma" , ',') ∷ ("colon" , ':') ∷ ("semicolon" , ';') ∷
   ("question" , '?') ∷ ("exclamation" , '!') ∷ ("at" , '@') ∷ ("doublequote" , '"') ∷
+  ("ampersand" , '&') ∷ ("backslash" , '\\') ∷ ("slash" , '/') ∷
   ("underscore" , '_') ∷ ("dollar" , '$') ∷ ("minus" , '-') ∷ ("forall" , '∀') ∷ ("exists" , '∃') ∷
   ("alpha" , 'α') ∷ ("beta" , 'β') ∷ ("gamma" , 'γ') ∷ ("delta" , 'δ') ∷ ("epsilon" , 'ε') ∷
   ("zeta" , 'ζ') ∷ ("eta" , 'η') ∷ ("theta" , 'θ') ∷ ("iota" , 'ι') ∷ ("kappa" , 'κ') ∷
@@ -72,7 +73,8 @@ translate = (Data.Maybe.map concat) ∘ helper ∘ splitMulti '='
       l'' <- helper l₂
       return $ l ∷
         (decCase l' of
-          ('_' , "\\_") ∷ ('$' , "\\$") ∷ ('!' , "\\!") ∷ ('@' , "\\@") ∷ [] default [ l' ]) ∷ l''
+          ('_' , "\\_") ∷ ('$' , "\\$") ∷ ('!' , "\\!") ∷ ('@' , "\\@") ∷ ('&' , "\\&") ∷ []
+          default [ l' ]) ∷ l''
 
 escape : List Char -> List Char
 escape = concatMap λ c -> maybe (λ s -> "=" ++ toList s ++ "=") [ c ] $ lookup c escapeTable
@@ -83,10 +85,10 @@ ruleToConstr = concat ∘ helper ∘ groupEscaped
     helper : List (List Char) -> List (List Char)
     helper [] = []
     helper (l ∷ l₁) = (case l of λ
-      { (c ∷ []) -> if c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@'
+      { (c ∷ []) -> if c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&'
         then [ c ]
         else (maybe (λ s -> "=" ++ toList s ++ "=") [ c ] $ lookup c escapeTable)
-      ; (_ ∷ c ∷ []) -> if l ≣ "\\$" ∨ l ≣ "\\_" ∨ l ≣ "\\!" ∨ l ≣ "\\@"
+      ; (_ ∷ c ∷ []) -> if l ≣ "\\$" ∨ l ≣ "\\_" ∨ l ≣ "\\!" ∨ l ≣ "\\@" ∨ l ≣ "\\&"
         then (maybe (λ s -> "=" ++ toList s ++ "=") [ c ] $ lookup c escapeTable)
         else l
       ; _ -> l }) ∷ (helper l₁)
