@@ -1,9 +1,11 @@
 -- the definition of Nat is in Induction.mced
 let one := [suc zero].
 let two := [suc one].
-let add := λ n : Nat λ m : Nat [[[<inductionNat λ _ : Nat Nat> n] λ _ : Nat λ rec : Nat [suc rec]] m] : Π _ : Nat Π _ : Nat Nat.
-let mul := λ n : Nat λ m : Nat [[[<inductionNat λ _ : Nat Nat> zero] λ _ : Nat λ rec : Nat [[add rec] n]] m] : Π _ : Nat Π _ : Nat Nat.
+b-let add (n : Nat) (m : Nat) : Nat := [[[<inductionNat λ _ : Nat Nat> n] λ _ : Nat λ rec : Nat [suc rec]] m].
+b-let mul (n : Nat) (m : Nat) : Nat := [[[<inductionNat λ _ : Nat Nat> zero] λ _ : Nat λ rec : Nat [[add rec] n]] m].
 
 let isZero := [[<inductionNat λ _ : Nat Bool> true] λ _ : Nat λ _ : Bool false] : Π _ : Nat Bool.
 
-let natEq := [[<inductionNat λ _ : Nat Π _ : Nat Bool> isZero] λ _ : Nat λ rec : Π _ : Nat Bool [[<inductionNat λ _ : Nat Bool> false] λ n : Nat λ _ : Bool [rec n]]] : Π _ : Nat Π _ : Nat Bool.
+b-let natEq : Π _ : Nat Π _ : Nat Bool :=
+  [[<inductionNat λ _ : Nat Π _ : Nat Bool> isZero]
+    λ _ : Nat λ rec : Π _ : Nat Bool [[<inductionNat λ _ : Nat Bool> false] λ n : Nat λ _ : Bool [rec n]]].

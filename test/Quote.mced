@@ -8,6 +8,9 @@ let quote$ncons := init$name'$_nameTailChar__name'_ : Π c : init$char Π cs : i
 let quote$nnil := init$name'$ : init$name'.
 let quote$var := λ name : init$name [init$term$_var_ [init$var$_name_ name]] : Π _ : init$name init$term.
 
+let quote$pi := [init$term$=pi=_space__term_ quote$singleSpace] : Π _ : init$term init$term.
+let quote$psi := [init$term$=psi=_space__term_ quote$singleSpace] : Π _ : init$term init$term.
+
 let quote$beta := λ t : init$term [[[init$term$=beta=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] : Π _ : init$term Π _ : init$term init$term.
 
 let quote$lambda := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=lambda=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.

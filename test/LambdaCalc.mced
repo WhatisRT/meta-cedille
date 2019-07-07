@@ -1,17 +1,28 @@
-let quoteId := [[[quote$lambda [[quote$name quote$x] init$name'$]] quote$ast] [quote$var [[quote$name quote$x] init$name'$]]] : init$term.
+b-let quoteId : init$term :=
+  [[[quote$lambda [[quote$name quote$x] init$name'$]] quote$ast] [quote$var [[quote$name quote$x] init$name'$]]].
 let quoteTop := [[quote$stringToVar quote$T] "op"] : init$term.
 
 let lambdaTermToTerm := [quote$beta quoteId] : Π _ : init$term init$term.
 
-let init$lambdaTerm := ∀ X : * Π _ : (Π _ : init$name X) Π _ : (Π _ : X Π _ : X X) Π _ : (Π _ : init$name Π _ : X X) X.
+let init$lambdaTerm :=
+  ∀ X : * Π _ : (Π _ : init$name X) Π _ : (Π _ : X Π _ : X X) Π _ : (Π _ : init$name Π _ : X X) X : *.
 let init$lambdaTerm$_name_ := quote$var : Π _ : init$name init$term.
-let init$lambdaTerm$=lsquare=_space'__lambdaTerm__space__lambdaTerm__space'_=rsquare= := λ _ : init$space' λ t : init$term λ _ : init$space λ t' : init$term λ _ : init$space' [[quote$square t] t'] : Π _ : init$space' Π _ : init$term Π _ : init$space Π _ : init$term Π _ : init$space' init$term.
-let init$lambdaTerm$=lambda=_space__name__space'_=dot=_space'__lambdaTerm_ := λ _ : init$space λ name : init$name λ _ : init$space' λ _ : init$space' λ t : init$term [[[quote$lambda name] quote$ast] t] : Π _ : init$space Π _ : init$name Π _ : init$space' Π _ : init$space' Π _ : init$term init$term.
+b-let init$lambdaTerm$=lsquare=_space'__lambdaTerm__space__lambdaTerm__space'_=rsquare=
+  (_ : init$space') (t : init$term) (_ : init$space) (t' : init$term) (_ : init$space') : init$term :=
+  [[quote$square t] t'].
+b-let init$lambdaTerm$=lambda=_space__name__space'_=dot=_space'__lambdaTerm_
+  (_ : init$space) (name : init$name) (_ : init$space') (_ : init$space') (t : init$term) : init$term :=
+  [[[quote$lambda name] quote$ast] t].
 
-let init$lambdaStmt$let_space__name__space'_=colon==equal=_space'__lambdaTerm__space'_=dot= := λ _ : init$space λ name : init$name λ _ : init$space' λ _ : init$space' λ t : init$term λ _ : init$space' [[quote$simpleLet name] [lambdaTermToTerm t]] : Π _ : init$space Π _ : init$name Π _ : init$space' Π _ : init$space' Π _ : init$term Π _ : init$space' init$stmt.
+b-let init$lambdaStmt$let_space__name__space'_=colon==equal=_space'__lambdaTerm__space'_=dot=
+  (_ : init$space) (name : init$name) (_ : init$space') (_ : init$space') (t : init$term) (_ : init$space') :
+    init$stmt :=
+  [[quote$simpleLet name] [lambdaTermToTerm t]].
 
-let init$lambdaStmt$normalize_space__lambdaTerm__space'_=dot= := λ _ : init$space λ t : init$term λ _ : init$space' [quote$normalize [lambdaTermToTerm t]] : Π _ : init$space Π _ : init$term Π _ : init$space' init$stmt.
+b-let init$lambdaStmt$normalize_space__lambdaTerm__space'_=dot=
+  (_ : init$space) (t : init$term) (_ : init$space') : init$stmt :=
+  [quote$normalize [lambdaTermToTerm t]].
 
-let init$stmt$=lambda==minus=_lambdaStmt_ := λ x : init$stmt x : Π _ : init$stmt init$stmt.
+b-let init$stmt$=lambda==minus=_lambdaStmt_ (x : init$stmt) : init$stmt := x.
 
 seteval eval init stmt.

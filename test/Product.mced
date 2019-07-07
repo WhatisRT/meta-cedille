@@ -1,0 +1,6 @@
+let Product := λ A : * λ B : * [[DSum A] λ _ : A B].
+let prodPair := Λ A : * Λ B : * λ a : A λ b : B [[<<pair A> λ _ : A B> a] b] : ∀ A : * ∀ B : * Π _ : A Π _ : B [[Product A] B].
+let inductionProduct := Λ A : * Λ B : * <<inductionDSum A> λ _ : A B>.
+
+let pr1 := Λ A : * Λ B : * [<<<inductionProduct A> B> λ _ : [[Product A] B] A> λ a : A λ _ : B a] : ∀ A : * ∀ B : * Π _ : [[Product A] B] A.
+let pr2 := Λ A : * Λ B : * [<<<inductionProduct A> B> λ _ : [[Product A] B] B> λ _ : A λ b : B b] : ∀ A : * ∀ B : * Π _ : [[Product A] B] B.
