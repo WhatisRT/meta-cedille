@@ -1,0 +1,29 @@
+-- use γ[f x1 ... xn] where erased arguments are prefixed with a '?'
+
+let App := [[Product Bool] init$term].
+let mkApp := <<prodPair Bool> init$term>.
+let appErased := <<pr1 Bool> init$term>.
+let appTerm := <<pr2 Bool> init$term>.
+
+b-let init$app$_term_ (t : init$term) : App := [[mkApp false] t].
+b-let init$app$=question=_term_ (t : init$term) : App := [[mkApp true] t].
+
+let init$applist := [List App].
+let init$applist$ := <nil App>.
+b-let init$applist$_space__app__applist_ (_ : init$space) (a : App) (as : [List App]) : [List App] :=
+  [[<cons App> a] as].
+
+b-let appToQuotedApp (t : init$term) (a : App) : init$term :=
+  [[[[
+    [<ifthenelse Π _ : init$term Π _ : init$term init$term> [appErased a]]
+      quote$angle]
+      quote$square]
+    t] [appTerm a]].
+
+let foldWithApp := [<<foldl App> init$term> appToQuotedApp] : Π _ : [List App] Π _ : init$term init$term.
+
+b-let init$term$=gamma==lsquare=_space'__term__applist_=rsquare=
+  (_ : init$space') (t : init$term) (as : [List App]) : init$term :=
+  [[foldWithApp [<reverse App> as]] t].
+
+seteval eval init stmt.

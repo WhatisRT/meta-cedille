@@ -13,11 +13,14 @@ let quote$charBytes := [quote$var [[quote$name quote$c] [[quote$ncons quote$h] [
 let quote$stringNil := [quote$var [[quote$name quote$s] [[quote$ncons quote$t] [[quote$ncons quote$r] [[quote$ncons quote$i] [[quote$ncons quote$n] [[quote$ncons quote$g] [[quote$ncons quote$N] [[quote$ncons quote$i] [[quote$ncons quote$l] quote$nnil]]]]]]]]]] : init$term.
 let quote$stringCons := [quote$var [[quote$name quote$s] [[quote$ncons quote$t] [[quote$ncons quote$r] [[quote$ncons quote$i] [[quote$ncons quote$n] [[quote$ncons quote$g] [[quote$ncons quote$C] [[quote$ncons quote$o] [[quote$ncons quote$n] [[quote$ncons quote$s] quote$nnil]]]]]]]]]]] : init$term.
 
-b-let quote$bit (b : init$bit) : init$term := [[<b init$term> quote$bitTrue] quote$bitFalse].
+b-let quote$bit (b : init$bit) : init$term := γ[b ?init$term quote$bitTrue quote$bitFalse].
 b-let quote$byte (b : init$byte) : init$term := [<b init$term> λ x1 : init$bit λ x2 : init$bit λ x3 : init$bit λ x4 : init$bit λ x5 : init$bit λ x6 : init$bit λ x7 : init$bit λ x8 : init$bit [[quote$square [[quote$square [[quote$square [[quote$square [[quote$square [[quote$square [[quote$square [[quote$square quote$byteBits] [quote$bit x1]]] [quote$bit x2]]] [quote$bit x3]]] [quote$bit x4]]] [quote$bit x5]]] [quote$bit x6]]] [quote$bit x7]]] [quote$bit x8]]].
 b-let quote$char (c : init$char) : init$term := [<c init$term> λ x1 : init$byte λ x2 : init$byte λ x3 : init$byte λ x4 : init$byte [[quote$square [[quote$square [[quote$square [[quote$square quote$charBytes] [quote$byte x1]]] [quote$byte x2]]] [quote$byte x3]]] [quote$byte x4]]].
 
-b-let quote$String (s : init$string) : init$term := [[<s init$term> λ c : init$char λ rec : init$term [[quote$square [[quote$square quote$stringCons] [quote$char c]]] rec]] quote$stringNil].
+b-let quote$String (s : init$string) : init$term :=
+  γ[s ?init$term
+      λ c : init$char λ rec : init$term γ[quote$square γ[quote$square quote$stringCons [quote$char c]] rec]
+      quote$stringNil].
 
 b-let init$stringchar$!=doublequote=! (c : init$char) : init$char := c.
 
@@ -27,9 +30,10 @@ let init$newstring$_stringchar__newstring_ := init$string$cons : Π _ : init$cha
 --let init$term$=singlequote=_stringchar_=singlequote= := quote$char : Π _ : init$char init$term.
 let init$term$=doublequote=_newstring_=doublequote= := quote$String : Π _ : init$string init$term.
 
-b-let stringToName' (s : init$string) : init$name' := [[<s init$name'> λ c : init$char λ rec : init$name' [[quote$ncons c] rec]] quote$nnil].
+b-let stringToName' (s : init$string) : init$name' :=
+  γ[s ?init$name' λ c : init$char λ rec : init$name' γ[quote$ncons c rec] quote$nnil].
 
-b-let quote$stringToName (c : init$char) (s : init$string) : init$name := [[quote$name c] [stringToName' s]].
-b-let quote$stringToVar (c : init$char) (s : init$string) : init$term := [quote$var [[quote$stringToName c] s]].
+b-let quote$stringToName (c : init$char) (s : init$string) : init$name := γ[quote$name c [stringToName' s]].
+b-let quote$stringToVar (c : init$char) (s : init$string) : init$term := [quote$var γ[quote$stringToName c s]].
 
 seteval eval init stmt.

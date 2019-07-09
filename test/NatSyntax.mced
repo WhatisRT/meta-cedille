@@ -6,31 +6,31 @@ let init$binnat'$ := <nil Bool> : [List Bool].
 
 let init$binnat$_bindigit__binnat'_ := <cons Bool> : Π _ : Bool Π _ : [List Bool] [List Bool].
 
-let quoteBoolT := [[quote$stringToVar quote$t] "rue"] : init$term.
-let quoteBoolF := [[quote$stringToVar quote$f] "alse"] : init$term.
-let quoteBool := [[quote$stringToVar quote$B] "ool"] : init$term.
+let quoteBoolT := γ[quote$stringToVar quote$t "rue"] : init$term.
+let quoteBoolF := γ[quote$stringToVar quote$f "alse"] : init$term.
+let quoteBool := γ[quote$stringToVar quote$B "ool"] : init$term.
 
-let quoteNil := [[quote$stringToVar quote$n] "il"] : init$term.
-let quoteCons := [[quote$stringToVar quote$c] "ons"] : init$term.
-let quoteNilBool := [[quote$angle quoteNil] quoteBool] : init$term.
-let quoteConsBool := [[quote$angle quoteCons] quoteBool] : init$term.
+let quoteNil := γ[quote$stringToVar quote$n "il"] : init$term.
+let quoteCons := γ[quote$stringToVar quote$c "ons"] : init$term.
+let quoteNilBool := γ[quote$angle quoteNil quoteBool] : init$term.
+let quoteConsBool := γ[quote$angle quoteCons quoteBool] : init$term.
 
-b-let quoteBoolFun (b : Bool) : init$term := [[[<ifthenelse init$term> b] quoteBoolT] quoteBoolF].
+b-let quoteBoolFun (b : Bool) : init$term := γ[ifthenelse ?init$term b quoteBoolT quoteBoolF].
 
 let quoteListBool :=
-  [[<<inductionList Bool> λ _ : [List Bool] init$term> quoteNilBool]
+  γ[inductionList ?Bool ?(λ _ : [List Bool] init$term) quoteNilBool
     λ b : Bool λ bs : [List Bool] λ rec : init$term
-      [[quote$square [[quote$square quoteConsBool] [quoteBoolFun b]]] rec]]
+      γ[quote$square γ[quote$square quoteConsBool [quoteBoolFun b]] rec]]
   : Π _ : [List Bool] init$term.
 
-b-let boolToNat (b : Bool) : Nat := [[[<ifthenelse Nat> b] one] zero].
+b-let boolToNat (b : Bool) : Nat := γ[ifthenelse ?Nat b one zero].
 b-let boolListToNat (bs : [List Bool]) : Nat :=
-  [[[<<inductionList Bool> λ _ : [List Bool] Nat> zero]
-    λ b : Bool λ _ : [List Bool] λ rec : Nat [[add [[mul rec] two]] [boolToNat b]]] [<reverse Bool> bs]].
+  γ[inductionList ?Bool ?(λ _ : [List Bool] Nat) zero
+    λ b : Bool λ _ : [List Bool] λ rec : Nat γ[add γ[mul rec two] [boolToNat b]] γ[reverse ?Bool bs]].
 
-let quoteBoolListToNat := [[quote$stringToVar quote$b] "oolListToNat"] : init$term.
+let quoteBoolListToNat := γ[quote$stringToVar quote$b "oolListToNat"] : init$term.
 
 b-let init$term$=nu=_binnat_ (bs : [List Bool]) : init$term :=
-  [[quote$square quoteBoolListToNat] [quoteListBool bs]].
+  γ[quote$square quoteBoolListToNat [quoteListBool bs]].
 
 seteval eval init stmt.
