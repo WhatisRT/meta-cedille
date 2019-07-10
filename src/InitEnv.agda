@@ -163,7 +163,7 @@ grammar =
   "stmt'$test_space__term__space'_=dot=" ∷
   "stmt'$seteval_space__term__space__name__space__name__space'_=dot=" ∷
   "stmt'$import_space__name__space'_=dot=" ∷
-  "stmt'$cmd_space__term__space'_=dot=" ∷
+  "stmt'$cmd_space__name__space'_=dot=" ∷
   "stmt'$" ∷
   "stmt$_space'__stmt'_" ∷
   []

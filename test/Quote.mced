@@ -31,6 +31,8 @@ let quote$annotatedLet := λ n : init$name λ t : init$term λ t' : init$term [[
 
 let quote$normalize := λ t : init$term [[init$stmt$_space'__stmt'_ quote$noSpace] [[[init$stmt'$normalize_space__term__space'_=dot= quote$singleSpace] t] quote$noSpace]] : Π _ : init$term init$stmt.
 
+let quote$cmd := λ n : init$name [[[init$stmt'$cmd_space__name__space'_=dot= quote$singleSpace] n] quote$noSpace].
+
 let quote$A := init$nameInitChar$A.
 let quote$B := init$nameInitChar$B.
 let quote$C := init$nameInitChar$C.

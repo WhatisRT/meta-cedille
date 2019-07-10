@@ -342,7 +342,7 @@ data Stmt : Set where
   Test : AnnTerm -> Stmt
   SetEval : AnnTerm -> String -> String -> Stmt
   Import : String -> Stmt
-  Shell : AnnTerm -> Stmt
+  Shell : String -> Stmt
   Empty : Stmt
 
 instance
@@ -428,11 +428,11 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
               return $ Import (fromList n)
             ; _ -> nothing })) ∷
 
-        ((from-just $ ruleId "stmt'" "cmd_space__term__space'_.") ,
+        ((from-just $ ruleId "stmt'" "cmd_space__name__space'_.") ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ []) -> do
-              t <- toTerm y
-              return (Shell t)
+              n <- toName y
+              return (Shell $ fromList n)
             ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "stmt'" "") ,

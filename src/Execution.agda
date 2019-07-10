@@ -210,12 +210,7 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
       { (inj₁ x) → throwError x
       ; (inj₂ y) → tryExecute y }
 
-  executeStmt (Shell t) = do
-    Γ <- getContext
-    T <- synthType Γ t
-    appendIfError (checkβη Γ T (Var-A $ Free $ "init$string"))
-      "The term passed to a shell statement needs to be of type string"
-    s <- constrsToString Γ $ normalizePure Γ $ Erase t
+  executeStmt (Shell s) = do
     res <- liftIO $ runShellCmd s
     return $ strResult res
 

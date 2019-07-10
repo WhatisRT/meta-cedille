@@ -25,3 +25,5 @@ import test/Nat.
 import test/NatSyntax.
 
 import test/StringHelpers.
+
+import test/Commands.
