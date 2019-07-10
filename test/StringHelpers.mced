@@ -16,10 +16,17 @@ b-let charEq (c : init$char) (c' : init$char) : Bool :=
 b-let stringToList (s : init$string) : [List init$char] :=
   γ[s ?[List init$char] λ c : init$char λ rec : [List init$char] γ[cons ?init$char c rec] <nil init$char>].
 
-let stringFromList :=
+b-let stringFromList (s : [List init$char]) : init$string :=
   γ[inductionList ?init$char ?(λ _ : [List init$char] init$string) init$string$nil
-    λ c : init$char λ cs : [List init$char] λ rec : init$string γ[init$string$cons c rec]]
-  : Π _ : [List init$char] init$string.
+    λ c : init$char λ cs : [List init$char] λ rec : init$string γ[init$string$cons c rec] s].
 
 b-let stringEq (s : init$string) (s' : init$string) : Bool :=
   γ[listEq ?init$char charEq [stringToList s] [stringToList s']].
+
+b-let stringToNameDefault (s : init$string) (d : init$name) : init$name :=
+  γ[inductionList ?init$char ?(λ _ : [List init$char] init$name) d
+    λ c : init$char λ cs : [List init$char] λ rec : init$name
+      γ[quote$stringToName c [stringToName' [stringFromList cs]]] [stringToList s]].
+
+b-let stringApp (s : init$string) (s' : init$string) : init$string :=
+  [stringFromList γ[app ?init$char [stringToList s] [stringToList s']]].

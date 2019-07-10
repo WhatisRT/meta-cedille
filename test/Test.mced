@@ -20,6 +20,7 @@ import test/Example.
 import test/LambdaCalc.
 import test/LambdaCalcExample.
 
+import test/Maybe.
 import test/Nat.
 import test/NatSyntax.
 
