@@ -14,7 +14,7 @@ b-let charEq (c : init$char) (c' : init$char) : Bool :=
       γ[and γ[byteEq x1 y1] γ[and γ[byteEq x2 y2] γ[and γ[byteEq x3 y3] γ[byteEq x4 y4]]]]]].
 
 b-let stringToList (s : init$string) : [List init$char] :=
-  γ[s ?[List init$char] λ c : init$char λ rec : [List init$char] γ[cons ?init$char c rec] <nil init$char>].
+  γ[s ?[List init$char] λ c : init$char λ rec : [List init$char] γ[cons ?init$char c rec] τ[init$char|]].
 
 b-let stringFromList (s : [List init$char]) : init$string :=
   γ[inductionList ?init$char ?(λ _ : [List init$char] init$string) init$string$nil

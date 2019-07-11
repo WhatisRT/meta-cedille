@@ -4,4 +4,4 @@ b-let maybe [A : *] [B : *] (default : B) (f : Π _ : A B) (x : [Maybe A]) : B :
   γ[inductionSum ?A ?Unit ?(λ _ : [Maybe A] B) (λ a : A [f a]) (λ _ : Unit default) x].
 
 b-let maybeToList [A : *] (x : [Maybe A]) : [List A] :=
-  γ[maybe ?A ?[List A] <nil A> (λ a : A γ[cons ?A a <nil A>]) x].
+  γ[maybe ?A ?[List A] τ[A|] (λ a : A τ[A|a]) x].

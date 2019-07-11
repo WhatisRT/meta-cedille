@@ -2,7 +2,7 @@ let init$bindigit$0 := false : Bool.
 let init$bindigit$1 := true : Bool.
 
 let init$binnat'$_bindigit__binnat'_ := <cons Bool> : Π _ : Bool Π _ : [List Bool] [List Bool].
-let init$binnat'$ := <nil Bool> : [List Bool].
+let init$binnat'$ := τ[Bool|] : [List Bool].
 
 let init$binnat$_bindigit__binnat'_ := <cons Bool> : Π _ : Bool Π _ : [List Bool] [List Bool].
 
@@ -10,8 +10,6 @@ let quoteBoolT := γ[quote$stringToVar quote$t "rue"] : init$term.
 let quoteBoolF := γ[quote$stringToVar quote$f "alse"] : init$term.
 let quoteBool := γ[quote$stringToVar quote$B "ool"] : init$term.
 
-let quoteNil := γ[quote$stringToVar quote$n "il"] : init$term.
-let quoteCons := γ[quote$stringToVar quote$c "ons"] : init$term.
 let quoteNilBool := γ[quote$angle quoteNil quoteBool] : init$term.
 let quoteConsBool := γ[quote$angle quoteCons quoteBool] : init$term.
 
