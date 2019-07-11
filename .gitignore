@@ -1,3 +1,6 @@
 *.agdai
+*.svg
 MAlonzo
+initProfiling
 meta-cedille
+runProfiling
