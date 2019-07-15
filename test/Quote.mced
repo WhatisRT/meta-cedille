@@ -2,6 +2,7 @@ let quote$noSpace := init$space'$ : init$space'.
 let quote$singleSpace := [init$space$=space=_space'_ init$space'$] : init$space.
 
 let quote$ast := [init$term$_sort_ init$sort$=ast=] : init$term.
+let quote$sq := [init$term$_sort_ init$sort$=sq=] : init$term.
 
 let quote$name := init$name$_nameInitChar__name'_ : Π c : init$char Π cs : init$name' init$name.
 let quote$ncons := init$name'$_nameTailChar__name'_ : Π c : init$char Π cs : init$name' init$name'.
@@ -13,17 +14,39 @@ let quote$psi := [init$term$=psi=_space__term_ quote$singleSpace] : Π _ : init$
 
 let quote$beta := λ t : init$term [[[init$term$=beta=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] : Π _ : init$term Π _ : init$term init$term.
 
-let quote$lambda := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=lambda=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
+let quote$delta := λ t : init$term [[[init$term$=delta=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] : Π _ : init$term Π _ : init$term init$term.
 
-let quote$Lambda := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=Lambda=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
+let quote$sigma := [init$term$=sigma=_space__term_ quote$singleSpace] : Π _ : init$term init$term.
+
+let quote$square := λ t : init$term λ t' : init$term [[[[[init$term$=lsquare=_space'__term__space__term__space'_=rsquare= quote$noSpace] t] quote$singleSpace] t'] quote$noSpace] : Π _ : init$term Π _ : init$term init$term.
+
+let quote$angle := λ t : init$term λ t' : init$term [[[[[init$term$=langle=_space'__term__space__term__space'_=rangle= quote$noSpace] t] quote$singleSpace] t'] quote$noSpace] : Π _ : init$term Π _ : init$term init$term.
+
+let quote$rho := λ t : init$term λ n : init$name λ t' : init$term λ t'' : init$term [[[[[[[[[init$term$=rho=_space__term__space__name__space'_=dot=_space'__term__space__term_ quote$singleSpace] t] quote$singleSpace] n] quote$noSpace] quote$noSpace] t'] quote$singleSpace] t''].
 
 let quote$forall := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=forall=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
 
 let quote$Pi := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=Pi=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
 
-let quote$square := λ t : init$term λ t' : init$term [[[[[init$term$=lsquare=_space'__term__space__term__space'_=rsquare= quote$noSpace] t] quote$singleSpace] t'] quote$noSpace] : Π _ : init$term Π _ : init$term init$term.
+let quote$iota := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=iota=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
 
-let quote$angle := λ t : init$term λ t' : init$term [[[[[init$term$=langle=_space'__term__space__term__space'_=rangle= quote$noSpace] t] quote$singleSpace] t'] quote$noSpace] : Π _ : init$term Π _ : init$term init$term.
+let quote$lambda := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=lambda=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
+
+let quote$Lambda := λ name : init$name λ t : init$term λ t' : init$term [[[[[[[init$term$=Lambda=_space__name__space'_=colon=_space'__term__space__term_ quote$singleSpace] name] quote$noSpace] quote$noSpace] t] quote$singleSpace] t'] : Π _ : init$name Π _ : init$term Π _ : init$term init$term.
+
+let quote$brace := λ t : init$term λ t' : init$term λ n : init$name λ t'' : init$term [[[[[[[[[[[init$term$=lbrace=_space'__term__space'_=comma=_space'__term__space__name__space'_=dot=_space'__term__space'_=rbrace= quote$noSpace] t] quote$noSpace] quote$noSpace] t'] quote$singleSpace] n] quote$noSpace] quote$noSpace] t''] quote$noSpace].
+
+let quote$phi := λ t : init$term λ t' : init$term λ t'' : init$term [[[[[[init$term$=phi=_space__term__space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t] quote$singleSpace] t].
+
+let quote$equal := λ t : init$term λ t' : init$term [[[[init$term$=equal=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
+
+let quote$omega := λ t : init$term [[init$term$=omega=_space__term_ quote$singleSpace] t].
+
+let quote$mu := λ t : init$term λ t' : init$term [[[[init$term$=mu=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
+
+let quote$epsilon := λ t : init$term [[init$term$=omega=_space__term_ quote$singleSpace] t].
+
+let quote$zeta := λ t : init$term [[init$term$=omega=_space__term_ quote$singleSpace] t].
 
 let quote$simpleLet := λ n : init$name λ t : init$term [[init$stmt$_space'__stmt'_ quote$noSpace] [[[[[[[init$stmt'$let_space__name__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] n] quote$noSpace] quote$noSpace] t] quote$noSpace] init$lettail$=dot=]] : Π _ : init$name Π _ : init$term init$stmt.
 
