@@ -1,4 +1,5 @@
 import test/basic/Comment.
 import test/basic/Parens.
+import test/basic/MetaAliases.
 
 seteval eval init stmt.

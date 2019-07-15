@@ -1,0 +1,4 @@
+let M := λ X : * ω X : Π _ : * *.
+
+let returnMeta := Λ X : * λ x : X ε x : ∀ X : * Π _ : X [M X].
+let bindMeta := Λ X : * Λ Y : * λ x : [M X] λ f : Π _ : X [M Y] μ x f : ∀ X : * ∀ Y : * Π _ : [M X] Π f : Π _ : X [M Y] [M Y].

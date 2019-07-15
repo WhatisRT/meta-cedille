@@ -878,14 +878,16 @@ synthType' Γ (μ t t₁) = do
     { (M-A u) ->
       case (hnfNorm Γ T') of λ
         { (Π v v₁) -> do
-          T'' <- synthType Γ v₁
+          T'' <- if checkFree (Bound 0) (Erase v₁)
+            then throwError ("Index 0 is not allowed to appear in " + show v₁)
+            else synthType (pushVar v Γ) v₁
           case (hnfNorm Γ T'') of λ
             { (Sort-A ∗) ->
               case (hnfNorm Γ v₁) of λ
                 { (M-A v₂) ->
                   appendIfError
                     (checkβη Γ u v)
-                    "The types in μ need to be compatible" >> return (M-A v₂)
+                    "The types in μ need to be compatible" >> return (M-A $ decrementIndices v₂)
                 ; _ -> throwError
                   "The second term in a μ needs to have a Pi type that maps to 'M t' for some 't'" }
             ; _ -> throwError "The second term in a μ needs to have a non-dependent Pi type" }
