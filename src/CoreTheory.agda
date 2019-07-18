@@ -16,6 +16,7 @@ open import Data.Maybe using () renaming (map to mapMaybe)
 open import Data.SimpleMap
 open import Monads.Except
 open import Relation.Nullary
+open import Data.Integer using (ℤ; +_; -[1+_])
 
 open import Prelude
 
@@ -230,23 +231,27 @@ typeOfDef : Def -> AnnTerm
 typeOfDef (Let x x₁) = x₁
 typeOfDef (Axiom x) = x
 
-decrementDBs : PureTerm -> PureTerm
-decrementDBs = helper 0
+_+ℤ_ : ℕ -> ℤ -> ℕ
+x +ℤ +_ n = x + n
+x +ℤ -[1+ n ] = pred x ∸ n
+
+incrementIndicesPure : ℤ -> PureTerm -> PureTerm
+incrementIndicesPure = helper 0
   where
-    helper : ℕ -> PureTerm -> PureTerm
-    helper n (Var-P (Bound x)) = Var-P $ Bound (if ⌊ n <? x ⌋ then pred x else x)
-    helper n t@(Var-P (Free x)) = t
-    helper n t@(Sort-P x) = t
-    helper n (App-P t t₁) = App-P (helper n t) (helper n t₁)
-    helper n (Lam-P t) = Lam-P $ helper (suc n) t
-    helper n (Pi-P t t₁) = Pi-P (helper n t) (helper (suc n) t)
-    helper n (All-P t t₁) = All-P (helper n t) (helper (suc n) t)
-    helper n (Iota-P t t₁) = Iota-P (helper n t) (helper (suc n) t)
-    helper n (Eq-P t t₁) = Eq-P (helper n t) (helper n t₁)
-    helper n (M-P t) = M-P (helper n t)
-    helper n (Mu-P t t₁) = Mu-P (helper n t) (helper n t₁)
-    helper n (Epsilon-P t) = Epsilon-P (helper n t)
-    helper n (Ev-P t) = Ev-P (helper n t)
+    helper : ℕ -> ℤ -> PureTerm -> PureTerm
+    helper k n v@(Var-P (Bound x)) = if ⌊ x <? k ⌋ then v else Var-P (Bound (x +ℤ n))
+    helper k n v@(Var-P (Free x)) = v
+    helper k n v@(Sort-P x) = v
+    helper k n (App-P t t₁) = App-P (helper k n t) (helper k n t₁)
+    helper k n (Lam-P t) = Lam-P (helper (suc k) n t)
+    helper k n (Pi-P t t₁) = Pi-P (helper k n t) (helper (suc k) n t₁)
+    helper k n (All-P t t₁) = All-P (helper k n t) (helper (suc k) n t₁)
+    helper k n (Iota-P t t₁) = Iota-P (helper k n t) (helper (suc k) n t₁)
+    helper k n (Eq-P t t₁) = Eq-P (helper k n t) (helper k n t₁)
+    helper k n (M-P t) = M-P (helper k n t)
+    helper k n (Mu-P t t₁) = Mu-P (helper k n t) (helper k n t₁)
+    helper k n (Epsilon-P t) = Epsilon-P (helper k n t)
+    helper k n (Ev-P t) = Ev-P (helper k n t)
 
 checkFree : Name -> PureTerm -> Bool
 checkFree = helper 0
@@ -297,39 +302,11 @@ pushVar v (fst , snd) = fst , v ∷ snd
 localContextLength : Context -> ℕ
 localContextLength (fst , snd) = length snd
 
-decrementIndices : AnnTerm -> AnnTerm
-decrementIndices = helper 0 0
-  where
-    helper : ℕ -> ℕ -> AnnTerm -> AnnTerm
-    helper k n (Var-A (Bound x)) = Var-A (Bound (if ⌊ k <? x ⌋ then pred x else x))
-    helper k n v@(Var-A (Free x)) = v
-    helper k n (Sort-A x) = Sort-A x
-    helper k n (t ∙1) = helper k n t ∙1
-    helper k n (t ∙2) = helper k n t ∙2
-    helper k n (β t t₁) = β (helper k n t) (helper k n t₁)
-    helper k n (δ t t₁) = δ (helper k n t) (helper k n t₁)
-    helper k n (ς t) = ς (helper k n t)
-    helper k n (App-A t t₁) = App-A (helper k n t) (helper k n t₁)
-    helper k n (AppE-A t t₁) = AppE-A (helper k n t) (helper k n t₁)
-    helper k n (ρ t ∶ t₁ - t₂) = ρ (helper k n t) ∶ (helper (suc k) n t₁) - (helper k n t₂)
-    helper k n (∀-A t t₁) = ∀-A (helper k n t) (helper (suc k) n t₁)
-    helper k n (Π t t₁) = Π (helper k n t) (helper (suc k) n t₁)
-    helper k n (ι t t₁) = ι (helper k n t) (helper (suc k) n t₁)
-    helper k n (λ-A t t₁) = λ-A (helper k n t) (helper (suc k) n t₁)
-    helper k n (Λ t t₁) = Λ (helper k n t) (helper (suc k) n t₁)
-    helper k n [ t , t₁ ∙ t₂ ] = [ (helper k n t) , (helper k n t₁) ∙ (helper (suc k) n t₂) ]
-    helper k n (φ t t₁ t₂) = φ (helper k n t) (helper k n t₁) (helper k n t₂)
-    helper k n (t ≃ t₁) = helper k n t ≃ helper k n t₁
-    helper k n (M-A t) = M-A (helper k n t)
-    helper k n (μ t t₁) = μ (helper k n t) (helper k n t₁)
-    helper k n (ε t) = ε (helper k n t)
-    helper k n (Ev-A t) = Ev-A (helper k n t)
-
-incrementIndices : ℕ -> AnnTerm -> AnnTerm
+incrementIndices : ℤ -> AnnTerm -> AnnTerm
 incrementIndices = helper 0
   where
-    helper : ℕ -> ℕ -> AnnTerm -> AnnTerm
-    helper k n v@(Var-A (Bound x)) = if ⌊ x <? k ⌋ then v else Var-A (Bound (x + n))
+    helper : ℕ -> ℤ -> AnnTerm -> AnnTerm
+    helper k n v@(Var-A (Bound x)) = if ⌊ x <? k ⌋ then v else Var-A (Bound (x +ℤ n))
     helper k n v@(Var-A (Free x)) = v
     helper k n (Sort-A x) = Sort-A x
     helper k n (t ∙1) = helper k n t ∙1
@@ -355,7 +332,7 @@ incrementIndices = helper 0
 
 lookupInContext : Name -> Context -> Maybe Def
 lookupInContext (Bound x) (fst , snd) =
-  Data.Maybe.map (λ y → Axiom (incrementIndices (suc x) y)) (lookupMaybe x snd)
+  Data.Maybe.map (λ y → Axiom (incrementIndices (+ suc x) y)) (lookupMaybe x snd)
 lookupInContext (Free x) (fst , snd) = lookup (Global x) fst
 
 validInContext : PureTerm -> Context -> Bool
@@ -392,7 +369,7 @@ Erase (∀-A t t₁) = All-P (Erase t) (Erase t₁)
 Erase (Π t t₁) = Pi-P (Erase t) (Erase t₁)
 Erase (ι t t₁) = Iota-P (Erase t) (Erase t₁)
 Erase (λ-A t t₁) = Lam-P (Erase t₁)
-Erase (Λ t t₁) = decrementDBs (Erase t₁)
+Erase (Λ t t₁) = incrementIndicesPure (-[1+ 0 ]) (Erase t₁)
 Erase ([_,_∙_] t t₁ t₂) = Erase t
 Erase (φ t t₁ t₂) = Erase t₂
 Erase (x ≃ x₁) = Eq-P (Erase x) (Erase x₁)
@@ -403,11 +380,11 @@ Erase (Ev-A t) = Ev-P (Erase t)
 
 -- substitute the first unbound variable in t with t'
 subst : AnnTerm -> AnnTerm -> AnnTerm
-subst t t' = decrementIndices $ substIndex t 0 t'
+subst t t' = incrementIndices (-[1+ 0 ]) $ substIndex t 0 t'
   where
     -- substitute the k-th unbound variable in t with t'
     substIndex : AnnTerm -> ℕ -> AnnTerm -> AnnTerm
-    substIndex v@(Var-A (Bound x)) k t' = if k ≣ x then incrementIndices (suc k) t' else v
+    substIndex v@(Var-A (Bound x)) k t' = if k ≣ x then incrementIndices (+ suc k) t' else v
     substIndex v@(Var-A (Free x)) k t' = v
     substIndex v@(Sort-A x) k t' = v
     substIndex (t ∙1) k t' = (substIndex t k t') ∙1
@@ -431,49 +408,13 @@ subst t t' = decrementIndices $ substIndex t 0 t'
     substIndex (ε t) k t' = ε (substIndex t k t')
     substIndex (Ev-A t) k t' = Ev-A (substIndex t k t')
 
-decrementIndicesPure : PureTerm -> PureTerm
-decrementIndicesPure = helper 0 0
-  where
-    helper : ℕ -> ℕ -> PureTerm -> PureTerm
-    helper k n (Var-P (Bound x)) = Var-P (Bound (if ⌊ k <? x ⌋ then pred x else x))
-    helper k n v@(Var-P (Free x)) = v
-    helper k n v@(Sort-P x) = v
-    helper k n (App-P t t₁) = App-P (helper k n t) (helper k n t₁)
-    helper k n (Lam-P t) = Lam-P (helper (suc k) n t)
-    helper k n (Pi-P t t₁) = Pi-P (helper k n t) (helper (suc k) n t₁)
-    helper k n (All-P t t₁) = All-P (helper k n t) (helper (suc k) n t₁)
-    helper k n (Iota-P t t₁) = Iota-P (helper k n t) (helper (suc k) n t₁)
-    helper k n (Eq-P t t₁) = Eq-P (helper k n t) (helper k n t₁)
-    helper k n (M-P t) = M-P (helper k n t)
-    helper k n (Mu-P t t₁) = Mu-P (helper k n t) (helper k n t₁)
-    helper k n (Epsilon-P t) = Epsilon-P (helper k n t)
-    helper k n (Ev-P t) = Ev-P (helper k n t)
-
-incrementIndicesPure : ℕ -> PureTerm -> PureTerm
-incrementIndicesPure = helper 0
-  where
-    helper : ℕ -> ℕ -> PureTerm -> PureTerm
-    helper k n v@(Var-P (Bound x)) = if ⌊ x <? k ⌋ then v else Var-P (Bound (x + n))
-    helper k n v@(Var-P (Free x)) = v
-    helper k n v@(Sort-P x) = v
-    helper k n (App-P t t₁) = App-P (helper k n t) (helper k n t₁)
-    helper k n (Lam-P t) = Lam-P (helper (suc k) n t)
-    helper k n (Pi-P t t₁) = Pi-P (helper k n t) (helper (suc k) n t₁)
-    helper k n (All-P t t₁) = All-P (helper k n t) (helper (suc k) n t₁)
-    helper k n (Iota-P t t₁) = Iota-P (helper k n t) (helper (suc k) n t₁)
-    helper k n (Eq-P t t₁) = Eq-P (helper k n t) (helper k n t₁)
-    helper k n (M-P t) = M-P (helper k n t)
-    helper k n (Mu-P t t₁) = Mu-P (helper k n t) (helper k n t₁)
-    helper k n (Epsilon-P t) = Epsilon-P (helper k n t)
-    helper k n (Ev-P t) = Ev-P (helper k n t)
-
 -- substitute the first unbound variable in t with t'
 substPure : PureTerm -> PureTerm -> PureTerm
-substPure t t' = decrementIndicesPure $ substIndexPure t 0 t'
+substPure t t' = incrementIndicesPure (-[1+ 0 ]) $ substIndexPure t 0 t'
   where
     -- substitute the k-th unbound variable in t with t'
     substIndexPure : PureTerm -> ℕ -> PureTerm -> PureTerm
-    substIndexPure v@(Var-P (Bound x)) k t' = if k ≣ x then incrementIndicesPure (suc k) t' else v
+    substIndexPure v@(Var-P (Bound x)) k t' = if k ≣ x then incrementIndicesPure (+ suc k) t' else v
     substIndexPure v@(Var-P (Free x)) k t' = v
     substIndexPure v@(Sort-P x) k t' = v
     substIndexPure (App-P t t₁) k t' = App-P (substIndexPure t k t') (substIndexPure t₁ k t')
@@ -503,27 +444,10 @@ hnfNorm Γ (Var-A x) with lookupInContext x Γ
 hnfNorm Γ (Var-A x) | just (Let x₁ x₂) = hnfNorm Γ x₁
 hnfNorm Γ v@(Var-A x) | just (Axiom x₁) = v -- we cannot reduce axioms
 hnfNorm Γ v@(Var-A x) | nothing = v -- in case the lookup fails, we cannot reduce
-hnfNorm Γ v@(Sort-A x) = v
-hnfNorm Γ v@(t ∙1) = v
-hnfNorm Γ v@(t ∙2) = v
-hnfNorm Γ v@(β t t₁) = v
-hnfNorm Γ v@(δ t t₁) = v
-hnfNorm Γ v@(ς t) = v
 hnfNorm Γ (App-A t t₁) = maybe (λ t' -> hnfNorm Γ $ subst t' t₁) (App-A t t₁) $ stripBinder (hnfNorm Γ t)
 hnfNorm Γ (AppE-A t t₁) = maybe (λ t' -> hnfNorm Γ $ subst t' t₁) (App-A t t₁) $ stripBinder (hnfNorm Γ t)
-hnfNorm Γ v@(ρ t ∶ t₁ - t₂) = v
-hnfNorm Γ v@(∀-A t t₁) = v
-hnfNorm Γ v@(Π t t₁) = v
-hnfNorm Γ v@(ι t t₁) = v
-hnfNorm Γ v@(λ-A t t₁) = v
-hnfNorm Γ v@(Λ t t₁) = v
-hnfNorm Γ v@([ t , t₁ ∙ t₂ ]) = v
-hnfNorm Γ v@(φ t t₁ t₂) = v
-hnfNorm Γ v@(t ≃ t₁) = v
-hnfNorm Γ v@(M-A t) = v
-hnfNorm Γ v@(μ t t₁) = v
-hnfNorm Γ v@(ε t) = v
-hnfNorm Γ v@(Ev-A t) = v
+{-# CATCHALL #-}
+hnfNorm Γ v = v
 
 stripBinderPure : PureTerm -> Maybe PureTerm
 stripBinderPure (Lam-P t') = just t'
@@ -539,19 +463,11 @@ hnfNormPure Γ (Var-P x) with lookupInContext x Γ
 hnfNormPure Γ (Var-P x) | just (Let x₁ x₂) = hnfNormPure Γ $ Erase x₁
 hnfNormPure Γ v@(Var-P x) | just (Axiom x₁) = v -- we cannot reduce axioms
 hnfNormPure Γ v@(Var-P x) | nothing = v -- in case the lookup fails, we cannot reduce
-hnfNormPure Γ v@(Sort-P x) = v
 hnfNormPure Γ (App-P t t₁) = case stripBinderPure (hnfNormPure Γ t) of λ
   { (just t') → hnfNormPure Γ $ substPure t' t₁
   ; nothing → App-P t t₁ }
-hnfNormPure Γ v@(Lam-P t) = v
-hnfNormPure Γ v@(Pi-P t t₁) = v
-hnfNormPure Γ v@(All-P t t₁) = v
-hnfNormPure Γ v@(Iota-P t t₁) = v
-hnfNormPure Γ v@(Eq-P t t₁) = v
-hnfNormPure Γ v@(M-P t) = v
-hnfNormPure Γ v@(Mu-P t t₁) = v
-hnfNormPure Γ v@(Epsilon-P t) = v
-hnfNormPure Γ v@(Ev-P t) = v
+{-# CATCHALL #-}
+hnfNormPure Γ v = v
 
 {-# TERMINATING #-}
 findOutermostConstructor : PureTerm -> PureTerm × List PureTerm
@@ -609,7 +525,7 @@ normalizePure Γ (App-P t t₁) = case normalizePure Γ t of λ t' ->
     { (just t'') → normalizePure Γ (substPure t'' t₁)
     ; nothing → App-P t' $ normalizePure Γ t₁ }
 normalizePure Γ (Lam-P t) = case normalizePure Γ t of λ
-  { t''@(App-P t' (Var-P (Bound 0))) -> if validInContext t' Γ then decrementIndicesPure t' else Lam-P t'' -- eta reduce here
+  { t''@(App-P t' (Var-P (Bound 0))) -> if validInContext t' Γ then incrementIndicesPure (-[1+ 0 ]) t' else Lam-P t'' -- eta reduce here
   ; t'' -> Lam-P t'' }
 normalizePure Γ (Pi-P t t₁) = Pi-P (normalizePure Γ t) (normalizePure Γ t₁)
 normalizePure Γ (All-P t t₁) = All-P (normalizePure Γ t) (normalizePure Γ t₁)
@@ -663,11 +579,11 @@ module CheckEquality {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String
       compareHnfs (Ev-P t) (Ev-P x) = checkβηPure t x
       compareHnfs (Lam-P t) t₁ = case normalizePure Γ t of λ
         { t''@(App-P t' (Var-P (Bound 0))) ->
-          if validInContext t' Γ then (compareHnfs (decrementIndicesPure t') t₁) else hnfError t'' t₁
+          if validInContext t' Γ then (compareHnfs (incrementIndicesPure (-[1+ 0 ]) t') t₁) else hnfError t'' t₁
         ; t'' -> hnfError t'' t₁ }
       compareHnfs t (Lam-P t₁) = case normalizePure Γ t₁ of λ
         { t''@(App-P t' (Var-P (Bound 0))) ->
-          if validInContext t' Γ then (compareHnfs t (decrementIndicesPure t')) else hnfError t t''
+          if validInContext t' Γ then (compareHnfs t (incrementIndicesPure (-[1+ 0 ]) t')) else hnfError t t''
         ; t'' -> hnfError t t'' }
       {-# CATCHALL #-}
       compareHnfs t t' = hnfError t t'
@@ -887,7 +803,7 @@ synthType' Γ (μ t t₁) = do
                 { (M-A v₂) ->
                   appendIfError
                     (checkβη Γ u v)
-                    "The types in μ need to be compatible" >> return (M-A $ decrementIndices v₂)
+                    "The types in μ need to be compatible" >> return (M-A $ incrementIndices (-[1+ 0 ]) v₂)
                 ; _ -> throwError
                   "The second term in a μ needs to have a Pi type that maps to 'M t' for some 't'" }
             ; _ -> throwError "The second term in a μ needs to have a non-dependent Pi type" }
