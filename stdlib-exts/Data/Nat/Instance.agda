@@ -1,5 +1,6 @@
 module Data.Nat.Instance where
 
+open import Agda.Builtin.Nat
 open import Class.Equality
 open import Class.Monoid
 open import Class.Show
@@ -22,6 +23,9 @@ private
 instance
   Eq-ℕ : Eq ℕ
   Eq-ℕ = record { _≟_ = _≟ℕ_ }
+
+  EqB-ℕ : EqB ℕ
+  EqB-ℕ = record { _≣_ = Agda.Builtin.Nat._==_ }
 
   ℕ-Monoid : Monoid ℕ
   ℕ-Monoid = record { mzero = zero ; _+_ = _+ℕ_ }

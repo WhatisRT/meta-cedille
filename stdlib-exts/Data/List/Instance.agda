@@ -5,6 +5,7 @@ open import Class.Monad
 open import Class.Monoid
 open import Class.Show
 open import Class.Traversable
+open import Data.Bool using (Bool; _∧_; true; false)
 open import Data.List hiding (concat)
 open import Data.String using (String; concat)
 open import Data.String.Instance
@@ -24,6 +25,15 @@ instance
       ... | yes p₁ rewrite p | p₁ = yes refl
       ... | no ¬p = no λ { refl -> ¬p refl }
       helper (x ∷ l) (x₁ ∷ l') | no ¬p = no λ { refl -> ¬p refl }
+
+  List-EqB : ∀ {A} {{_ : EqB A}} -> EqB (List A)
+  List-EqB {A} = record { _≣_ = helper }
+    where
+      helper : (l l' : List A) -> Bool
+      helper [] [] = true
+      helper [] (x ∷ l') = false
+      helper (x ∷ l) [] = false
+      helper (x ∷ l) (x₁ ∷ l') = x ≣ x₁ ∧ helper l l'
 
   List-Monoid : ∀ {a} {A : Set a} -> Monoid (List A)
   List-Monoid = record { mzero = [] ; _+_ = _++_ }

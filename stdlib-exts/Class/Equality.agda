@@ -13,9 +13,15 @@ record Eq (A : Set) : Set where
 
 open Eq {{...}} public
 
-_≣_ : ∀ {A} {{_ : Eq A}} -> A -> A -> Bool
-x ≣ y = ⌊ x ≟ y ⌋
+record EqB (A : Set) : Set where
+  field
+    _≣_ : (x y : A) -> Bool
 
-decCase_of_default_ : ∀ {a} {A : Set} {B : Set a} {{_ : Eq A}} -> A -> List (A × B) -> B -> B
+open EqB {{...}} public
+
+Eq→EqB : ∀ {A} -> {{_ : Eq A}} -> EqB A
+Eq→EqB = record { _≣_ = λ x y -> ⌊ x ≟ y ⌋ }
+
+decCase_of_default_ : ∀ {a} {A : Set} {B : Set a} {{_ : EqB A}} -> A -> List (A × B) -> B -> B
 decCase a of [] default d = d
 decCase a of x ∷ xs default d = if a ≣ proj₁ x then proj₂ x else (decCase a of xs default d)

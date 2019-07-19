@@ -41,6 +41,8 @@ instance
       helper □ ⋆ = no λ ()
       helper □ □ = yes refl
 
+  Sort-EqB = Eq→EqB {{Sort-Eq}}
+
 data GlobalName : Set where
   Global : String -> GlobalName
 
@@ -52,6 +54,12 @@ instance
       helper (Global x) (Global x₁) with x ≟ x₁
       ... | yes p rewrite p = yes refl
       ... | no ¬p = no λ { refl -> ¬p refl }
+
+  GlobalName-EqB : EqB GlobalName
+  GlobalName-EqB = record { _≣_ = helper }
+    where
+      helper : (n n' : GlobalName) -> Bool
+      helper (Global x) (Global x₁) = x ≣ x₁
 
   GlobalName-Show : Show GlobalName
   GlobalName-Show = record { show = helper }
@@ -76,6 +84,15 @@ instance
       helper (Free x) (Free x₁) with x ≟ x₁
       ... | yes p rewrite p = yes refl
       ... | no ¬p = no λ { refl -> ¬p refl }
+
+  Name-EqB : EqB Name
+  Name-EqB = record { _≣_ = helper }
+    where
+      helper : (n n' : Name) -> Bool
+      helper (Bound x) (Bound x₁) = x ≣ x₁
+      helper (Bound x) (Free x₁) = false
+      helper (Free x) (Bound x₁) = false
+      helper (Free x) (Free x₁) = x ≣ x₁
 
   Name-Show : Show Name
   Name-Show = record { show = helper }

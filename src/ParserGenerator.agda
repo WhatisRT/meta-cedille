@@ -92,6 +92,8 @@ instance
     ; WildcardSeparator WhitelistWildcardBracket → no (λ ())
     ; WildcardSeparator WildcardSeparator → yes refl} }
 
+  Marker-EqB = Eq→EqB {{Marker-Eq}}
+
 MultiCharGroup : Set
 MultiCharGroup = ⊥
 

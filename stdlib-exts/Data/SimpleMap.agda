@@ -2,6 +2,7 @@ module Data.SimpleMap where
 
 open import Class.Equality
 open import Class.Map
+open import Data.Bool
 open import Data.Maybe
 open import Data.List hiding (lookup)
 open import Data.Product
@@ -13,17 +14,17 @@ SimpleMap A B = List (A × B)
 
 private
 
-  simpleRemove : ∀ {A B} {{_ : Eq A}} -> A -> SimpleMap A B -> SimpleMap A B
-  simpleRemove k m = filter (λ {(k' , _) → ¬? (k ≟ k')}) m
+  simpleRemove : ∀ {A B} {{_ : EqB A}} -> A -> SimpleMap A B -> SimpleMap A B
+  simpleRemove k m = boolFilter (λ {(k' , _) → not (k ≣ k')}) m
 
-  simpleInsert : ∀ {A B} {{_ : Eq A}} -> A -> B -> SimpleMap A B -> SimpleMap A B
+  simpleInsert : ∀ {A B} {{_ : EqB A}} -> A -> B -> SimpleMap A B -> SimpleMap A B
   simpleInsert k v m = (k , v) ∷ (simpleRemove k m)
 
-  simpleLookup : ∀ {A B} {{_ : Eq A}} -> A -> SimpleMap A B -> Maybe B
+  simpleLookup : ∀ {A B} {{_ : EqB A}} -> A -> SimpleMap A B -> Maybe B
   simpleLookup k [] = nothing
-  simpleLookup k ((fst , snd) ∷ m) with k ≟ fst
-  simpleLookup k ((fst , snd) ∷ m) | yes p = just snd
-  simpleLookup k ((fst , snd) ∷ m) | no ¬p = simpleLookup k m
+  simpleLookup k ((fst , snd) ∷ m) with k ≣ fst
+  simpleLookup k ((fst , snd) ∷ m) | true = just snd
+  simpleLookup k ((fst , snd) ∷ m) | false = simpleLookup k m
 
   simpleMapSnd : ∀ {A B C} -> (B -> C) -> SimpleMap A B -> SimpleMap A C
   simpleMapSnd f [] = []
