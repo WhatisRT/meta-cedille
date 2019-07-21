@@ -12,6 +12,7 @@ open import Data.List using (map; length)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
 open import Data.Tree
+open import Data.Word using (toℕ)
 open import Data.Word32
 
 open import CoreTheory
@@ -29,7 +30,7 @@ module ConversionInternals {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M 
     ... | t' , ts = Node t' $ map (buildConstructorTree Γ) $ reverse ts
 
     extractConstrId : PureTerm -> M ℕ
-    extractConstrId (Var-P (Bound x)) = return x
+    extractConstrId (Var-P (Bound x)) = return $ toℕ x
     extractConstrId (Var-P (Free x)) = throwError "Not a constructor"
     {-# CATCHALL #-}
     extractConstrId t = throwError ("Not a variable" + show t)
@@ -40,22 +41,6 @@ module ConversionInternals {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M 
       x' <- extractConstrId x
       y' <- sequence (map extractConstrIdTree y)
       return $ Node x' y'
-
-    -- charConvert : Tree ℕ -> Maybe (Tree (List Char))
-    -- charConvert t = do
-    --   w <- treeToWord32 t
-    --   return (Node ("char$" ++ [ bytesToChar w ]) [])
-
-    -- {-# TERMINATING #-}
-    -- ℕTreeToSyntaxTree : List Char -> Tree ℕ -> Maybe (Tree (List Char))
-    -- ℕTreeToSyntaxTree init t@(Node x x₁) =
-    --   if init ≣ "nameInitChar" ∨ init ≣ "nameTailChar"
-    --     then charConvert t
-    --     else do
-    --       rules <- lookup init parseRuleMap
-    --       rule <- lookupMaybe x rules
-    --       rest <- sequence $ zipWith ℕTreeToSyntaxTree (parseConstrToNonTerminals' rule) x₁
-    --       return $ Node rule rest
 
     -- converts a normalized term to an appropriate agda term, if possible
     constrsToAgda : {A : Set} -> List Char -> (Tree ℕ -> M A) -> Context -> PureTerm -> M A

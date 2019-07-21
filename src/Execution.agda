@@ -82,12 +82,9 @@ module StateHelpers {M : Set -> Set} {{_ : Monad M}}
   addDef : GlobalName -> Def -> M String
   addDef n d = do
     Γ <- getContext
-    case lookup n (contextToGlobal Γ) of λ
-      { (just x) → throwError
-        ("The name " + show n + " is already defined!")
-      ; nothing → do
-        modifyContext (insert n d)
-        return $ "Defined " + show n + show d }
+    case insertInGlobalContext n d (contextToGlobal Γ) of λ
+      { (inj₁ x) → throwError x
+      ; (inj₂ y) → setContext y >> return ("Defined " + show n + show d) }
 
 open StateHelpers
 
@@ -152,8 +149,7 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
     catchError (profileCall ("Equality" , show u ∷ show t' ∷ []) $ checkβη Γ u t')
       (λ e -> throwError $
         "Type mismatch with the provided type!\n" + e + "\nProvided: " + show t' +
-        "\nSynthesized: " + show u + " which normalize to: " +
-        show (normalize Γ t') + "\nand: " + show (normalize Γ u))
+        "\nSynthesized: " + show u)
     res <- addDef n (Let t t')
     return $ strResult res
 

@@ -21,6 +21,7 @@ open import Data.SimpleMap
 open import Data.String using (fromList)
 open import Data.Tree
 open import Data.Tree.Instance
+open import Data.Word using (fromℕ)
 open import Data.Word32
 open import Relation.Nullary
 
@@ -170,11 +171,11 @@ toTerm = helper []
                   ((from-just $ ruleId "var" "_name_") , do
                     n' <- toName n
                     case findIndexList (n' ≟_) accu of (λ
-                      { (just x) → return $ Var-A $ Bound x
+                      { (just x) → return $ Var-A $ Bound $ fromℕ x
                       ; nothing → return $ Var-A $ Free (fromList n') })) ∷
                   ((from-just $ ruleId "var" "_index_") , do
                     n' <- toIndex n
-                    return $ Var-A $ Bound n') ∷ []
+                    return $ Var-A $ Bound $ fromℕ n') ∷ []
                 default nothing
               ; _ -> nothing }) ∷
 

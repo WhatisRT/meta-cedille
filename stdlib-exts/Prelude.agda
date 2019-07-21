@@ -15,7 +15,7 @@ open import Data.Empty.Instance public
 open import Data.List using (List; []; [_]; _∷_; drop; boolFilter; reverse; _++_; zipWith; foldl) public
 open import Data.List.Exts public
 open import Data.List.Instance public
-open import Data.Maybe using (Maybe; just; nothing; maybe; from-just) public
+open import Data.Maybe using (Maybe; just; nothing; maybe; from-just; is-just; is-nothing) public
 open import Data.Maybe.Instance public
 open import Data.Nat hiding (_+_; _≟_) public
 open import Data.Nat.Instance public

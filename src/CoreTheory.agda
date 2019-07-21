@@ -7,16 +7,20 @@
 
 module CoreTheory where
 
+import Agda.Builtin.Nat using (_+_; _-_; _==_)
 import Data.Product
+import Data.Word.Unsafe
 open import Class.Map
 open import Class.Monad.Except
 open import Class.Monad.Profiler
+open import Data.Integer using (ℤ; +_; -[1+_])
 open import Data.List using (length)
 open import Data.Maybe using () renaming (map to mapMaybe)
 open import Data.SimpleMap
+open import Data.Word
 open import Monads.Except
 open import Relation.Nullary
-open import Data.Integer using (ℤ; +_; -[1+_])
+open import Data.Word64.Exts
 
 open import Prelude
 
@@ -67,8 +71,36 @@ instance
       helper : GlobalName -> String
       helper (Global x) = x
 
+𝕀 : Set
+𝕀 = Word64
+
+instance
+  𝕀-Eq : Eq 𝕀
+  𝕀-Eq = record { _≟_ = Data.Word.Unsafe._≟_ }
+
+  𝕀-EqB : EqB 𝕀
+  𝕀-EqB = record { _≣_ = λ x y -> toℕ x Agda.Builtin.Nat.== toℕ y }
+
+  𝕀-Show : Show 𝕀
+  𝕀-Show = record { show = show ∘ toℕ }
+
+_<𝕀_ : 𝕀 -> 𝕀 -> Bool
+x <𝕀 y = (toℕ x) <ᵇ (toℕ y)
+
+_+𝕀_ : 𝕀 -> 𝕀 -> 𝕀
+x +𝕀 y = fromℕ ((toℕ x) Agda.Builtin.Nat.+ (toℕ y))
+
+_-𝕀_ : 𝕀 -> 𝕀 -> 𝕀
+_-𝕀_ = subWord
+
+suc𝕀 : 𝕀 -> 𝕀
+suc𝕀 = _+𝕀 (fromℕ 1)
+
+pred𝕀 : 𝕀 -> 𝕀
+pred𝕀 = _-𝕀 (fromℕ 1)
+
 data Name : Set where
-  Bound : ℕ -> Name
+  Bound : 𝕀 -> Name
   Free : String -> Name
 
 instance
@@ -236,6 +268,18 @@ data Def : Set where
   Let : AnnTerm -> AnnTerm -> Def
   Axiom : AnnTerm -> Def
 
+data EfficientDef : Set where
+  EfficientLet : AnnTerm -> PureTerm -> AnnTerm -> EfficientDef
+  EfficientAxiom : AnnTerm -> EfficientDef
+
+toDef : EfficientDef -> Def
+toDef (EfficientLet x x₁ x₂) = Let x x₂
+toDef (EfficientAxiom x) = Axiom x
+
+getNorm : EfficientDef -> Maybe PureTerm
+getNorm (EfficientLet x x₁ x₂) = return x₁
+getNorm (EfficientAxiom x) = nothing
+
 instance
   Def-Show : Show Def
   Def-Show = record { show = helper }
@@ -248,38 +292,74 @@ typeOfDef : Def -> AnnTerm
 typeOfDef (Let x x₁) = x₁
 typeOfDef (Axiom x) = x
 
-_+ℤ_ : ℕ -> ℤ -> ℕ
-x +ℤ +_ n = x + n
-x +ℤ -[1+ n ] = pred x ∸ n
-
-incrementIndicesPure : ℤ -> PureTerm -> PureTerm
-incrementIndicesPure = helper 0
+modifyIndicesPure : 𝕀 -> PureTerm -> PureTerm
+modifyIndicesPure = helper (fromℕ 0)
   where
-    helper : ℕ -> ℤ -> PureTerm -> PureTerm
-    helper k n v@(Var-P (Bound x)) = if ⌊ x <? k ⌋ then v else Var-P (Bound (x +ℤ n))
+    helper : 𝕀 -> 𝕀 -> PureTerm -> PureTerm
+    helper k n v@(Var-P (Bound x)) = if x <𝕀 k then v else Var-P (Bound $ pred𝕀 (x +𝕀 n))
     helper k n v@(Var-P (Free x)) = v
     helper k n v@(Sort-P x) = v
     helper k n (App-P t t₁) = App-P (helper k n t) (helper k n t₁)
-    helper k n (Lam-P t) = Lam-P (helper (suc k) n t)
-    helper k n (Pi-P t t₁) = Pi-P (helper k n t) (helper (suc k) n t₁)
-    helper k n (All-P t t₁) = All-P (helper k n t) (helper (suc k) n t₁)
-    helper k n (Iota-P t t₁) = Iota-P (helper k n t) (helper (suc k) n t₁)
+    helper k n (Lam-P t) = Lam-P (helper (suc𝕀 k) n t)
+    helper k n (Pi-P t t₁) = Pi-P (helper k n t) (helper (suc𝕀 k) n t₁)
+    helper k n (All-P t t₁) = All-P (helper k n t) (helper (suc𝕀 k) n t₁)
+    helper k n (Iota-P t t₁) = Iota-P (helper k n t) (helper (suc𝕀 k) n t₁)
     helper k n (Eq-P t t₁) = Eq-P (helper k n t) (helper k n t₁)
     helper k n (M-P t) = M-P (helper k n t)
     helper k n (Mu-P t t₁) = Mu-P (helper k n t) (helper k n t₁)
     helper k n (Epsilon-P t) = Epsilon-P (helper k n t)
     helper k n (Ev-P t) = Ev-P (helper k n t)
 
+incrementIndicesPureBy : 𝕀 -> PureTerm -> PureTerm
+incrementIndicesPureBy i = modifyIndicesPure (suc𝕀 i)
+
+decrementIndicesPure : PureTerm -> PureTerm
+decrementIndicesPure = modifyIndicesPure (fromℕ 0)
+
+modifyIndices : 𝕀 -> AnnTerm -> AnnTerm
+modifyIndices = helper (fromℕ 0)
+  where
+    helper : 𝕀 -> 𝕀 -> AnnTerm -> AnnTerm
+    helper k n v@(Var-A (Bound x)) = if x <𝕀 k then v else Var-A (Bound $ pred𝕀 (x +𝕀 n))
+    helper k n v@(Var-A (Free x)) = v
+    helper k n (Sort-A x) = Sort-A x
+    helper k n (t ∙1) = helper k n t ∙1
+    helper k n (t ∙2) = helper k n t ∙2
+    helper k n (β t t₁) = β (helper k n t) (helper k n t₁)
+    helper k n (δ t t₁) = δ (helper k n t) (helper k n t₁)
+    helper k n (ς t) = ς (helper k n t)
+    helper k n (App-A t t₁) = App-A (helper k n t) (helper k n t₁)
+    helper k n (AppE-A t t₁) = AppE-A (helper k n t) (helper k n t₁)
+    helper k n (ρ t ∶ t₁ - t₂) = ρ (helper k n t) ∶ (helper (suc𝕀 k) n t₁) - (helper k n t₂)
+    helper k n (∀-A t t₁) = ∀-A (helper k n t) (helper (suc𝕀 k) n t₁)
+    helper k n (Π t t₁) = Π (helper k n t) (helper (suc𝕀 k) n t₁)
+    helper k n (ι t t₁) = ι (helper k n t) (helper (suc𝕀 k) n t₁)
+    helper k n (λ-A t t₁) = λ-A (helper k n t) (helper (suc𝕀 k) n t₁)
+    helper k n (Λ t t₁) = Λ (helper k n t) (helper (suc𝕀 k) n t₁)
+    helper k n [ t , t₁ ∙ t₂ ] = [ (helper k n t) , (helper k n t₁) ∙ (helper (suc𝕀 k) n t₂) ]
+    helper k n (φ t t₁ t₂) = φ (helper k n t) (helper k n t₁) (helper k n t₂)
+    helper k n (t ≃ t₁) = helper k n t ≃ helper k n t₁
+    helper k n (M-A t) = M-A (helper k n t)
+    helper k n (μ t t₁) = μ (helper k n t) (helper k n t₁)
+    helper k n (ε t) = ε (helper k n t)
+    helper k n (Ev-A t) = Ev-A (helper k n t)
+
+incrementIndicesBy : 𝕀 -> AnnTerm -> AnnTerm
+incrementIndicesBy i = modifyIndices (suc𝕀 i)
+
+decrementIndices : AnnTerm -> AnnTerm
+decrementIndices = modifyIndices (fromℕ 0)
+
 checkFree : Name -> PureTerm -> Bool
 checkFree = helper 0
   where
     helper : ℕ -> Name -> PureTerm -> Bool
     helper k n (Var-P (Bound x)) = case n of λ
-      { (Bound x₁) → ⌊ x ≟ (k + x₁) ⌋
+      { (Bound x₁) → x ≣ (fromℕ k +𝕀 x₁)
       ; (Free x₁) → false }
     helper k n (Var-P (Free x)) = case n of λ
       { (Bound x₁) → false
-      ; (Free x₁) → ⌊ x ≟ x₁ ⌋ }
+      ; (Free x₁) → x ≣ x₁ }
     helper k n (Sort-P x) = false
     helper k n (App-P t t₁) = helper k n t ∧ helper k n t₁
     helper k n (Lam-P t) = helper (suc k) n t
@@ -293,7 +373,7 @@ checkFree = helper 0
     helper k n (Ev-P t) = helper k n t
 
 GlobalContext : Set
-GlobalContext = SimpleMap GlobalName Def -- TODO: go for something more efficient later
+GlobalContext = SimpleMap GlobalName EfficientDef -- TODO: go for something more efficient later
 
 Context : Set
 Context = GlobalContext × List AnnTerm
@@ -319,45 +399,20 @@ pushVar v (fst , snd) = fst , v ∷ snd
 localContextLength : Context -> ℕ
 localContextLength (fst , snd) = length snd
 
-incrementIndices : ℤ -> AnnTerm -> AnnTerm
-incrementIndices = helper 0
-  where
-    helper : ℕ -> ℤ -> AnnTerm -> AnnTerm
-    helper k n v@(Var-A (Bound x)) = if ⌊ x <? k ⌋ then v else Var-A (Bound (x +ℤ n))
-    helper k n v@(Var-A (Free x)) = v
-    helper k n (Sort-A x) = Sort-A x
-    helper k n (t ∙1) = helper k n t ∙1
-    helper k n (t ∙2) = helper k n t ∙2
-    helper k n (β t t₁) = β (helper k n t) (helper k n t₁)
-    helper k n (δ t t₁) = δ (helper k n t) (helper k n t₁)
-    helper k n (ς t) = ς (helper k n t)
-    helper k n (App-A t t₁) = App-A (helper k n t) (helper k n t₁)
-    helper k n (AppE-A t t₁) = AppE-A (helper k n t) (helper k n t₁)
-    helper k n (ρ t ∶ t₁ - t₂) = ρ (helper k n t) ∶ (helper (suc k) n t₁) - (helper k n t₂)
-    helper k n (∀-A t t₁) = ∀-A (helper k n t) (helper (suc k) n t₁)
-    helper k n (Π t t₁) = Π (helper k n t) (helper (suc k) n t₁)
-    helper k n (ι t t₁) = ι (helper k n t) (helper (suc k) n t₁)
-    helper k n (λ-A t t₁) = λ-A (helper k n t) (helper (suc k) n t₁)
-    helper k n (Λ t t₁) = Λ (helper k n t) (helper (suc k) n t₁)
-    helper k n [ t , t₁ ∙ t₂ ] = [ (helper k n t) , (helper k n t₁) ∙ (helper (suc k) n t₂) ]
-    helper k n (φ t t₁ t₂) = φ (helper k n t) (helper k n t₁) (helper k n t₂)
-    helper k n (t ≃ t₁) = helper k n t ≃ helper k n t₁
-    helper k n (M-A t) = M-A (helper k n t)
-    helper k n (μ t t₁) = μ (helper k n t) (helper k n t₁)
-    helper k n (ε t) = ε (helper k n t)
-    helper k n (Ev-A t) = Ev-A (helper k n t)
+efficientLookupInContext : Name -> Context -> Maybe EfficientDef
+efficientLookupInContext (Bound x) (fst , snd) =
+  Data.Maybe.map (λ y → EfficientAxiom (incrementIndicesBy (suc𝕀 x) y)) (lookupMaybe (toℕ x) snd)
+efficientLookupInContext (Free x) (fst , snd) = lookup (Global x) fst
 
 lookupInContext : Name -> Context -> Maybe Def
-lookupInContext (Bound x) (fst , snd) =
-  Data.Maybe.map (λ y → Axiom (incrementIndices (+ suc x) y)) (lookupMaybe x snd)
-lookupInContext (Free x) (fst , snd) = lookup (Global x) fst
+lookupInContext n Γ = mmap toDef $ efficientLookupInContext n Γ
 
 validInContext : PureTerm -> Context -> Bool
 validInContext = helper 0
   where
     -- instead of modifying the context here, we just count how many variables we would have added if we did
     helper : ℕ -> PureTerm -> Context -> Bool
-    helper k (Var-P (Bound x)) Γ = ⌊ x <? localContextLength Γ + k ⌋
+    helper k (Var-P (Bound x)) Γ = x <𝕀 fromℕ (localContextLength Γ + k)
     helper k (Var-P n@(Free x)) Γ = maybe (λ _ → true) false $ lookupInContext n Γ
     helper k (Sort-P x) Γ = true
     helper k (App-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
@@ -386,7 +441,7 @@ Erase (∀-A t t₁) = All-P (Erase t) (Erase t₁)
 Erase (Π t t₁) = Pi-P (Erase t) (Erase t₁)
 Erase (ι t t₁) = Iota-P (Erase t) (Erase t₁)
 Erase (λ-A t t₁) = Lam-P (Erase t₁)
-Erase (Λ t t₁) = incrementIndicesPure (-[1+ 0 ]) (Erase t₁)
+Erase (Λ t t₁) = decrementIndicesPure (Erase t₁)
 Erase ([_,_∙_] t t₁ t₂) = Erase t
 Erase (φ t t₁ t₂) = Erase t₂
 Erase (x ≃ x₁) = Eq-P (Erase x) (Erase x₁)
@@ -397,11 +452,11 @@ Erase (Ev-A t) = Ev-P (Erase t)
 
 -- substitute the first unbound variable in t with t'
 subst : AnnTerm -> AnnTerm -> AnnTerm
-subst t t' = incrementIndices (-[1+ 0 ]) $ substIndex t 0 t'
+subst t t' = decrementIndices $ substIndex t (fromℕ 0) t'
   where
     -- substitute the k-th unbound variable in t with t'
-    substIndex : AnnTerm -> ℕ -> AnnTerm -> AnnTerm
-    substIndex v@(Var-A (Bound x)) k t' = if k ≣ x then incrementIndices (+ suc k) t' else v
+    substIndex : AnnTerm -> 𝕀 -> AnnTerm -> AnnTerm
+    substIndex v@(Var-A (Bound x)) k t' = if k ≣ x then incrementIndicesBy (suc𝕀 k) t' else v
     substIndex v@(Var-A (Free x)) k t' = v
     substIndex v@(Sort-A x) k t' = v
     substIndex (t ∙1) k t' = (substIndex t k t') ∙1
@@ -412,12 +467,12 @@ subst t t' = incrementIndices (-[1+ 0 ]) $ substIndex t 0 t'
     substIndex (App-A t t₁) k t' = App-A (substIndex t k t') (substIndex t₁ k t')
     substIndex (AppE-A t t₁) k t' = AppE-A (substIndex t k t') (substIndex t₁ k t')
     substIndex (ρ t ∶ t₁ - t₂) k t' = ρ (substIndex t k t') ∶ (substIndex t₁ k t') - (substIndex t₂ k t')
-    substIndex (∀-A t t₁) k t' = ∀-A (substIndex t k t') (substIndex t₁ (suc k) t')
-    substIndex (Π t t₁) k t' = Π (substIndex t k t') (substIndex t₁ (suc k) t')
-    substIndex (ι t t₁) k t' = ι (substIndex t k t') (substIndex t₁ (suc k) t')
-    substIndex (λ-A t t₁) k t' = λ-A (substIndex t k t') (substIndex t₁ (suc k) t')
-    substIndex (Λ t t₁) k t' = Λ (substIndex t k t') (substIndex t₁ (suc k) t')
-    substIndex [ t , t₁ ∙ t₂ ] k t' = [ (substIndex t k t') , (substIndex t₁ k t') ∙ substIndex t₂ (suc k) t' ]
+    substIndex (∀-A t t₁) k t' = ∀-A (substIndex t k t') (substIndex t₁ (suc𝕀 k) t')
+    substIndex (Π t t₁) k t' = Π (substIndex t k t') (substIndex t₁ (suc𝕀 k) t')
+    substIndex (ι t t₁) k t' = ι (substIndex t k t') (substIndex t₁ (suc𝕀 k) t')
+    substIndex (λ-A t t₁) k t' = λ-A (substIndex t k t') (substIndex t₁ (suc𝕀 k) t')
+    substIndex (Λ t t₁) k t' = Λ (substIndex t k t') (substIndex t₁ (suc𝕀 k) t')
+    substIndex [ t , t₁ ∙ t₂ ] k t' = [ (substIndex t k t') , (substIndex t₁ k t') ∙ substIndex t₂ (suc𝕀 k) t' ]
     substIndex (φ t t₁ t₂) k t' = φ (substIndex t k t') (substIndex t₁ k t') (substIndex t₂ k t')
     substIndex (t ≃ t₁) k t' = substIndex t k t' ≃ substIndex t₁ k t'
     substIndex (M-A t) k t' = M-A (substIndex t k t')
@@ -427,18 +482,18 @@ subst t t' = incrementIndices (-[1+ 0 ]) $ substIndex t 0 t'
 
 -- substitute the first unbound variable in t with t'
 substPure : PureTerm -> PureTerm -> PureTerm
-substPure t t' = incrementIndicesPure (-[1+ 0 ]) $ substIndexPure t 0 t'
+substPure t t' = decrementIndicesPure $ substIndexPure t (fromℕ 0) t'
   where
     -- substitute the k-th unbound variable in t with t'
-    substIndexPure : PureTerm -> ℕ -> PureTerm -> PureTerm
-    substIndexPure v@(Var-P (Bound x)) k t' = if k ≣ x then incrementIndicesPure (+ suc k) t' else v
+    substIndexPure : PureTerm -> 𝕀 -> PureTerm -> PureTerm
+    substIndexPure v@(Var-P (Bound x)) k t' = if k ≣ x then incrementIndicesPureBy (suc𝕀 k) t' else v
     substIndexPure v@(Var-P (Free x)) k t' = v
     substIndexPure v@(Sort-P x) k t' = v
     substIndexPure (App-P t t₁) k t' = App-P (substIndexPure t k t') (substIndexPure t₁ k t')
-    substIndexPure (Lam-P t) k t' = Lam-P (substIndexPure t (suc k) t')
-    substIndexPure (Pi-P t t₁) k t' = Pi-P (substIndexPure t k t') (substIndexPure t₁ (suc k) t')
-    substIndexPure (All-P t t₁) k t' = All-P (substIndexPure t k t') (substIndexPure t₁ (suc k) t')
-    substIndexPure (Iota-P t t₁) k t' = Iota-P (substIndexPure t k t') (substIndexPure t₁ (suc k) t')
+    substIndexPure (Lam-P t) k t' = Lam-P (substIndexPure t (suc𝕀 k) t')
+    substIndexPure (Pi-P t t₁) k t' = Pi-P (substIndexPure t k t') (substIndexPure t₁ (suc𝕀 k) t')
+    substIndexPure (All-P t t₁) k t' = All-P (substIndexPure t k t') (substIndexPure t₁ (suc𝕀 k) t')
+    substIndexPure (Iota-P t t₁) k t' = Iota-P (substIndexPure t k t') (substIndexPure t₁ (suc𝕀 k) t')
     substIndexPure (Eq-P t t₁) k t' = Eq-P (substIndexPure t k t') (substIndexPure t₁ k t')
     substIndexPure (M-P t) k t' = M-P (substIndexPure t k t')
     substIndexPure (Mu-P t t₁) k t' = Mu-P (substIndexPure t k t') (substIndexPure t₁ k t')
@@ -501,40 +556,10 @@ findOutermostConstructor t = outermostApp $ stripBinders t
     outermostApp t = t , []
 
 {-# NON_TERMINATING #-}
-normalize : Context -> AnnTerm -> AnnTerm
-normalize Γ (Var-A x) with lookupInContext x Γ
-normalize Γ (Var-A x) | just (Let x₁ x₂) = normalize Γ x₁
-normalize Γ v@(Var-A x) | just (Axiom x₁) = v -- we cannot reduce axioms
-normalize Γ v@(Var-A x) | nothing = v -- in case the lookup fails, we cannot reduce
-normalize Γ v@(Sort-A x) = v
-normalize Γ (t ∙1) = case (normalize Γ t) of λ { [ t' , _ ∙ _ ] -> normalize Γ t' ; t' -> t' ∙1 }
-normalize Γ (t ∙2) = case (normalize Γ t) of λ { [ _ , t' ∙ _ ] -> normalize Γ t' ; t' -> t' ∙2 }
-normalize Γ (β t t₁) = β (normalize Γ t) (normalize Γ t₁)
-normalize Γ (δ t t₁) = δ (normalize Γ t) (normalize Γ t₁)
-normalize Γ (ς t) = ς (normalize Γ t)
-normalize Γ (App-A t t₁) = case normalize Γ t of λ
-  t' -> maybe (λ t'' -> normalize Γ (subst t'' t₁)) (App-A t' $ normalize Γ t₁) $ stripBinder t'
-normalize Γ (AppE-A t t₁) = case normalize Γ t of λ
-  t' -> maybe (λ t'' -> normalize Γ (subst t'' t₁)) (App-A t' $ normalize Γ t₁) $ stripBinder t'
-normalize Γ (ρ t ∶ t₁ - t₂) = ρ (normalize Γ t) ∶ (normalize Γ t₁) - (normalize Γ t₂)
-normalize Γ (∀-A t t₁) = ∀-A (normalize Γ t) (normalize Γ t₁)
-normalize Γ (Π t t₁) = Π (normalize Γ t) (normalize Γ t₁)
-normalize Γ (ι t t₁) = ι (normalize Γ t) (normalize Γ t₁)
-normalize Γ (λ-A t t₁) = λ-A (normalize Γ t) (normalize Γ t₁)
-normalize Γ (Λ t t₁) = Λ (normalize Γ t) (normalize Γ t₁)
-normalize Γ [ t , t₁ ∙ t₂ ] = [ (normalize Γ t) , (normalize Γ t₁) ∙ (normalize Γ t₂) ]
-normalize Γ (φ t t₁ t₂) = φ (normalize Γ t) (normalize Γ t₁) (normalize Γ t₂)
-normalize Γ (t ≃ t₁) = (normalize Γ t) ≃ (normalize Γ t₁)
-normalize Γ (M-A t) = M-A (normalize Γ t)
-normalize Γ (μ t t₁) = μ (normalize Γ t) (normalize Γ t₁) -- maybe we should also apply monad laws here?
-normalize Γ (ε t) = ε (normalize Γ t)
-normalize Γ (Ev-A t) = Ev-A (normalize Γ t)
-
-{-# NON_TERMINATING #-}
 normalizePure : Context -> PureTerm -> PureTerm
-normalizePure Γ (Var-P x) with lookupInContext x Γ
-normalizePure Γ (Var-P x) | just (Let x₁ x₂) = normalizePure Γ (Erase x₁)
-normalizePure Γ v@(Var-P x) | just (Axiom x₁) = v -- we cannot reduce axioms
+normalizePure Γ (Var-P x) with efficientLookupInContext x Γ
+normalizePure Γ (Var-P x) | just (EfficientLet x₁ x₂ x₃) = x₂
+normalizePure Γ v@(Var-P x) | just (EfficientAxiom x₁) = v -- we cannot reduce axioms
 normalizePure Γ v@(Var-P x) | nothing = v -- in case the lookup fails, we cannot reduce
 normalizePure Γ v@(Sort-P x) = v
 normalizePure Γ (App-P t t₁) = case normalizePure Γ t of λ t' ->
@@ -542,7 +567,7 @@ normalizePure Γ (App-P t t₁) = case normalizePure Γ t of λ t' ->
     { (just t'') → normalizePure Γ (substPure t'' t₁)
     ; nothing → App-P t' $ normalizePure Γ t₁ }
 normalizePure Γ (Lam-P t) = case normalizePure Γ t of λ
-  { t''@(App-P t' (Var-P (Bound 0))) -> if validInContext t' Γ then incrementIndicesPure (-[1+ 0 ]) t' else Lam-P t'' -- eta reduce here
+  { t''@(App-P t' (Var-P (Bound i))) -> if i ≣ (fromℕ 0) ∧ validInContext t' Γ then decrementIndicesPure t' else Lam-P t'' -- eta reduce here
   ; t'' -> Lam-P t'' }
 normalizePure Γ (Pi-P t t₁) = Pi-P (normalizePure Γ t) (normalizePure Γ t₁)
 normalizePure Γ (All-P t t₁) = All-P (normalizePure Γ t) (normalizePure Γ t₁)
@@ -552,6 +577,16 @@ normalizePure Γ (M-P t) = M-P (normalizePure Γ t)
 normalizePure Γ (Mu-P t t₁) = Mu-P (normalizePure Γ t) (normalizePure Γ t₁)
 normalizePure Γ (Epsilon-P t) = Epsilon-P (normalizePure Γ t)
 normalizePure Γ (Ev-P t) = Ev-P (normalizePure Γ t)
+
+insertInGlobalContext : GlobalName -> Def -> GlobalContext -> String ⊎ GlobalContext
+insertInGlobalContext n d Γ =
+  if is-just $ lookup n Γ
+    then inj₁ ("The name " + show n + " is already defined!")
+    else (inj₂ $ insert n (toEfficientDef d Γ) Γ)
+  where
+    toEfficientDef : Def -> GlobalContext -> EfficientDef
+    toEfficientDef (Let x x₁) Γ = EfficientLet x (normalizePure (globalToContext Γ) $ Erase x) x₁
+    toEfficientDef (Axiom x) Γ = EfficientAxiom x
 
 module CheckEquality {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String}} (Γ : Context) where
 
@@ -595,12 +630,12 @@ module CheckEquality {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String
       compareHnfs (Epsilon-P t) (Epsilon-P x) = checkβηPure t x
       compareHnfs (Ev-P t) (Ev-P x) = checkβηPure t x
       compareHnfs (Lam-P t) t₁ = case normalizePure Γ t of λ
-        { t''@(App-P t' (Var-P (Bound 0))) ->
-          if validInContext t' Γ then (compareHnfs (incrementIndicesPure (-[1+ 0 ]) t') t₁) else hnfError t'' t₁
+        { t''@(App-P t' (Var-P (Bound i))) ->
+          if i ≣ (fromℕ 0) ∧ validInContext t' Γ then (compareHnfs (decrementIndicesPure t') t₁) else hnfError t'' t₁
         ; t'' -> hnfError t'' t₁ }
       compareHnfs t (Lam-P t₁) = case normalizePure Γ t₁ of λ
-        { t''@(App-P t' (Var-P (Bound 0))) ->
-          if validInContext t' Γ then (compareHnfs t (incrementIndicesPure (-[1+ 0 ]) t')) else hnfError t t''
+        { t''@(App-P t' (Var-P (Bound i))) ->
+          if i ≣ (fromℕ 0) ∧ validInContext t' Γ then (compareHnfs t (decrementIndicesPure t')) else hnfError t t''
         ; t'' -> hnfError t t'' }
       {-# CATCHALL #-}
       compareHnfs t t' = hnfError t t'
@@ -655,8 +690,8 @@ synthType' Γ (δ t t₁) = do
   case (hnfNorm Γ T) of λ
     { (u ≃ u₁) -> do
       catchError
-        (pureTermBeq (normalizePure Γ $ Erase u) (Lam-P $ Lam-P (Var-P $ Bound 1)) >>
-         pureTermBeq (normalizePure Γ $ Erase u₁) (Lam-P $ Lam-P (Var-P $ Bound 0)))
+        (pureTermBeq (normalizePure Γ $ Erase u) (Lam-P $ Lam-P (Var-P $ Bound (fromℕ 1))) >>
+         pureTermBeq (normalizePure Γ $ Erase u₁) (Lam-P $ Lam-P (Var-P $ Bound (fromℕ 0))))
         (λ e -> throwError $
           "This equality cannot be used for the delta term: " + show u
           + " = " + show u₁ + "\nError: " + e)
@@ -750,7 +785,7 @@ synthType' Γ (λ-A t t₁) = profileCall ("Lambda" , []) $ do
   return (Π t u)
 
 synthType' Γ (Λ t t₁) =
-  if checkFree (Bound 0) (Erase t₁)
+  if checkFree (Bound (fromℕ 0)) (Erase t₁)
     then throwError "Erased arguments cannot appear bound in a term"
     else do
       synthType Γ t
@@ -811,7 +846,7 @@ synthType' Γ (μ t t₁) = do
     { (M-A u) ->
       case (hnfNorm Γ T') of λ
         { (Π v v₁) -> do
-          T'' <- if checkFree (Bound 0) (Erase v₁)
+          T'' <- if checkFree (Bound (fromℕ 0)) (Erase v₁)
             then throwError ("Index 0 is not allowed to appear in " + show v₁)
             else synthType (pushVar v Γ) v₁
           case (hnfNorm Γ T'') of λ
@@ -820,7 +855,7 @@ synthType' Γ (μ t t₁) = do
                 { (M-A v₂) ->
                   appendIfError
                     (checkβη Γ u v)
-                    "The types in μ need to be compatible" >> return (M-A $ incrementIndices (-[1+ 0 ]) v₂)
+                    "The types in μ need to be compatible" >> return (M-A $ decrementIndices v₂)
                 ; _ -> throwError
                   "The second term in a μ needs to have a Pi type that maps to 'M t' for some 't'" }
             ; _ -> throwError "The second term in a μ needs to have a non-dependent Pi type" }
