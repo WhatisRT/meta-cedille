@@ -562,10 +562,10 @@ normalizePure Γ (Var-P x) | just (EfficientLet x₁ x₂ x₃) = x₂
 normalizePure Γ v@(Var-P x) | just (EfficientAxiom x₁) = v -- we cannot reduce axioms
 normalizePure Γ v@(Var-P x) | nothing = v -- in case the lookup fails, we cannot reduce
 normalizePure Γ v@(Sort-P x) = v
-normalizePure Γ (App-P t t₁) = case normalizePure Γ t of λ t' ->
+normalizePure Γ (App-P t t₁) = case hnfNormPure Γ t of λ t' ->
   case stripBinderPure t' of λ
     { (just t'') → normalizePure Γ (substPure t'' t₁)
-    ; nothing → App-P t' $ normalizePure Γ t₁ }
+    ; nothing → App-P (normalizePure Γ t) (normalizePure Γ t₁) }
 normalizePure Γ (Lam-P t) = case normalizePure Γ t of λ
   { t''@(App-P t' (Var-P (Bound i))) -> if i ≣ (fromℕ 0) ∧ validInContext t' Γ then decrementIndicesPure t' else Lam-P t'' -- eta reduce here
   ; t'' -> Lam-P t'' }
