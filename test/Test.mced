@@ -14,6 +14,8 @@ import test/BetterLet.
 import test/BetterApp.
 
 import test/String.
+import test/QuoteTerm.
+
 import test/ListNotation.
 
 import test/Example.

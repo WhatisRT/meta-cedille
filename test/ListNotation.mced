@@ -1,8 +1,5 @@
 -- use τ[ X | x1 , ... , xn] to denote a [List X]
 
-let quoteNil := γ[quote$stringToVar quote$n "il"] : init$term.
-let quoteCons := γ[quote$stringToVar quote$c "ons"] : init$term.
-
 b-let init$termlist'$ : [List init$term] := <nil init$term>.
 b-let init$termlist'$_space'_=comma=_space'__term__termlist'_
   (_ : init$space') (_ : init$space') (t : init$term) (ts : [List init$term]) : [List init$term] :=
@@ -15,9 +12,9 @@ b-let init$termlist$_term__termlist'_
 
 b-let quoteTermList (type : init$term) (terms : [List init$term]) : init$term :=
   γ[inductionList ?init$term ?(λ _ : [List init$term] init$term)
-    γ[quote$angle quoteNil type]
+    γ[quote$angle θ{nil} type]
     λ t : init$term λ _ : [List init$term] λ rec : init$term
-      γ[quote$square γ[quote$square γ[quote$angle quoteCons type] t] rec]
+      γ[quote$square γ[quote$square γ[quote$angle θ{cons} type] t] rec]
     terms].
 
 b-let init$term$=tau==lsquare=_space'__term__space'_=pipe=_space'__termlist_=rsquare=

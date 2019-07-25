@@ -1,8 +1,4 @@
-b-let quoteId : init$term :=
-  γ[quote$lambda γ[quote$name quote$x init$name'$] quote$ast [quote$var γ[quote$name quote$x init$name'$]]].
-let quoteTop := [[quote$stringToVar quote$T] "op"] : init$term.
-
-let lambdaTermToTerm := [quote$beta quoteId] : Π _ : init$term init$term.
+let lambdaTermToTerm := [quote$beta θ{λ x : * x}] : Π _ : init$term init$term.
 
 let init$lambdaTerm :=
   ∀ X : * Π _ : (Π _ : init$name X) Π _ : (Π _ : X Π _ : X X) Π _ : (Π _ : init$name Π _ : X X) X : *.
@@ -17,7 +13,7 @@ b-let init$lambdaTerm$=lambda=_space__name__space'_=dot=_space'__lambdaTerm_
 b-let init$lambdaStmt$let_space__name__space'_=colon==equal=_space'__lambdaTerm__space'_=dot=
   (_ : init$space) (name : init$name) (_ : init$space') (_ : init$space') (t : init$term) (_ : init$space') :
     init$stmt :=
-  γ[quote$simpleLet name [lambdaTermToTerm t]].
+  γ[quote$annotatedLet name [lambdaTermToTerm t] θ{Top}].
 
 b-let init$lambdaStmt$normalize_space__lambdaTerm__space'_=dot=
   (_ : init$space) (t : init$term) (_ : init$space') : init$stmt :=
