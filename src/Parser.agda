@@ -68,12 +68,10 @@ module LL1Parser {V : Set} {{_ : Eq V}} (showV : V -> String) {a}
   parsingTable : V -> Maybe Char -> Maybe Rule
   parsingTable v x with R v
   ... | rules =
-    head $ map (-,_) $ boolFilter (maybe startWith produces-ε x) (AllRules v)
+    mmap (-,_) $ head $ boolDropWhile (not ∘ (maybe startWith produces-ε x)) (AllRules v)
     where
       produces-ε : {v : V} -> R v -> Bool
-      produces-ε r with Rstring r
-      ... | [] = true
-      ... | x ∷ x₁ = false
+      produces-ε r = null $ Rstring r
 
       startWith : {v : V} -> Char -> R v -> Bool
       startWith x r = helper x (Rstring r)
