@@ -14,7 +14,7 @@ open import Class.Monad.IO
 open import Class.Monad.Profiler
 open import Class.Monad.State
 open import Class.Traversable
-open import Data.List using (map; length)
+open import Data.List using (concat; map; length)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
 open import Data.String.Exts
@@ -27,6 +27,7 @@ open import Monads.Except
 
 open import Conversion
 open import CoreTheory
+open import Escape
 open import InitEnv
 open import ParseTreeConvert
 open import Parser
@@ -97,6 +98,20 @@ getParserNamespace : GlobalContext -> List Char -> List (List Char)
 getParserNamespace Γ n = map (drop $ suc $ length n) $
   boolFilter (λ c -> checkInit n c) $
     map (toList ∘ (λ { (Global n) -> n }) ∘ proj₁) Γ
+
+ruleToConstr : List Char -> List Char
+ruleToConstr = concat ∘ helper ∘ groupEscaped
+  where
+    helper : List (List Char) -> List (List Char)
+    helper [] = []
+    helper (l ∷ l₁) = (case l of λ
+      { (c ∷ []) -> if c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&'
+        then [ c ]
+        else escapeChar c
+      ; (_ ∷ c ∷ []) -> if l ≣ "\\$" ∨ l ≣ "\\_" ∨ l ≣ "\\!" ∨ l ≣ "\\@" ∨ l ≣ "\\&"
+        then escapeChar c
+        else l
+      ; _ -> l }) ∷ (helper l₁)
 
 -- Folds a tree of constructors back into a term by properly applying the
 -- constructors and prefixing the namespace

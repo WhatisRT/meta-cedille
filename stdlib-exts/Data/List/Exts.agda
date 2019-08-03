@@ -30,3 +30,8 @@ splitMulti : ∀ {A : Set} {{_ : Eq A}} -> A -> List A -> List (List A)
 splitMulti a [] = []
 splitMulti a l@(x ∷ xs) with break (a ≟_) l
 ... | fst , snd = fst ∷ splitMulti a (dropHeadIfAny snd)
+
+takeEven : ∀ {a} {A : Set a} -> List A -> List A
+takeEven [] = []
+takeEven (x ∷ []) = []
+takeEven (x ∷ x₁ ∷ l) = x₁ ∷ takeEven l

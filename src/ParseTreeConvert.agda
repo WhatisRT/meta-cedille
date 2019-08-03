@@ -457,9 +457,6 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
 {-# CATCHALL #-}
 toStmt _ = nothing
 
-coreGrammarGenerator : List (List Char)
-coreGrammarGenerator = from-just $ sequence $ map translate grammarWithChars
-
 module CoreParser-Internal {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
   preCoreGrammar : M Grammar
