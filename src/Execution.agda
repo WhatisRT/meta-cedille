@@ -267,7 +267,7 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
             (res , _) <- profileCall ("Execute" , [ show exec ]) $
               appendIfError
                 (executeTerm execHnf)
-                ("\n\nError while executing input: " + s + "\nThe corresponding term is: " + show exec)
+                ("\n\nError while executing input: " + s)
             res' <- if strNull snd then return mzero else tryExecute snd
             return (res + res')
           ; _ -> throwError "Trying to execute something that isn't of type M t. This should never happen!" }
