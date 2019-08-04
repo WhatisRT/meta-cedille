@@ -44,13 +44,19 @@ let quote$omega := λ t : init$term [[init$term$=omega=_space__term_ quote$singl
 
 let quote$mu := λ t : init$term λ t' : init$term [[[[init$term$=mu=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
 
-let quote$epsilon := λ t : init$term [[init$term$=omega=_space__term_ quote$singleSpace] t].
+let quote$epsilon := λ t : init$term [[init$term$=epsilon=_space__term_ quote$singleSpace] t].
 
-let quote$zeta := λ t : init$term [[init$term$=omega=_space__term_ quote$singleSpace] t].
+let quote$Alpha := λ t : init$term [[init$term$=Alpha=_space__term_ quote$singleSpace] t].
 
-let quote$simpleLet := λ n : init$name λ t : init$term [[init$stmt$_space'__stmt'_ quote$noSpace] [[[[[[[init$stmt'$let_space__name__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] n] quote$noSpace] quote$noSpace] t] quote$noSpace] init$lettail$=dot=]] : Π _ : init$name Π _ : init$term init$stmt.
+let quote$Beta := λ t : init$term [[init$term$=Beta=_space__term_ quote$singleSpace] t].
 
-let quote$annotatedLet := λ n : init$name λ t : init$term λ t' : init$term [[init$stmt$_space'__stmt'_ quote$noSpace] [[[[[[[init$stmt'$let_space__name__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] n] quote$noSpace] quote$noSpace] t] quote$noSpace] [[[init$lettail$=colon=_space'__term__space'_=dot= quote$noSpace] t'] quote$noSpace]]] : Π _ : init$name Π _ : init$term Π _ : init$term init$stmt.
+let quote$Gamma := λ t : init$term λ t' : init$term [[[[init$term$=Gamma=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
+
+let quote$stmt'ToStmt := [init$stmt$_space'__stmt'_ quote$noSpace].
+
+let quote$simpleLet := λ n : init$name λ t : init$term [quote$stmt'ToStmt [[[[[[[init$stmt'$let_space__name__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] n] quote$noSpace] quote$noSpace] t] quote$noSpace] init$lettail$=dot=]] : Π _ : init$name Π _ : init$term init$stmt.
+
+let quote$annotatedLet := λ n : init$name λ t : init$term λ t' : init$term [quote$stmt'ToStmt [[[[[[[init$stmt'$let_space__name__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] n] quote$noSpace] quote$noSpace] t] quote$noSpace] [[[init$lettail$=colon=_space'__term__space'_=dot= quote$noSpace] t'] quote$noSpace]]] : Π _ : init$name Π _ : init$term Π _ : init$term init$stmt.
 
 let quote$normalize := λ t : init$term [[init$stmt$_space'__stmt'_ quote$noSpace] [[[init$stmt'$normalize_space__term__space'_=dot= quote$singleSpace] t] quote$noSpace]] : Π _ : init$term init$stmt.
 

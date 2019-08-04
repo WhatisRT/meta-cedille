@@ -2,3 +2,9 @@ let M := λ X : * ω X : Π _ : * *.
 
 let returnMeta := Λ X : * λ x : X ε x : ∀ X : * Π _ : X [M X].
 let bindMeta := Λ X : * Λ Y : * λ x : [M X] λ f : Π _ : X [M Y] μ x f : ∀ X : * ∀ Y : * Π _ : [M X] Π f : Π _ : X [M Y] [M Y].
+let mapMeta := Λ X : * Λ Y : * λ f : Π _ : X Y λ x : [M X] [[<<bindMeta X> Y> x] λ x' : X [<returnMeta Y> [f x']]] : ∀ X : * ∀ Y : * Π f : Π _ : X Y Π _ : [M X] [M Y].
+
+let init$err := init$metaResult.
+
+let shellCmd := λ s : init$string Β s : Π _ : init$string [M init$string].
+let catchErr := Λ X : * λ run : [M X] λ catch : Π _ : init$err [M X] Γ run catch : ∀ X : * Π _ : [M X] Π _ : Π _ : init$err [M X] [M X].

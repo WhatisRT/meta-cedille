@@ -133,6 +133,44 @@ instance
       helper (Bound x) = show x
       helper (Free x) = x
 
+data PrimMeta : Set where
+  EvalStmt : PrimMeta
+  ShellCmd : PrimMeta
+  CatchErr : PrimMeta
+
+instance
+  PrimMeta-Show : Show PrimMeta
+  PrimMeta-Show = record { show = helper }
+    where
+      helper : PrimMeta -> String
+      helper EvalStmt = "EvalStmt"
+      helper ShellCmd = "ShellCmd"
+      helper CatchErr = "CatchErr"
+
+primMetaArgs : Set -> PrimMeta -> Set
+primMetaArgs A EvalStmt = A
+primMetaArgs A ShellCmd = A
+primMetaArgs A CatchErr = A × A
+
+mapPrimMetaArgs : ∀ {A B} -> (A -> B) -> {m : PrimMeta} -> primMetaArgs A m -> primMetaArgs B m
+mapPrimMetaArgs f {EvalStmt} args = f args
+mapPrimMetaArgs f {ShellCmd} args = f args
+mapPrimMetaArgs f {CatchErr} (fst , snd) = (f fst , f snd)
+
+traversePrimMetaArgs : ∀ {A B M} {{_ : Monad M}}
+                     -> (A -> M B) -> {m : PrimMeta} -> primMetaArgs A m -> M (primMetaArgs B m)
+traversePrimMetaArgs f {EvalStmt} args = f args
+traversePrimMetaArgs f {ShellCmd} args = f args
+traversePrimMetaArgs f {CatchErr} (fst , snd) = do
+  fst' <- f fst
+  snd' <- f snd
+  return (fst' , snd')
+
+primMetaArgs-Show : ∀ {A} -> (A -> String) -> (m : PrimMeta) -> primMetaArgs A m -> String
+primMetaArgs-Show showA EvalStmt args = showA args
+primMetaArgs-Show showA ShellCmd args = showA args
+primMetaArgs-Show showA CatchErr (fst , snd) = showA fst + " " + showA snd
+
 data PureTerm : Set where
   Var-P : Name -> PureTerm
   Sort-P : Sort -> PureTerm
@@ -145,9 +183,10 @@ data PureTerm : Set where
   M-P : PureTerm -> PureTerm
   Mu-P : PureTerm -> PureTerm -> PureTerm
   Epsilon-P : PureTerm -> PureTerm
-  Ev-P : PureTerm -> PureTerm
+  Ev-P : (m : PrimMeta) -> primMetaArgs PureTerm m -> PureTerm
 
 instance
+  {-# TERMINATING #-}
   PureTerm-Show : Show PureTerm
   PureTerm-Show = record { show = helper }
     where
@@ -163,7 +202,7 @@ instance
       helper (M-P t) = "M " + helper t
       helper (Mu-P t t₁) = "μ " + helper t + " " + helper t₁
       helper (Epsilon-P t) = "ε " + helper t
-      helper (Ev-P t) = "ζ " + helper t
+      helper (Ev-P m args) = "ζ " + show m + " " + primMetaArgs-Show helper m args
 
 pureTermBeq : {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String}}
   -> PureTerm -> PureTerm -> M ⊤
@@ -184,7 +223,9 @@ pureTermBeq (Eq-P t t₁) (Eq-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x�
 pureTermBeq (M-P t) (M-P x) = pureTermBeq x t
 pureTermBeq (Mu-P t t₁) (Mu-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
 pureTermBeq (Epsilon-P t) (Epsilon-P x) = pureTermBeq t x
-pureTermBeq (Ev-P t) (Ev-P x) = pureTermBeq t x
+pureTermBeq (Ev-P EvalStmt t) (Ev-P EvalStmt x) = pureTermBeq t x
+pureTermBeq (Ev-P ShellCmd t) (Ev-P ShellCmd x) = pureTermBeq t x
+pureTermBeq (Ev-P CatchErr (t , t₁)) (Ev-P CatchErr (x , x₁)) = pureTermBeq t x >> pureTermBeq t₁ x₁
 {-# CATCHALL #-}
 pureTermBeq t t' =
   throwError $ "The terms " + show t + " and " + show t' + " aren't equal!"
@@ -212,9 +253,10 @@ data AnnTerm : Set where
   M-A : AnnTerm -> AnnTerm
   μ : AnnTerm -> AnnTerm -> AnnTerm
   ε : AnnTerm -> AnnTerm
-  Ev-A : AnnTerm -> AnnTerm
+  Ev-A : (x : PrimMeta) -> primMetaArgs AnnTerm x -> AnnTerm
 
 instance
+  {-# TERMINATING #-}
   AnnTerm-Show : Show AnnTerm
   AnnTerm-Show = record { show = helper }
     where
@@ -240,7 +282,7 @@ instance
       helper (M-A t) = "M " + helper t
       helper (μ t t₁) = "μ " + helper t + " " + helper t₁
       helper (ε t) = "ε " + helper t
-      helper (Ev-A t) = "Ev " + helper t
+      helper (Ev-A m args) = "Ev " + show m + " " + primMetaArgs-Show helper m args
 
 annTermBeq : AnnTerm -> AnnTerm -> Bool
 annTermBeq (Var-A x) (Var-A x₁) = x ≣ x₁
@@ -261,6 +303,12 @@ annTermBeq (Λ t t₁) (Λ u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
 annTermBeq [ t , t₁ ∙ t₂ ] [ u , u₁ ∙ u₂ ] = annTermBeq t u ∧ annTermBeq t₁ u₁ ∧ annTermBeq t₂ u₂
 annTermBeq (φ t t₁ t₂) (φ u u₁ u₂) = annTermBeq t u ∧ annTermBeq t₁ u₁ ∧ annTermBeq t₂ u₂
 annTermBeq (t ≃ t₁) (u ≃ u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
+annTermBeq (M-A t) (M-A u) = annTermBeq t u
+annTermBeq (μ t t₁) (μ u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
+annTermBeq (ε t) (ε u) = annTermBeq t u
+annTermBeq (Ev-A EvalStmt t) (Ev-A EvalStmt u) = annTermBeq t u
+annTermBeq (Ev-A ShellCmd t) (Ev-A ShellCmd u) = annTermBeq t u
+annTermBeq (Ev-A CatchErr (t , t₁)) (Ev-A CatchErr (u , u₁)) = annTermBeq t u ∧ annTermBeq t₁ u₁
 {-# CATCHALL #-}
 annTermBeq _ _ = false
 
@@ -292,6 +340,7 @@ typeOfDef : Def -> AnnTerm
 typeOfDef (Let x x₁) = x₁
 typeOfDef (Axiom x) = x
 
+{-# TERMINATING #-}
 modifyIndicesPure : 𝕀 -> PureTerm -> PureTerm
 modifyIndicesPure = helper (fromℕ 0)
   where
@@ -308,7 +357,7 @@ modifyIndicesPure = helper (fromℕ 0)
     helper k n (M-P t) = M-P (helper k n t)
     helper k n (Mu-P t t₁) = Mu-P (helper k n t) (helper k n t₁)
     helper k n (Epsilon-P t) = Epsilon-P (helper k n t)
-    helper k n (Ev-P t) = Ev-P (helper k n t)
+    helper k n (Ev-P m args) = Ev-P m (mapPrimMetaArgs (helper k n) args)
 
 incrementIndicesPureBy : 𝕀 -> PureTerm -> PureTerm
 incrementIndicesPureBy i = modifyIndicesPure (suc𝕀 i)
@@ -316,6 +365,7 @@ incrementIndicesPureBy i = modifyIndicesPure (suc𝕀 i)
 decrementIndicesPure : PureTerm -> PureTerm
 decrementIndicesPure = modifyIndicesPure (fromℕ 0)
 
+{-# TERMINATING #-}
 modifyIndices : 𝕀 -> AnnTerm -> AnnTerm
 modifyIndices = helper (fromℕ 0)
   where
@@ -342,7 +392,7 @@ modifyIndices = helper (fromℕ 0)
     helper k n (M-A t) = M-A (helper k n t)
     helper k n (μ t t₁) = μ (helper k n t) (helper k n t₁)
     helper k n (ε t) = ε (helper k n t)
-    helper k n (Ev-A t) = Ev-A (helper k n t)
+    helper k n (Ev-A m args) = Ev-A m (mapPrimMetaArgs (helper k n) args)
 
 incrementIndicesBy : 𝕀 -> AnnTerm -> AnnTerm
 incrementIndicesBy i = modifyIndices (suc𝕀 i)
@@ -370,7 +420,9 @@ checkFree = helper 0
     helper k n (M-P t) = helper k n t
     helper k n (Mu-P t t₁) = helper k n t ∧ helper k n t₁
     helper k n (Epsilon-P t) = helper k n t
-    helper k n (Ev-P t) = helper k n t
+    helper k n (Ev-P EvalStmt t) = helper k n t
+    helper k n (Ev-P ShellCmd t) = helper k n t
+    helper k n (Ev-P CatchErr (t , t₁)) = helper k n t ∧ helper k n t₁
 
 GlobalContext : Set
 GlobalContext = SimpleMap GlobalName EfficientDef -- TODO: go for something more efficient later
@@ -424,8 +476,11 @@ validInContext = helper 0
     helper k (M-P t) Γ = helper k t Γ
     helper k (Mu-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
     helper k (Epsilon-P t) Γ = helper k t Γ
-    helper k (Ev-P t) Γ = helper k t Γ
+    helper k (Ev-P EvalStmt t) Γ = helper k t Γ
+    helper k (Ev-P ShellCmd t) Γ = helper k t Γ
+    helper k (Ev-P CatchErr (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
 
+{-# TERMINATING #-}
 Erase : AnnTerm -> PureTerm
 Erase (Var-A x) = Var-P x
 Erase (Sort-A x) = Sort-P x
@@ -448,7 +503,7 @@ Erase (x ≃ x₁) = Eq-P (Erase x) (Erase x₁)
 Erase (M-A t) = M-P (Erase t)
 Erase (μ t t₁) = Mu-P (Erase t) (Erase t₁)
 Erase (ε t) = Epsilon-P (Erase t)
-Erase (Ev-A t) = Ev-P (Erase t)
+Erase (Ev-A m args) = Ev-P m (mapPrimMetaArgs Erase args)
 
 -- substitute the first unbound variable in t with t'
 subst : AnnTerm -> AnnTerm -> AnnTerm
@@ -478,7 +533,9 @@ subst t t' = decrementIndices $ substIndex t (fromℕ 0) t'
     substIndex (M-A t) k t' = M-A (substIndex t k t')
     substIndex (μ t t₁) k t' = μ (substIndex t k t') (substIndex t₁ k t')
     substIndex (ε t) k t' = ε (substIndex t k t')
-    substIndex (Ev-A t) k t' = Ev-A (substIndex t k t')
+    substIndex (Ev-A EvalStmt t) k t' = Ev-A EvalStmt (substIndex t k t')
+    substIndex (Ev-A ShellCmd t) k t' = Ev-A ShellCmd (substIndex t k t')
+    substIndex (Ev-A CatchErr (t , t₁)) k t' = Ev-A CatchErr ((substIndex t k t' , substIndex t₁ k t'))
 
 -- substitute the first unbound variable in t with t'
 substPure : PureTerm -> PureTerm -> PureTerm
@@ -498,7 +555,9 @@ substPure t t' = decrementIndicesPure $ substIndexPure t (fromℕ 0) t'
     substIndexPure (M-P t) k t' = M-P (substIndexPure t k t')
     substIndexPure (Mu-P t t₁) k t' = Mu-P (substIndexPure t k t') (substIndexPure t₁ k t')
     substIndexPure (Epsilon-P t) k t' = Epsilon-P (substIndexPure t k t')
-    substIndexPure (Ev-P t) k t' = Ev-P (substIndexPure t k t')
+    substIndexPure (Ev-P EvalStmt t) k t' = Ev-P EvalStmt (substIndexPure t k t')
+    substIndexPure (Ev-P ShellCmd t) k t' = Ev-P ShellCmd (substIndexPure t k t')
+    substIndexPure (Ev-P CatchErr (t , t₁)) k t' = Ev-P CatchErr ((substIndexPure t k t' , substIndexPure t₁ k t'))
 
 stripBinder : AnnTerm -> Maybe AnnTerm
 stripBinder (∀-A t' t'') = just t''
@@ -576,7 +635,7 @@ normalizePure Γ (Eq-P t t₁) = Eq-P (normalizePure Γ t) (normalizePure Γ t�
 normalizePure Γ (M-P t) = M-P (normalizePure Γ t)
 normalizePure Γ (Mu-P t t₁) = Mu-P (normalizePure Γ t) (normalizePure Γ t₁)
 normalizePure Γ (Epsilon-P t) = Epsilon-P (normalizePure Γ t)
-normalizePure Γ (Ev-P t) = Ev-P (normalizePure Γ t)
+normalizePure Γ (Ev-P m args) = Ev-P m (mapPrimMetaArgs (normalizePure Γ) args)
 
 insertInGlobalContext : GlobalName -> Def -> GlobalContext -> String ⊎ GlobalContext
 insertInGlobalContext n d Γ =
@@ -628,7 +687,9 @@ module CheckEquality {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String
       compareHnfs (M-P t) (M-P x) = checkβηPure x t
       compareHnfs (Mu-P t t₁) (Mu-P x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
       compareHnfs (Epsilon-P t) (Epsilon-P x) = checkβηPure t x
-      compareHnfs (Ev-P t) (Ev-P x) = checkβηPure t x
+      compareHnfs (Ev-P EvalStmt t) (Ev-P EvalStmt x) = checkβηPure t x
+      compareHnfs (Ev-P ShellCmd t) (Ev-P ShellCmd x) = checkβηPure t x
+      compareHnfs (Ev-P CatchErr (t , t₁)) (Ev-P CatchErr (x , x₁)) = checkβηPure t x >> checkβηPure t₁ x₁
       compareHnfs (Lam-P t) t₁ = case normalizePure Γ t of λ
         { t''@(App-P t' (Var-P (Bound i))) ->
           if i ≣ (fromℕ 0) ∧ validInContext t' Γ then (compareHnfs (decrementIndicesPure t') t₁) else hnfError t'' t₁
@@ -866,10 +927,27 @@ synthType' Γ (ε t) = do
   T <- synthType Γ t
   return $ M-A T
 
-synthType' Γ (Ev-A t) = profileCall ("Zeta" , [ show (Ev-A t) ]) $ do
-  T <- profileCall ("CheckArg" , [ show t ]) $ synthType Γ t
-  profileCall ("CompareArg" , [ show T ]) $
-    appendIfError
-      (checkβη Γ T (Var-A $ Free "init$stmt"))
-      "The term supplied to Ev needs to be of type 'init$stmt'"
+synthType' Γ (Ev-A EvalStmt t) = do
+  T <- synthType Γ t
+  appendIfError
+    (checkβη Γ T (Var-A $ Free "init$stmt"))
+    "The term supplied to EvalStmt needs to be of type 'init$stmt'"
   return $ M-A (Var-A $ Free "init$metaResult")
+
+synthType' Γ (Ev-A ShellCmd t) = do
+  T <- synthType Γ t
+  appendIfError
+    (checkβη Γ T (Var-A $ Free "init$string"))
+    "The term supplied to ShellCmd needs to be of type 'init$string'"
+  return $ M-A (Var-A $ Free "init$string")
+
+synthType' Γ (Ev-A CatchErr (t , t₁)) = do
+  T <- synthType Γ t
+  T₁ <- synthType Γ t₁
+  case (hnfNorm Γ T) of λ
+    { (M-A u) -> do
+      appendIfError (checkβη Γ T₁ (Π (Var-A $ Free "init$err") (incrementIndicesBy (fromℕ 1) $ M-A u)))
+        ("The second term supplied to CatchErr has type " + show T₁ +
+         ", while it should have type 'init$err -> M " + show u)
+      return $ M-A u
+    ; _ -> throwError "The first term in CatchErr needs to have type 'M t' for some 't'" }

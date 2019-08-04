@@ -326,10 +326,24 @@ toTerm = helper []
             return $ ε t
           ; _ -> nothing })) ∷
 
-        ((from-just $ ruleId "term" "ζ_space__term_") , (case x₁ of λ
-          { (_ ∷ y ∷ []) -> do
-            t <- helper accu y
-            return $ Ev-A t
+        ((from-just $ ruleId "term" "Α_space__term_") , (case x₁ of λ -- alpha
+          { (_ ∷ z ∷ []) -> do
+            t <- helper accu z
+            return $ Ev-A EvalStmt t
+          ; _ -> nothing })) ∷
+
+        ((from-just $ ruleId "term" "Β_space__term_") , (case x₁ of λ -- beta
+          { (_ ∷ z ∷ []) -> do
+            t <- helper accu z
+            return $ Ev-A ShellCmd t
+          ; _ -> nothing })) ∷
+
+        ((from-just $ ruleId "term" "Γ_space__term__space__term_") , (case x₁ of λ
+          { (_ ∷ z ∷ _ ∷ z' ∷ []) -> do
+            t <- helper accu z
+            t' <- helper accu z'
+            return $ Ev-A CatchErr (t , t')
+
           ; _ -> nothing })) ∷
         []
         default nothing

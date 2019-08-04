@@ -230,17 +230,27 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
   executeTerm (Mu-P t t₁) = do
     Γ <- getContext
     (res , t') <- executeTerm (hnfNormPure Γ t)
-    (res' , resTerm) <- executeTerm (App-P t₁ t')
+    (res' , resTerm) <- executeTerm (hnfNormPure Γ $ App-P t₁ t')
     return (res + res' , resTerm)
 
   executeTerm (Epsilon-P t) = return (([] , []) , t)
 
-  executeTerm (Ev-P t) = do
+  executeTerm (Ev-P EvalStmt t) = do
     Γ <- getContext
     normStmt <- profileCall ("NormalizeStmt" , []) $ return $ normalizePure Γ t
     stmt <- profileCall ("GenerateStmt" , []) $ appendIfError (constrsToStmt Γ normStmt) ("Error with term: " + show t)
     res <- executeStmt stmt
     return (res , (Erase $ embedMetaResult res))
+
+  executeTerm (Ev-P ShellCmd t) = do
+    Γ <- getContext
+    cmd <- constrsToString Γ $ normalizePure Γ t
+    res <- liftIO $ runShellCmd cmd
+    return (strResult res , (Erase $ stringToTerm res))
+
+  executeTerm (Ev-P CatchErr (t , t')) =
+    catchError (executeTerm t) (λ s -> executeTerm $ App-P t' $ Erase $ stringToTerm s)
+
   {-# CATCHALL #-}
   executeTerm t =
     throwError ("Error: " + show t + " is not a term that can be evaluated!")

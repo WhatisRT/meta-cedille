@@ -75,10 +75,16 @@ let quoteTermMu := λ _ : init$space λ t : init$term λ _ : init$space λ t' : 
 let quotedEpsilon := [quote$var [[quote$name quote$q] "uote$epsilon"]].
 let quoteTermEpsilon := λ _ : init$space λ t : init$term [[quote$square quotedEpsilon] t].
 
-let quotedZeta := [quote$var [[quote$name quote$q] "uote$zeta"]].
-let quoteTermZeta := λ _ : init$space λ t : init$term [[quote$square quotedZeta] t].
+let quotedAlpha := [quote$var [[quote$name quote$q] "uote$Alpha"]].
+let quoteTermAlpha := λ _ : init$space λ t : init$term [[quote$square quotedAlpha] t].
 
-let quoteTerm := λ t : init$term [[[[[[[[[[[[[[[[[[[[[[<t init$term> quoteVar] quoteSort] λ _ : init$space quoteTermPi] λ _ : init$space quoteTermPsi] quoteTermBeta] quoteTermDelta] λ _ : init$space quoteTermSigma] quoteTermSquare] quoteTermAngle] quoteTermRho] quoteTermForall] quoteTermPi'] quoteTermIota] quoteTermLambda] quoteTermLambda'] quoteTermBrace] quoteTermPhi] quoteTermEqual] quoteTermOmega] quoteTermMu] quoteTermEpsilon] quoteTermZeta].
+let quotedBeta' := [quote$var [[quote$name quote$q] "uote$Beta"]].
+let quoteTermBeta' := λ _ : init$space λ t : init$term [[quote$square quotedBeta'] t].
+
+let quotedGamma := [quote$var [[quote$name quote$q] "uote$Gamma"]].
+let quoteTermGamma := λ _ : init$space λ t : init$term λ _ : init$space λ t' : init$term [[quote$square [[quote$square quotedGamma] t]] t'].
+
+let quoteTerm := λ t : init$term [[[[[[[[[[[[[[[[[[[[[[[[<t init$term> quoteVar] quoteSort] λ _ : init$space quoteTermPi] λ _ : init$space quoteTermPsi] quoteTermBeta] quoteTermDelta] λ _ : init$space quoteTermSigma] quoteTermSquare] quoteTermAngle] quoteTermRho] quoteTermForall] quoteTermPi'] quoteTermIota] quoteTermLambda] quoteTermLambda'] quoteTermBrace] quoteTermPhi] quoteTermEqual] quoteTermOmega] quoteTermMu] quoteTermEpsilon] quoteTermAlpha] quoteTermBeta'] quoteTermGamma].
 
 let init$term$=theta==lbrace=_space'__term__space'_=rbrace= := λ _ : init$space' λ t : init$term λ _ : init$space' [quoteTerm t].
 

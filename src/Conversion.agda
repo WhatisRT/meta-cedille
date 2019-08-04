@@ -80,6 +80,9 @@ charListToTerm [] = Var-A (Free "init$string$nil")
 charListToTerm (c ∷ cs) =
   App-A (App-A (Var-A $ Free "init$string$cons") $ charToTerm c) (charListToTerm cs)
 
+stringToTerm : String -> AnnTerm
+stringToTerm = charListToTerm ∘ toList
+
 stringListToTerm : List String -> AnnTerm
 stringListToTerm [] = Var-A $ Free "init$stringList$nil"
 stringListToTerm (x ∷ l) =

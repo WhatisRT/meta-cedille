@@ -69,7 +69,9 @@ private
     "term$=omega=_space__term_" ∷ -- this is M
     "term$=mu=_space__term__space__term_" ∷
     "term$=epsilon=_space__term_" ∷
-    "term$=zeta=_space__term_" ∷ -- this is ev
+    "term$=Alpha=_space__term_" ∷ -- this is zeta EvalStmt
+    "term$=Beta=_space__term_" ∷ -- this is zeta ShellCmd
+    "term$=Gamma=_space__term__space__term_" ∷ -- this is zeta CatchErr
 
     "lettail$=dot=" ∷ "lettail$=colon=_space'__term__space'_=dot=" ∷
 
@@ -186,7 +188,7 @@ private
   otherInit : List String
   otherInit =
     map simpleInductive (stringData ∷ stringListData ∷ termListData ∷ metaResultData ∷ [])
-    ++ "let eval := λ s : init$stmt ζ s." ∷ "seteval eval init stmt." ∷ []
+    ++ "let eval := λ s : init$stmt Α s." ∷ "seteval eval init stmt." ∷ []
 
   grammarWithChars : List (List Char)
   grammarWithChars = grammar ++
