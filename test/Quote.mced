@@ -48,7 +48,7 @@ let quote$epsilon := λ t : init$term [[init$term$=epsilon=_space__term_ quote$s
 
 let quote$Alpha := λ t : init$term [[init$term$=Alpha=_space__term_ quote$singleSpace] t].
 
-let quote$Beta := λ t : init$term [[init$term$=Beta=_space__term_ quote$singleSpace] t].
+let quote$Beta := λ t : init$term λ t' : init$term [[[[init$term$=Beta=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
 
 let quote$Gamma := λ t : init$term λ t' : init$term [[[[init$term$=Gamma=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
 

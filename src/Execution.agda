@@ -222,7 +222,7 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
       ; (inj₂ y) → tryExecute y }
 
   executeStmt (Shell s) = do
-    res <- liftIO $ runShellCmd s
+    res <- liftIO $ runShellCmd s [""]
     return $ strResult res
 
   executeStmt Empty = return (strResult "")
@@ -242,10 +242,11 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
     res <- executeStmt stmt
     return (res , (Erase $ embedMetaResult res))
 
-  executeTerm (Ev-P ShellCmd t) = do
+  executeTerm (Ev-P ShellCmd (t , t')) = do
     Γ <- getContext
     cmd <- constrsToString Γ $ normalizePure Γ t
-    res <- liftIO $ runShellCmd cmd
+    args <- constrsToStringList Γ $ normalizePure Γ t'
+    res <- liftIO $ runShellCmd cmd args
     return (strResult res , (Erase $ stringToTerm res))
 
   executeTerm (Ev-P CatchErr (t , t')) =

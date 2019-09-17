@@ -6,5 +6,5 @@ let mapMeta := Λ X : * Λ Y : * λ f : Π _ : X Y λ x : [M X] [[<<bindMeta X> 
 
 let init$err := init$metaResult.
 
-let shellCmd := λ s : init$string Β s : Π _ : init$string [M init$string].
+let shellCmd := λ s : init$string λ args : init$stringList Β s args : Π _ : init$string Π _ : init$stringList [M init$string].
 let catchErr := Λ X : * λ run : [M X] λ catch : Π _ : init$err [M X] Γ run catch : ∀ X : * Π _ : [M X] Π _ : Π _ : init$err [M X] [M X].

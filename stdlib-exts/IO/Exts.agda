@@ -31,7 +31,7 @@ postulate
   putStrErrPrim : String -> Prim.IO ⊤
   exitFailurePrim : ∀ {A : Set} -> Prim.IO A
   exitSuccessPrim : ∀ {A : Set} -> Prim.IO A
-  runShellCmdPrim : String -> Prim.IO String
+  runShellCmdPrim : String -> List String -> Prim.IO String
   catchIOErrorPrim : ∀ {A : Set} -> Prim.IO A -> (String -> Prim.IO A) -> Prim.IO A
 
 {-# COMPILE GHC getLinePrim = fmap pack getLine #-}
@@ -41,7 +41,7 @@ postulate
 {-# COMPILE GHC putStrErrPrim = hPutStr stderr . unpack #-}
 {-# COMPILE GHC exitFailurePrim = \ _ -> exitFailure #-}
 {-# COMPILE GHC exitSuccessPrim = \ _ -> exitSuccess #-}
-{-# COMPILE GHC runShellCmdPrim = \ s -> pack <$> readCreateProcess (shell $ unpack s) "" #-}
+{-# COMPILE GHC runShellCmdPrim = \ s t -> pack <$> (readProcess (unpack s) (fmap unpack t) "") #-} -- use haskell proc
 {-# COMPILE GHC catchIOErrorPrim = \ _ a f -> catchIOError a (f . pack . show) #-}
 
 getLine : IO String
@@ -68,8 +68,8 @@ exitFailure = lift exitFailurePrim
 exitSuccess : ∀ {A} -> IO A
 exitSuccess = lift exitSuccessPrim
 
-runShellCmd : String -> IO String
-runShellCmd s = lift (runShellCmdPrim s)
+runShellCmd : String -> List String -> IO String
+runShellCmd s args = lift (runShellCmdPrim s args)
 
 catchIOError : ∀ {A : Set} -> IO A -> (String -> IO A) -> IO A
 catchIOError a f = lift $ catchIOErrorPrim (run a) (run ∘ f)

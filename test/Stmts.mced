@@ -1,0 +1,44 @@
+let init$stmts := [List init$stmt].
+
+b-let sequenceMeta [X : *] (l : [List ω X]) : ω [List X] :=
+  [[[<<inductionList ω X> λ _ : [List ω X] ω [List X]> ε <nil X>]
+    λ x : ω X λ _ : [List ω X] λ rec : ω [List X] μ x (λ x' : X μ rec (λ xs : [List X] ε [[<cons X> x'] xs]))] l].
+
+b-let multiEval (stmts : init$stmts) : ω [List init$metaResult] :=
+  γ[sequenceMeta ?init$metaResult γ[map ?init$stmt ?(ω init$metaResult) eval stmts]].
+
+b-let stringListToList (l : init$stringList) : [List init$string] :=
+  γ[l ?[List init$string] <nil init$string>
+    λ s : init$string λ rec : [List init$string] γ[cons ?init$string s rec]].
+
+b-let listToStringList (l : [List init$string]) : init$stringList :=
+  [γ[inductionList ?init$string ?(λ _ : [List init$string] init$stringList)
+      init$stringList$nil
+      λ s : init$string λ _ : [List init$string] λ rec : init$stringList γ[init$stringList$cons s rec]]
+    l].
+
+b-let termListToList (l : init$termList) : [List init$term] :=
+  γ[l ?[List init$term] <nil init$term>
+    λ s : init$term λ rec : [List init$term] γ[cons ?init$term s rec]].
+
+b-let metaResult : * := γ[Product [List init$string] [List init$term]].
+
+b-let metaResultToLists (res : init$metaResult) : γ[Product [List init$string] [List init$term]] :=
+  γ[res ?γ[Product [List init$string] [List init$term]]
+    λ l : init$stringList λ l' : init$termList γ[prodPair ?[List init$string] ?[List init$term]
+      [stringListToList l] [termListToList l']]].
+
+b-let eval' (stmt : init$stmt) : [M metaResult] :=
+  γ[mapMeta ?init$metaResult ?metaResult metaResultToLists [eval stmt]].
+
+b-let showMetaResult (res : metaResult) : init$string :=
+  γ[showList ?init$string (λ s : init$string s) [<<pr1 [List init$string]> [List init$term]> res]].
+
+b-let echoCommand (s : init$string) : [M init$string] := γ[shellCmd "echo" [listToStringList τ[init$string | s]]].
+
+b-let evalPrint (stmt : init$stmt) : [M metaResult] :=
+  γ[bindMeta ?metaResult ?metaResult [eval' stmt]
+    λ res : metaResult γ[bindMeta ?init$string ?metaResult [echoCommand [showMetaResult res]]
+      λ _ : init$string γ[returnMeta ?metaResult res]]].
+
+seteval evalPrint init stmt.

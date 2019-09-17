@@ -114,6 +114,15 @@ toName (Node x x₁) = case x₁ of λ
           else nothing)
       ; _ -> nothing }
 
+toNameList : Tree ℕ -> Maybe (List String)
+toNameList (Node x []) = just []
+toNameList (Node x (x₁ ∷ x₂ ∷ _)) = do
+  n <- toName x₁
+  rest <- toNameList x₂
+  return ((fromList n) ∷ rest)
+{-# CATCHALL #-}
+toNameList _ = nothing
+
 toIndex : Tree ℕ -> Maybe ℕ
 toIndex t = do
   res <- helper t
@@ -332,10 +341,11 @@ toTerm = helper []
             return $ Ev-A EvalStmt t
           ; _ -> nothing })) ∷
 
-        ((from-just $ ruleId "term" "Β_space__term_") , (case x₁ of λ -- beta
-          { (_ ∷ z ∷ []) -> do
+        ((from-just $ ruleId "term" "Β_space__term__space__term_") , (case x₁ of λ -- beta
+          { (_ ∷ z ∷ _ ∷ z' ∷ []) -> do
             t <- helper accu z
-            return $ Ev-A ShellCmd t
+            t' <- helper accu z'
+            return $ Ev-A ShellCmd (t , t')
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term" "Γ_space__term__space__term_") , (case x₁ of λ

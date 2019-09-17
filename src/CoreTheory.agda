@@ -149,27 +149,35 @@ instance
 
 primMetaArgs : Set -> PrimMeta -> Set
 primMetaArgs A EvalStmt = A
-primMetaArgs A ShellCmd = A
+primMetaArgs A ShellCmd = A × A
 primMetaArgs A CatchErr = A × A
 
 mapPrimMetaArgs : ∀ {A B} -> (A -> B) -> {m : PrimMeta} -> primMetaArgs A m -> primMetaArgs B m
-mapPrimMetaArgs f {EvalStmt} args = f args
-mapPrimMetaArgs f {ShellCmd} args = f args
-mapPrimMetaArgs f {CatchErr} (fst , snd) = (f fst , f snd)
+mapPrimMetaArgs f {EvalStmt} = f
+mapPrimMetaArgs f {ShellCmd} = Data.Product.map f f
+mapPrimMetaArgs f {CatchErr} = Data.Product.map f f
+
+private
+  traverseHomPair : ∀ {A B M} {{_ : Monad M}} -> (A -> M B) -> A × A -> M (B × B)
+  traverseHomPair f (fst , snd) = do
+    fst' <- f fst
+    snd' <- f snd
+    return (fst' , snd')
 
 traversePrimMetaArgs : ∀ {A B M} {{_ : Monad M}}
                      -> (A -> M B) -> {m : PrimMeta} -> primMetaArgs A m -> M (primMetaArgs B m)
 traversePrimMetaArgs f {EvalStmt} args = f args
-traversePrimMetaArgs f {ShellCmd} args = f args
-traversePrimMetaArgs f {CatchErr} (fst , snd) = do
-  fst' <- f fst
-  snd' <- f snd
-  return (fst' , snd')
+traversePrimMetaArgs f {ShellCmd} = traverseHomPair f
+traversePrimMetaArgs f {CatchErr} = traverseHomPair f
+
+private
+  showHomPair : ∀ {A} -> (A -> String) -> A × A -> String
+  showHomPair showA (fst , snd) = showA fst + " " + showA snd
 
 primMetaArgs-Show : ∀ {A} -> (A -> String) -> (m : PrimMeta) -> primMetaArgs A m -> String
 primMetaArgs-Show showA EvalStmt args = showA args
-primMetaArgs-Show showA ShellCmd args = showA args
-primMetaArgs-Show showA CatchErr (fst , snd) = showA fst + " " + showA snd
+primMetaArgs-Show showA ShellCmd = showHomPair showA
+primMetaArgs-Show showA CatchErr = showHomPair showA
 
 data PureTerm : Set where
   Var-P : Name -> PureTerm
@@ -224,7 +232,7 @@ pureTermBeq (M-P t) (M-P x) = pureTermBeq x t
 pureTermBeq (Mu-P t t₁) (Mu-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
 pureTermBeq (Epsilon-P t) (Epsilon-P x) = pureTermBeq t x
 pureTermBeq (Ev-P EvalStmt t) (Ev-P EvalStmt x) = pureTermBeq t x
-pureTermBeq (Ev-P ShellCmd t) (Ev-P ShellCmd x) = pureTermBeq t x
+pureTermBeq (Ev-P ShellCmd (t , t₁)) (Ev-P ShellCmd (x , x₁)) = pureTermBeq t x >> pureTermBeq t₁ x₁
 pureTermBeq (Ev-P CatchErr (t , t₁)) (Ev-P CatchErr (x , x₁)) = pureTermBeq t x >> pureTermBeq t₁ x₁
 {-# CATCHALL #-}
 pureTermBeq t t' =
@@ -307,7 +315,7 @@ annTermBeq (M-A t) (M-A u) = annTermBeq t u
 annTermBeq (μ t t₁) (μ u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
 annTermBeq (ε t) (ε u) = annTermBeq t u
 annTermBeq (Ev-A EvalStmt t) (Ev-A EvalStmt u) = annTermBeq t u
-annTermBeq (Ev-A ShellCmd t) (Ev-A ShellCmd u) = annTermBeq t u
+annTermBeq (Ev-A ShellCmd (t , t₁)) (Ev-A ShellCmd (u , u₁)) = annTermBeq t u ∧ annTermBeq t₁ u₁
 annTermBeq (Ev-A CatchErr (t , t₁)) (Ev-A CatchErr (u , u₁)) = annTermBeq t u ∧ annTermBeq t₁ u₁
 {-# CATCHALL #-}
 annTermBeq _ _ = false
@@ -421,7 +429,7 @@ checkFree = helper 0
     helper k n (Mu-P t t₁) = helper k n t ∧ helper k n t₁
     helper k n (Epsilon-P t) = helper k n t
     helper k n (Ev-P EvalStmt t) = helper k n t
-    helper k n (Ev-P ShellCmd t) = helper k n t
+    helper k n (Ev-P ShellCmd (t , t₁)) = helper k n t ∧ helper k n t₁
     helper k n (Ev-P CatchErr (t , t₁)) = helper k n t ∧ helper k n t₁
 
 GlobalContext : Set
@@ -477,7 +485,7 @@ validInContext = helper 0
     helper k (Mu-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
     helper k (Epsilon-P t) Γ = helper k t Γ
     helper k (Ev-P EvalStmt t) Γ = helper k t Γ
-    helper k (Ev-P ShellCmd t) Γ = helper k t Γ
+    helper k (Ev-P ShellCmd (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
     helper k (Ev-P CatchErr (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
 
 {-# TERMINATING #-}
@@ -534,7 +542,7 @@ subst t t' = decrementIndices $ substIndex t (fromℕ 0) t'
     substIndex (μ t t₁) k t' = μ (substIndex t k t') (substIndex t₁ k t')
     substIndex (ε t) k t' = ε (substIndex t k t')
     substIndex (Ev-A EvalStmt t) k t' = Ev-A EvalStmt (substIndex t k t')
-    substIndex (Ev-A ShellCmd t) k t' = Ev-A ShellCmd (substIndex t k t')
+    substIndex (Ev-A ShellCmd (t , t₁)) k t' = Ev-A ShellCmd ((substIndex t k t' , substIndex t₁ k t'))
     substIndex (Ev-A CatchErr (t , t₁)) k t' = Ev-A CatchErr ((substIndex t k t' , substIndex t₁ k t'))
 
 -- substitute the first unbound variable in t with t'
@@ -556,7 +564,7 @@ substPure t t' = decrementIndicesPure $ substIndexPure t (fromℕ 0) t'
     substIndexPure (Mu-P t t₁) k t' = Mu-P (substIndexPure t k t') (substIndexPure t₁ k t')
     substIndexPure (Epsilon-P t) k t' = Epsilon-P (substIndexPure t k t')
     substIndexPure (Ev-P EvalStmt t) k t' = Ev-P EvalStmt (substIndexPure t k t')
-    substIndexPure (Ev-P ShellCmd t) k t' = Ev-P ShellCmd (substIndexPure t k t')
+    substIndexPure (Ev-P ShellCmd (t , t₁)) k t' = Ev-P ShellCmd ((substIndexPure t k t' , substIndexPure t₁ k t'))
     substIndexPure (Ev-P CatchErr (t , t₁)) k t' = Ev-P CatchErr ((substIndexPure t k t' , substIndexPure t₁ k t'))
 
 stripBinder : AnnTerm -> Maybe AnnTerm
@@ -688,7 +696,7 @@ module CheckEquality {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String
       compareHnfs (Mu-P t t₁) (Mu-P x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
       compareHnfs (Epsilon-P t) (Epsilon-P x) = checkβηPure t x
       compareHnfs (Ev-P EvalStmt t) (Ev-P EvalStmt x) = checkβηPure t x
-      compareHnfs (Ev-P ShellCmd t) (Ev-P ShellCmd x) = checkβηPure t x
+      compareHnfs (Ev-P ShellCmd (t , t₁)) (Ev-P ShellCmd (x , x₁)) = checkβηPure t x >> checkβηPure t₁ x₁
       compareHnfs (Ev-P CatchErr (t , t₁)) (Ev-P CatchErr (x , x₁)) = checkβηPure t x >> checkβηPure t₁ x₁
       compareHnfs (Lam-P t) t₁ = case normalizePure Γ t of λ
         { t''@(App-P t' (Var-P (Bound i))) ->
@@ -934,11 +942,15 @@ synthType' Γ (Ev-A EvalStmt t) = do
     "The term supplied to EvalStmt needs to be of type 'init$stmt'"
   return $ M-A (Var-A $ Free "init$metaResult")
 
-synthType' Γ (Ev-A ShellCmd t) = do
+synthType' Γ (Ev-A ShellCmd (t , t₁)) = do
   T <- synthType Γ t
+  T₁ <- synthType Γ t₁
   appendIfError
     (checkβη Γ T (Var-A $ Free "init$string"))
-    "The term supplied to ShellCmd needs to be of type 'init$string'"
+    "The first term supplied to ShellCmd needs to be of type 'init$string'"
+  appendIfError
+    (checkβη Γ T₁ (Var-A $ Free "init$stringList"))
+    "The second term supplied to ShellCmd needs to be of type 'init$stringList'"
   return $ M-A (Var-A $ Free "init$string")
 
 synthType' Γ (Ev-A CatchErr (t , t₁)) = do
