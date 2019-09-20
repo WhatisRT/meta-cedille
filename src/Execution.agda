@@ -252,6 +252,17 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
   executeTerm (Ev-P CatchErr (t , t')) =
     catchError (executeTerm t) (λ s -> executeTerm $ App-P t' $ Erase $ stringToTerm s)
 
+  executeTerm (Ev-P CheckTerm (t , t')) = do
+    Γ <- getContext
+    --T <- catchError (constrsToTerm Γ $ normalizePure Γ t) (λ e -> throwError $ "Error while converting " + show t + " to a term")
+    u <- catchError (constrsToTerm Γ $ normalizePure Γ t') (λ e -> throwError $ "Error while converting " + show t' + " to a term")
+    T' <- check u
+    catchError (checkβηPure Γ t $ Erase T')
+      (λ e -> throwError $
+        "Type mismatch with the provided type!\nProvided: " + show t +
+        "\nSynthesized: " + show T')
+    return (strResult "" , Erase u)
+
   {-# CATCHALL #-}
   executeTerm t =
     throwError ("Error: " + show t + " is not a term that can be evaluated!")

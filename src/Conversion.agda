@@ -51,6 +51,9 @@ module ConversionInternals {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M 
   constrsToStmt : Context -> PureTerm -> M Stmt
   constrsToStmt = constrsToAgda "stmt" (λ t -> maybeToError (toStmt t) "Error while converting to stmt")
 
+  constrsToTerm : Context -> PureTerm -> M AnnTerm
+  constrsToTerm = constrsToAgda "term" (λ t -> maybeToError (toTerm t) "Error while converting to term")
+
   constrsToString : Context -> PureTerm -> M String
   constrsToString = constrsToAgda "name" (λ x -> maybeToError (mmap fromList $ toName x) "Error while converting to string")
 

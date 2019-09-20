@@ -52,6 +52,8 @@ let quote$Beta := λ t : init$term λ t' : init$term [[[[init$term$=Beta=_space_
 
 let quote$Gamma := λ t : init$term λ t' : init$term [[[[init$term$=Gamma=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
 
+let quote$Delta := λ t : init$term λ t' : init$term [[[[init$term$=Delta=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
+
 let quote$stmt'ToStmt := [init$stmt$_space'__stmt'_ quote$noSpace].
 
 let quote$simpleLet := λ n : init$name λ t : init$term [quote$stmt'ToStmt [[[[[[[init$stmt'$let_space__name__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] n] quote$noSpace] quote$noSpace] t] quote$noSpace] init$lettail$=dot=]] : Π _ : init$name Π _ : init$term init$stmt.

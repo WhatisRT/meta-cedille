@@ -7,5 +7,4 @@ let init$linecomment'$!=newline=!_linecomment'_ := λ _ : init$char unitId : Π 
 
 let init$space'$=minus==minus=_linecomment'__space'_ := λ _ : unit λ s : init$space' s : Π _ : unit Π _ : init$space' init$space'.
 
-
 seteval eval init stmt.

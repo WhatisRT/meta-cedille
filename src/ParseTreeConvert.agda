@@ -353,8 +353,15 @@ toTerm = helper []
             t <- helper accu z
             t' <- helper accu z'
             return $ Ev-A CatchErr (t , t')
-
           ; _ -> nothing })) ∷
+
+        ((from-just $ ruleId "term" "Δ_space__term__space__term_") , (case x₁ of λ
+          { (_ ∷ z ∷ _ ∷ z' ∷ []) -> do
+            t <- helper accu z
+            t' <- helper accu z'
+            return $ Ev-A CheckTerm (t , t')
+          ; _ -> nothing })) ∷
+
         []
         default nothing
 

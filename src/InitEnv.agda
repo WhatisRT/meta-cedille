@@ -72,6 +72,7 @@ private
     "term$=Alpha=_space__term_" ∷ -- this is zeta EvalStmt
     "term$=Beta=_space__term__space__term_" ∷ -- this is zeta ShellCmd
     "term$=Gamma=_space__term__space__term_" ∷ -- this is zeta CatchErr
+    "term$=Delta=_space__term__space__term_" ∷ -- this is zeta CheckTerm
 
     "lettail$=dot=" ∷ "lettail$=colon=_space'__term__space'_=dot=" ∷
 

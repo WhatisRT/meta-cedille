@@ -137,6 +137,7 @@ data PrimMeta : Set where
   EvalStmt : PrimMeta
   ShellCmd : PrimMeta
   CatchErr : PrimMeta
+  CheckTerm : PrimMeta
 
 instance
   PrimMeta-Show : Show PrimMeta
@@ -146,16 +147,19 @@ instance
       helper EvalStmt = "EvalStmt"
       helper ShellCmd = "ShellCmd"
       helper CatchErr = "CatchErr"
+      helper CheckTerm = "CheckTerm"
 
 primMetaArgs : Set -> PrimMeta -> Set
 primMetaArgs A EvalStmt = A
 primMetaArgs A ShellCmd = A × A
 primMetaArgs A CatchErr = A × A
+primMetaArgs A CheckTerm = A × A
 
 mapPrimMetaArgs : ∀ {A B} -> (A -> B) -> {m : PrimMeta} -> primMetaArgs A m -> primMetaArgs B m
 mapPrimMetaArgs f {EvalStmt} = f
 mapPrimMetaArgs f {ShellCmd} = Data.Product.map f f
 mapPrimMetaArgs f {CatchErr} = Data.Product.map f f
+mapPrimMetaArgs f {CheckTerm} = Data.Product.map f f
 
 private
   traverseHomPair : ∀ {A B M} {{_ : Monad M}} -> (A -> M B) -> A × A -> M (B × B)
@@ -169,6 +173,7 @@ traversePrimMetaArgs : ∀ {A B M} {{_ : Monad M}}
 traversePrimMetaArgs f {EvalStmt} args = f args
 traversePrimMetaArgs f {ShellCmd} = traverseHomPair f
 traversePrimMetaArgs f {CatchErr} = traverseHomPair f
+traversePrimMetaArgs f {CheckTerm} = traverseHomPair f
 
 private
   showHomPair : ∀ {A} -> (A -> String) -> A × A -> String
@@ -178,6 +183,7 @@ primMetaArgs-Show : ∀ {A} -> (A -> String) -> (m : PrimMeta) -> primMetaArgs A
 primMetaArgs-Show showA EvalStmt args = showA args
 primMetaArgs-Show showA ShellCmd = showHomPair showA
 primMetaArgs-Show showA CatchErr = showHomPair showA
+primMetaArgs-Show showA CheckTerm = showHomPair showA
 
 data PureTerm : Set where
   Var-P : Name -> PureTerm
@@ -431,6 +437,7 @@ checkFree = helper 0
     helper k n (Ev-P EvalStmt t) = helper k n t
     helper k n (Ev-P ShellCmd (t , t₁)) = helper k n t ∧ helper k n t₁
     helper k n (Ev-P CatchErr (t , t₁)) = helper k n t ∧ helper k n t₁
+    helper k n (Ev-P CheckTerm (t , t₁)) = helper k n t ∧ helper k n t₁
 
 GlobalContext : Set
 GlobalContext = SimpleMap GlobalName EfficientDef -- TODO: go for something more efficient later
@@ -487,6 +494,7 @@ validInContext = helper 0
     helper k (Ev-P EvalStmt t) Γ = helper k t Γ
     helper k (Ev-P ShellCmd (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
     helper k (Ev-P CatchErr (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
+    helper k (Ev-P CheckTerm (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
 
 {-# TERMINATING #-}
 Erase : AnnTerm -> PureTerm
@@ -544,6 +552,7 @@ subst t t' = decrementIndices $ substIndex t (fromℕ 0) t'
     substIndex (Ev-A EvalStmt t) k t' = Ev-A EvalStmt (substIndex t k t')
     substIndex (Ev-A ShellCmd (t , t₁)) k t' = Ev-A ShellCmd ((substIndex t k t' , substIndex t₁ k t'))
     substIndex (Ev-A CatchErr (t , t₁)) k t' = Ev-A CatchErr ((substIndex t k t' , substIndex t₁ k t'))
+    substIndex (Ev-A CheckTerm (t , t₁)) k t' = Ev-A CheckTerm ((substIndex t k t' , substIndex t₁ k t'))
 
 -- substitute the first unbound variable in t with t'
 substPure : PureTerm -> PureTerm -> PureTerm
@@ -566,6 +575,7 @@ substPure t t' = decrementIndicesPure $ substIndexPure t (fromℕ 0) t'
     substIndexPure (Ev-P EvalStmt t) k t' = Ev-P EvalStmt (substIndexPure t k t')
     substIndexPure (Ev-P ShellCmd (t , t₁)) k t' = Ev-P ShellCmd ((substIndexPure t k t' , substIndexPure t₁ k t'))
     substIndexPure (Ev-P CatchErr (t , t₁)) k t' = Ev-P CatchErr ((substIndexPure t k t' , substIndexPure t₁ k t'))
+    substIndexPure (Ev-P CheckTerm (t , t₁)) k t' = Ev-P CheckTerm ((substIndexPure t k t' , substIndexPure t₁ k t'))
 
 stripBinder : AnnTerm -> Maybe AnnTerm
 stripBinder (∀-A t' t'') = just t''
@@ -952,6 +962,17 @@ synthType' Γ (Ev-A ShellCmd (t , t₁)) = do
     (checkβη Γ T₁ (Var-A $ Free "init$stringList"))
     "The second term supplied to ShellCmd needs to be of type 'init$stringList'"
   return $ M-A (Var-A $ Free "init$string")
+
+synthType' Γ (Ev-A CheckTerm (t , t₁)) = do
+  T <- synthType Γ t
+  T₁ <- synthType Γ t₁
+  appendIfError
+    (checkβη Γ T (Sort-A ⋆))
+    "The first term supplied to CheckTerm needs to be of type *"
+  appendIfError
+    (checkβη Γ T₁ (Var-A $ Free "init$term"))
+    "The second term supplied to CheckTerm needs to be of type 'init$term"
+  return $ M-A t
 
 synthType' Γ (Ev-A CatchErr (t , t₁)) = do
   T <- synthType Γ t
