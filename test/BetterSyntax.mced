@@ -1,12 +1,3 @@
-let init$stmts := [List init$stmt].
-
-b-let sequenceMeta [X : *] (l : [List ω X]) : ω [List X] :=
-  [[[<<inductionList ω X> λ _ : [List ω X] ω [List X]> ε <nil X>]
-    λ x : ω X λ _ : [List ω X] λ rec : ω [List X] μ x (λ x' : X μ rec (λ xs : [List X] ε [[<cons X> x'] xs]))] l].
-
-b-let multiEval (stmts : init$stmts) : ω [List init$metaResult] :=
-  γ[sequenceMeta ?init$metaResult γ[map ?init$stmt ?(ω init$metaResult) eval stmts]].
-
 b-let stringListToList (l : init$stringList) : [List init$string] :=
   γ[l ?[List init$string] <nil init$string>
     λ s : init$string λ rec : [List init$string] γ[cons ?init$string s rec]].
@@ -40,6 +31,8 @@ b-let showMetaResult (res : metaResult) : init$string :=
 b-let echoCommand (s : init$string) : [M metaResult] :=
   γ[mapMeta ?init$string ?metaResult strToMetaResult γ[shellCmd "echo" [listToStringList τ[init$string | s]]]].
 
+b-let simpleCommand (s : init$string) : [M metaResult] := γ[mapMeta ?init$string ?metaResult strToMetaResult γ[shellCmd s [listToStringList τ[init$string |]]]].
+
 b-let init$newStmt : * := γ[Sum init$stmt [M metaResult]].
 
 b-let runMetaCommand (t : init$term) : init$newStmt :=
@@ -47,6 +40,9 @@ b-let runMetaCommand (t : init$term) : init$newStmt :=
 
 b-let init$newStmt'$o=minus=_stmt'_ (stmt : init$stmt') : init$newStmt :=
   γ[inl ?init$stmt ?[M metaResult] [quote$stmt'ToStmt stmt]].
+
+b-let init$newStmt'$let_space__betterLet_ (_ : init$space) (s : init$stmt') : init$newStmt :=
+  γ[inl ?init$stmt ?[M metaResult] [quote$stmt'ToStmt s]].
 b-let init$newStmt'$runMeta_space__term__space'_=dot= (_ : init$space) (t : init$term) (_ : init$space') : init$newStmt :=
   [runMetaCommand t].
 b-let init$newStmt'$echo_space__term__space'_=dot= (_ : init$space) (t : init$term) (_ : init$space') : init$newStmt :=

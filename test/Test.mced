@@ -33,4 +33,4 @@ import test/Commands.
 
 import test/ListExt.
 import test/NatExt.
-import test/Stmts.
+import test/BetterSyntax.

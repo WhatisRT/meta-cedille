@@ -44,9 +44,12 @@ let paramToPi := λ t : init$term λ p : Param
 
 let foldWithPi := [<<foldl Param> init$term> paramToPi] : Π _ : init$params Π _ : init$term init$term.
 
-let init$stmt$b=minus=let_space__name__space__params_=colon=_space__term__space_=colon==equal=_space'__term_=dot= :=
-  λ _ : init$space λ n : init$name λ _ : init$space λ params : init$params
-  λ _ : init$space λ type : init$term λ _ : init$space λ _ : init$space' λ term : init$term
-    [[[quote$annotatedLet n] [[foldWithLambdas params] term]] [[foldWithPi params] type]].
+let init$betterLet$_name__space__params_=colon=_space__term__space_=colon==equal=_space'__term_=dot= :=
+  λ n : init$name λ _ : init$space λ params : init$params λ _ : init$space
+  λ type : init$term λ _ : init$space λ _ : init$space' λ term : init$term
+    [[[quote$annotatedLet' n] [[foldWithLambdas params] term]] [[foldWithPi params] type]].
+
+let init$stmt'$b=minus=let_space__betterLet_ :=
+  λ _ : init$space λ s : init$stmt' s.
 
 seteval eval init stmt.
