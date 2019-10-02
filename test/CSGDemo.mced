@@ -1,7 +1,7 @@
 b-let countOccurencesChar (c : init$char) (l : [List init$char]) : Nat :=
   γ[length ?init$char γ[filter ?init$char [charEq c] l]].
 
-b-let natEqTriple (l : Nat) (m : Nat) (n : Nat) : Bool := γ[and γ[natEq l m] γ[natEq m n]].
+b-let natEqTriple (l, m, n : Nat) : Bool := γ[and γ[natEq l m] γ[natEq m n]].
 
 b-let abcEqual (l : [List init$char]) : Bool :=
   γ[natEqTriple

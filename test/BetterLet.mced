@@ -1,3 +1,5 @@
+-- use b-let f (x1, ..., xn : T1) ... (... : Tn) : T := def. to define a term
+
 let PreParam := [[Product init$name] init$term].
 let mkPreParam := <<prodPair init$name> init$term>.
 let Param := [[Product Bool] PreParam]. -- potentially erased
@@ -7,15 +9,20 @@ let paramErased := <<pr1 Bool> PreParam> : Π _ : Param Bool.
 let paramName := λ p : Param [<<pr1 init$name> init$term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$name.
 let paramType := λ p : Param [<<pr2 init$name> init$term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$term.
 
-let init$params := [List Param].
-let init$params$=lparen=_param_=rparen=_space__params_ := λ p : PreParam λ _ : init$space
-  [<cons Param> [[mkParam false] p]].
-let init$params$=lsquare=_param_=rsquare=_space__params_ := λ p : PreParam λ _ : init$space
-  [<cons Param> [[mkParam true] p]].
-let init$params$ := <nil Param>.
+let init$nameparams$_name__nameparams'_ := <cons init$name>.
 
-let init$param$_name__space_=colon=_space__term_ := λ n : init$name λ _ : init$space λ _ : init$space λ t : init$term
-  [[mkPreParam n] t].
+let init$nameparams'$ := <nil init$name>.
+let init$nameparams'$=comma=_space'__name__nameparams'_ := λ _ : init$space' <cons init$name>.
+
+let init$param'$_nameparams__space_=colon=_space__term_ := λ ns : [List init$name] λ _ : init$space λ _ : init$space λ t : init$term
+  [[<<map init$name> PreParam> (λ n' : init$name [[mkPreParam n'] t])] ns].
+
+let init$params := [List Param].
+let init$params$=lparen=_param'_=rparen=_space__params_ := λ p : [List PreParam] λ _ : init$space
+  [<app Param> [[<<map PreParam> Param> [mkParam false]] p]].
+let init$params$=lsquare=_param'_=rsquare=_space__params_ := λ p : [List PreParam] λ _ : init$space
+  [<app Param> [[<<map PreParam> Param> [mkParam true]] p]].
+let init$params$ := <nil Param>.
 
 let paramToLambda := λ t : init$term λ p : Param
   [[[[[

@@ -1,8 +1,8 @@
 -- the definition of Nat is in Induction.mced
 let one := [suc zero].
 let two := [suc one].
-b-let add (n : Nat) (m : Nat) : Nat := γ[inductionNat ?(λ _ : Nat Nat) n (λ _ : Nat λ rec : Nat [suc rec]) m].
-b-let mul (n : Nat) (m : Nat) : Nat := γ[inductionNat ?(λ _ : Nat Nat) zero (λ _ : Nat λ rec : Nat [[add rec] n]) m].
+b-let add (n, m : Nat) : Nat := γ[inductionNat ?(λ _ : Nat Nat) n (λ _ : Nat λ rec : Nat [suc rec]) m].
+b-let mul (n, m : Nat) : Nat := γ[inductionNat ?(λ _ : Nat Nat) zero (λ _ : Nat λ rec : Nat γ[add rec n]) m].
 
 let isZero := γ[inductionNat ?(λ _ : Nat Bool) true (λ _ : Nat λ _ : Bool false)] : Π _ : Nat Bool.
 
