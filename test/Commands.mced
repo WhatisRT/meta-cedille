@@ -1,7 +1,0 @@
-b-let falseCommand : init$name := [quote$stringToName quote$a ""].
-
-b-let init$stmt'$=sigma=cmd_space_=doublequote=_newstring_=doublequote=_space'_=dot=
-  (_ : init$space) (s : init$string) (_ : init$space') : init$stmt' :=
-  [quote$cmd [stringToNameDefault s falseCommand]].
-
-seteval eval init stmt.

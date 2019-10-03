@@ -48,7 +48,7 @@ b-let init$newStmt'$runMeta_space__bTerm__space'_=dot= (_ : init$space) (t : ini
   [runMetaCommand t].
 b-let init$newStmt'$echo_space__bTerm__space'_=dot= (_ : init$space) (t : init$term) (_ : init$space') : init$newStmt :=
   [runMetaCommand [quote$square θ{echoCommand} t]].
-b-let init$newStmt'$import_space__name_ (_ : init$space) (n : init$name) : init$newStmt :=
+b-let init$newStmt'$import_space__name_=dot= (_ : init$space) (n : init$name) : init$newStmt :=
   [stmtToNewStmt [quote$import' n]].
 b-let init$newStmt'$ : init$newStmt := [stmtToNewStmt init$stmt'$].
 

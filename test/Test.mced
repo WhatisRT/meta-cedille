@@ -1,15 +1,7 @@
 import test/Basic.
 import test/BasicTest.
 
-import test/BetterNotation/Quote.
-
-import test/BetterNotation/BetterTermSyntax.
-import test/BetterNotation/BetterLet.
-
-import test/BetterNotation/String.
-import test/BetterNotation/QuoteTerm.
-
-import test/BetterNotation/ListNotation.
+import test/BetterNotation.
 
 import test/LambdaCalc.
 import test/LambdaCalcExample.
@@ -20,8 +12,5 @@ import test/NatSyntax.
 
 import test/StringHelpers.
 
-import test/Commands.
-
 import test/ListExt.
 import test/NatExt.
-import test/BetterNotation/BetterSyntax.

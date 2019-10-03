@@ -1,24 +1,24 @@
-b-let lambdaTermToTerm : Π _ : init$term init$term := [quote$beta θ{λ x : * x}].
+let lambdaTermToTerm : Π _ : init$term init$term := [quote$beta θ{λ x : * x}].
 
-b-let init$lambdaTerm : * :=
+let init$lambdaTerm : * :=
   ∀ X : * Π _ : (Π _ : init$name X) Π _ : (Π _ : X Π _ : X X) Π _ : (Π _ : init$name Π _ : X X) X.
-b-let init$lambdaTerm$_name_ : Π _ : init$name init$term := quote$var.
-b-let init$lambdaTerm$=lsquare=_space'__lambdaTerm__space__lambdaTerm__space'_=rsquare=
+let init$lambdaTerm$_name_ : Π _ : init$name init$term := quote$var.
+let init$lambdaTerm$=lsquare=_space'__lambdaTerm__space__lambdaTerm__space'_=rsquare=
   (_ : init$space') (t : init$term) (_ : init$space) (t' : init$term) (_ : init$space') : init$term :=
   [quote$square t t'].
-b-let init$lambdaTerm$=lambda=_space__name__space'_=dot=_space'__lambdaTerm_
+let init$lambdaTerm$=lambda=_space__name__space'_=dot=_space'__lambdaTerm_
   (_ : init$space) (name : init$name) (_ : init$space') (_ : init$space') (t : init$term) : init$term :=
   [quote$lambda name quote$ast t].
 
-b-let init$lambdaStmt$let_space__name__space'_=colon==equal=_space'__lambdaTerm__space'_=dot=
+let init$lambdaStmt$let_space__name__space'_=colon==equal=_space'__lambdaTerm__space'_=dot=
   (_ : init$space) (name : init$name) (_ : init$space') (_ : init$space') (t : init$term) (_ : init$space') :
-    init$stmt :=
-  [quote$annotatedLet name [lambdaTermToTerm t] θ{Top}].
+    init$stmt' :=
+  [quote$annotatedLet' name [lambdaTermToTerm t] θ{Top}].
 
-b-let init$lambdaStmt$normalize_space__lambdaTerm__space'_=dot=
-  (_ : init$space) (t : init$term) (_ : init$space') : init$stmt :=
-  [quote$normalize [lambdaTermToTerm t]].
+let init$lambdaStmt$normalize_space__lambdaTerm__space'_=dot=
+  (_ : init$space) (t : init$term) (_ : init$space') : init$stmt' :=
+  [quote$normalize' [lambdaTermToTerm t]].
 
-b-let init$stmt$=lambda==minus=_lambdaStmt_ (x : init$stmt) : init$stmt := x.
+let init$newStmt'$=lambda==minus=_lambdaStmt_ (x : init$stmt') : init$newStmt := [stmtToNewStmt x].
 
-seteval eval init stmt.
+o-seteval evalNewStmt init newStmt.
