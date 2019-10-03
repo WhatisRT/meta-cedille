@@ -3,7 +3,7 @@
 let init$proj := ∀ X : * (Π _ : (Π _ : init$term X) (Π _ : (Π _ : init$term X) X)) : *.
 
 b-let init$term$=alpha=_proj_ (p : init$proj) : init$term :=
-  γ[p ?init$term λ t : init$term [quote$pi t] λ t : init$term [quote$psi t]].
+  [p ?init$term λ t : init$term [quote$pi t] λ t : init$term [quote$psi t]].
 
 b-let init$proj$1_space__term_ (_ : init$space) (x : init$term) : init$proj :=
   Λ X : * λ t : (Π _ : init$term X) λ t' : (Π _ : init$term X) [t x].

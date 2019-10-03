@@ -3,3 +3,10 @@ import test/basic/Parens.
 import test/basic/MetaAliases.
 
 seteval eval init stmt.
+
+import test/basic/Datatypes.
+import test/basic/DatatypesRedef.
+
+import test/basic/Bool.
+import test/basic/List.
+import test/basic/Product.

@@ -1,32 +1,32 @@
-b-let bitEq (b, b' : init$bit) : Bool := γ[b ?Bool γ[b' ?Bool true false] γ[b' ?Bool false true]].
+b-let bitEq (b, b' : init$bit) : Bool := [b ?Bool [b' ?Bool true false] [b' ?Bool false true]].
 
 b-let byteEq (b, b' : init$byte) : Bool :=
-  γ[b ?Bool λ x1 : init$bit λ x2 : init$bit λ x3 : init$bit λ x4 : init$bit
-            λ x5 : init$bit λ x6 : init$bit λ x7 : init$bit λ x8 : init$bit
-    γ[b' ?Bool λ y1 : init$bit λ y2 : init$bit λ y3 : init$bit λ y4 : init$bit
-               λ y5 : init$bit λ y6 : init$bit λ y7 : init$bit λ y8 : init$bit
-      γ[and γ[bitEq x1 y1] γ[and γ[bitEq x2 y2] γ[and γ[bitEq x3 y3] γ[and γ[bitEq x4 y4]
-      γ[and γ[bitEq x5 y5] γ[and γ[bitEq x6 y6] γ[and γ[bitEq x7 y7] γ[bitEq x8 y8]]]]]]]]]].
+  [b ?Bool λ x1 : init$bit λ x2 : init$bit λ x3 : init$bit λ x4 : init$bit
+           λ x5 : init$bit λ x6 : init$bit λ x7 : init$bit λ x8 : init$bit
+    [b' ?Bool λ y1 : init$bit λ y2 : init$bit λ y3 : init$bit λ y4 : init$bit
+              λ y5 : init$bit λ y6 : init$bit λ y7 : init$bit λ y8 : init$bit
+      [and [bitEq x1 y1] [and [bitEq x2 y2] [and [bitEq x3 y3] [and [bitEq x4 y4]
+      [and [bitEq x5 y5] [and [bitEq x6 y6] [and [bitEq x7 y7] [bitEq x8 y8]]]]]]]]]].
 
 b-let charEq (c, c' : init$char) : Bool :=
-  γ[c ?Bool λ x1 : init$byte λ x2 : init$byte λ x3 : init$byte λ x4 : init$byte
-    γ[c' ?Bool λ y1 : init$byte λ y2 : init$byte λ y3 : init$byte λ y4 : init$byte
-      γ[and γ[byteEq x1 y1] γ[and γ[byteEq x2 y2] γ[and γ[byteEq x3 y3] γ[byteEq x4 y4]]]]]].
+  [c ?Bool λ x1 : init$byte λ x2 : init$byte λ x3 : init$byte λ x4 : init$byte
+    [c' ?Bool λ y1 : init$byte λ y2 : init$byte λ y3 : init$byte λ y4 : init$byte
+      [and [byteEq x1 y1] [and [byteEq x2 y2] [and [byteEq x3 y3] [byteEq x4 y4]]]]]].
 
 b-let stringToList (s : init$string) : [List init$char] :=
-  γ[s ?[List init$char] λ c : init$char λ rec : [List init$char] γ[cons ?init$char c rec] τ[init$char|]].
+  [s ?[List init$char] λ c : init$char λ rec : [List init$char] [cons ?init$char c rec] τ[init$char|]].
 
 b-let stringFromList (s : [List init$char]) : init$string :=
-  γ[inductionList ?init$char ?(λ _ : [List init$char] init$string) init$string$nil
-    λ c : init$char λ cs : [List init$char] λ rec : init$string γ[init$string$cons c rec] s].
+  [inductionList ?init$char ?(λ _ : [List init$char] init$string) init$string$nil
+    λ c : init$char λ cs : [List init$char] λ rec : init$string [init$string$cons c rec] s].
 
 b-let stringEq (s, s' : init$string) : Bool :=
-  γ[listEq ?init$char charEq [stringToList s] [stringToList s']].
+  [listEq ?init$char charEq [stringToList s] [stringToList s']].
 
 b-let stringToNameDefault (s : init$string) (d : init$name) : init$name :=
-  γ[inductionList ?init$char ?(λ _ : [List init$char] init$name) d
+  [inductionList ?init$char ?(λ _ : [List init$char] init$name) d
     λ c : init$char λ cs : [List init$char] λ rec : init$name
-      γ[quote$stringToName c [stringToName' [stringFromList cs]]] [stringToList s]].
+      [quote$stringToName c [stringToName' [stringFromList cs]]] [stringToList s]].
 
 b-let stringApp (s, s' : init$string) : init$string :=
-  [stringFromList γ[app ?init$char [stringToList s] [stringToList s']]].
+  [stringFromList [app ?init$char [stringToList s] [stringToList s']]].

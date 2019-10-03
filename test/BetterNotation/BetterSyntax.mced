@@ -1,0 +1,63 @@
+b-let stringListToList (l : init$stringList) : [List init$string] :=
+  [l ?[List init$string] [nil ?init$string]
+    λ s : init$string λ rec : [List init$string] [cons ?init$string s rec]].
+
+b-let listToStringList (l : [List init$string]) : init$stringList :=
+  [[inductionList ?init$string ?(λ _ : [List init$string] init$stringList)
+      init$stringList$nil
+      λ s : init$string λ _ : [List init$string] λ rec : init$stringList [init$stringList$cons s rec]]
+    l].
+
+b-let termListToList (l : init$termList) : [List init$term] :=
+  [l ?[List init$term] [nil ?init$term]
+    λ s : init$term λ rec : [List init$term] [cons ?init$term s rec]].
+
+b-let metaResult : * := [Product [List init$string] [List init$term]].
+
+b-let strToMetaResult (s : init$string) : metaResult :=
+  [pair ?[List init$string] ?(λ _ : [List init$string] [List init$term]) τ[init$string | s] τ[init$term |]].
+
+b-let metaResultToLists (res : init$metaResult) : [Product [List init$string] [List init$term]] :=
+  [res ?[Product [List init$string] [List init$term]]
+    λ l : init$stringList λ l' : init$termList [prodPair ?[List init$string] ?[List init$term]
+      [stringListToList l] [termListToList l']]].
+
+b-let eval' (stmt : init$stmt) : [M metaResult] :=
+  [mapMeta ?init$metaResult ?metaResult metaResultToLists [eval stmt]].
+
+b-let echoCommand (s : init$string) : [M metaResult] :=
+  [mapMeta ?init$string ?metaResult strToMetaResult [shellCmd "echo" [listToStringList τ[init$string | s]]]].
+
+b-let simpleCommand (s : init$string) : [M metaResult] :=
+  [mapMeta ?init$string ?metaResult strToMetaResult [shellCmd s [listToStringList τ[init$string |]]]].
+
+b-let init$newStmt : * := [Sum init$stmt [M metaResult]].
+
+b-let runMetaCommand (t : init$term) : init$newStmt :=
+  [inr ?init$stmt ?[M metaResult] [joinMeta ?metaResult [checkTerm [M metaResult] t]]].
+
+b-let stmtToNewStmt (stmt : init$stmt') : init$newStmt :=
+  [inl ?init$stmt ?[M metaResult] [quote$stmt'ToStmt stmt]].
+
+b-let init$newStmt'$o=minus=_stmt'_ (stmt : init$stmt') : init$newStmt :=
+  [stmtToNewStmt stmt].
+
+b-let init$newStmt'$let_space__betterLet_ (_ : init$space) (stmt : init$stmt') : init$newStmt :=
+  [stmtToNewStmt stmt].
+b-let init$newStmt'$runMeta_space__bTerm__space'_=dot= (_ : init$space) (t : init$term) (_ : init$space') : init$newStmt :=
+  [runMetaCommand t].
+b-let init$newStmt'$echo_space__bTerm__space'_=dot= (_ : init$space) (t : init$term) (_ : init$space') : init$newStmt :=
+  [runMetaCommand [quote$square θ{echoCommand} t]].
+b-let init$newStmt'$import_space__name_ (_ : init$space) (n : init$name) : init$newStmt :=
+  [stmtToNewStmt [quote$import' n]].
+b-let init$newStmt'$ : init$newStmt := [stmtToNewStmt init$stmt'$].
+
+b-let init$newStmt$_space'__newStmt'_ (_ : init$space') (stmt : init$newStmt) : init$newStmt := stmt.
+
+b-let evalNewStmt (stmt : init$newStmt) : [M metaResult] :=
+  [inductionSum ?init$stmt ?[M metaResult] ?(λ _ : init$newStmt [M metaResult])
+    λ inl : init$stmt [eval' inl]
+    λ inr : [M metaResult] [mapMeta ?metaResult ?metaResult (λ res : metaResult res) inr]
+    stmt].
+
+seteval evalNewStmt init newStmt.

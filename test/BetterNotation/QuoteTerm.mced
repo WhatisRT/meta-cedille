@@ -2,25 +2,25 @@
 
 let quoteTemp := quote$sq. -- this is for stuff we haven't implemented yet
 
-let quoteSort := λ s : init$sort [[<s init$term> [quote$var γ[quote$name quote$q "uote$ast"]]] [quote$var γ[quote$name quote$q "uote$sq"]]].
+b-let quoteSort (s : init$sort) : init$term := [s ?init$term [quote$var [quote$name quote$q "uote$ast"]] [quote$var [quote$name quote$q "uote$sq"]]].
 
-let quoteName' := λ n : init$name'
-  [[<n init$term>
+b-let quoteName' (n : init$name') : init$term :=
+  [n ?init$term
     λ c : init$char λ rec : init$term
-      γ[quote$square γ[quote$square [quote$var γ[quote$name quote$q "uote$ncons"]] [quote$char c]] rec]]
-    [quote$var γ[quote$name quote$q "uote$nnil"]]].
+      [quote$square [quote$square [quote$var [quote$name quote$q "uote$ncons"]] [quote$char c]] rec]
+    [quote$var [quote$name quote$q "uote$nnil"]]].
 
 b-let quoteName (n : init$name) : init$term :=
-  [<n init$term>
+  [n ?init$term
     λ c : init$char λ n' : init$name'
-      γ[quote$square
-        γ[quote$square [quote$var γ[quote$name quote$q "uote$name"]] [quote$char c]]
+      [quote$square
+        [quote$square [quote$var [quote$name quote$q "uote$name"]] [quote$char c]]
         [quoteName' n']]].
 
-let quoteVar := λ v : init$var
-  γ[quote$square
-    [quote$var γ[quote$name quote$q "uote$var"]]
-    [[<v init$term> λ n : init$name [quoteName n]] λ i : init$index quoteTemp]].
+b-let quoteVar (v : init$var) : init$term :=
+  [quote$square
+    [quote$var [quote$name quote$q "uote$var"]]
+    [v ?init$term λ n : init$name [quoteName n] λ i : init$index quoteTemp]].
 
 let quoteTermPi := [quote$square [quote$var [[quote$name quote$q] "uote$pi"]]].
 let quoteTermPsi := [quote$square [quote$var [[quote$name quote$q] "uote$psi"]]].
@@ -89,6 +89,6 @@ let quoteTermDelta' := λ _ : init$space λ t : init$term λ _ : init$space λ t
 
 let quoteTerm := λ t : init$term [[[[[[[[[[[[[[[[[[[[[[[[[<t init$term> quoteVar] quoteSort] λ _ : init$space quoteTermPi] λ _ : init$space quoteTermPsi] quoteTermBeta] quoteTermDelta] λ _ : init$space quoteTermSigma] quoteTermSquare] quoteTermAngle] quoteTermRho] quoteTermForall] quoteTermPi'] quoteTermIota] quoteTermLambda] quoteTermLambda'] quoteTermBrace] quoteTermPhi] quoteTermEqual] quoteTermOmega] quoteTermMu] quoteTermEpsilon] quoteTermAlpha] quoteTermBeta'] quoteTermGamma] quoteTermDelta'].
 
-let init$term$=theta==lbrace=_space'__term__space'_=rbrace= := λ _ : init$space' λ t : init$term λ _ : init$space' [quoteTerm t].
+let init$bTerm$=theta==lbrace=_space'__bTerm__space'_=rbrace= := λ _ : init$space' λ t : init$term λ _ : init$space' [quoteTerm t].
 
 seteval eval init stmt.

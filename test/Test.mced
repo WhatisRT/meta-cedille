@@ -1,24 +1,15 @@
 import test/Basic.
 import test/BasicTest.
 
-import test/Datatypes.
-import test/DatatypesRedef.
+import test/BetterNotation/Quote.
 
-import test/Quote.
+import test/BetterNotation/BetterTermSyntax.
+import test/BetterNotation/BetterLet.
 
-import test/Bool.
-import test/List.
-import test/Product.
+import test/BetterNotation/String.
+import test/BetterNotation/QuoteTerm.
 
-import test/BetterLet.
-import test/BetterApp.
-
-import test/String.
-import test/QuoteTerm.
-
-import test/ListNotation.
-
-import test/Example.
+import test/BetterNotation/ListNotation.
 
 import test/LambdaCalc.
 import test/LambdaCalcExample.
@@ -33,4 +24,4 @@ import test/Commands.
 
 import test/ListExt.
 import test/NatExt.
-import test/BetterSyntax.
+import test/BetterNotation/BetterSyntax.

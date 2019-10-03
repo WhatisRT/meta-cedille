@@ -1,0 +1,50 @@
+-- Application: use [f x1 ... xn] where erased arguments are prefixed with a '?'
+
+let App := [[Product Bool] init$term].
+let mkApp := <<prodPair Bool> init$term>.
+let appErased := <<pr1 Bool> init$term>.
+let appTerm := <<pr2 Bool> init$term>.
+
+let init$app$_bTerm_ := λ t : init$term [[mkApp false] t].
+let init$app$=question=_bTerm_ := λ t : init$term [[mkApp true] t].
+
+let init$applist := [List App].
+let init$applist$ := <nil App>.
+let init$applist$_space__app__applist_ :=
+  λ _ : init$space λ a : App λ as : [List App] [[<cons App> a] as].
+
+let appToQuotedApp :=
+  λ t : init$term λ a : App
+    [[[[
+      [<ifthenelse Π _ : init$term Π _ : init$term init$term> [appErased a]]
+        quote$angle]
+        quote$square]
+      t] [appTerm a]].
+
+let foldWithApp := [<<foldl App> init$term> appToQuotedApp] : Π _ : [List App] Π _ : init$term init$term.
+
+let applyList :=
+  λ t : init$term λ as : [List App] [[foldWithApp [<reverse App> as]] t].
+
+-- term syntax below
+
+let init$bTerm$=ast= := quote$ast.
+let init$bTerm$=sq= := quote$sq.
+
+let init$bTerm$_name_ := λ n : init$name [quote$var n].
+let init$bTerm$=lsquare=_space'__bTerm__applist_=rsquare= :=
+  λ _ : init$space' λ t : init$term λ as : [List App] [[applyList t] as].
+
+let init$bTerm$=lparen=_bTerm_=rparen= := λ t : init$term t.
+
+let init$bTerm$=forall=_space__name__space'_=colon=_space'__bTerm__space__bTerm_ :=
+  init$term$=forall=_space__name__space'_=colon=_space'__term__space__term_.
+
+let init$bTerm$=Pi=_space__name__space'_=colon=_space'__bTerm__space__bTerm_ :=
+  init$term$=Pi=_space__name__space'_=colon=_space'__term__space__term_.
+
+let init$bTerm$=lambda=_space__name__space'_=colon=_space'__bTerm__space__bTerm_ :=
+  init$term$=lambda=_space__name__space'_=colon=_space'__term__space__term_.
+
+let init$bTerm$=Lambda=_space__name__space'_=colon=_space'__bTerm__space__bTerm_ :=
+  init$term$=Lambda=_space__name__space'_=colon=_space'__term__space__term_.

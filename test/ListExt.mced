@@ -1,5 +1,5 @@
 b-let concatStrings (l : [List init$string]) : init$string :=
-  γ[foldl ?init$string ?init$string stringApp l init$string$nil].
+  [foldl ?init$string ?init$string stringApp l init$string$nil].
 
 b-let showList [X : *] (showX : Π _ : X init$string) (l : [List X]) : init$string :=
-  γ[concatStrings γ[intersperse ?init$string ", " γ[map ?X ?init$string showX l]]].
+  [concatStrings [intersperse ?init$string ", " [map ?X ?init$string showX l]]].
