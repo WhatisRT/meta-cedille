@@ -1,10 +1,10 @@
 let init$bindigit$0 : Bool := false.
 let init$bindigit$1 : Bool := true.
 
-o-let init$binnat'$_bindigit__binnat'_ := <cons Bool> : Π _ : Bool Π _ : [List Bool] [List Bool].
+let init$binnat'$_bindigit__binnat'_ := [cons ?Bool].
 let init$binnat'$ : [List Bool] := τ[Bool|].
 
-o-let init$binnat$_bindigit__binnat'_ := <cons Bool> : Π _ : Bool Π _ : [List Bool] [List Bool].
+let init$binnat$_bindigit__binnat'_ := [cons ?Bool].
 
 let quoteBoolFun (b : Bool) : init$term := [ifthenelse ?init$term b θ{true} θ{false}].
 

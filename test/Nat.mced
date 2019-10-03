@@ -1,6 +1,6 @@
 -- the definition of Nat is in Induction.mced
-o-let one := [suc zero].
-o-let two := [suc one].
+let one := [suc zero].
+let two := [suc one].
 let add (n, m : Nat) : Nat := [inductionNat ?(λ _ : Nat Nat) n (λ _ : Nat λ rec : Nat [suc rec]) m].
 let mul (n, m : Nat) : Nat := [inductionNat ?(λ _ : Nat Nat) zero (λ _ : Nat λ rec : Nat [add rec n]) m].
 

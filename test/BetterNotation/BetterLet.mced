@@ -1,5 +1,10 @@
 -- use b-let f (x1, ..., xn : T1) ... (... : Tn) : T := def. to define a term
 
+let Maybe' := λ A : * [[Sum A] Unit].
+
+let maybe' := Λ A : * Λ B : * λ default : B λ f : Π _ : A B λ x : [Maybe' A]
+  [[[<<<inductionSum A> Unit> (λ _ : [Maybe' A] B)> (λ a : A [f a])] (λ _ : Unit default)] x].
+
 let PreParam := [[Product init$name] init$term].
 let mkPreParam := <<prodPair init$name> init$term>.
 let Param := [[Product Bool] PreParam]. -- potentially erased
@@ -44,10 +49,15 @@ let paramToPi := λ t : init$term λ p : Param
 
 let foldWithPi := [<<foldl Param> init$term> paramToPi] : Π _ : init$params Π _ : init$term init$term.
 
-let init$betterLet$_name__space__params_=colon=_space__bTerm__space_=colon==equal=_space'__bTerm_=dot= :=
-  λ n : init$name λ _ : init$space λ params : init$params λ _ : init$space
-  λ type : init$term λ _ : init$space λ _ : init$space' λ term : init$term
-    [[[quote$annotatedLet' n] [[foldWithLambdas params] term]] [[foldWithPi params] type]].
+let init$betterLetType$ := [<<inr init$term> Unit> tt].
+let init$betterLetType$_space__bTerm__space_=colon= := λ _ : init$space λ t : init$term λ _ : init$space [<<inl init$term> Unit> t].
+
+let init$betterLet$_name__space__params_=colon=_betterLetType_=equal=_space'__bTerm_=dot= :=
+  λ n : init$name λ _ : init$space λ params : init$params λ maybeType : [Maybe' init$term] λ _ : init$space' λ term : init$term
+    [[[<<maybe' init$term> init$stmt'>
+      [[quote$simpleLet' n] [[foldWithLambdas params] term]]]
+      λ type : init$term [[[quote$annotatedLet' n] [[foldWithLambdas params] term]] [[foldWithPi params] type]]]
+      maybeType].
 
 let init$stmt'$b=minus=let_space__betterLet_ :=
   λ _ : init$space λ s : init$stmt' s.
