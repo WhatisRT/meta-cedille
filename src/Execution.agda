@@ -254,8 +254,8 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
 
   executeTerm (Ev-P CheckTerm (t , t')) = do
     Γ <- getContext
-    --T <- catchError (constrsToTerm Γ $ normalizePure Γ t) (λ e -> throwError $ "Error while converting " + show t + " to a term")
-    u <- catchError (constrsToTerm Γ $ normalizePure Γ t') (λ e -> throwError $ "Error while converting " + show t' + " to a term")
+    u <- catchError (constrsToTerm Γ $ normalizePure Γ t')
+                    (λ e -> throwError $ "Error while converting " + show t' + " to a term")
     T' <- check u
     catchError (checkβηPure Γ t $ Erase T')
       (λ e -> throwError $
@@ -279,17 +279,15 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
     m@(_ , _ , interpreter) <- getMeta
     case interpreter of λ
       { (Sort-A □') -> tryExecute' s -- this is the default interpreter that gets used to start the language
-      ; _ -> profileCall ("TryExecute" , [ s ]) $ do
-        (fst , snd) <- profileCall ("ParseMeta" , [ s ]) $ parseMeta m s
+      ; _ -> do
+        (fst , snd) <- parseMeta m s
         let exec = App-A interpreter fst
-        T <- profileCall ("TypecheckEval" , [ show exec ]) $ synthType Γ exec
+        (G , _ , _) <- getMeta
+        T <- appendIfError (synthType Γ exec) ("\n\nError while interpreting input: " + show fst + "\nWhile parsing: " + s)
         case (hnfNorm Γ T) of λ
           { (M-A _) -> do
-            execHnf <- profileCall ("HNF" , [ show exec ]) $ return $ hnfNormPure Γ $ Erase exec
-            (res , _) <- profileCall ("Execute" , [ show exec ]) $
-              appendIfError
-                (executeTerm execHnf)
-                ("\n\nError while executing input: " + s)
+            execHnf <- return $ hnfNormPure Γ $ Erase exec
+            (res , _) <- appendIfError (executeTerm execHnf) ("\n\nError while executing input: " + s)
             res' <- if strNull snd then return mzero else tryExecute snd
             return (res + res')
           ; _ -> throwError "Trying to execute something that isn't of type M t. This should never happen!" }
