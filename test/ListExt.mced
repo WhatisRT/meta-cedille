@@ -1,5 +1,5 @@
-let concatStrings (l : [List init$string]) : init$string :=
-  [foldl ?init$string ?init$string stringApp l init$string$nil].
+let concatStrings (l : List init$string) : init$string :=
+  foldl ?init$string ?init$string stringApp l init$string$nil.
 
-let showList [X : *] (showX : Π _ : X init$string) (l : [List X]) : init$string :=
-  [concatStrings [intersperse ?init$string ", " [map ?X ?init$string showX l]]].
+let showList [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string :=
+  concatStrings (intersperse ?init$string ", " (map ?X ?init$string showX l)).

@@ -5,13 +5,15 @@ let mkApp := <<prodPair Bool> init$term>.
 let appErased := <<pr1 Bool> init$term>.
 let appTerm := <<pr2 Bool> init$term>.
 
-let init$app$_bTerm_ := λ t : init$term [[mkApp false] t].
-let init$app$=question=_bTerm_ := λ t : init$term [[mkApp true] t].
+let init$app$_singleTerm_ := λ t : init$term [[mkApp false] t].
+let init$app$=question=_singleTerm_ := λ t : init$term [[mkApp true] t].
 
 let init$applist := [List App].
 let init$applist$ := <nil App>.
-let init$applist$_space__app__applist_ :=
-  λ _ : init$space λ a : App λ as : [List App] [[<cons App> a] as].
+let init$applist$_app__maybeApplist_ := λ a : App λ as : [List App] [[<cons App> a] as].
+
+let init$maybeApplist$ := <nil App>.
+let init$maybeApplist$_space__applist_ := λ _ : init$space λ l : [List App] l.
 
 let appToQuotedApp :=
   λ t : init$term λ a : App
@@ -28,23 +30,30 @@ let applyList :=
 
 -- term syntax below
 
-let init$bTerm$=ast= := quote$ast.
-let init$bTerm$=sq= := quote$sq.
+let init$multiTerm$_singleTerm__maybeApplist_ := λ t : init$term λ as : [List App] [[applyList t] as].
 
-let init$bTerm$_name_ := λ n : init$name [quote$var n].
-let init$bTerm$=lsquare=_space'__bTerm__applist_=rsquare= :=
-  λ _ : init$space' λ t : init$term λ as : [List App] [[applyList t] as].
+let init$singleTerm$=ast= := quote$ast.
+let init$singleTerm$=sq= := quote$sq.
 
-let init$bTerm$=lparen=_bTerm_=rparen= := λ t : init$term t.
+let init$singleTerm$_name_ := λ n : init$name [quote$var n].
+let init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : init$term t.
 
-let init$bTerm$=forall=_space__name__space'_=colon=_space'__bTerm__space__bTerm_ :=
-  init$term$=forall=_space__name__space'_=colon=_space'__term__space__term_.
+let init$singleTerm$=forall=_space__name__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
+  λ _ : init$space λ n : init$name λ _ : init$space' λ _ : init$space'
+  λ T : init$term λ _ : init$space λ t : init$term
+    [[[quote$forall n] T] t].
 
-let init$bTerm$=Pi=_space__name__space'_=colon=_space'__bTerm__space__bTerm_ :=
-  init$term$=Pi=_space__name__space'_=colon=_space'__term__space__term_.
+let init$singleTerm$=Pi=_space__name__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
+  λ _ : init$space λ n : init$name λ _ : init$space' λ _ : init$space'
+  λ T : init$term λ _ : init$space λ t : init$term
+    [[[quote$Pi n] T] t].
 
-let init$bTerm$=lambda=_space__name__space'_=colon=_space'__bTerm__space__bTerm_ :=
-  init$term$=lambda=_space__name__space'_=colon=_space'__term__space__term_.
+let init$singleTerm$=lambda=_space__name__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
+  λ _ : init$space λ n : init$name λ _ : init$space' λ _ : init$space'
+  λ T : init$term λ _ : init$space λ t : init$term
+    [[[quote$lambda n] T] t].
 
-let init$bTerm$=Lambda=_space__name__space'_=colon=_space'__bTerm__space__bTerm_ :=
-  init$term$=Lambda=_space__name__space'_=colon=_space'__term__space__term_.
+let init$singleTerm$=Lambda=_space__name__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
+  λ _ : init$space λ n : init$name λ _ : init$space' λ _ : init$space'
+  λ T : init$term λ _ : init$space λ t : init$term
+    [[[quote$Lambda n] T] t].

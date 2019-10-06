@@ -1,7 +1,7 @@
-let Maybe (A : *) : * := [Sum A Unit].
+let Maybe (A : *) : * := Sum A Unit.
 
-let maybe [A : *] [B : *] (default : B) (f : Π _ : A B) (x : [Maybe A]) : B :=
-  [inductionSum ?A ?Unit ?(λ _ : [Maybe A] B) (λ a : A [f a]) (λ _ : Unit default) x].
+let maybe [A : *] [B : *] (default : B) (f : Π _ : A. B) (x : Maybe A) : B :=
+  inductionSum ?A ?Unit ?(λ _ : Maybe A. B) (λ a : A. f a) (λ _ : Unit. default) x.
 
-let maybeToList [A : *] (x : [Maybe A]) : [List A] :=
-  [maybe ?A ?[List A] τ[A|] (λ a : A τ[A|a]) x].
+let maybeToList [A : *] (x : Maybe A) : List A :=
+  maybe ?A ?(List A) τ[A|] (λ a : A. τ[A|a]) x.

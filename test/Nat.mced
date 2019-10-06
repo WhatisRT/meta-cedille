@@ -1,12 +1,17 @@
 -- the definition of Nat is in Induction.mced
-let one := [suc zero].
-let two := [suc one].
-let add (n, m : Nat) : Nat := [inductionNat ?(λ _ : Nat Nat) n (λ _ : Nat λ rec : Nat [suc rec]) m].
-let mul (n, m : Nat) : Nat := [inductionNat ?(λ _ : Nat Nat) zero (λ _ : Nat λ rec : Nat [add rec n]) m].
 
-let isZero : Π _ : Nat Bool := [inductionNat ?(λ _ : Nat Bool) true (λ _ : Nat λ _ : Bool false)].
+let recNat [X : *] (x : X) (step : Π _ : Nat. Π _ : X. X) : Π _ : Nat. X :=
+  inductionNat ?(λ _ : Nat. X) x step.
 
-let natEq : Π _ : Nat Π _ : Nat Bool :=
-  [inductionNat ?(λ _ : Nat Π _ : Nat Bool)
+let one := suc zero.
+let two := suc one.
+let add (n, m : Nat) : Nat := recNat ?Nat n (λ _ : Nat. λ rec : Nat. suc rec) m.
+let mul (n, m : Nat) : Nat := recNat ?Nat zero (λ _ : Nat. λ rec : Nat. add rec n) m.
+let pred (n : Nat) : Nat := recNat ?Nat zero (λ n' : Nat. λ _ : Nat. n') n.
+
+let isZero : Π _ : Nat. Bool := recNat ?Bool true (λ _ : Nat. λ _ : Bool. false).
+
+let natEq : Π _ : Nat. Π _ : Nat. Bool :=
+  recNat ?(Π _ : Nat. Bool)
     isZero
-    λ _ : Nat λ rec : Π _ : Nat Bool [inductionNat ?(λ _ : Nat Bool) false (λ n : Nat λ _ : Bool [rec n])]].
+    (λ _ : Nat. λ rec : Π _ : Nat. Bool. recNat ?Bool false (λ n : Nat. λ _ : Bool. rec n)).

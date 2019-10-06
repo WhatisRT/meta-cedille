@@ -1,24 +1,24 @@
 -- use τ[ X | x1 , ... , xn] to denote a [List X]
 
-b-let init$termlist'$ : [List init$term] := [nil ?init$term].
-b-let init$termlist'$=comma=_space'__bTerm__space'__termlist'_
-  (_ : init$space') (t : init$term) (_ : init$space') (ts : [List init$term]) : [List init$term] :=
-  [cons ?init$term t ts].
+b-let init$termlist'$ : List init$term := nil ?init$term.
+b-let init$termlist'$=comma=_space'__multiTerm__termlist'_
+  (_ : init$space') (t : init$term) (ts : List init$term) : List init$term :=
+  cons ?init$term t ts.
 
-b-let init$termlist$ : [List init$term] := [nil ?init$term].
-b-let init$termlist$_bTerm__space'__termlist'_
-  (t : init$term) (_ : init$space') (ts : [List init$term]) : [List init$term] :=
-  [cons ?init$term t ts].
+b-let init$termlist$ : List init$term := nil ?init$term.
+b-let init$termlist$_multiTerm__termlist'_
+  (t : init$term) (ts : List init$term) : List init$term :=
+  cons ?init$term t ts.
 
-b-let quoteTermList (type : init$term) (terms : [List init$term]) : init$term :=
-  [inductionList ?init$term ?(λ _ : [List init$term] init$term)
-    [quote$angle θ{nil} type]
-    λ t : init$term λ _ : [List init$term] λ rec : init$term
-      [quote$square [quote$square [quote$angle θ{cons} type] t] rec]
-    terms].
+b-let quoteTermList (type : init$term) (terms : List init$term) : init$term :=
+  inductionList ?init$term ?(λ _ : List init$term. init$term)
+    (quote$angle θ{nil} type)
+    (λ t : init$term. λ _ : List init$term. λ rec : init$term.
+      quote$square (quote$square (quote$angle θ{cons} type) t) rec)
+    terms.
 
-b-let init$bTerm$=tau==lsquare=_space'__bTerm__space'_=pipe=_space'__termlist_=rsquare=
-  (_ : init$space') (type : init$term) (_ : init$space') (_ : init$space') (terms : [List init$term]) : init$term :=
-  [quoteTermList type terms].
+b-let init$singleTerm$=tau==lsquare=_space'__multiTerm_=pipe=_space'__termlist_=rsquare=
+  (_ : init$space') (type : init$term) (_ : init$space') (terms : List init$term) : init$term :=
+  quoteTermList type terms.
 
 seteval eval init stmt.

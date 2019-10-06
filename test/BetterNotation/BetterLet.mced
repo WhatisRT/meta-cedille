@@ -19,7 +19,7 @@ let init$nameparams$_name__nameparams'_ := <cons init$name>.
 let init$nameparams'$ := <nil init$name>.
 let init$nameparams'$=comma=_space'__name__nameparams'_ := λ _ : init$space' <cons init$name>.
 
-let init$param'$_nameparams__space_=colon=_space__bTerm_ := λ ns : [List init$name] λ _ : init$space λ _ : init$space λ t : init$term
+let init$param'$_nameparams__space_=colon=_space__multiTerm_ := λ ns : [List init$name] λ _ : init$space λ _ : init$space λ t : init$term
   [[<<map init$name> PreParam> (λ n' : init$name [[mkPreParam n'] t])] ns].
 
 let init$params := [List Param].
@@ -50,9 +50,9 @@ let paramToPi := λ t : init$term λ p : Param
 let foldWithPi := [<<foldl Param> init$term> paramToPi] : Π _ : init$params Π _ : init$term init$term.
 
 let init$betterLetType$ := [<<inr init$term> Unit> tt].
-let init$betterLetType$_space__bTerm__space_=colon= := λ _ : init$space λ t : init$term λ _ : init$space [<<inl init$term> Unit> t].
+let init$betterLetType$_space__multiTerm_=colon= := λ _ : init$space λ t : init$term [<<inl init$term> Unit> t].
 
-let init$betterLet$_name__space__params_=colon=_betterLetType_=equal=_space'__bTerm_=dot= :=
+let init$betterLet$_name__space__params_=colon=_betterLetType_=equal=_space'__multiTerm_=dot= :=
   λ n : init$name λ _ : init$space λ params : init$params λ maybeType : [Maybe' init$term] λ _ : init$space' λ term : init$term
     [[[<<maybe' init$term> init$stmt'>
       [[quote$simpleLet' n] [[foldWithLambdas params] term]]]
