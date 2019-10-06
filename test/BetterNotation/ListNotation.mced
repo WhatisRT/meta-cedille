@@ -1,4 +1,4 @@
--- use τ[ X | x1 , ... , xn] to denote a [List X]
+-- use [ X | x1 , ... , xn] to denote a List X
 
 b-let init$termlist'$ : List init$term := nil ?init$term.
 b-let init$termlist'$=comma=_space'__multiTerm__termlist'_
@@ -17,7 +17,7 @@ b-let quoteTermList (type : init$term) (terms : List init$term) : init$term :=
       quote$square (quote$square (quote$angle θ{cons} type) t) rec)
     terms.
 
-b-let init$singleTerm$=tau==lsquare=_space'__multiTerm_=pipe=_space'__termlist_=rsquare=
+b-let init$singleTerm$=lsquare=_space'__multiTerm_=pipe=_space'__termlist_=rsquare=
   (_ : init$space') (type : init$term) (_ : init$space') (terms : List init$term) : init$term :=
   quoteTermList type terms.
 

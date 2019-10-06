@@ -14,7 +14,7 @@ let charEq (c, c' : init$char) : Bool :=
       and (byteEq x1 y1) (and (byteEq x2 y2) (and (byteEq x3 y3) (byteEq x4 y4))).
 
 let stringToList (s : init$string) : List init$char :=
-  s ?(List init$char) (λ c : init$char. λ rec : List init$char. cons ?init$char c rec) τ[init$char|].
+  s ?(List init$char) (λ c : init$char. λ rec : List init$char. cons ?init$char c rec) [init$char|].
 
 let stringFromList (s : List init$char) : init$string :=
   inductionList ?init$char ?(λ _ : List init$char. init$string) init$string$nil

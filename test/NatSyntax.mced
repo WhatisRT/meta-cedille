@@ -2,7 +2,7 @@ let init$bindigit$0 : Bool := false.
 let init$bindigit$1 : Bool := true.
 
 let init$binnat'$_bindigit__binnat'_ := cons ?Bool.
-let init$binnat'$ : List Bool := τ[Bool|].
+let init$binnat'$ : List Bool := [Bool|].
 
 let init$binnat$_bindigit__binnat'_ := cons ?Bool.
 

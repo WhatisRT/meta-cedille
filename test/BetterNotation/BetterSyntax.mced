@@ -15,7 +15,7 @@ b-let termListToList (l : init$termList) : List init$term :=
 b-let metaResult : * := Product (List init$string) (List init$term).
 
 b-let strToMetaResult (s : init$string) : metaResult :=
-  pair ?(List init$string) ?(λ _ : List init$string. List init$term) τ[init$string | s] τ[init$term |].
+  pair ?(List init$string) ?(λ _ : List init$string. List init$term) [init$string | s] [init$term |].
 
 b-let metaResultToLists (res : init$metaResult) : metaResult :=
   res ?metaResult
@@ -26,10 +26,10 @@ b-let eval' (stmt : init$stmt) : M metaResult :=
   mapMeta ?init$metaResult ?metaResult metaResultToLists (eval stmt).
 
 b-let echoCommand (s : init$string) : M metaResult :=
-  mapMeta ?init$string ?metaResult strToMetaResult (shellCmd "echo" (listToStringList τ[init$string | s])).
+  mapMeta ?init$string ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [init$string | s])).
 
 b-let simpleCommand (s : init$string) : M metaResult :=
-  mapMeta ?init$string ?metaResult strToMetaResult (shellCmd s (listToStringList τ[init$string |])).
+  mapMeta ?init$string ?metaResult strToMetaResult (shellCmd s (listToStringList [init$string |])).
 
 b-let init$newStmt : * := Sum init$stmt (M metaResult).
 

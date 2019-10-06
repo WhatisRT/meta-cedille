@@ -3,14 +3,14 @@ let showListOfDigits [X : *] (showX : Π _ : X. init$string) (l : List X) : init
 
 let incrementBinList (l : List Bool) : List Bool :=
   inductionList ?Bool ?(λ _ : List Bool. List Bool)
-    τ[Bool | true]
+    [Bool | true]
     (λ b : Bool. λ bs : List Bool. λ rec : List Bool.
       ifthenelse ?(List Bool) b (cons ?Bool false rec) (cons ?Bool true bs))
     l.
 
 let natToBinList (n : Nat) : List Bool :=
   inductionNat ?(λ _ : Nat. List Bool)
-    τ[Bool | false]
+    [Bool | false]
     (λ _ : Nat. λ rec : List Bool. incrementBinList rec)
     n.
 
