@@ -271,7 +271,7 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
       parseRuleTable : M (RuleTable RuleString)
       parseRuleTable = sequenceRuleTable
-        λ v x → let y = lookup (fromList $ proj₂ (lookup rules v)) x in do
+        λ v x → let y = lookup (fromList $ proj₂ (lookup rules v)) x in
           appendIfError (markedStringToRule y) (" In: " + show y)
 
   -- The first parameter describes the non-terminal the grammar should start with
