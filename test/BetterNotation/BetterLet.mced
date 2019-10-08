@@ -1,9 +1,13 @@
 -- use b-let f (x1, ..., xn : T1) ... (... : Tn) : T := def. to define a term
 
 let Maybe' := λ A : * [[Sum A] Unit].
+let just' := Λ A : * λ a : A [<<inl A> Unit> a].
 
 let maybe' := Λ A : * Λ B : * λ default : B λ f : Π _ : A B λ x : [Maybe' A]
   [[[<<<inductionSum A> Unit> (λ _ : [Maybe' A] B)> (λ a : A [f a])] (λ _ : Unit default)] x].
+let mapMaybe' :=
+  Λ A : * Λ B : * λ f : Π _ : A B λ x : [Maybe' A]
+    [[[<<maybe' A> [Maybe' B]> [<<inr B> Unit> tt]] λ a : A [<just' B> [f a]]] x].
 
 let PreParam := [[Product init$name] init$term].
 let mkPreParam := <<prodPair init$name> init$term>.
@@ -13,6 +17,17 @@ let mkParam := <<prodPair Bool> PreParam>.
 let paramErased := <<pr1 Bool> PreParam> : Π _ : Param Bool.
 let paramName := λ p : Param [<<pr1 init$name> init$term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$name.
 let paramType := λ p : Param [<<pr2 init$name> init$term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$term.
+
+let LetInfo := [[Product init$name] [[Product init$term] [Maybe' init$term]]].
+let mkLetInfo :=
+  λ n : init$name λ t : init$term λ T : [Maybe' init$term]
+    [[<<prodPair init$name> [[Product init$term] [Maybe' init$term]]>
+      n]
+      [[<<prodPair init$term> [Maybe' init$term]> t] T]]
+  : Π _ : init$name Π _ : init$term Π _ : [Maybe' init$term] LetInfo.
+let letInfoName := λ i : LetInfo [<<pr1 init$name> [[Product init$term] [Maybe' init$term]]> i].
+let letInfoTerm := λ i : LetInfo [<<pr1 init$term> [Maybe' init$term]> [<<pr2 init$name> [[Product init$term] [Maybe' init$term]]> i]].
+let letInfoType := λ i : LetInfo [<<pr2 init$term> [Maybe' init$term]> [<<pr2 init$name> [[Product init$term] [Maybe' init$term]]> i]].
 
 let init$nameparams$_name__nameparams'_ := <cons init$name>.
 
@@ -54,12 +69,16 @@ let init$betterLetType$_space__multiTerm_=colon= := λ _ : init$space λ t : ini
 
 let init$betterLet$_name__space__params_=colon=_betterLetType_=equal=_space'__multiTerm_=dot= :=
   λ n : init$name λ _ : init$space λ params : init$params λ maybeType : [Maybe' init$term] λ _ : init$space' λ term : init$term
+    [[[mkLetInfo n] [[foldWithLambdas params] term]] [[<<mapMaybe' init$term> init$term> [foldWithPi params]] maybeType]].
+
+let convertLetInfo :=
+  λ i : LetInfo
     [[[<<maybe' init$term> init$stmt'>
-      [[quote$simpleLet' n] [[foldWithLambdas params] term]]]
-      λ type : init$term [[[quote$annotatedLet' n] [[foldWithLambdas params] term]] [[foldWithPi params] type]]]
-      maybeType].
+      [[quote$simpleLet' [letInfoName i]] [letInfoTerm i]]]
+      λ type : init$term [[[quote$annotatedLet' [letInfoName i]] [letInfoTerm i]] type]]
+      [letInfoType i]].
 
 let init$stmt'$b=minus=let_space__betterLet_ :=
-  λ _ : init$space λ s : init$stmt' s.
+  λ _ : init$space convertLetInfo.
 
 seteval eval init stmt.
