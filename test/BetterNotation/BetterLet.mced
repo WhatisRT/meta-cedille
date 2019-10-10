@@ -9,15 +9,6 @@ let mapMaybe' :=
   Λ A : * Λ B : * λ f : Π _ : A B λ x : [Maybe' A]
     [[[<<maybe' A> [Maybe' B]> [<<inr B> Unit> tt]] λ a : A [<just' B> [f a]]] x].
 
-let PreParam := [[Product init$name] init$term].
-let mkPreParam := <<prodPair init$name> init$term>.
-let Param := [[Product Bool] PreParam]. -- potentially erased
-let mkParam := <<prodPair Bool> PreParam>.
-
-let paramErased := <<pr1 Bool> PreParam> : Π _ : Param Bool.
-let paramName := λ p : Param [<<pr1 init$name> init$term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$name.
-let paramType := λ p : Param [<<pr2 init$name> init$term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$term.
-
 let LetInfo := [[Product init$name] [[Product init$term] [Maybe' init$term]]].
 let mkLetInfo :=
   λ n : init$name λ t : init$term λ T : [Maybe' init$term]
@@ -26,23 +17,10 @@ let mkLetInfo :=
       [[<<prodPair init$term> [Maybe' init$term]> t] T]]
   : Π _ : init$name Π _ : init$term Π _ : [Maybe' init$term] LetInfo.
 let letInfoName := λ i : LetInfo [<<pr1 init$name> [[Product init$term] [Maybe' init$term]]> i].
-let letInfoTerm := λ i : LetInfo [<<pr1 init$term> [Maybe' init$term]> [<<pr2 init$name> [[Product init$term] [Maybe' init$term]]> i]].
-let letInfoType := λ i : LetInfo [<<pr2 init$term> [Maybe' init$term]> [<<pr2 init$name> [[Product init$term] [Maybe' init$term]]> i]].
-
-let init$nameparams$_name__nameparams'_ := <cons init$name>.
-
-let init$nameparams'$ := <nil init$name>.
-let init$nameparams'$=comma=_space'__name__nameparams'_ := λ _ : init$space' <cons init$name>.
-
-let init$param'$_nameparams__space_=colon=_space__multiTerm_ := λ ns : [List init$name] λ _ : init$space λ _ : init$space λ t : init$term
-  [[<<map init$name> PreParam> (λ n' : init$name [[mkPreParam n'] t])] ns].
-
-let init$params := [List Param].
-let init$params$=lparen=_param'_=rparen=_space__params_ := λ p : [List PreParam] λ _ : init$space
-  [<app Param> [[<<map PreParam> Param> [mkParam false]] p]].
-let init$params$=lsquare=_param'_=rsquare=_space__params_ := λ p : [List PreParam] λ _ : init$space
-  [<app Param> [[<<map PreParam> Param> [mkParam true]] p]].
-let init$params$ := <nil Param>.
+let letInfoTerm :=
+  λ i : LetInfo [<<pr1 init$term> [Maybe' init$term]> [<<pr2 init$name> [[Product init$term] [Maybe' init$term]]> i]].
+let letInfoType :=
+  λ i : LetInfo [<<pr2 init$term> [Maybe' init$term]> [<<pr2 init$name> [[Product init$term] [Maybe' init$term]]> i]].
 
 let paramToLambda := λ t : init$term λ p : Param
   [[[[[
@@ -52,7 +30,7 @@ let paramToLambda := λ t : init$term λ p : Param
     [paramName p]] [paramType p]] t]
   : Π _ : init$term Π _ : Param init$term.
 
-let foldWithLambdas := [<<foldl Param> init$term> paramToLambda] : Π _ : init$params Π _ : init$term init$term.
+let foldWithLambdas := [<<foldl Param> init$term> paramToLambda] : Π _ : Telescope Π _ : init$term init$term.
 
 let paramToPi := λ t : init$term λ p : Param
   [[[[[
@@ -62,14 +40,14 @@ let paramToPi := λ t : init$term λ p : Param
     [paramName p]] [paramType p]] t]
   : Π _ : init$term Π _ : Param init$term.
 
-let foldWithPi := [<<foldl Param> init$term> paramToPi] : Π _ : init$params Π _ : init$term init$term.
+let foldWithPi := [<<foldl Param> init$term> paramToPi] : Π _ : Telescope Π _ : init$term init$term.
 
 let init$betterLetType$ := [<<inr init$term> Unit> tt].
 let init$betterLetType$_space__multiTerm_=colon= := λ _ : init$space λ t : init$term [<<inl init$term> Unit> t].
 
-let init$betterLet$_name__space__params_=colon=_betterLetType_=equal=_space'__multiTerm_=dot= :=
-  λ n : init$name λ _ : init$space λ params : init$params λ maybeType : [Maybe' init$term] λ _ : init$space' λ term : init$term
-    [[[mkLetInfo n] [[foldWithLambdas params] term]] [[<<mapMaybe' init$term> init$term> [foldWithPi params]] maybeType]].
+let init$betterLet$_name__space__telescope_=colon=_betterLetType_=equal=_space'__multiTerm_=dot= :=
+  λ n : init$name λ _ : init$space λ tel : Telescope λ maybeType : [Maybe' init$term] λ _ : init$space' λ term : init$term
+    [[[mkLetInfo n] [[foldWithLambdas tel] term]] [[<<mapMaybe' init$term> init$term> [foldWithPi tel]] maybeType]].
 
 let convertLetInfo :=
   λ i : LetInfo
