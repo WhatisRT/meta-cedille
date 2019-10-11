@@ -9,18 +9,12 @@ let mapMaybe' :=
   Λ A : * Λ B : * λ f : Π _ : A B λ x : [Maybe' A]
     [[[<<maybe' A> [Maybe' B]> [<<inr B> Unit> tt]] λ a : A [<just' B> [f a]]] x].
 
-let LetInfo := [[Product init$name] [[Product init$term] [Maybe' init$term]]].
-let mkLetInfo :=
-  λ n : init$name λ t : init$term λ T : [Maybe' init$term]
-    [[<<prodPair init$name> [[Product init$term] [Maybe' init$term]]>
-      n]
-      [[<<prodPair init$term> [Maybe' init$term]> t] T]]
+let LetInfo := [[[TripleProduct init$name] init$term] [Maybe' init$term]].
+let mkLetInfo := <<<mkTripleProduct init$name> init$term> [Maybe' init$term]>
   : Π _ : init$name Π _ : init$term Π _ : [Maybe' init$term] LetInfo.
-let letInfoName := λ i : LetInfo [<<pr1 init$name> [[Product init$term] [Maybe' init$term]]> i].
-let letInfoTerm :=
-  λ i : LetInfo [<<pr1 init$term> [Maybe' init$term]> [<<pr2 init$name> [[Product init$term] [Maybe' init$term]]> i]].
-let letInfoType :=
-  λ i : LetInfo [<<pr2 init$term> [Maybe' init$term]> [<<pr2 init$name> [[Product init$term] [Maybe' init$term]]> i]].
+let letInfoName := λ i : LetInfo [<<<pr31 init$name> init$term> [Maybe' init$term]> i].
+let letInfoTerm := λ i : LetInfo [<<<pr32 init$name> init$term> [Maybe' init$term]> i].
+let letInfoType := λ i : LetInfo [<<<pr33 init$name> init$term> [Maybe' init$term]> i].
 let letInfoHasAnn := λ i : LetInfo [[[<<maybe' init$term> Bool> false] λ _ : init$term true] [letInfoType i]].
 
 let paramToLambda := λ t : init$term λ p : Param
