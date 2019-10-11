@@ -66,6 +66,9 @@ let quote$annotatedLet := λ n : init$name λ t : init$term λ t' : init$term [q
 
 let quote$normalize' := λ t : init$term [[[init$stmt'$normalize_space__term__space'_=dot= quote$singleSpace] t] quote$noSpace] : Π _ : init$term init$stmt'.
 
+let quote$seteval' := λ t : init$term λ n : init$name λ n' : init$name
+  [[[[[[[init$stmt'$seteval_space__term__space__name__space__name__space'_=dot= quote$singleSpace] t] quote$singleSpace] n] quote$singleSpace] n'] quote$noSpace].
+
 let quote$normalize := λ t : init$term [quote$stmt'ToStmt [quote$normalize' t]] : Π _ : init$term init$stmt.
 
 let quote$import' := λ n : init$name [[[init$stmt'$import_space__name__space'_=dot= quote$singleSpace] n] quote$noSpace].

@@ -21,4 +21,4 @@ let init$lambdaStmt$normalize_space__lambdaTerm__space'_=dot=
 
 let init$newStmt'$=lambda==minus=_lambdaStmt_ (x : init$stmt') : init$newStmt := stmtToNewStmt x.
 
-o-seteval evalNewStmt init newStmt.
+o-seteval [evalNewStmt emptyEvaluatorState] init newStmt.

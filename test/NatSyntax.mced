@@ -22,4 +22,4 @@ let boolListToNat (bs : List Bool) : Nat :=
 let init$singleTerm$_binnat_ (bs : List Bool) : init$term :=
   quote$square θ{boolListToNat} (quoteListBool bs).
 
-o-seteval evalNewStmt init newStmt.
+o-seteval [evalNewStmt emptyEvaluatorState] init newStmt.

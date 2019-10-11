@@ -1,3 +1,62 @@
+-- Types + state monad
+
+b-let EvalFlags : * := Bool.
+b-let defaultFlags : EvalFlags := false.
+b-let quoteEvalFlags (f : EvalFlags) : init$term :=
+  ifthenelse ?init$term f θ{true} θ{false}.
+
+b-let getAnnReq (f : EvalFlags) : Bool := f.
+b-let modifyAnnReq (b : Bool) (_ : EvalFlags) : EvalFlags := b.
+
+b-let ModuleState : * := Unit.
+b-let emptyModState : ModuleState := tt.
+b-let quoteModuleState (_ : ModuleState) : init$term := θ{tt}.
+
+b-let EvaluatorState : * := Product EvalFlags ModuleState.
+b-let mkEvaluatorState (f : EvalFlags) (s : ModuleState) : EvaluatorState := prodPair ?EvalFlags ?ModuleState f s.
+b-let getEvalFlags := pr1 ?EvalFlags ?ModuleState.
+b-let getModuleState := pr2 ?EvalFlags ?ModuleState.
+
+b-let quoteEvaluatorState (s : EvaluatorState) : init$term :=
+  quote$square (quote$square θ{mkEvaluatorState} (quoteEvalFlags (getEvalFlags s))) (quoteModuleState (getModuleState s)).
+
+b-let emptyEvaluatorState : EvaluatorState := mkEvaluatorState defaultFlags emptyModState.
+
+b-let metaResult : * := Product (List init$string) (List init$term).
+
+b-let EvalState : Π _ : *. * := λ T : *. Π _ : EvaluatorState. M (Product T EvaluatorState).
+b-let pureEvalState [T : *] (t : T) : EvalState T :=
+  λ s : EvaluatorState. returnMeta ?(Product T EvaluatorState) (prodPair ?T ?EvaluatorState t s).
+b-let bindEvalState [T, T' : *] (x : EvalState T) (f : Π _ : T. EvalState T') : EvalState T' :=
+  λ s : EvaluatorState.
+    bindMeta ?(Product T EvaluatorState) ?(Product T' EvaluatorState) (x s)
+             (λ res : (Product T EvaluatorState). f (pr1 ?T ?EvaluatorState res) (pr2 ?T ?EvaluatorState res)).
+b-let mapEvalState [T, T' : *] (f : Π _ : T. T') (t : EvalState T) : EvalState T' :=
+  bindEvalState ?T ?T' t (λ x : T. pureEvalState ?T' (f x)).
+b-let seqEvalState [T, T' : *] (t : EvalState T) (t' : EvalState T') : EvalState T' :=
+  bindEvalState ?T ?T' t (λ _ : T. t').
+b-let getEvalState : EvalState EvaluatorState :=
+  λ s : EvaluatorState. returnMeta ?(Product EvaluatorState EvaluatorState) (prodPair ?EvaluatorState ?EvaluatorState s s).
+b-let setEvalState (s : EvaluatorState) : EvalState Unit :=
+  λ _ : EvaluatorState. returnMeta ?(Product Unit EvaluatorState) (prodPair ?Unit ?EvaluatorState tt s).
+b-let modifyEvalState (f : Π _ : EvaluatorState. EvaluatorState) : EvalState Unit :=
+  bindEvalState ?EvaluatorState ?Unit getEvalState
+    (λ s : EvaluatorState. setEvalState (f s)).
+
+b-let getFlags : EvalState EvalFlags :=
+  mapEvalState ?EvaluatorState ?EvalFlags getEvalFlags getEvalState.
+b-let modifyEvalFlags (f : Π _ : EvalFlags. EvalFlags) : EvalState Unit :=
+  modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (f (getEvalFlags s)) (getModuleState s)).
+
+b-let liftMtoEvalState [T : *] (t : M T) : EvalState T :=
+  λ s : EvaluatorState.
+    bindMeta ?T ?(Product T EvaluatorState) t
+      (λ x : T. returnMeta ?(Product T EvaluatorState) (prodPair ?T ?EvaluatorState x s)).
+
+b-let init$newStmt : * := EvalState metaResult.
+
+-- helper functions
+
 b-let stringListToList (l : init$stringList) : List init$string :=
   l ?(List init$string) (nil ?init$string)
     (λ s : init$string. λ rec : List init$string. cons ?init$string s rec).
@@ -18,8 +77,6 @@ b-let termListToList (l : init$termList) : List init$term :=
   l ?(List init$term) (nil ?init$term)
     (λ s : init$term. λ rec : List init$term. cons ?init$term s rec).
 
-b-let metaResult : * := Product (List init$string) (List init$term).
-
 b-let strToMetaResult (s : init$string) : metaResult :=
   pair ?(List init$string) ?(λ _ : List init$string. List init$term) [init$string | s] [init$term |].
 
@@ -28,11 +85,16 @@ b-let metaResultToLists (res : init$metaResult) : metaResult :=
     (λ l : init$stringList. λ l' : init$termList.
       prodPair ?(List init$string) ?(List init$term) (stringListToList l) (termListToList l')).
 
+-- Statements
+
 b-let eval' (stmt : init$stmt) : M metaResult :=
   mapMeta ?init$metaResult ?metaResult metaResultToLists (eval stmt).
 
 b-let echoCommand (s : init$string) : M metaResult :=
   mapMeta ?init$string ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [init$string | s])).
+
+b-let echoStmt (s : init$string) : init$newStmt :=
+  liftMtoEvalState ?metaResult (echoCommand s).
 
 b-let simpleCommand (s : init$string) : M metaResult :=
   mapMeta ?init$string ?metaResult strToMetaResult (shellCmd s (listToStringList [init$string |])).
@@ -40,22 +102,43 @@ b-let simpleCommand (s : init$string) : M metaResult :=
 b-let letInfoTermToQuoted (i : LetInfo) : LetInfo :=
   mkLetInfo (namePrefix "qTerm" (letInfoName i)) (quoteTerm (letInfoTerm i)) (just' ?init$term θ{init$term}).
 
-b-let init$newStmt : * := M metaResult.
-
 b-let runMetaCommand (t : init$term) : init$newStmt :=
-  joinMeta ?metaResult (checkTerm (M metaResult) t).
+  liftMtoEvalState ?metaResult (joinMeta ?metaResult (checkTerm (M metaResult) t)).
 
-b-let seqNewStmt (s, s' : init$newStmt) := bindMeta ?metaResult ?metaResult s (λ _ : metaResult. s').
+b-let seqNewStmt (s, s' : init$newStmt) : init$newStmt :=
+  seqEvalState ?metaResult ?metaResult s s'.
 
 b-let stmtToNewStmt (stmt : init$stmt') : init$newStmt :=
-  eval' (quote$stmt'ToStmt stmt).
+  liftMtoEvalState ?metaResult (eval' (quote$stmt'ToStmt stmt)).
 
-b-let letInfoToNewStmt (i : LetInfo) : init$newStmt := stmtToNewStmt (convertLetInfo i).
+b-let updateEvalState (s : EvaluatorState) : init$newStmt :=
+  stmtToNewStmt (quote$seteval' (quote$square θ{evalNewStmt} (quoteEvaluatorState s))
+                                (quote$name quote$i "nit") (quote$name quote$n "ewStmt")).
+
+b-let emptyStmt : init$newStmt := stmtToNewStmt init$stmt'$.
+
+b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
+  bindEvalState ?EvalFlags ?metaResult getFlags (λ f : EvalFlags.
+    ifthenelse ?init$newStmt (or (not (getAnnReq f)) (letInfoHasAnn i))
+      (stmtToNewStmt (convertLetInfo i))
+      (echoStmt "The provided command has no type annotation!")).
 
 -- statements from the old syntax
 b-let init$newStmt'$o=minus=_stmt'_ (stmt : init$stmt') : init$newStmt := stmtToNewStmt stmt.
 
+-- flags
+
+b-let init$flag$true := true.
+b-let init$flag$false := false.
+
+-- set statements
+
+b-let init$setStmt$RequireTypeAnnotations_space__flag_ (_ : init$space) (b : Bool) :=
+  seqEvalState ?Unit ?metaResult (modifyEvalFlags (modifyAnnReq b))
+    (bindEvalState ?EvaluatorState ?metaResult getEvalState updateEvalState).
+
 -- "native" statements in the new syntax
+b-let init$newStmt'$set_space__setStmt_=dot= (_ : init$space) (s : init$newStmt) := s.
 b-let init$newStmt'$let_space__betterLet_ (_ : init$space) (i : LetInfo) : init$newStmt := letInfoToNewStmt i .
 b-let init$newStmt'$qlet_space__betterLet_ (_ : init$space) (i : LetInfo) : init$newStmt :=
   seqNewStmt (letInfoToNewStmt i) (letInfoToNewStmt (letInfoTermToQuoted i)).
@@ -63,11 +146,11 @@ b-let init$newStmt'$runMeta_space__multiTerm_=dot= (_ : init$space) (t : init$te
 b-let init$newStmt'$echo_space__multiTerm_=dot= (_ : init$space) (t : init$term) : init$newStmt :=
   runMetaCommand (quote$square θ{echoCommand} t).
 b-let init$newStmt'$import_space__name_=dot= (_ : init$space) (n : init$name) : init$newStmt := stmtToNewStmt (quote$import' n).
-b-let init$newStmt'$ : init$newStmt := stmtToNewStmt init$stmt'$.
+b-let init$newStmt'$ : init$newStmt := emptyStmt.
 
 b-let init$newStmt$_space'__newStmt'_ (_ : init$space') (stmt : init$newStmt) : init$newStmt := stmt.
 
 -- new evaluator
-b-let evalNewStmt (stmt : init$newStmt) : M metaResult := stmt.
+b-let evalNewStmt (s : EvaluatorState) (stmt : init$newStmt) : M (Product metaResult EvaluatorState) := stmt s.
 
-seteval evalNewStmt init newStmt.
+seteval [evalNewStmt emptyEvaluatorState] init newStmt.
