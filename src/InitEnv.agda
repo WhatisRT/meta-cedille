@@ -44,7 +44,7 @@ private
 
     "index'$" ∷ map (λ c -> "index'$" ++ [ c ] ++ "_index'_") digits ++
     map (λ c -> "index$" ++ [ c ] ++ "_index'_") digits ++
-    "var$_name_" ∷ "var$_index_" ∷
+    "var$_string_" ∷ "var$_index_" ∷
 
     "sort$=ast=" ∷ "sort$=sq=" ∷
 
@@ -57,13 +57,13 @@ private
     "term$=sigma=_space__term_" ∷
     "term$=lsquare=_space'__term__space__term__space'_=rsquare=" ∷
     "term$=langle=_space'__term__space__term__space'_=rangle=" ∷
-    "term$=rho=_space__term__space__name__space'_=dot=_space'__term__space__term_" ∷
-    "term$=forall=_space__name__space'_=colon=_space'__term__space__term_" ∷
-    "term$=Pi=_space__name__space'_=colon=_space'__term__space__term_" ∷
-    "term$=iota=_space__name__space'_=colon=_space'__term__space__term_" ∷
-    "term$=lambda=_space__name__space'_=colon=_space'__term__space__term_" ∷
-    "term$=Lambda=_space__name__space'_=colon=_space'__term__space__term_" ∷
-    "term$=lbrace=_space'__term__space'_=comma=_space'__term__space__name__space'_=dot=_space'__term__space'_=rbrace=" ∷
+    "term$=rho=_space__term__space__string__space'_=dot=_space'__term__space__term_" ∷
+    "term$=forall=_space__string__space'_=colon=_space'__term__space__term_" ∷
+    "term$=Pi=_space__string__space'_=colon=_space'__term__space__term_" ∷
+    "term$=iota=_space__string__space'_=colon=_space'__term__space__term_" ∷
+    "term$=lambda=_space__string__space'_=colon=_space'__term__space__term_" ∷
+    "term$=Lambda=_space__string__space'_=colon=_space'__term__space__term_" ∷
+    "term$=lbrace=_space'__term__space'_=comma=_space'__term__space__string__space'_=dot=_space'__term__space'_=rbrace=" ∷
     "term$=phi=_space__term__space__term__space__term_" ∷
     "term$=equal=_space__term__space__term_" ∷
     "term$=omega=_space__term_" ∷ -- this is M
@@ -76,15 +76,15 @@ private
 
     "lettail$=dot=" ∷ "lettail$=colon=_space'__term__space'_=dot=" ∷
 
-    "stmt'$let_space__name__space'_=colon==equal=_space'__term__space'__lettail_" ∷
-    "stmt'$ass_space__name__space'_=colon=_space'__term__space'_=dot=" ∷
+    "stmt'$let_space__string__space'_=colon==equal=_space'__term__space'__lettail_" ∷
+    "stmt'$ass_space__string__space'_=colon=_space'__term__space'_=dot=" ∷
     "stmt'$normalize_space__term__space'_=dot=" ∷
     "stmt'$hnf_space__term__space'_=dot=" ∷
     "stmt'$erase_space__term__space'_=dot=" ∷
     "stmt'$test_space__term__space'_=dot=" ∷
-    "stmt'$seteval_space__term__space__name__space__name__space'_=dot=" ∷
-    "stmt'$import_space__name__space'_=dot=" ∷
-    "stmt'$cmd_space__name__space'_=dot=" ∷
+    "stmt'$seteval_space__term__space__string__space__string__space'_=dot=" ∷
+    "stmt'$import_space__string__space'_=dot=" ∷
+    "stmt'$cmd_space__string__space'_=dot=" ∷
     "stmt'$" ∷
     "stmt$_space'__stmt'_" ∷
     []
@@ -140,18 +140,6 @@ private
     ("init$metaResult"
     , ("init$metaResult$pair" , (Other "init$stringList" ∷ Other "init$termList" ∷ [])) ∷ [])
 
-  name'Data : InductiveData
-  name'Data =
-    ("init$name'"
-    , ("init$name'$_nameTailChar__name'_" , ((Other "init$char") ∷ Self ∷ [])) ∷
-      ("init$name'$" , []) ∷
-      [])
-
-  nameData : InductiveData
-  nameData =
-    ("init$name" ,
-    ("init$name$_nameInitChar__name'_" , ((Other "init$char") ∷ (Other "init$name'") ∷ [])) ∷ [])
-
   bitToData : Bool -> String
   bitToData false = "init$bit$false"
   bitToData true = "init$bit$true"
@@ -181,21 +169,24 @@ private
   nameTailConstrs = map (λ c -> charDataConstructor c "init$nameTailChar$") nameTails
 
   initEnvConstrs : List InductiveData
-  initEnvConstrs = bitData ∷ byteData ∷ charData ∷ name'Data ∷ nameData ∷
+  initEnvConstrs = bitData ∷ byteData ∷ charData ∷ stringData ∷
     (map
       (λ { (name , rule) -> toInductiveData "init" (fromList name) (map fromList rule) }) $
       sortGrammar grammar)
 
   otherInit : List String
   otherInit =
-    map simpleInductive (stringData ∷ stringListData ∷ termListData ∷ metaResultData ∷ [])
-    ++ "let eval := λ s : init$stmt Α s." ∷ "seteval eval init stmt." ∷ []
+    map simpleInductive (stringListData ∷ termListData ∷ metaResultData ∷ [])
+    ++ "let init$string$_nameInitChar__string'_ := init$string$cons."
+    ∷ "let init$string'$_nameTailChar__string'_ := init$string$cons."
+    ∷ "let init$string'$ := init$string$nil."
+    ∷ "let eval := λ s : init$stmt Α s." ∷ "seteval eval init stmt." ∷ []
 
   grammarWithChars : List (List Char)
   grammarWithChars = grammar ++
     map (λ c -> "nameTailChar$" ++ c) (map escapeChar nameTails) ++
     map (λ c -> "nameInitChar$" ++ c) (map escapeChar nameInits) ++
-    "name'$_nameTailChar__name'_" ∷ "name'$" ∷ "name$_nameInitChar__name'_" ∷ []
+    "string'$_nameTailChar__string'_" ∷ "string'$" ∷ "string$_nameInitChar__string'_" ∷ "var$_string_" ∷ "var$_index_" ∷ []
 
 --------------------------------------------------------------------------------
 

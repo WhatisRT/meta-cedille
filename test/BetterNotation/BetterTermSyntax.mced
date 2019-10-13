@@ -35,25 +35,25 @@ let init$multiTerm$_singleTerm__maybeApplist_ := λ t : init$term λ as : [List 
 let init$singleTerm$=ast= := quote$ast.
 let init$singleTerm$=sq= := quote$sq.
 
-let init$singleTerm$_name_ := λ n : init$name [quote$var n].
+let init$singleTerm$_string_ := λ n : init$string [quote$var n].
 let init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : init$term t.
 
-let init$singleTerm$=forall=_space__name__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
-  λ _ : init$space λ n : init$name λ _ : init$space' λ _ : init$space'
+let init$singleTerm$=forall=_space__string__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
+  λ _ : init$space λ n : init$string λ _ : init$space' λ _ : init$space'
   λ T : init$term λ _ : init$space λ t : init$term
     [[[quote$forall n] T] t].
 
-let init$singleTerm$=Pi=_space__name__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
-  λ _ : init$space λ n : init$name λ _ : init$space' λ _ : init$space'
+let init$singleTerm$=Pi=_space__string__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
+  λ _ : init$space λ n : init$string λ _ : init$space' λ _ : init$space'
   λ T : init$term λ _ : init$space λ t : init$term
     [[[quote$Pi n] T] t].
 
-let init$singleTerm$=lambda=_space__name__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
-  λ _ : init$space λ n : init$name λ _ : init$space' λ _ : init$space'
+let init$singleTerm$=lambda=_space__string__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
+  λ _ : init$space λ n : init$string λ _ : init$space' λ _ : init$space'
   λ T : init$term λ _ : init$space λ t : init$term
     [[[quote$lambda n] T] t].
 
-let init$singleTerm$=Lambda=_space__name__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
-  λ _ : init$space λ n : init$name λ _ : init$space' λ _ : init$space'
+let init$singleTerm$=Lambda=_space__string__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
+  λ _ : init$space λ n : init$string λ _ : init$space' λ _ : init$space'
   λ T : init$term λ _ : init$space λ t : init$term
     [[[quote$Lambda n] T] t].

@@ -10,7 +10,5 @@ import test/Maybe.
 import test/Nat.
 import test/NatSyntax.
 
-import test/StringHelpers.
-
 import test/ListExt.
 import test/NatExt.

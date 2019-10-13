@@ -67,12 +67,6 @@ b-let listToStringList (l : List init$string) : init$stringList :=
                  (λ s : init$string. λ _ : List init$string. λ rec : init$stringList. init$stringList$cons s rec))
     l.
 
-b-let namePrefixChar (c : init$char) (n : init$name) : init$name :=
-  n ?init$name (λ c' : init$char. λ n' : init$name'. quote$name c (quote$ncons c' n')).
-
-b-let namePrefix (s : init$string) (n : init$name) : init$name :=
-  s ?init$name (λ c : init$char. λ rec : init$name. namePrefixChar c rec) n.
-
 b-let termListToList (l : init$termList) : List init$term :=
   l ?(List init$term) (nil ?init$term)
     (λ s : init$term. λ rec : List init$term. cons ?init$term s rec).
@@ -100,22 +94,27 @@ b-let simpleCommand (s : init$string) : M metaResult :=
   mapMeta ?init$string ?metaResult strToMetaResult (shellCmd s (listToStringList [init$string |])).
 
 b-let letInfoTermToQuoted (i : LetInfo) : LetInfo :=
-  mkLetInfo (namePrefix "qTerm" (letInfoName i)) (quoteTerm (letInfoTerm i)) (just' ?init$term θ{init$term}).
+  mkLetInfo (stringApp "qTerm" (letInfoName i)) (quoteTerm (letInfoTerm i)) (just' ?init$term θ{init$term}).
 
 b-let runMetaCommand (t : init$term) : init$newStmt :=
   liftMtoEvalState ?metaResult (joinMeta ?metaResult (checkTerm (M metaResult) t)).
 
-b-let seqNewStmt (s, s' : init$newStmt) : init$newStmt :=
-  seqEvalState ?metaResult ?metaResult s s'.
-
 b-let stmtToNewStmt (stmt : init$stmt') : init$newStmt :=
   liftMtoEvalState ?metaResult (eval' (quote$stmt'ToStmt stmt)).
 
-b-let updateEvalState (s : EvaluatorState) : init$newStmt :=
-  stmtToNewStmt (quote$seteval' (quote$square θ{evalNewStmt} (quoteEvaluatorState s))
-                                (quote$name quote$i "nit") (quote$name quote$n "ewStmt")).
-
 b-let emptyStmt : init$newStmt := stmtToNewStmt init$stmt'$.
+
+b-let seqNewStmt (s, s' : init$newStmt) : init$newStmt :=
+  seqEvalState ?metaResult ?metaResult s s'.
+
+b-let seqNewStmts (stmts : List init$newStmt) : init$newStmt :=
+  inductionList ?init$newStmt ?(λ _ : List init$newStmt. init$newStmt)
+    emptyStmt
+    (λ s : init$newStmt. λ _ : List init$newStmt. λ rec : init$newStmt. seqNewStmt s rec)
+    stmts.
+
+b-let updateEvalState (s : EvaluatorState) : init$newStmt :=
+  stmtToNewStmt (quote$seteval' (quote$square θ{evalNewStmt} (quoteEvaluatorState s)) "init" "newStmt").
 
 b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
   bindEvalState ?EvalFlags ?metaResult getFlags (λ f : EvalFlags.
@@ -145,7 +144,7 @@ b-let init$newStmt'$qlet_space__betterLet_ (_ : init$space) (i : LetInfo) : init
 b-let init$newStmt'$runMeta_space__multiTerm_=dot= (_ : init$space) (t : init$term) : init$newStmt := runMetaCommand t.
 b-let init$newStmt'$echo_space__multiTerm_=dot= (_ : init$space) (t : init$term) : init$newStmt :=
   runMetaCommand (quote$square θ{echoCommand} t).
-b-let init$newStmt'$import_space__name_=dot= (_ : init$space) (n : init$name) : init$newStmt := stmtToNewStmt (quote$import' n).
+b-let init$newStmt'$import_space__string_=dot= (_ : init$space) (n : init$string) : init$newStmt := stmtToNewStmt (quote$import' n).
 b-let init$newStmt'$ : init$newStmt := emptyStmt.
 
 b-let init$newStmt$_space'__newStmt'_ (_ : init$space') (stmt : init$newStmt) : init$newStmt := stmt.

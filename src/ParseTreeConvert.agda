@@ -109,7 +109,7 @@ toName (Node x x₁) = case x₁ of λ
         c <- toChar y
         n <- toName' y'
         return (c ∷ n)
-      ; [] -> (if x ≣ (from-just $ ruleId "name'" "")
+      ; [] -> (if x ≣ (from-just $ ruleId "string'" "")
           then return []
           else nothing)
       ; _ -> nothing }
@@ -177,7 +177,7 @@ toTerm = helper []
           head x₁ >>=
             λ { (Node y (n ∷ [])) ->
                 decCase y of
-                  ((from-just $ ruleId "var" "_name_") , do
+                  ((from-just $ ruleId "var" "_string_") , do
                     n' <- toName n
                     case findIndexList (n' ≟_) accu of (λ
                       { (just x) → return $ Var-A $ Bound $ fromℕ x
@@ -236,7 +236,7 @@ toTerm = helper []
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
-          "ρ_space__term__space__name__space'_._space'__term__space__term_") , (case x₁ of λ
+          "ρ_space__term__space__string__space'_._space'__term__space__term_") , (case x₁ of λ
           { (_ ∷ y ∷ _ ∷ n' ∷ _ ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) -> do
             t <- helper accu y
             n <- toName n'
@@ -246,7 +246,7 @@ toTerm = helper []
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
-          "∀_space__name__space'_:_space'__term__space__term_") , (case x₁ of λ
+          "∀_space__string__space'_:_space'__term__space__term_") , (case x₁ of λ
           { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
             n <- toName n'
             t <- helper accu y
@@ -255,7 +255,7 @@ toTerm = helper []
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
-          "Π_space__name__space'_:_space'__term__space__term_") , (case x₁ of λ
+          "Π_space__string__space'_:_space'__term__space__term_") , (case x₁ of λ
           { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
             n <- toName n'
             t <- helper accu y
@@ -264,7 +264,7 @@ toTerm = helper []
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
-          "ι_space__name__space'_:_space'__term__space__term_") , (case x₁ of λ
+          "ι_space__string__space'_:_space'__term__space__term_") , (case x₁ of λ
           { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
             n <- toName n'
             t <- helper accu y
@@ -273,7 +273,7 @@ toTerm = helper []
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
-          "λ_space__name__space'_:_space'__term__space__term_") , (case x₁ of λ
+          "λ_space__string__space'_:_space'__term__space__term_") , (case x₁ of λ
           { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
             n <- toName n'
             t <- helper accu y
@@ -282,7 +282,7 @@ toTerm = helper []
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
-          "Λ_space__name__space'_:_space'__term__space__term_") , (case x₁ of λ
+          "Λ_space__string__space'_:_space'__term__space__term_") , (case x₁ of λ
           { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) -> do
             n <- toName n'
             t <- helper accu y
@@ -291,7 +291,7 @@ toTerm = helper []
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
-          "{_space'__term__space'_,_space'__term__space__name__space'_._space'__term__space'_}") ,
+          "{_space'__term__space'_,_space'__term__space__string__space'_._space'__term__space'_}") ,
           (case x₁ of λ
           { (_ ∷ y ∷ _ ∷ _ ∷ y' ∷ _ ∷ n' ∷ _ ∷ _ ∷ y'' ∷ _ ∷ []) -> do
             t <- helper accu y
@@ -399,7 +399,7 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
   if (x ≣ (from-just $ ruleId "stmt" "_space'__stmt'_"))
     then
       decCase x' of
-        ((from-just $ ruleId "stmt'" "let_space__name__space'_:=_space'__term__space'__lettail_") ,
+        ((from-just $ ruleId "stmt'" "let_space__string__space'_:=_space'__term__space'__lettail_") ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) → do
               n <- toName y
@@ -408,7 +408,7 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
             ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "stmt'"
-          "ass_space__name__space'_:_space'__term__space'_.") ,
+          "ass_space__string__space'_:_space'__term__space'_.") ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ _ ∷ y₁ ∷ _ ∷ []) -> do
               n <- toName y
@@ -444,7 +444,7 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
               return (Test t)
             ; _ -> nothing })) ∷
 
-        ((from-just $ ruleId "stmt'" "seteval_space__term__space__name__space__name__space'_.") ,
+        ((from-just $ ruleId "stmt'" "seteval_space__term__space__string__space__string__space'_.") ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ y'' ∷ _ ∷ []) -> do
               t <- toTerm y
@@ -453,14 +453,14 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
               return (SetEval t (fromList n) (fromList n'))
             ; _ -> nothing })) ∷
 
-        ((from-just $ ruleId "stmt'" "import_space__name__space'_.") ,
+        ((from-just $ ruleId "stmt'" "import_space__string__space'_.") ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ []) -> do
               n <- toName y
               return $ Import (fromList n)
             ; _ -> nothing })) ∷
 
-        ((from-just $ ruleId "stmt'" "cmd_space__name__space'_.") ,
+        ((from-just $ ruleId "stmt'" "cmd_space__string__space'_.") ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ []) -> do
               n <- toName y

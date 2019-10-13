@@ -1,14 +1,14 @@
-let PreParam := [[Product init$name] init$term].
-let mkPreParam := <<prodPair init$name> init$term>.
+let PreParam := [[Product init$string] init$term].
+let mkPreParam := <<prodPair init$string> init$term>.
 let Param := [[Product Bool] PreParam]. -- potentially erased
 let mkParam := <<prodPair Bool> PreParam>.
 
 let paramErased := <<pr1 Bool> PreParam> : Π _ : Param Bool.
-let paramName := λ p : Param [<<pr1 init$name> init$term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$name.
-let paramType := λ p : Param [<<pr2 init$name> init$term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$term.
+let paramName := λ p : Param [<<pr1 init$string> init$term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$string.
+let paramType := λ p : Param [<<pr2 init$string> init$term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$term.
 
 let namesToPreParams :=
-  λ ns : [List init$name] λ t : init$term [[<<map init$name> PreParam> (λ n : init$name [[mkPreParam n] t])] ns].
+  λ ns : [List init$string] λ t : init$term [[<<map init$string> PreParam> (λ n : init$string [[mkPreParam n] t])] ns].
 
 let Telescope := [List Param].
 let telApp := λ p : [List PreParam] [<app Param> [[<<map PreParam> Param> [mkParam false]] p]].
@@ -17,13 +17,13 @@ let telNil := <nil Param>.
 
 -- parsing rules
 
-let init$nameparams'$ := <nil init$name>.
-let init$nameparams'$=comma=_space'__name__nameparams'_ := λ _ : init$space' <cons init$name>.
+let init$nameparams'$ := <nil init$string>.
+let init$nameparams'$=comma=_space'__string__nameparams'_ := λ _ : init$space' <cons init$string>.
 
-let init$nameparams$_name__nameparams'_ := <cons init$name>.
+let init$nameparams$_string__nameparams'_ := <cons init$string>.
 
 let init$params$_nameparams__space_=colon=_space__multiTerm_ :=
-  λ ns : [List init$name] λ _ : init$space λ _ : init$space λ t : init$term [[namesToPreParams ns] t].
+  λ ns : [List init$string] λ _ : init$space λ _ : init$space λ t : init$term [[namesToPreParams ns] t].
 
 let init$telescope$=lparen=_params_=rparen=_space__telescope_ := λ p : [List PreParam] λ _ : init$space [telApp p].
 let init$telescope$=lsquare=_params_=rsquare=_space__telescope_ := λ p : [List PreParam] λ _ : init$space [telAppE p].
