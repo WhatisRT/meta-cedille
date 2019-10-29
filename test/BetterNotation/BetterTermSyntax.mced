@@ -2,11 +2,13 @@
 
 let App := [[Product Bool] init$term].
 let mkApp := <<prodPair Bool> init$term>.
+let mkAppU := [<<prodPair Bool> init$term> false].
+let mkAppE := [<<prodPair Bool> init$term> true].
 let appErased := <<pr1 Bool> init$term>.
 let appTerm := <<pr2 Bool> init$term>.
 
-let init$app$_singleTerm_ := λ t : init$term [[mkApp false] t].
-let init$app$=question=_singleTerm_ := λ t : init$term [[mkApp true] t].
+let init$app$_singleTerm_ := mkAppU.
+let init$app$=question=_singleTerm_ := mkAppE.
 
 let init$applist := [List App].
 let init$applist$ := <nil App>.

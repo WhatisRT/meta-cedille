@@ -6,7 +6,15 @@ import test/BetterNotation/BetterTermSyntax.
 import test/BetterNotation/BetterLet.
 
 import test/BetterNotation/String.
+import test/BetterNotation/StringEquality.
 import test/BetterNotation/QuoteTerm.
 
 import test/BetterNotation/ListNotation.
+import test/BetterNotation/ListExt.
+import test/BetterNotation/ShowNat.
+
+import test/BetterNotation/ConversionHelpers.
+import test/BetterNotation/ModuleDefinitions.
+import test/BetterNotation/EvalTypes.
+import test/BetterNotation/ModuleFunction.
 import test/BetterNotation/BetterSyntax.

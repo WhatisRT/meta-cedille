@@ -10,5 +10,4 @@ import test/Maybe.
 import test/Nat.
 import test/NatSyntax.
 
-import test/ListExt.
-import test/NatExt.
+import test/ModuleTest.

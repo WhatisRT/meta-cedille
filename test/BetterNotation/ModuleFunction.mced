@@ -1,0 +1,152 @@
+b-let prefixVar (p : init$string) (v : init$var) : init$var :=
+  v ?init$var
+    (λ s : init$string. init$var$_string_ (stringApp p s))
+    init$var$_index_.
+
+b-let prefixNamesInTerm (p : init$string) (t : init$term) : init$term :=
+  t ?init$term
+    (λ v : init$var. init$term$_var_ (prefixVar p v))
+    init$term$_sort_
+    init$term$=pi=_space__term_
+    init$term$=psi=_space__term_
+    init$term$=beta=_space__term__space__term_
+    init$term$=delta=_space__term__space__term_
+    init$term$=sigma=_space__term_
+    init$term$=lsquare=_space'__term__space__term__space'_=rsquare=
+    init$term$=langle=_space'__term__space__term__space'_=rangle=
+    (λ sp1 : init$space. λ t : init$term. λ sp2 : init$space. λ s : init$string.
+      init$term$=rho=_space__term__space__string__space'_=dot=_space'__term__space__term_ sp1 t sp2 (stringApp p s))
+    (λ sp : init$space. λ s : init$string.
+      init$term$=forall=_space__string__space'_=colon=_space'__term__space__term_ sp (stringApp p s))
+    (λ sp : init$space. λ s : init$string.
+      init$term$=Pi=_space__string__space'_=colon=_space'__term__space__term_ sp (stringApp p s))
+    (λ sp : init$space. λ s : init$string.
+      init$term$=iota=_space__string__space'_=colon=_space'__term__space__term_ sp (stringApp p s))
+    (λ sp : init$space. λ s : init$string.
+      init$term$=lambda=_space__string__space'_=colon=_space'__term__space__term_ sp (stringApp p s))
+    (λ sp : init$space. λ s : init$string.
+      init$term$=Lambda=_space__string__space'_=colon=_space'__term__space__term_ sp (stringApp p s))
+    (λ sp1 : init$space'. λ t : init$term. λ sp2 : init$space'. λ sp3 : init$space'. λ t' : init$term. λ sp4 : init$space. λ s : init$string.
+      init$term$=lbrace=_space'__term__space'_=comma=_space'__term__space__string__space'_=dot=_space'__term__space'_=rbrace= sp1 t sp2 sp3 t' sp4 (stringApp p s))
+    init$term$=phi=_space__term__space__term__space__term_
+    init$term$=equal=_space__term__space__term_
+    init$term$=omega=_space__term_
+    init$term$=mu=_space__term__space__term_
+    init$term$=epsilon=_space__term_
+    init$term$=Alpha=_space__term_
+    init$term$=Beta=_space__term__space__term_
+    init$term$=Gamma=_space__term__space__term_
+    init$term$=Delta=_space__term__space__term_.
+
+b-let quoteNat (n : Nat) : init$term :=
+  inductionNat ?(λ _ : Nat. init$term) θ{zero} (λ _ : Nat. λ rec : init$term. applyList θ{suc} [App| mkAppU rec]) n.
+b-let quoteBool (b : Bool) : init$term := ifthenelse ?init$term b θ{true} θ{false}.
+
+b-let quoteParam (p : Param) : init$term :=
+  applyList θ{mkParam}
+    [App| mkAppU (quoteBool (paramErased p)), mkAppU
+          (applyList θ{mkPreParam} [App| mkAppU (quoteName (paramName p)), mkAppU (quoteTerm (paramType p))])].
+
+b-let quoteTelescope (t : Telescope) : init$term := quoteTermList θ{Param} (map ?Param ?init$term quoteParam t).
+
+b-let initModule (n : ModuleName) (v : Nat) (t : Telescope) : init$newStmt :=
+  (λ m : Module.
+    seqNewStmt
+      (letInfoToNewStmt
+        (mkLetInfo (mkTempModuleName m)
+          (applyList θ{mkInitModule} [App| mkAppU (quoteModuleName n), mkAppU (quoteNat v), mkAppU (quoteTelescope t)])
+          (just' ?init$term θ{Module})))
+      (modifyEvalStateStmt (modifyModuleInState (λ _ : Maybe' Module. just' ?Module m))))
+  (mkInitModule n v t).
+
+b-let consModule (n : init$string) (m : Module) : Module :=
+  mkModule (ModuleModuleName m) (ModuleVersion m) (ModuleTelescope m) (cons ?init$string n (ModuleContents m)).
+
+b-let setModule (m : Maybe' Module) : init$newStmt := modifyEvalStateStmt (modifyModuleInState (λ _ : Maybe' Module. m)).
+
+b-let updateTempModule (n : init$string) (m : Module) : init$newStmt :=
+  seqNewStmt
+    (letInfoToNewStmt
+      (mkLetInfo (mkTempModuleNameSuc m)
+        (applyList θ{consModule} [App| mkAppU (quoteName n), mkAppU (quote$var (mkTempModuleName m))])
+        (just' ?init$term θ{Module})))
+    (setModule (just' ?Module (consModule n m))).
+
+b-let nameToModuleName (m : Module) (n : init$string) : init$string := stringApp (mkModulePrefix (ModuleModuleInfo m)) n.
+b-let nameToMaybeModuleName (x : Maybe' Module) (n : init$string) : init$string :=
+  maybe' ?Module ?init$string n (λ m : Module. nameToModuleName m n) x.
+
+b-let modifyLetInfo (i : LetInfo) (m : Module) : LetInfo :=
+  (λ prefix : init$string.
+    mkLetInfo
+      (nameToModuleName m (letInfoName i))
+      (prefixNamesInTerm prefix (foldWithLambdas (ModuleTelescope m) (letInfoTerm i)))
+      (maybe' ?init$term ?(Maybe' init$term)
+        (nothing' ?init$term) (λ t : init$term. just' ?init$term (prefixNamesInTerm prefix t)) (letInfoType i)))
+  (mkModulePrefix (ModuleModuleInfo m)).
+
+b-let letInModule (i : LetInfo) (m : Module) : init$newStmt :=
+  seqNewStmt
+    (stmtToNewStmt (convertLetInfo (modifyLetInfo i m)))
+    (updateTempModule (letInfoName i) m).
+
+b-let letInMaybeModule (i : LetInfo) (x : Maybe' Module) : init$newStmt :=
+  maybe' ?Module ?init$newStmt
+    (stmtToNewStmt (convertLetInfo i))
+    (letInModule i)
+    x.
+
+b-let letInfoToNewStmtMod (i : LetInfo) : init$newStmt :=
+  bindEvalState ?EvaluatorState ?metaResult getEvalState (λ s : EvaluatorState.
+    ifthenelse ?init$newStmt (or (not (getAnnReq (getEvalFlags s))) (letInfoHasAnn i))
+      (letInMaybeModule i (ModuleStateModule (getModuleState s)))
+      (echoStmt "The provided command has no type annotation!")).
+
+b-let updateModuleDict (m : Module) (d : ModuleDict) : init$newStmt :=
+  letInfoToNewStmt (mkLetInfo
+    (mkModuleDictNameSuc d)
+    (applyList θ{insertModuleDict} [App| mkAppU (quote$var (mkModuleName m)), mkAppU (quote$var (mkModuleDictName d))])
+    (just' ?init$term θ{ModuleDict})).
+
+b-let finishModuleDef (m : Module) (d : ModuleDict) : init$newStmt :=
+  seqNewStmts [init$newStmt|
+    letInfoToNewStmt (mkLetInfo
+      (mkModuleName m)
+      (quote$var (mkTempModuleName m))
+      (just' ?init$term θ{Module})),
+    updateModuleDict m d,
+    updateModuleState (mkModuleState (nothing' ?Module) (insertModuleDict m d))].
+
+b-let endModule : init$newStmt :=
+  bindEvalState ?ModuleState ?metaResult getModuleState'
+    (λ s : ModuleState.
+      maybe' ?Module ?init$newStmt
+        (echoStmt "Currently not in a module!")
+        (λ m : Module. finishModuleDef m (ModuleStateDict s))
+        (ModuleStateModule s)).
+
+b-let findModule (n : ModuleName) : EvalState (Maybe' Module) :=
+  mapEvalState ?ModuleState ?(Maybe' Module) (λ s : ModuleState. lookupModuleDict n (ModuleStateDict s)) getModuleState'.
+
+b-let importModule (m : Module) (l : List App) : init$newStmt :=
+  bindEvalState ?ModuleState ?metaResult getModuleState' (λ s : ModuleState.
+    seqNewStmts (map ?init$string ?init$newStmt
+      (λ n : init$string. letInfoToNewStmt (mkLetInfo
+        (nameToMaybeModuleName (ModuleStateModule s) n)
+        (applyList (quote$var (nameToModuleName m n)) l)
+        (nothing' ?init$term)))
+      (ModuleContents m))).
+
+b-let importFile (file : init$string) : init$newStmt := stmtToNewStmt (quote$import' file).
+
+b-let importModuleOrStmt (n : ModuleName) (l : List App) (stmt : init$newStmt) : init$newStmt :=
+  bindEvalState ?(Maybe' Module) ?metaResult (findModule n)
+    (maybe' ?Module ?init$newStmt stmt (λ m : Module. importModule m l)).
+
+b-let loadAndImportModule (n : ModuleName) (l : List App) (file : init$string) : init$newStmt :=
+  importModuleOrStmt n l (seqNewStmt (importFile file) (importModuleOrStmt n l (echoStmt "Could not find module!"))).
+
+b-let init$moduleName'$=slash=_string__moduleName'_ (s : init$string) (n : ModuleName) := cons ?init$string s n.
+b-let init$moduleName'$ := nil ?init$string.
+
+b-let init$moduleName$_string__moduleName'_ (s : init$string) (n : ModuleName) := cons ?init$string s n.

@@ -1,18 +1,18 @@
-let showListOfDigits [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string :=
+b-let showListOfDigits [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string :=
   concatStrings (map ?X ?init$string showX l).
 
-let incrementBinList (l : List Bool) : List Bool :=
+b-let incrementBinList (l : List Bool) : List Bool :=
   inductionList ?Bool ?(λ _ : List Bool. List Bool)
     [Bool | true]
     (λ b : Bool. λ bs : List Bool. λ rec : List Bool.
       ifthenelse ?(List Bool) b (cons ?Bool false rec) (cons ?Bool true bs))
     l.
 
-let natToBinList (n : Nat) : List Bool :=
+b-let natToBinList (n : Nat) : List Bool :=
   inductionNat ?(λ _ : Nat. List Bool)
     [Bool | false]
     (λ _ : Nat. λ rec : List Bool. incrementBinList rec)
     n.
 
-let showNatBinary (n : Nat) : init$string :=
+b-let showNatBinary (n : Nat) : init$string :=
   showListOfDigits ?Bool (λ b : Bool. ifthenelse ?init$string b "1" "0") (natToBinList n).

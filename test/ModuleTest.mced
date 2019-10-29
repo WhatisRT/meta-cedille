@@ -1,0 +1,7 @@
+module Test [T : *].
+
+let id (t : T) := t.
+
+EndModule.
+
+Import Test ?Unit.

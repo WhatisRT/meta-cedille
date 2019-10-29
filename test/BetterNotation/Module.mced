@@ -1,0 +1,46 @@
+let quoteNat (n : Nat) : init$term :=
+  inductionNat ?(λ _ : Nat. init$term) θ{zero} (λ _ : Nat. λ rec : init$term. applyList θ{suc} [App| mkAppU rec]) n.
+let quoteBool (b : Bool) : init$term := ifthenelse ?init$term b θ{true} θ{false}.
+
+let quoteParam (p : Param) : init$term :=
+  applyList θ{mkParam}
+    [App| mkAppU (quoteBool (paramErased p)), mkAppU
+          (applyList θ{mkPreParam} [App| mkAppU (quoteName (paramName p)), mkAppU (quoteTerm (paramType p))])].
+
+let quoteTelescope (t : Telescope) : init$term := quoteTermList θ{Param} (map ?Param ?init$term quoteParam t).
+
+let initModule (n : ModuleName) (v : Nat) (t : Telescope) : EvalState Unit :=
+  voidEvalState ?metaResult
+    (letInfoToNewStmt
+      (mkLetInfo (mkTempModuleName (mkInitModule n v t))
+        (applyList θ{mkInitModule} [App| mkAppU (quoteModuleName n), mkAppU (quoteNat v), mkAppU (quoteTelescope t)])
+        (just' ?init$term θ{Module}))).
+
+let consModule (n : init$string) (m : Module) : Module :=
+  mkModule (ModuleModuleName m) (ModuleVersion m) (ModuleTelescope m) (cons ?init$string n (ModuleContents m)).
+
+let updateTempModule (n : init$string) (m : Module) : EvalState Unit :=
+  voidEvalState ?metaResult
+    (letInfoToNewStmt
+      (mkLetInfo (mkTempModuleNameSuc m)
+        (applyList θ{consModule} [App| mkAppU (quoteName n), mkAppU (quoteName (mkTempModuleName m))])
+        (just' ?init$term θ{Module}))).
+
+let prefixNameAndAppToStmt (prefix, currentPrefix, n : init$string) (app : List App) : init$newStmt :=
+  stmtToNewStmt
+    (convertLetInfo
+      (mkLetInfo (stringApp currentPrefix n) (foldWithApp app (quote$var (stringApp prefix n))) (nothing' ?init$term))).
+
+let getCurrentModuleName : EvalState init$string :=
+
+let findModule (n : ModuleName) : EvalState Module :=
+  bindEvalState ?ModuleState ?Module getModuleState' (λ s : ModuleState.
+    maybe' ?Module ?(EvalState Module) () (λ m : Module. pureEvalState ?Module m) (ModuleStateModule s)).
+
+let importModule (n : ModuleName) (app : List App) : init$newStmt :=
+  bindEvalState ?Module ?metaResult (findModule n)
+    (λ m : Module. bindEvalState ?init$string ?metaResult getCurrentModuleName
+      (λ current : init$string.
+        seqNewStmts (map ?init$string ?init$newStmt
+                      (λ n : init$string. prefixNameAndAppToStmt (mkModulePrefix (ModuleModuleInfo m)) current n app)
+                      (ModuleContents m)))).

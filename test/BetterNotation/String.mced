@@ -42,4 +42,10 @@ b-let stringFromList (s : List init$char) : init$string :=
 b-let stringApp (s, s' : init$string) : init$string :=
   stringFromList (app ?init$char (stringToList s) (stringToList s')).
 
+b-let stringConcat (l : List init$string) : init$string :=
+  inductionList ?init$string ?(λ _ : List init$string. init$string)
+    init$string$nil
+    (λ s : init$string. λ _ : List init$string. λ rec : init$string. stringApp s rec)
+    l.
+
 seteval eval init stmt.

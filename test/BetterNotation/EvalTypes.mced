@@ -1,0 +1,128 @@
+b-let EvalFlags : * := Bool.
+b-let defaultFlags : EvalFlags := false.
+b-let quoteEvalFlags (f : EvalFlags) : init$term :=
+  ifthenelse ?init$term f θ{true} θ{false}.
+
+b-let getAnnReq (f : EvalFlags) : Bool := f.
+b-let modifyAnnReq (b : Bool) (_ : EvalFlags) : EvalFlags := b.
+
+b-let ModuleState : * := Product (Maybe' Module) ModuleDict.
+b-let mkModuleState (m : Maybe' Module) (d : ModuleDict) : ModuleState := prodPair ?(Maybe' Module) ?ModuleDict m d.
+b-let ModuleStateModule (s : ModuleState) : Maybe' Module := pr1 ?(Maybe' Module) ?ModuleDict s.
+b-let ModuleStateDict (s : ModuleState) : ModuleDict := pr2 ?(Maybe' Module) ?ModuleDict s.
+b-let emptyModState : ModuleState := mkModuleState (nothing' ?Module) emptyModuleDict.
+b-let quoteMaybeModule (x : Maybe' Module) : init$term :=
+  maybe' ?Module ?init$term
+    θ{nothing' ?Module}
+    (λ m : Module. applyList θ{just' ?Module} [App| mkAppU (quote$var (mkTempModuleName m))])
+    x.
+b-let quoteDict (d : ModuleDict) : init$term := quote$var (mkModuleDictName d).
+b-let quoteModuleState (s : ModuleState) : init$term :=
+  applyList θ{mkModuleState} [App| mkAppU (quoteMaybeModule (ModuleStateModule s)), mkAppU (quoteDict (ModuleStateDict s))].
+
+b-let EvaluatorState : * := Product EvalFlags ModuleState.
+b-let mkEvaluatorState (f : EvalFlags) (s : ModuleState) : EvaluatorState := prodPair ?EvalFlags ?ModuleState f s.
+b-let getEvalFlags := pr1 ?EvalFlags ?ModuleState.
+b-let getModuleState := pr2 ?EvalFlags ?ModuleState.
+
+b-let modifyModuleInState (f : Π _ : Maybe' Module. Maybe' Module) (s : EvaluatorState) : EvaluatorState :=
+  mkEvaluatorState (getEvalFlags s)
+                   (mkModuleState (f (ModuleStateModule (getModuleState s))) (ModuleStateDict (getModuleState s))).
+
+b-let modifyModuleDictInState (f : Π _ : ModuleDict. ModuleDict) (s : EvaluatorState) : EvaluatorState :=
+  mkEvaluatorState (getEvalFlags s)
+                   (mkModuleState (ModuleStateModule (getModuleState s)) (f (ModuleStateDict (getModuleState s)))).
+
+b-let quoteEvaluatorState (s : EvaluatorState) : init$term :=
+  applyList θ{mkEvaluatorState} [App| mkAppU (quoteEvalFlags (getEvalFlags s)), mkAppU (quoteModuleState (getModuleState s))].
+
+b-let emptyEvaluatorState : EvaluatorState := mkEvaluatorState defaultFlags emptyModState.
+
+b-let EvalState : Π _ : *. * := λ T : *. Π _ : EvaluatorState. M (Product T EvaluatorState).
+b-let pureEvalState [T : *] (t : T) : EvalState T :=
+  λ s : EvaluatorState. returnMeta ?(Product T EvaluatorState) (prodPair ?T ?EvaluatorState t s).
+b-let bindEvalState [T, T' : *] (x : EvalState T) (f : Π _ : T. EvalState T') : EvalState T' :=
+  λ s : EvaluatorState.
+    bindMeta ?(Product T EvaluatorState) ?(Product T' EvaluatorState) (x s)
+             (λ res : (Product T EvaluatorState). f (pr1 ?T ?EvaluatorState res) (pr2 ?T ?EvaluatorState res)).
+b-let mapEvalState [T, T' : *] (f : Π _ : T. T') (t : EvalState T) : EvalState T' :=
+  bindEvalState ?T ?T' t (λ x : T. pureEvalState ?T' (f x)).
+b-let seqEvalState [T, T' : *] (t : EvalState T) (t' : EvalState T') : EvalState T' :=
+  bindEvalState ?T ?T' t (λ _ : T. t').
+b-let getEvalState : EvalState EvaluatorState :=
+  λ s : EvaluatorState. returnMeta ?(Product EvaluatorState EvaluatorState) (prodPair ?EvaluatorState ?EvaluatorState s s).
+b-let setEvalState (s : EvaluatorState) : EvalState Unit :=
+  λ _ : EvaluatorState. returnMeta ?(Product Unit EvaluatorState) (prodPair ?Unit ?EvaluatorState tt s).
+b-let modifyEvalState (f : Π _ : EvaluatorState. EvaluatorState) : EvalState Unit :=
+  bindEvalState ?EvaluatorState ?Unit getEvalState
+    (λ s : EvaluatorState. setEvalState (f s)).
+b-let getModuleState' : EvalState ModuleState := mapEvalState ?EvaluatorState ?ModuleState getModuleState getEvalState.
+b-let voidEvalState [T : *] (x : EvalState T) : EvalState Unit :=
+  seqEvalState ?T ?Unit x (pureEvalState ?Unit tt).
+
+b-let getFlags : EvalState EvalFlags :=
+  mapEvalState ?EvaluatorState ?EvalFlags getEvalFlags getEvalState.
+b-let modifyEvalFlags (f : Π _ : EvalFlags. EvalFlags) : EvalState Unit :=
+  modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (f (getEvalFlags s)) (getModuleState s)).
+b-let modifyModuleState (f : Π _ : ModuleState. ModuleState) : EvalState Unit :=
+  modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (getEvalFlags s) (f (getModuleState s))).
+
+b-let liftMtoEvalState [T : *] (t : M T) : EvalState T :=
+  λ s : EvaluatorState.
+    bindMeta ?T ?(Product T EvaluatorState) t
+      (λ x : T. returnMeta ?(Product T EvaluatorState) (prodPair ?T ?EvaluatorState x s)).
+
+b-let init$newStmt : * := EvalState metaResult.
+
+b-let eval' (stmt : init$stmt) : M metaResult :=
+  mapMeta ?init$metaResult ?metaResult metaResultToLists (eval stmt).
+
+b-let echoCommand (s : init$string) : M metaResult :=
+  mapMeta ?init$string ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [init$string | s])).
+
+b-let echoStmt (s : init$string) : init$newStmt :=
+  liftMtoEvalState ?metaResult (echoCommand s).
+
+b-let simpleCommand (s : init$string) : M metaResult :=
+  mapMeta ?init$string ?metaResult strToMetaResult (shellCmd s (listToStringList [init$string |])).
+
+b-let letInfoTermToQuoted (i : LetInfo) : LetInfo :=
+  mkLetInfo (stringApp "qTerm" (letInfoName i)) (quoteTerm (letInfoTerm i)) (just' ?init$term θ{init$term}).
+
+b-let runMetaCommand (t : init$term) : init$newStmt :=
+  λ s : EvaluatorState.
+    bindMeta ?init$newStmt ?(Product metaResult EvaluatorState) (checkTerm init$newStmt t) (λ stmt : init$newStmt. stmt s).
+
+b-let stmtToMmetaRes (stmt : init$stmt') : M metaResult := eval' (quote$stmt'ToStmt stmt).
+
+b-let stmtToNewStmt (stmt : init$stmt') : init$newStmt :=
+  liftMtoEvalState ?metaResult (eval' (quote$stmt'ToStmt stmt)).
+
+b-let emptyStmt : init$newStmt := stmtToNewStmt init$stmt'$.
+
+b-let seqNewStmt (s, s' : init$newStmt) : init$newStmt :=
+  seqEvalState ?metaResult ?metaResult s s'.
+
+b-let seqNewStmts (l : List init$newStmt) : init$newStmt :=
+  foldl ?init$newStmt ?init$newStmt seqNewStmt (reverse ?init$newStmt l) emptyStmt.
+
+b-let updateEvalState (s : EvaluatorState) : init$newStmt :=
+  stmtToNewStmt (quote$seteval' (quote$square θ{evalNewStmt} (quoteEvaluatorState s)) "init" "newStmt").
+
+b-let updateModuleState (s : ModuleState) : init$newStmt :=
+  bindEvalState ?EvaluatorState ?metaResult getEvalState
+    (λ s' : EvaluatorState. updateEvalState (mkEvaluatorState (getEvalFlags s') s)).
+
+b-let modifyEvalStateStmt (f : Π _ : EvaluatorState. EvaluatorState) : init$newStmt :=
+  bindEvalState ?EvaluatorState ?metaResult getEvalState
+    (λ s : EvaluatorState. updateEvalState (f s)).
+
+b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
+  bindEvalState ?EvalFlags ?metaResult getFlags (λ f : EvalFlags.
+    ifthenelse ?init$newStmt (or (not (getAnnReq f)) (letInfoHasAnn i))
+      (stmtToNewStmt (convertLetInfo i))
+      (echoStmt "The provided command has no type annotation!")).
+
+b-let printModuleDictName : init$newStmt :=
+  bindEvalState ?ModuleState ?metaResult getModuleState' (λ s : ModuleState.
+    echoStmt (mkModuleDictName (ModuleStateDict s))).
