@@ -1,4 +1,6 @@
 b-let metaResult : * := Product (List init$string) (List init$term).
+b-let mkMetaResult (l : List init$string) (l' : List init$term) := prodPair ?(List init$string) ?(List init$term) l l'.
+b-let emptyMetaResult : metaResult := mkMetaResult [init$string|] [init$term|].
 
 b-let stringListToList (l : init$stringList) : List init$string :=
   l ?(List init$string) (nil ?init$string)
@@ -14,10 +16,9 @@ b-let termListToList (l : init$termList) : List init$term :=
   l ?(List init$term) (nil ?init$term)
     (λ s : init$term. λ rec : List init$term. cons ?init$term s rec).
 
-b-let strToMetaResult (s : init$string) : metaResult :=
-  pair ?(List init$string) ?(λ _ : List init$string. List init$term) [init$string | s] [init$term |].
+b-let strToMetaResult (s : init$string) : metaResult := mkMetaResult [init$string | s] [init$term |].
 
 b-let metaResultToLists (res : init$metaResult) : metaResult :=
-  res ?metaResult
-    (λ l : init$stringList. λ l' : init$termList.
-      prodPair ?(List init$string) ?(List init$term) (stringListToList l) (termListToList l')).
+  res ?metaResult (λ l : init$stringList. λ l' : init$termList. mkMetaResult (stringListToList l) (termListToList l')).
+
+b-let eval' (stmt : init$stmt) : M metaResult := mapMeta ?init$metaResult ?metaResult metaResultToLists (eval stmt).

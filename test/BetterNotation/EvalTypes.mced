@@ -45,6 +45,20 @@ b-let bindEvalState [T, T' : *] (x : EvalState T) (f : Π _ : T. EvalState T') :
   λ s : EvaluatorState.
     bindMeta ?(Product T EvaluatorState) ?(Product T' EvaluatorState) (x s)
              (λ res : (Product T EvaluatorState). f (pr1 ?T ?EvaluatorState res) (pr2 ?T ?EvaluatorState res)).
+
+b-let liftMtoEvalState [T : *] (t : M T) : EvalState T :=
+  λ s : EvaluatorState.
+    bindMeta ?T ?(Product T EvaluatorState) t
+      (λ x : T. returnMeta ?(Product T EvaluatorState) (prodPair ?T ?EvaluatorState x s)).
+
+b-let init$newStmt : * := EvalState metaResult.
+
+b-let stmtToNewStmt (stmt : init$stmt') : init$newStmt :=
+  liftMtoEvalState ?metaResult (eval' (quote$stmt'ToStmt stmt)).
+
+b-let updateEvalState (s : EvaluatorState) : init$newStmt :=
+  stmtToNewStmt (quote$seteval' (quote$square θ{evalNewStmt} (quoteEvaluatorState s)) "init" "newStmt").
+
 b-let mapEvalState [T, T' : *] (f : Π _ : T. T') (t : EvalState T) : EvalState T' :=
   bindEvalState ?T ?T' t (λ x : T. pureEvalState ?T' (f x)).
 b-let seqEvalState [T, T' : *] (t : EvalState T) (t' : EvalState T') : EvalState T' :=
@@ -52,7 +66,9 @@ b-let seqEvalState [T, T' : *] (t : EvalState T) (t' : EvalState T') : EvalState
 b-let getEvalState : EvalState EvaluatorState :=
   λ s : EvaluatorState. returnMeta ?(Product EvaluatorState EvaluatorState) (prodPair ?EvaluatorState ?EvaluatorState s s).
 b-let setEvalState (s : EvaluatorState) : EvalState Unit :=
-  λ _ : EvaluatorState. returnMeta ?(Product Unit EvaluatorState) (prodPair ?Unit ?EvaluatorState tt s).
+  seqEvalState ?metaResult ?Unit
+    (updateEvalState s)
+    (λ _ : EvaluatorState. returnMeta ?(Product Unit EvaluatorState) (prodPair ?Unit ?EvaluatorState tt s)).
 b-let modifyEvalState (f : Π _ : EvaluatorState. EvaluatorState) : EvalState Unit :=
   bindEvalState ?EvaluatorState ?Unit getEvalState
     (λ s : EvaluatorState. setEvalState (f s)).
@@ -66,16 +82,6 @@ b-let modifyEvalFlags (f : Π _ : EvalFlags. EvalFlags) : EvalState Unit :=
   modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (f (getEvalFlags s)) (getModuleState s)).
 b-let modifyModuleState (f : Π _ : ModuleState. ModuleState) : EvalState Unit :=
   modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (getEvalFlags s) (f (getModuleState s))).
-
-b-let liftMtoEvalState [T : *] (t : M T) : EvalState T :=
-  λ s : EvaluatorState.
-    bindMeta ?T ?(Product T EvaluatorState) t
-      (λ x : T. returnMeta ?(Product T EvaluatorState) (prodPair ?T ?EvaluatorState x s)).
-
-b-let init$newStmt : * := EvalState metaResult.
-
-b-let eval' (stmt : init$stmt) : M metaResult :=
-  mapMeta ?init$metaResult ?metaResult metaResultToLists (eval stmt).
 
 b-let echoCommand (s : init$string) : M metaResult :=
   mapMeta ?init$string ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [init$string | s])).
@@ -95,9 +101,6 @@ b-let runMetaCommand (t : init$term) : init$newStmt :=
 
 b-let stmtToMmetaRes (stmt : init$stmt') : M metaResult := eval' (quote$stmt'ToStmt stmt).
 
-b-let stmtToNewStmt (stmt : init$stmt') : init$newStmt :=
-  liftMtoEvalState ?metaResult (eval' (quote$stmt'ToStmt stmt)).
-
 b-let emptyStmt : init$newStmt := stmtToNewStmt init$stmt'$.
 
 b-let seqNewStmt (s, s' : init$newStmt) : init$newStmt :=
@@ -106,16 +109,15 @@ b-let seqNewStmt (s, s' : init$newStmt) : init$newStmt :=
 b-let seqNewStmts (l : List init$newStmt) : init$newStmt :=
   foldl ?init$newStmt ?init$newStmt seqNewStmt (reverse ?init$newStmt l) emptyStmt.
 
-b-let updateEvalState (s : EvaluatorState) : init$newStmt :=
-  stmtToNewStmt (quote$seteval' (quote$square θ{evalNewStmt} (quoteEvaluatorState s)) "init" "newStmt").
+b-let updateModuleState (s : ModuleState) : EvalState Unit :=
+  bindEvalState ?EvaluatorState ?Unit getEvalState
+    (λ s' : EvaluatorState. setEvalState (mkEvaluatorState (getEvalFlags s') s)).
 
-b-let updateModuleState (s : ModuleState) : init$newStmt :=
-  bindEvalState ?EvaluatorState ?metaResult getEvalState
-    (λ s' : EvaluatorState. updateEvalState (mkEvaluatorState (getEvalFlags s') s)).
+b-let evalStateUnitToNewStmt (x : EvalState Unit) : init$newStmt :=
+  seqEvalState ?Unit ?metaResult x (pureEvalState ?metaResult emptyMetaResult).
 
 b-let modifyEvalStateStmt (f : Π _ : EvaluatorState. EvaluatorState) : init$newStmt :=
-  bindEvalState ?EvaluatorState ?metaResult getEvalState
-    (λ s : EvaluatorState. updateEvalState (f s)).
+  evalStateUnitToNewStmt (modifyEvalState f).
 
 b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
   bindEvalState ?EvalFlags ?metaResult getFlags (λ f : EvalFlags.

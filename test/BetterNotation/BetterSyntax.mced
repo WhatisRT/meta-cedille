@@ -26,7 +26,7 @@ b-let init$newStmt'$echo_space__multiTerm_=dot= (_ : init$space) (t : init$term)
   runMetaCommand (quote$square θ{echoStmt} t).
 b-let init$newStmt'$import_space__string_=dot= (_ : init$space) (n : init$string) : init$newStmt := stmtToNewStmt (quote$import' n).
 b-let init$newStmt'$Import_space__moduleName__maybeApplist_=dot= (_ : init$space) (n : ModuleName) (l : List App) : init$newStmt :=
-  loadAndImportModule n l "x".
+  loadAndImportModule n l "test/".
 b-let init$newStmt'$ : init$newStmt := emptyStmt.
 
 b-let init$newStmt$_space'__newStmt'_ (_ : init$space') (stmt : init$newStmt) : init$newStmt := stmt.

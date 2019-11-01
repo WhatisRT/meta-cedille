@@ -10,4 +10,5 @@ import test/Maybe.
 import test/Nat.
 import test/NatSyntax.
 
-import test/ModuleTest.
+Import ModuleTest ?Unit.
+Import ModuleTest ?Unit. -- currently need to do it twice, fix later
