@@ -11,7 +11,7 @@ b-let init$termlist$_multiTerm__termlist'_
   cons ?init$term t ts.
 
 b-let quoteTermList (type : init$term) (terms : List init$term) : init$term :=
-  inductionList ?init$term ?(λ _ : List init$term. init$term)
+  recursionList ?init$term ?init$term
     (quote$angle θ{nil} type)
     (λ t : init$term. λ _ : List init$term. λ rec : init$term.
       quote$square (quote$square (quote$angle θ{cons} type) t) rec)

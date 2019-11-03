@@ -35,7 +35,7 @@ b-let stringToList (s : init$string) : List init$char :=
   s ?(List init$char) (λ c : init$char. λ rec : List init$char. cons ?init$char c rec) (nil ?init$char).
 
 b-let stringFromList (s : List init$char) : init$string :=
-  inductionList ?init$char ?(λ _ : List init$char. init$string) init$string$nil
+  recursionList ?init$char ?init$string init$string$nil
     (λ c : init$char. λ cs : List init$char. λ rec : init$string. init$string$cons c rec)
     s.
 
@@ -43,7 +43,7 @@ b-let stringApp (s, s' : init$string) : init$string :=
   stringFromList (app ?init$char (stringToList s) (stringToList s')).
 
 b-let stringConcat (l : List init$string) : init$string :=
-  inductionList ?init$string ?(λ _ : List init$string. init$string)
+  recursionList ?init$string ?init$string
     init$string$nil
     (λ s : init$string. λ _ : List init$string. λ rec : init$string. stringApp s rec)
     l.

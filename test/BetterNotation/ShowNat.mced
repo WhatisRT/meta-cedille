@@ -2,7 +2,7 @@ b-let showListOfDigits [X : *] (showX : Π _ : X. init$string) (l : List X) : in
   concatStrings (map ?X ?init$string showX l).
 
 b-let incrementBinList (l : List Bool) : List Bool :=
-  inductionList ?Bool ?(λ _ : List Bool. List Bool)
+  recursionList ?Bool ?(List Bool)
     [Bool | true]
     (λ b : Bool. λ bs : List Bool. λ rec : List Bool.
       ifthenelse ?(List Bool) b (cons ?Bool false rec) (cons ?Bool true bs))

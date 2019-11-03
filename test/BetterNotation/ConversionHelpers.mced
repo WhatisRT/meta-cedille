@@ -7,7 +7,7 @@ b-let stringListToList (l : init$stringList) : List init$string :=
     (λ s : init$string. λ rec : List init$string. cons ?init$string s rec).
 
 b-let listToStringList (l : List init$string) : init$stringList :=
-  (inductionList ?init$string ?(λ _ : List init$string. init$stringList)
+  (recursionList ?init$string ?init$stringList
                  init$stringList$nil
                  (λ s : init$string. λ _ : List init$string. λ rec : init$stringList. init$stringList$cons s rec))
     l.
