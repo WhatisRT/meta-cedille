@@ -41,18 +41,18 @@ b-let lookupModuleDict (k : ModuleName) (dict : ModuleDict) : Maybe' Module := M
 
 b-let ModuleNameToName (n : ModuleName) : init$string := stringConcat n.
 b-let mkShortModulePrefix (i : ModuleInfo) : init$string :=
-  stringApp modulePrefix (stringApp (ModuleNameToName (ModuleInfoName i)) (showNatBinary (ModuleInfoVersion i))).
+  stringApp modulePrefix (stringApp (ModuleNameToName (ModuleInfoName i)) (showNatDecimal (ModuleInfoVersion i))).
 
 b-let mkModulePrefix (i : ModuleInfo) : init$string := -- prefix for things in the module
   stringApp (mkShortModulePrefix i) "|".
 b-let mkTempModuleName' (m : Module) (n : Nat) : init$string := -- name for temporary modules
-  stringConcat [init$string | mkShortModulePrefix (ModuleModuleInfo m), "||", showNatBinary n].
+  stringConcat [init$string | mkShortModulePrefix (ModuleModuleInfo m), "||", showNatDecimal n].
 b-let mkTempModuleName (m : Module) : init$string := mkTempModuleName' m (length ?init$string (ModuleContents m)).
 b-let mkTempModuleNameSuc (m : Module) : init$string := mkTempModuleName' m (suc (length ?init$string (ModuleContents m))).
 b-let mkModuleName (m : Module) : init$string :=
   stringConcat [init$string | mkShortModulePrefix (ModuleModuleInfo m), "||"].
 
 b-let mkModuleDictName' (v : Nat) (d : ModuleDict) : init$string :=
-  stringConcat [init$string| modulePrefix, "||Dict", (showNatBinary v)].
+  stringConcat [init$string| modulePrefix, "||Dict", (showNatDecimal v)].
 b-let mkModuleDictName (d : ModuleDict) : init$string := mkModuleDictName' (ModuleDictVersion d) d.
 b-let mkModuleDictNameSuc (d : ModuleDict) : init$string := mkModuleDictName' (suc (ModuleDictVersion d)) d.

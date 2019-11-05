@@ -1,3 +1,5 @@
+-- Binary
+
 let init$bindigit$0 : Bool := false.
 let init$bindigit$1 : Bool := true.
 
@@ -8,18 +10,50 @@ let init$binnat$_bindigit__binnat'_ := cons ?Bool.
 
 let quoteBoolFun (b : Bool) : init$term := ifthenelse ?init$term b θ{true} θ{false}.
 
-let quoteListBool : Π _ : List Bool. init$term :=
-  inductionList ?Bool ?(λ _ : List Bool. init$term) θ{(nil ?Bool)}
-    (λ b : Bool. λ bs : List Bool. λ rec : init$term.
-      quote$square (quote$square θ{(cons ?Bool)} (quoteBoolFun b)) rec).
-
 let boolToNat (b : Bool) : Nat := ifthenelse ?Nat b one zero.
-let boolListToNat (bs : List Bool) : Nat :=
-  inductionList ?Bool ?(λ _ : List Bool. Nat) zero
-    (λ b : Bool. λ _ : List Bool. λ rec : Nat. add (mul rec two) (boolToNat b))
-    (reverse ?Bool bs).
 
-let init$singleTerm$_binnat_ (bs : List Bool) : init$term :=
-  quote$square θ{boolListToNat} (quoteListBool bs).
+-- Decimal
+
+let init$decdigit$0 : Dec := Dec0.
+let init$decdigit$1 : Dec := Dec1.
+let init$decdigit$2 : Dec := Dec2.
+let init$decdigit$3 : Dec := Dec3.
+let init$decdigit$4 : Dec := Dec4.
+let init$decdigit$5 : Dec := Dec5.
+let init$decdigit$6 : Dec := Dec6.
+let init$decdigit$7 : Dec := Dec7.
+let init$decdigit$8 : Dec := Dec8.
+let init$decdigit$9 : Dec := Dec9.
+
+let init$decnat'$_decdigit__decnat'_ := cons ?Dec.
+let init$decnat'$ : List Dec := [Dec|].
+
+let init$decnat$_decdigit__decnat'_ := cons ?Dec.
+
+let quoteDec (d : Dec) : init$term :=
+  d ?init$term θ{Dec0} θ{Dec1} θ{Dec2} θ{Dec3} θ{Dec4} θ{Dec5} θ{Dec6} θ{Dec7} θ{Dec8} θ{Dec9}.
+
+let decToNat (d : Dec) : Nat := d ?Nat zero one two three four five six seven eight nine.
+
+--
+
+let quoteList [X : *] (quotedX : init$term) (quoteX : Π _ : X. init$term) : Π _ : List X. init$term :=
+  recursionList ?X ?init$term (quote$angle θ{nil} quotedX)
+    (λ x : X. λ _ : List X. λ rec : init$term.
+      quote$square (quote$square (quote$angle θ{cons} quotedX) (quoteX x)) rec).
+
+let quoteListBool := quoteList ?Bool θ{Bool} quoteBoolFun.
+let quoteListDec := quoteList ?Dec θ{Dec} quoteDec.
+
+let baseListToNat [B : *] (digitToNat : Π _ : B. Nat) (ds : List B) (base : Nat) : Nat :=
+  recursionList ?B ?Nat zero
+    (λ d : B. λ _ : List B. λ rec : Nat. add (mul rec ten) (digitToNat d))
+    (reverse ?B ds).
+
+let boolListToNat (bs : List Bool) : Nat := baseListToNat ?Bool boolToNat bs two.
+let decListToNat (ds : List Dec) : Nat := baseListToNat ?Dec decToNat ds ten.
+
+--let init$singleTerm$_binnat_ (bs : List Bool) : init$term := quote$square θ{boolListToNat} (quoteListBool bs).
+let init$singleTerm$_decnat_ (ds : List Dec) : init$term := quote$square θ{decListToNat} (quoteListDec ds).
 
 o-seteval [evalNewStmt emptyEvaluatorState] init newStmt.

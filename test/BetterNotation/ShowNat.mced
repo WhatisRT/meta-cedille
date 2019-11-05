@@ -1,5 +1,39 @@
-b-let showListOfDigits [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string :=
-  concatStrings (map ?X ?init$string showX l).
+b-let Dec := ∀ X : *. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. X.
+b-let Dec0 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d0.
+b-let Dec1 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d1.
+b-let Dec2 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d2.
+b-let Dec3 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d3.
+b-let Dec4 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d4.
+b-let Dec5 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d5.
+b-let Dec6 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d6.
+b-let Dec7 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d7.
+b-let Dec8 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d8.
+b-let Dec9 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d9.
+
+b-let showDec (d : Dec) : init$string := d ?init$string "0" "1" "2" "3" "4" "5" "6" "7" "8" "9".
+
+b-let consDecToIndex' (i : init$index') (d : Dec) : init$index' :=
+  (d ?(Π _ : init$index'. init$index')
+    init$index'$0_index'_ init$index'$1_index'_ init$index'$2_index'_ init$index'$3_index'_ init$index'$4_index'_
+    init$index'$5_index'_ init$index'$6_index'_ init$index'$7_index'_ init$index'$8_index'_ init$index'$9_index'_) i.
+
+b-let consDecToIndex (i : init$index') (d : Dec) : init$index :=
+  (d ?(Π _ : init$index'. init$index)
+    init$index$0_index'_ init$index$1_index'_ init$index$2_index'_ init$index$3_index'_ init$index$4_index'_
+    init$index$5_index'_ init$index$6_index'_ init$index$7_index'_ init$index$8_index'_ init$index$9_index'_) i.
+
+b-let indexToIndex' (i : init$index) : init$index' :=
+  i ?init$index'
+    init$index'$0_index'_ init$index'$1_index'_ init$index'$2_index'_ init$index'$3_index'_ init$index'$4_index'_
+    init$index'$5_index'_ init$index'$6_index'_ init$index'$7_index'_ init$index'$8_index'_ init$index'$9_index'_.
+
+b-let digitListToIndex' (l : List Dec) : init$index' := foldl ?Dec ?init$index' consDecToIndex' l init$index'$.
+b-let digitListToIndex : Π _ : List Dec. init$index :=
+  recursionList ?Dec ?init$index
+    (init$index$0_index'_ init$index'$)
+    (λ d : Dec. λ ds : List Dec. λ _ : init$index. consDecToIndex (digitListToIndex' ds) d).
+
+b-let showListOfDecs [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string := concatStrings (map ?X ?init$string showX l).
 
 b-let incrementBinList (l : List Bool) : List Bool :=
   recursionList ?Bool ?(List Bool)
@@ -8,11 +42,28 @@ b-let incrementBinList (l : List Bool) : List Bool :=
       ifthenelse ?(List Bool) b (cons ?Bool false rec) (cons ?Bool true bs))
     l.
 
+b-let incrementDecList (l : List Dec) : List Dec :=
+  recursionList ?Dec ?(List Dec)
+    [Dec | Dec1]
+    (λ d : Dec. λ ds : List Dec. λ rec : List Dec.
+      d ?(List Dec)
+        (cons ?Dec Dec1 ds) (cons ?Dec Dec2 ds) (cons ?Dec Dec3 ds) (cons ?Dec Dec4 ds) (cons ?Dec Dec5 ds)
+        (cons ?Dec Dec6 ds) (cons ?Dec Dec7 ds) (cons ?Dec Dec8 ds) (cons ?Dec Dec9 ds) (cons ?Dec Dec0 rec))
+    l.
+
 b-let natToBinList (n : Nat) : List Bool :=
   inductionNat ?(λ _ : Nat. List Bool)
     [Bool | false]
     (λ _ : Nat. λ rec : List Bool. incrementBinList rec)
     n.
 
+b-let natToDecList (n : Nat) : List Dec :=
+  inductionNat ?(λ _ : Nat. List Dec)
+    [Dec | Dec0]
+    (λ _ : Nat. λ rec : List Dec. incrementDecList rec)
+    n.
+
 b-let showNatBinary (n : Nat) : init$string :=
-  showListOfDigits ?Bool (λ b : Bool. ifthenelse ?init$string b "1" "0") (natToBinList n).
+  showListOfDecs ?Bool (λ b : Bool. ifthenelse ?init$string b "1" "0") (natToBinList n).
+b-let showNatDecimal (n : Nat) : init$string :=
+  showListOfDecs ?Dec showDec (natToDecList n).
