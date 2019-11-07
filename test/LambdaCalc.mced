@@ -1,4 +1,4 @@
-let lambdaTermToTerm : Π _ : init$term. init$term := quote$beta θ{λ x : *. x}.
+let lambdaTermToTerm : Π _ : init$term. init$term := quote$beta (TermToInitTerm θ{λ x : *. x}).
 
 let init$lambdaTerm : * :=
   ∀ X : *. Π _ : (Π _ : init$string. X). Π _ : (Π _ : X. Π _ : X. X). Π _ : (Π _ : init$string. Π _ : X. X). X.
@@ -13,7 +13,7 @@ let init$lambdaTerm$=lambda=_space__string__space'_=dot=_space'__lambdaTerm_
 let init$lambdaStmt$let_space__string__space'_=colon==equal=_space'__lambdaTerm__space'_=dot=
   (_ : init$space) (name : init$string) (_ : init$space') (_ : init$space') (t : init$term) (_ : init$space') :
     init$stmt' :=
-  quote$annotatedLet' name (lambdaTermToTerm t) θ{Top}.
+  quote$annotatedLet' name (lambdaTermToTerm t) (TermToInitTerm θ{Top}).
 
 let init$lambdaStmt$normalize_space__lambdaTerm__space'_=dot=
   (_ : init$space) (t : init$term) (_ : init$space') : init$stmt' :=

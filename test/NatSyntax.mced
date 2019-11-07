@@ -8,8 +8,6 @@ let init$binnat'$ : List Bool := [Bool|].
 
 let init$binnat$_bindigit__binnat'_ := cons ?Bool.
 
-let quoteBoolFun (b : Bool) : init$term := ifthenelse ?init$term b θ{true} θ{false}.
-
 let boolToNat (b : Bool) : Nat := ifthenelse ?Nat b one zero.
 
 -- Decimal
@@ -30,19 +28,19 @@ let init$decnat'$ : List Dec := [Dec|].
 
 let init$decnat$_decdigit__decnat'_ := cons ?Dec.
 
-let quoteDec (d : Dec) : init$term :=
-  d ?init$term θ{Dec0} θ{Dec1} θ{Dec2} θ{Dec3} θ{Dec4} θ{Dec5} θ{Dec6} θ{Dec7} θ{Dec8} θ{Dec9}.
+let quoteDec (d : Dec) : Term :=
+  d ?Term θ{Dec0} θ{Dec1} θ{Dec2} θ{Dec3} θ{Dec4} θ{Dec5} θ{Dec6} θ{Dec7} θ{Dec8} θ{Dec9}.
 
 let decToNat (d : Dec) : Nat := d ?Nat zero one two three four five six seven eight nine.
 
 --
 
-let quoteList [X : *] (quotedX : init$term) (quoteX : Π _ : X. init$term) : Π _ : List X. init$term :=
-  recursionList ?X ?init$term (quote$angle θ{nil} quotedX)
-    (λ x : X. λ _ : List X. λ rec : init$term.
-      quote$square (quote$square (quote$angle θ{cons} quotedX) (quoteX x)) rec).
+let quoteList [X : *] (quotedX : Term) (quoteX : Π _ : X. Term) : Π _ : List X. Term :=
+  recursionList ?X ?Term (appSingleE θ{nil} quotedX)
+    (λ x : X. λ _ : List X. λ rec : Term.
+      appLTerm θ{cons} [App| mkAppE quotedX, mkAppU (quoteX x), mkAppU rec]).
 
-let quoteListBool := quoteList ?Bool θ{Bool} quoteBoolFun.
+let quoteListBool := quoteList ?Bool θ{Bool} quoteBool.
 let quoteListDec := quoteList ?Dec θ{Dec} quoteDec.
 
 let baseListToNat [B : *] (digitToNat : Π _ : B. Nat) (ds : List B) (base : Nat) : Nat :=
@@ -54,6 +52,6 @@ let boolListToNat (bs : List Bool) : Nat := baseListToNat ?Bool boolToNat bs two
 let decListToNat (ds : List Dec) : Nat := baseListToNat ?Dec decToNat ds ten.
 
 --let init$singleTerm$_binnat_ (bs : List Bool) : init$term := quote$square θ{boolListToNat} (quoteListBool bs).
-let init$singleTerm$_decnat_ (ds : List Dec) : init$term := quote$square θ{decListToNat} (quoteListDec ds).
+let init$singleTerm$_decnat_ (ds : List Dec) : Term := appSingle θ{decListToNat} (quoteListDec ds).
 
 o-seteval [evalNewStmt emptyEvaluatorState] init newStmt.

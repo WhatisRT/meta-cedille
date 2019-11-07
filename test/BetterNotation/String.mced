@@ -5,21 +5,21 @@ let charBytes := init$char$bytes.
 let stringNil := init$string$nil.
 let stringCons := init$string$cons.
 
-let quote$bitFalse := [quote$var [[stringCons quote$b] [[stringCons quote$i] [[stringCons quote$t] [[stringCons quote$F] [[stringCons quote$a] [[stringCons quote$l] [[stringCons quote$s] [[stringCons quote$e] stringNil]]]]]]]]] : init$term.
-let quote$bitTrue := [quote$var [[stringCons quote$b] [[stringCons quote$i] [[stringCons quote$t] [[stringCons quote$T] [[stringCons quote$r] [[stringCons quote$u] [[stringCons quote$e] stringNil]]]]]]]] : init$term.
-let quote$byteBits := [quote$var [[stringCons quote$b] [[stringCons quote$y] [[stringCons quote$t] [[stringCons quote$e] [[stringCons quote$B] [[stringCons quote$i] [[stringCons quote$t] [[stringCons quote$s] stringNil]]]]]]]]] : init$term.
-let quote$charBytes := [quote$var [[stringCons quote$c] [[stringCons quote$h] [[stringCons quote$a] [[stringCons quote$r] [[stringCons quote$B] [[stringCons quote$y] [[stringCons quote$t] [[stringCons quote$e] [[stringCons quote$s] stringNil]]]]]]]]]] : init$term.
+let quote$bitFalse := [sVarTerm [[stringCons quote$b] [[stringCons quote$i] [[stringCons quote$t] [[stringCons quote$F] [[stringCons quote$a] [[stringCons quote$l] [[stringCons quote$s] [[stringCons quote$e] stringNil]]]]]]]]] : Term.
+let quote$bitTrue := [sVarTerm [[stringCons quote$b] [[stringCons quote$i] [[stringCons quote$t] [[stringCons quote$T] [[stringCons quote$r] [[stringCons quote$u] [[stringCons quote$e] stringNil]]]]]]]] : Term.
+let quote$byteBits := [sVarTerm [[stringCons quote$b] [[stringCons quote$y] [[stringCons quote$t] [[stringCons quote$e] [[stringCons quote$B] [[stringCons quote$i] [[stringCons quote$t] [[stringCons quote$s] stringNil]]]]]]]]] : Term.
+let quote$charBytes := [sVarTerm [[stringCons quote$c] [[stringCons quote$h] [[stringCons quote$a] [[stringCons quote$r] [[stringCons quote$B] [[stringCons quote$y] [[stringCons quote$t] [[stringCons quote$e] [[stringCons quote$s] stringNil]]]]]]]]]] : Term.
 
-let quote$stringNil := [quote$var [[stringCons quote$s] [[stringCons quote$t] [[stringCons quote$r] [[stringCons quote$i] [[stringCons quote$n] [[stringCons quote$g] [[stringCons quote$N] [[stringCons quote$i] [[stringCons quote$l] stringNil]]]]]]]]]] : init$term.
-let quote$stringCons := [quote$var [[stringCons quote$s] [[stringCons quote$t] [[stringCons quote$r] [[stringCons quote$i] [[stringCons quote$n] [[stringCons quote$g] [[stringCons quote$C] [[stringCons quote$o] [[stringCons quote$n] [[stringCons quote$s] stringNil]]]]]]]]]]] : init$term.
+let quote$stringNil := [sVarTerm [[stringCons quote$s] [[stringCons quote$t] [[stringCons quote$r] [[stringCons quote$i] [[stringCons quote$n] [[stringCons quote$g] [[stringCons quote$N] [[stringCons quote$i] [[stringCons quote$l] stringNil]]]]]]]]]] : Term.
+let quote$stringCons := [sVarTerm [[stringCons quote$s] [[stringCons quote$t] [[stringCons quote$r] [[stringCons quote$i] [[stringCons quote$n] [[stringCons quote$g] [[stringCons quote$C] [[stringCons quote$o] [[stringCons quote$n] [[stringCons quote$s] stringNil]]]]]]]]]]] : Term.
 
-b-let quote$bit (b : init$bit) : init$term := b ?init$term quote$bitTrue quote$bitFalse.
-b-let quote$byte (b : init$byte) : init$term := b ?init$term λ x1 : init$bit. λ x2 : init$bit. λ x3 : init$bit. λ x4 : init$bit. λ x5 : init$bit. λ x6 : init$bit. λ x7 : init$bit. λ x8 : init$bit. ((quote$square ((quote$square ((quote$square ((quote$square ((quote$square ((quote$square ((quote$square ((quote$square quote$byteBits) (quote$bit x1))) (quote$bit x2))) (quote$bit x3))) (quote$bit x4))) (quote$bit x5))) (quote$bit x6))) (quote$bit x7))) (quote$bit x8)).
-b-let quote$char (c : init$char) : init$term := c ?init$term λ x1 : init$byte. λ x2 : init$byte. λ x3 : init$byte. λ x4 : init$byte. ((quote$square ((quote$square ((quote$square ((quote$square quote$charBytes) (quote$byte x1))) (quote$byte x2))) (quote$byte x3))) (quote$byte x4)).
+b-let quote$bit (b : init$bit) : Term := b ?Term quote$bitTrue quote$bitFalse.
+b-let quote$byte (b : init$byte) : Term := b ?Term λ x1 : init$bit. λ x2 : init$bit. λ x3 : init$bit. λ x4 : init$bit. λ x5 : init$bit. λ x6 : init$bit. λ x7 : init$bit. λ x8 : init$bit. ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle quote$byteBits) (quote$bit x1))) (quote$bit x2))) (quote$bit x3))) (quote$bit x4))) (quote$bit x5))) (quote$bit x6))) (quote$bit x7))) (quote$bit x8)).
+b-let quote$char (c : init$char) : Term := c ?Term λ x1 : init$byte. λ x2 : init$byte. λ x3 : init$byte. λ x4 : init$byte. ((appSingle ((appSingle ((appSingle ((appSingle quote$charBytes) (quote$byte x1))) (quote$byte x2))) (quote$byte x3))) (quote$byte x4)).
 
-b-let quote$String (s : init$string) : init$term :=
-  s ?init$term
-    (λ c : init$char. λ rec : init$term. quote$square (quote$square quote$stringCons (quote$char c)) rec)
+b-let quote$String (s : init$string) : Term :=
+  s ?Term
+    (λ c : init$char. λ rec : Term. appSingle (appSingle quote$stringCons (quote$char c)) rec)
     quote$stringNil.
 
 b-let init$stringchar$!=doublequote=! (c : init$char) : init$char := c.
@@ -27,9 +27,9 @@ b-let init$stringchar$!=doublequote=! (c : init$char) : init$char := c.
 let init$newstring$ := init$string$nil : init$string.
 let init$newstring$_stringchar__newstring_ := init$string$cons : Π _ : init$char Π _ : init$string init$string.
 
---let init$singleTerm$=singlequote=_stringchar_=singlequote= := quote$char : Π _ : init$char init$term.
-let init$singleTerm$=doublequote=_newstring_=doublequote= := quote$String : Π _ : init$string init$term.
-let init$term$=doublequote=_newstring_=doublequote= := quote$String : Π _ : init$string init$term.
+--let init$singleTerm$=singlequote=_stringchar_=singlequote= := quote$char : Π _ : init$char Term.
+let init$singleTerm$=doublequote=_newstring_=doublequote= := quote$String : Π _ : init$string Term.
+let init$term$=doublequote=_newstring_=doublequote= := quote$String : Π _ : init$string Term.
 
 b-let stringToList (s : init$string) : List init$char :=
   s ?(List init$char) (λ c : init$char. λ rec : List init$char. cons ?init$char c rec) (nil ?init$char).

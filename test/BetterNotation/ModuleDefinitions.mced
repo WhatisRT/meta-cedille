@@ -2,7 +2,7 @@ b-let modulePrefix := "modPrefix|".
 
 b-let ModuleName := List init$string.
 b-let moduleNameEq (n, n' : ModuleName) : Bool := listEq ?init$string stringEq n n'.
-b-let quoteModuleName (n : ModuleName) : init$term := quoteTermList θ{init$string} (map ?init$string ?init$term quoteName n).
+b-let quoteModuleName (n : ModuleName) : Term := quoteTermList θ{init$string} (map ?init$string ?Term quote$String n).
 
 b-let ModuleInfo := TripleProduct ModuleName Nat Telescope.
 b-let ModuleInfoName (i : ModuleInfo) : ModuleName := pr31 ?ModuleName ?Nat ?Telescope i.

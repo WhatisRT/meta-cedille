@@ -10,46 +10,46 @@ let mapMaybe' :=
   Λ A : * Λ B : * λ f : Π _ : A B λ x : [Maybe' A]
     [[[<<maybe' A> [Maybe' B]> [<<inr B> Unit> tt]] λ a : A [<just' B> [f a]]] x].
 
-let LetInfo := [[[TripleProduct init$string] init$term] [Maybe' init$term]].
-let mkLetInfo := <<<mkTripleProduct init$string> init$term> [Maybe' init$term]>
-  : Π _ : init$string Π _ : init$term Π _ : [Maybe' init$term] LetInfo.
-let letInfoName := λ i : LetInfo [<<<pr31 init$string> init$term> [Maybe' init$term]> i].
-let letInfoTerm := λ i : LetInfo [<<<pr32 init$string> init$term> [Maybe' init$term]> i].
-let letInfoType := λ i : LetInfo [<<<pr33 init$string> init$term> [Maybe' init$term]> i].
-let letInfoHasAnn := λ i : LetInfo [[[<<maybe' init$term> Bool> false] λ _ : init$term true] [letInfoType i]].
+let LetInfo := [[[TripleProduct init$string] Term] [Maybe' Term]].
+let mkLetInfo := <<<mkTripleProduct init$string> Term> [Maybe' Term]>
+  : Π _ : init$string Π _ : Term Π _ : [Maybe' Term] LetInfo.
+let letInfoName := λ i : LetInfo [<<<pr31 init$string> Term> [Maybe' Term]> i].
+let letInfoTerm := λ i : LetInfo [<<<pr32 init$string> Term> [Maybe' Term]> i].
+let letInfoType := λ i : LetInfo [<<<pr33 init$string> Term> [Maybe' Term]> i].
+let letInfoHasAnn := λ i : LetInfo [[[<<maybe' Term> Bool> false] λ _ : Term true] [letInfoType i]].
 
-let paramToLambda := λ t : init$term λ p : Param
+let paramToLambda := λ t : Term λ p : Param
   [[[[[
-    [<ifthenelse Π _ : init$string Π _ : init$term Π _ : init$term init$term> [paramErased p]]
-      quote$Lambda]
-      quote$lambda]
+    [<ifthenelse Π _ : init$string Π _ : Term Π _ : Term Term> [paramErased p]]
+      LambdaTerm]
+      lambdaTerm]
     [paramName p]] [paramType p]] t]
-  : Π _ : init$term Π _ : Param init$term.
+  : Π _ : Term Π _ : Param Term.
 
-let foldWithLambdas := [<<foldl Param> init$term> paramToLambda] : Π _ : Telescope Π _ : init$term init$term.
+let foldWithLambdas := [<<foldl Param> Term> paramToLambda] : Π _ : Telescope Π _ : Term Term.
 
-let paramToPi := λ t : init$term λ p : Param
+let paramToPi := λ t : Term λ p : Param
   [[[[[
-    [<ifthenelse Π _ : init$string Π _ : init$term Π _ : init$term init$term> [paramErased p]]
-      quote$forall]
-      quote$Pi]
+    [<ifthenelse Π _ : init$string Π _ : Term Π _ : Term Term> [paramErased p]]
+      forallTerm]
+      piTerm]
     [paramName p]] [paramType p]] t]
-  : Π _ : init$term Π _ : Param init$term.
+  : Π _ : Term Π _ : Param Term.
 
-let foldWithPi := [<<foldl Param> init$term> paramToPi] : Π _ : Telescope Π _ : init$term init$term.
+let foldWithPi := [<<foldl Param> Term> paramToPi] : Π _ : Telescope Π _ : Term Term.
 
-let init$betterLetType$ := [<<inr init$term> Unit> tt].
-let init$betterLetType$_space__multiTerm_=colon= := λ _ : init$space λ t : init$term [<<inl init$term> Unit> t].
+let init$betterLetType$ := [<<inr Term> Unit> tt].
+let init$betterLetType$_space__multiTerm_=colon= := λ _ : init$space λ t : Term [<<inl Term> Unit> t].
 
 let init$betterLet$_string__space__telescope_=colon=_betterLetType_=equal=_space'__multiTerm_=dot= :=
-  λ n : init$string λ _ : init$space λ tel : Telescope λ maybeType : [Maybe' init$term] λ _ : init$space' λ term : init$term
-    [[[mkLetInfo n] [[foldWithLambdas tel] term]] [[<<mapMaybe' init$term> init$term> [foldWithPi tel]] maybeType]].
+  λ n : init$string λ _ : init$space λ tel : Telescope λ maybeType : [Maybe' Term] λ _ : init$space' λ term : Term
+    [[[mkLetInfo n] [[foldWithLambdas tel] term]] [[<<mapMaybe' Term> Term> [foldWithPi tel]] maybeType]].
 
 let convertLetInfo :=
   λ i : LetInfo
-    [[[<<maybe' init$term> init$stmt'>
-      [[quote$simpleLet' [letInfoName i]] [letInfoTerm i]]]
-      λ type : init$term [[[quote$annotatedLet' [letInfoName i]] [letInfoTerm i]] type]]
+    [[[<<maybe' Term> init$stmt'>
+      [[quote$simpleLet' [letInfoName i]] [TermToInitTerm [letInfoTerm i]]]]
+      λ type : Term [[[quote$annotatedLet' [letInfoName i]] [TermToInitTerm [letInfoTerm i]]] [TermToInitTerm type]]]
       [letInfoType i]].
 
 let init$stmt'$b=minus=let_space__betterLet_ := λ _ : init$space convertLetInfo.

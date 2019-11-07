@@ -1,61 +1,40 @@
 -- Application: use [f x1 ... xn] where erased arguments are prefixed with a '?'
 
-let App := [[Product Bool] init$term].
-let mkApp := <<prodPair Bool> init$term>.
-let mkAppU := [<<prodPair Bool> init$term> false].
-let mkAppE := [<<prodPair Bool> init$term> true].
-let appErased := <<pr1 Bool> init$term>.
-let appTerm := <<pr2 Bool> init$term>.
-
 let init$app$_singleTerm_ := mkAppU.
 let init$app$=question=_singleTerm_ := mkAppE.
 
-let init$applist := [List App].
 let init$applist$ := <nil App>.
 let init$applist$_app__maybeApplist_ := λ a : App λ as : [List App] [[<cons App> a] as].
 
 let init$maybeApplist$ := <nil App>.
 let init$maybeApplist$_space__applist_ := λ _ : init$space λ l : [List App] l.
 
-let appToQuotedApp :=
-  λ t : init$term λ a : App
-    [[[[
-      [<ifthenelse Π _ : init$term Π _ : init$term init$term> [appErased a]]
-        quote$angle]
-        quote$square]
-      t] [appTerm a]].
-
-let foldWithApp := [<<foldl App> init$term> appToQuotedApp] : Π _ : [List App] Π _ : init$term init$term.
-
-let applyList :=
-  λ t : init$term λ as : [List App] [[foldWithApp [<reverse App> as]] t].
-
 -- term syntax below
 
-let init$multiTerm$_singleTerm__maybeApplist_ := λ t : init$term λ as : [List App] [[applyList t] as].
+let init$multiTerm$_singleTerm__maybeApplist_ := appLTerm.
 
-let init$singleTerm$=ast= := quote$ast.
-let init$singleTerm$=sq= := quote$sq.
+let init$singleTerm$=ast= := [sortTerm init$sort$=ast=].
+let init$singleTerm$=sq= := [sortTerm init$sort$=sq=].
 
-let init$singleTerm$_string_ := λ n : init$string [quote$var n].
-let init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : init$term t.
+let init$singleTerm$_string_ := λ n : init$string [varTerm [init$var$_string_ n]].
+let init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : Term t.
 
 let init$singleTerm$=forall=_space__string__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
   λ _ : init$space λ n : init$string λ _ : init$space' λ _ : init$space'
-  λ T : init$term λ _ : init$space λ t : init$term
-    [[[quote$forall n] T] t].
+  λ T : Term λ _ : init$space λ t : Term
+    [[[forallTerm n] T] t].
 
 let init$singleTerm$=Pi=_space__string__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
   λ _ : init$space λ n : init$string λ _ : init$space' λ _ : init$space'
-  λ T : init$term λ _ : init$space λ t : init$term
-    [[[quote$Pi n] T] t].
+  λ T : Term λ _ : init$space λ t : Term
+    [[[piTerm n] T] t].
 
 let init$singleTerm$=lambda=_space__string__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
   λ _ : init$space λ n : init$string λ _ : init$space' λ _ : init$space'
-  λ T : init$term λ _ : init$space λ t : init$term
-    [[[quote$lambda n] T] t].
+  λ T : Term λ _ : init$space λ t : Term
+    [[[lambdaTerm n] T] t].
 
 let init$singleTerm$=Lambda=_space__string__space'_=colon=_space'__multiTerm_=dot=_space__multiTerm_ :=
   λ _ : init$space λ n : init$string λ _ : init$space' λ _ : init$space'
-  λ T : init$term λ _ : init$space λ t : init$term
-    [[[quote$Lambda n] T] t].
+  λ T : Term λ _ : init$space λ t : Term
+    [[[LambdaTerm n] T] t].
