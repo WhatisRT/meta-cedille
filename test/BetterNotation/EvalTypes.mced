@@ -14,11 +14,11 @@ b-let emptyModState : ModuleState := mkModuleState (nothing' ?Module) emptyModul
 b-let quoteMaybeModule (x : Maybe' Module) : Term :=
   maybe' ?Module ?Term
     θ{nothing' ?Module}
-    (λ m : Module. appLTerm θ{just' ?Module} [App| mkAppU (sVarTerm (mkTempModuleName m))])
+    (λ m : Module. θ{just' ?Module γ{sVarTerm (mkTempModuleName m)}})
     x.
 b-let quoteDict (d : ModuleDict) : Term := sVarTerm (mkModuleDictName d).
 b-let quoteModuleState (s : ModuleState) : Term :=
-  appLTerm θ{mkModuleState} [App| mkAppU (quoteMaybeModule (ModuleStateModule s)), mkAppU (quoteDict (ModuleStateDict s))].
+  θ{mkModuleState γ{quoteMaybeModule (ModuleStateModule s)} γ{quoteDict (ModuleStateDict s)}}.
 
 b-let EvaluatorState : * := Product EvalFlags ModuleState.
 b-let mkEvaluatorState (f : EvalFlags) (s : ModuleState) : EvaluatorState := prodPair ?EvalFlags ?ModuleState f s.
@@ -34,7 +34,7 @@ b-let modifyModuleDictInState (f : Π _ : ModuleDict. ModuleDict) (s : Evaluator
                    (mkModuleState (ModuleStateModule (getModuleState s)) (f (ModuleStateDict (getModuleState s)))).
 
 b-let quoteEvaluatorState (s : EvaluatorState) : Term :=
-  appLTerm θ{mkEvaluatorState} [App| mkAppU (quoteEvalFlags (getEvalFlags s)), mkAppU (quoteModuleState (getModuleState s))].
+  θ{mkEvaluatorState γ{quoteEvalFlags (getEvalFlags s)} γ{quoteModuleState (getModuleState s)}}.
 
 b-let emptyEvaluatorState : EvaluatorState := mkEvaluatorState defaultFlags emptyModState.
 

@@ -23,7 +23,7 @@ b-let init$newStmt'$qlet_space__betterLet_ (_ : init$space) (i : LetInfo) : init
   seqNewStmt (letInfoToNewStmt i) (letInfoToNewStmt (letInfoTermToQuoted i)).
 b-let init$newStmt'$runMeta_space__multiTerm_=dot= (_ : init$space) (t : Term) : init$newStmt := runMetaCommand t.
 b-let init$newStmt'$echo_space__multiTerm_=dot= (_ : init$space) (t : Term) : init$newStmt :=
-  runMetaCommand (appSingle θ{echoStmt} t).
+  runMetaCommand θ{echoStmt γ{t}}.
 b-let init$newStmt'$import_space__string_=dot= (_ : init$space) (n : init$string) : init$newStmt := stmtToNewStmt (quote$import' n).
 b-let init$newStmt'$Import_space__moduleName__maybeApplist_=dot= (_ : init$space) (n : ModuleName) (l : List App) : init$newStmt :=
   loadAndImportModule n l "test/".

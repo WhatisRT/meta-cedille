@@ -8,15 +8,14 @@ b-let prefixNamesInTerm (p : init$string) (t : Term) : Term :=
     (λ v : init$var. varTerm (prefixVar p v))
     sortTerm
     (λ b : Binder. λ n : init$string. λ T : Term. λ t : Term. binderTerm b (stringApp p n) T t)
-    (λ t : Term. λ l : List App. appLTerm t l).
+    (λ t : Term. λ l : List App. appLTerm t l)
+    (λ u : Term. unquoteTerm u).
 
 b-let quoteNat (n : Nat) : Term :=
-  inductionNat ?(λ _ : Nat. Term) θ{zero} (λ _ : Nat. λ rec : Term. appLTerm θ{suc} [App| mkAppU rec]) n.
+  inductionNat ?(λ _ : Nat. Term) θ{zero} (λ _ : Nat. λ rec : Term. θ{suc γ{rec}}) n.
 
 b-let quoteParam (p : Param) : Term :=
-  appLTerm θ{mkParam}
-    [App| mkAppU (quoteBool (paramErased p)), mkAppU
-          (appLTerm θ{mkPreParam} [App| mkAppU (quote$String (paramName p)), mkAppU (quoteTerm (paramType p))])].
+  θ{mkParam γ{quoteBool (paramErased p)} (mkPreParam γ{quote$String (paramName p)} γ{quoteTerm (paramType p)})}.
 
 b-let quoteTelescope (t : Telescope) : Term := quoteTermList θ{Param} (map ?Param ?Term quoteParam t).
 
@@ -25,7 +24,7 @@ b-let initModule (n : ModuleName) (v : Nat) (t : Telescope) : init$newStmt :=
     seqNewStmt
       (letInfoToNewStmt
         (mkLetInfo (mkTempModuleName m)
-          (appLTerm θ{mkInitModule} [App| mkAppU (quoteModuleName n), mkAppU (quoteNat v), mkAppU (quoteTelescope t)])
+          θ{mkInitModule γ{quoteModuleName n} γ{quoteNat v} γ{quoteTelescope t}}
           (just' ?Term θ{Module})))
       (modifyEvalStateStmt (modifyModuleInState (λ _ : Maybe' Module. just' ?Module m))))
   (mkInitModule n v t).
@@ -39,7 +38,7 @@ b-let updateTempModule (n : init$string) (m : Module) : init$newStmt :=
   seqNewStmt
     (letInfoToNewStmt
       (mkLetInfo (mkTempModuleNameSuc m)
-        (appLTerm θ{consModule} [App| mkAppU (quote$String n), mkAppU (sVarTerm (mkTempModuleName m))])
+        θ{consModule γ{quote$String n} γ{sVarTerm (mkTempModuleName m)}}
         (just' ?Term θ{Module})))
     (setModule (just' ?Module (consModule n m))).
 
@@ -76,7 +75,7 @@ b-let letInfoToNewStmtMod (i : LetInfo) : init$newStmt :=
 b-let updateModuleDict (m : Module) (d : ModuleDict) : init$newStmt :=
   letInfoToNewStmt (mkLetInfo
     (mkModuleDictNameSuc d)
-    (appLTerm θ{insertModuleDict} [App| mkAppU (sVarTerm (mkModuleName m)), mkAppU (sVarTerm (mkModuleDictName d))])
+    θ{insertModuleDict γ{sVarTerm (mkModuleName m)} γ{sVarTerm (mkModuleDictName d)}}
     (just' ?Term θ{ModuleDict})).
 
 b-let finishModuleDef (m : Module) (d : ModuleDict) : init$newStmt :=

@@ -36,9 +36,8 @@ let decToNat (d : Dec) : Nat := d ?Nat zero one two three four five six seven ei
 --
 
 let quoteList [X : *] (quotedX : Term) (quoteX : Π _ : X. Term) : Π _ : List X. Term :=
-  recursionList ?X ?Term (appSingleE θ{nil} quotedX)
-    (λ x : X. λ _ : List X. λ rec : Term.
-      appLTerm θ{cons} [App| mkAppE quotedX, mkAppU (quoteX x), mkAppU rec]).
+  recursionList ?X ?Term θ{nil ?γ{quotedX}}
+    (λ x : X. λ _ : List X. λ rec : Term. θ{cons ?γ{quotedX} γ{quoteX x} γ{rec}}).
 
 let quoteListBool := quoteList ?Bool θ{Bool} quoteBool.
 let quoteListDec := quoteList ?Dec θ{Dec} quoteDec.
@@ -52,6 +51,6 @@ let boolListToNat (bs : List Bool) : Nat := baseListToNat ?Bool boolToNat bs two
 let decListToNat (ds : List Dec) : Nat := baseListToNat ?Dec decToNat ds ten.
 
 --let init$singleTerm$_binnat_ (bs : List Bool) : init$term := quote$square θ{boolListToNat} (quoteListBool bs).
-let init$singleTerm$_decnat_ (ds : List Dec) : Term := appSingle θ{decListToNat} (quoteListDec ds).
+let init$singleTerm$_decnat_ (ds : List Dec) : Term := θ{decListToNat γ{quoteListDec ds}}.
 
 o-seteval [evalNewStmt emptyEvaluatorState] init newStmt.
