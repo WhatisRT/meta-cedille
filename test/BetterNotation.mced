@@ -20,3 +20,10 @@ import test/BetterNotation/ModuleDefinitions.
 import test/BetterNotation/EvalTypes.
 import test/BetterNotation/ModuleFunction.
 import test/BetterNotation/BetterSyntax.
+
+import test/BetterNotation/ShowTerm.
+import test/BetterNotation/Functors.
+import test/BetterNotation/DataFunctors.
+import test/BetterNotation/ChurchData.
+import test/BetterNotation/Error.
+import test/BetterNotation/DataParser.

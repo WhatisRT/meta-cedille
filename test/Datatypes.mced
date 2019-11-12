@@ -1,0 +1,13 @@
+data TestUnit where
+| tt : TestUnit.
+
+data TestNat where
+| zero : TestNat
+| succ : Π _ : TestNat. TestNat.
+
+data TestList (A : *) where
+| nil : TestList A
+| cons : Π _ : A. Π _ : TestList A. TestList A.
+
+data TestDSum (A : *) (B : Π _ : A. *) where
+| pair : Π a : A. Π _ : B a. TestDSum A B.

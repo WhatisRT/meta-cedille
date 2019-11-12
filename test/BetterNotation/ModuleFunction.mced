@@ -108,7 +108,7 @@ b-let importModule (m : Module) (l : List App) : init$newStmt :=
       (ModuleContents m))).
 
 b-let importFile (file : init$string) : init$newStmt := stmtToNewStmt (quote$import' file).
-b-let moduleNameToPath (n : ModuleName) : init$string := concatStrings (intersperse ?init$string "/" n).
+b-let moduleNameToPath (n : ModuleName) : init$string := stringConcat (intersperse ?init$string "/" n).
 
 b-let importModuleOrStmt (n : ModuleName) (l : List App) (stmt : init$newStmt) : init$newStmt :=
   bindEvalState ?(Maybe' Module) ?metaResult (findModule n)

@@ -1,0 +1,34 @@
+let Functor (F : Π _ : *. *) := ∀ X : *. ∀ Y : *. Π _ : (Π _ : X. Y). Π _ : F X. F Y.
+
+let functorTerm := Product Term Term. -- first F, then fmap
+let mkFunctorTerm := prodPair ?Term ?Term.
+let getF := pr1 ?Term ?Term.
+let getFunctor := pr2 ?Term ?Term.
+
+let FunctorSumF (F1, F2 : Π _ : *. *) := λ X : *. Sum (F1 X) (F2 X).
+let FunctorSumFunctor [F1, F2 : Π _ : *. *] (fmap1 : Functor F1) (fmap2 : Functor F2) : Functor (FunctorSumF F1 F2) :=
+  Λ X : *. Λ Y : *. λ f : (Π _ : X. Y). λ x : Sum (F1 X) (F2 X).
+    inductionSum ?(F1 X) ?(F2 X) ?(λ _ : Sum (F1 X) (F2 X). Sum (F1 Y) (F2 Y))
+      (λ f1x : F1 X. inl ?(F1 Y) ?(F2 Y) (fmap1 ?X ?Y f f1x))
+      (λ f2x : F2 X. inr ?(F1 Y) ?(F2 Y) (fmap2 ?X ?Y f f2x)) x.
+
+let compF (F1, F2 : Π _ : *. *) : Π _ : *. * := λ A : *. F1 (F2 A).
+let compFunctor [F1, F2 : Π _ : *. *] (fmap1 : Functor F1) (fmap2 : Functor F2) : Functor (compF F1 F2) :=
+  Λ X : *. Λ Y : *. λ f : (Π _ : X. Y). λ x : F1 (F2 X). fmap1 ?(F2 X) ?(F2 Y) (fmap2 ?X ?Y f) x.
+let compFTerm (F1, F2 : functorTerm) : functorTerm :=
+  mkFunctorTerm θ{compF γ{getF F1} γ{getF F2}} θ{compFunctor γ{getFunctor F1} γ{getFunctor F2}}.
+
+let idF (X : *) : * := X.
+let idFunctor : Functor idF := Λ X : *. Λ Y : *. λ f : (Π _ : X. Y). λ x : idF X. f x.
+let idFTerm : functorTerm := mkFunctorTerm θ{idF} θ{idFunctor}.
+
+let covHomF (A : *) (X : *) : * := Π _ : A. X.
+let covHomFunctor (A : *) : Functor (covHomF A) := Λ X : *. Λ Y : *. λ f : (Π _ : X. Y). λ g : covHomF A X. λ a : A. f (g a).
+let covHomFTerm (A : Term) : functorTerm := mkFunctorTerm θ{covHomF γ{A}} θ{covHomFunctor γ{A}}.
+
+let constF (A : *) (X : *) : * := A.
+let constFunctor (A : *) : Functor (constF A) := Λ X : *. Λ Y : *. λ f : (Π _ : X. Y). λ a : constF A X. a.
+let constFTerm (A : Term) : functorTerm := mkFunctorTerm θ{constF γ{A}} θ{constFunctor γ{A}}.
+
+--let FunctorDSumF (F1 : Π _ : *. *) (F2 : Π X : *. Π x : F1 x. *) (X : *) : * :=
+--  DSum (F1 X) (λ x : F1 X. )

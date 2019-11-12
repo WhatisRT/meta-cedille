@@ -38,6 +38,12 @@ let paramToPi := λ t : Term λ p : Param
 
 let foldWithPi := [<<foldl Param> Term> paramToPi] : Π _ : Telescope Π _ : Term Term.
 
+let appendTelToLetInfo := λ tel : Telescope λ i : LetInfo
+  [[[mkLetInfo
+    [letInfoName i]]
+    [[foldWithLambdas tel] [letInfoTerm i]]]
+    [[<<mapMaybe' Term> Term> [foldWithPi tel]] [letInfoType i]]].
+
 let init$betterLetType$ := [<<inr Term> Unit> tt].
 let init$betterLetType$_space__multiTerm_=colon= := λ _ : init$space λ t : Term [<<inl Term> Unit> t].
 

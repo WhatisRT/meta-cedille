@@ -1,0 +1,17 @@
+let showVar (v : init$var) : init$string := v ?init$string (λ s : init$string. s) (λ i : init$index. "INDEX").
+let showSort (s : init$sort) : init$string := s ?init$string "*" "□".
+let showBinder (b : Binder) : init$string := b ?init$string "λ" "Λ" "Π" "∀".
+
+let showTerm (t : Term) : init$string :=
+  t ?init$string
+    (λ v : init$var. showVar v)
+    (λ s : init$sort. showSort s)
+    (λ b : Binder. λ n : init$string. λ T : init$string. λ t : init$string.
+      stringConcat [init$string| showBinder b, " ", n, " : ", T, ". ", t])
+    (λ t : init$string. λ l : List (Product Bool init$string).
+      stringConcat (cons ?init$string t
+                          (map ?(Product Bool init$string) ?init$string
+                               (λ bs : Product Bool init$string.
+                                 stringConcat [init$string| ifthenelse ?init$string (pr1 ?Bool ?init$string bs) " ?" " ",
+                                                             "(", pr2 ?Bool ?init$string bs, ")"]) l)))
+    (λ t : init$string. stringConcat [init$string| "γ{", t, "}"]).

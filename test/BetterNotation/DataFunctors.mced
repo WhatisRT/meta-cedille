@@ -1,0 +1,124 @@
+let ConstrFunctor := ∀ X : *.
+  Π _ : X. -- id
+  Π _ : (Π _ : Term. X). -- const
+  Π _ : (Π _ : Term. Π _ : X. X). -- covHom with inner functor
+  Π _ : (Π _ : init$string. Π _ : X. Π _ : X. X). -- dependent pair
+  X.
+
+let idConstrFunctor := Λ X : *.
+  λ i : X.
+  λ _ : (Π _ : Term. X).
+  λ _ : (Π _ : Term. Π _ : X. X).
+  λ _ : (Π _ : init$string. Π _ : X. Π _ : X. X).
+  i.
+
+let constConstrFunctor := λ t : Term. Λ X : *.
+  λ _ : X.
+  λ c : (Π _ : Term. X).
+  λ _ : (Π _ : Term. Π _ : X. X).
+  λ _ : (Π _ : init$string. Π _ : X. Π _ : X. X).
+  c t.
+
+let covHomConstrFunctor := λ t : Term. λ f : ConstrFunctor. Λ X : *.
+  λ i : X.
+  λ c : (Π _ : Term. X).
+  λ h : (Π _ : Term. Π _ : X. X).
+  λ p : (Π _ : init$string. Π _ : X. Π _ : X. X).
+  h t (f ?X i c h p).
+
+let pairConstrFunctor := λ s : init$string. λ f : ConstrFunctor. λ f' : ConstrFunctor. Λ X : *.
+  λ i : X.
+  λ c : (Π _ : Term. X).
+  λ h : (Π _ : Term. Π _ : X. X).
+  λ p : (Π _ : init$string. Π _ : X. Π _ : X. X).
+  p s (f ?X i c h p) (f' ?X i c h p).
+
+let recursionConstrFunctor [X : *]
+  (idf : X)
+  (constf : (Π _ : Term. X))
+  (covHomf : (Π _ : Term. Π _ : ConstrFunctor. Π _ : X. X))
+  (pairf : (Π _ : init$string. Π _ : ConstrFunctor. Π _ : ConstrFunctor. Π _ : X. Π _ : X. X))
+  (f : ConstrFunctor) : X :=
+  pr1 ?X ?ConstrFunctor (f ?(Product X ConstrFunctor)
+    (prodPair ?X ?ConstrFunctor idf idConstrFunctor)
+    (λ t : Term. prodPair ?X ?ConstrFunctor (constf t) (constConstrFunctor t))
+    (λ t : Term. λ t' : Product X ConstrFunctor.
+      prodPair ?X ?ConstrFunctor
+        (covHomf t (pr2 ?X ?ConstrFunctor t') (pr1 ?X ?ConstrFunctor t'))
+        (covHomConstrFunctor t (pr2 ?X ?ConstrFunctor t')))
+    (λ s : init$string. λ t : Product X ConstrFunctor. λ t' : Product X ConstrFunctor.
+      prodPair ?X ?ConstrFunctor
+        (pairf s (pr2 ?X ?ConstrFunctor t) (pr2 ?X ?ConstrFunctor t') (pr1 ?X ?ConstrFunctor t) (pr1 ?X ?ConstrFunctor t'))
+        (pairConstrFunctor s (pr2 ?X ?ConstrFunctor t) (pr2 ?X ?ConstrFunctor t')))).
+
+let ConstrFunctorF (name : init$string) (f : ConstrFunctor) : Term :=
+  f ?Term
+    θ{idF}
+    (λ t : Term. θ{constF γ{t}})
+    (λ t : Term. λ recF : Term. θ{compF (covHomF γ{t}) γ{recF}})
+    (λ s : init$string. λ recF : Term. λ recF' : Term.
+      lambdaTerm name θ{*} θ{DSum (γ{recF} γ{sVarTerm name})
+                 γ{lambdaTerm s (θ{γ{recF} γ{sVarTerm name}})
+                                (θ{γ{recF'} γ{sVarTerm name}})}}).
+
+let ConstrsFunctorF (name : init$string) : Π _ : List ConstrFunctor. Term :=
+  recursionList ?ConstrFunctor ?Term θ{constF Void}
+    (λ f : ConstrFunctor. λ fs : List ConstrFunctor. λ rec : Term. θ{FunctorSumF γ{ConstrFunctorF name f} γ{rec}}).
+
+let mapDSum [A, A' : *] [B : Π _ : A. *] [B' : Π _ : A'. *]
+            (f : Π _ : A. A') (g : Π a : A. Π _ : B a. B' (f a)) (x : DSum A B) : DSum A' B' :=
+  inductionDSum ?A ?B ?(λ _ : DSum A B. DSum A' B') (λ a : A. λ b : B a. pair ?A' ?B' (f a) (g a b)) x.
+
+let ConstrFunctorFunctor (name : init$string) : Π _ : ConstrFunctor. Term :=
+  recursionConstrFunctor ?Term
+    θ{idFunctor}
+    (λ t : Term. θ{constFunctor γ{t}})
+    (λ t : Term. λ f : ConstrFunctor. λ intFmap : Term. θ{covHomFunctor γ{t}})
+    (λ s : init$string. λ f : ConstrFunctor. λ f' : ConstrFunctor. λ intFmap : Term. λ intFmap' : Term.
+      θ{Λ X : *. Λ Y : *. λ f : (Π _ : X. Y).
+        mapDSum ?(γ{ConstrFunctorF name f} X) ?(γ{ConstrFunctorF name f} Y)
+                ?γ{lambdaTerm s θ{γ{ConstrFunctorF name f} X} θ{γ{ConstrFunctorF name f'} X}}
+                ?γ{lambdaTerm s θ{γ{ConstrFunctorF name f} Y} θ{γ{ConstrFunctorF name f'} Y}}
+                (γ{intFmap} ?X ?Y f)
+                γ{lambdaTerm s θ{γ{ConstrFunctorF name f} X} θ{γ{intFmap'} ?X ?Y f}}}).
+
+let ConstrsFunctorFunctor (name : init$string) : Π _ : List ConstrFunctor. Term :=
+  recursionList ?ConstrFunctor ?Term θ{constFunctor Void}
+    (λ f : ConstrFunctor. λ fs : List ConstrFunctor. λ rec : Term.
+      θ{FunctorSumFunctor ?γ{ConstrFunctorF name f} ?γ{ConstrsFunctorF name fs} γ{ConstrFunctorFunctor name f} γ{rec}}).
+
+let telescopeToApp (tel : Telescope) : List App := map ?Param ?App (λ p : Param. mkApp (paramErased p) (sVarTerm (paramName p))) tel.
+
+let DatatypeData := TripleProduct init$string Telescope (List ConstrFunctor).
+let mkDatatypeData := mkTripleProduct ?init$string ?Telescope ?(List ConstrFunctor).
+let DatatypeName := pr31 ?init$string ?Telescope ?(List ConstrFunctor).
+let DatatypeTelescope := pr32 ?init$string ?Telescope ?(List ConstrFunctor).
+let DatatypeConstrs := pr33 ?init$string ?Telescope ?(List ConstrFunctor).
+
+let functorToLet (d : DatatypeData) : init$newStmt :=
+  seqNewStmts (map ?LetInfo ?init$newStmt (λ i : LetInfo. letInfoToNewStmt (appendTelToLetInfo (DatatypeTelescope d) i))
+    [LetInfo|
+      mkLetInfo (stringApp (DatatypeName d) "F")
+                (ConstrsFunctorF (DatatypeName d) (DatatypeConstrs d))
+                (just' ?Term θ{Π _ : *. *}),
+      mkLetInfo (stringApp (DatatypeName d) "Functor")
+                (ConstrsFunctorFunctor (DatatypeName d) (DatatypeConstrs d))
+                (just' ?Term θ{Functor γ{ConstrsFunctorF (DatatypeName d) (DatatypeConstrs d)}}),
+      mkLetInfo (stringApp (DatatypeName d) "Type")
+                θ{FixC γ{appLTerm (sVarTerm (stringApp (DatatypeName d) "F")) (telescopeToApp (DatatypeTelescope d))}}
+                (just' ?Term θ{*}),
+      mkLetInfo (stringApp (DatatypeName d) "Constrs")
+                θ{inC γ{appLTerm (sVarTerm (stringApp (DatatypeName d) "F")) (telescopeToApp (DatatypeTelescope d))}
+                      γ{appLTerm (sVarTerm (stringApp (DatatypeName d) "Functor")) (telescopeToApp (DatatypeTelescope d))}}
+                (just' ?Term θ{AlgC γ{appLTerm (sVarTerm (stringApp (DatatypeName d) "F")) (telescopeToApp (DatatypeTelescope d))}
+                                    γ{appLTerm (sVarTerm (stringApp (DatatypeName d) "Type")) (telescopeToApp (DatatypeTelescope d))}})]).
+
+let natTest := mkDatatypeData "NatTest" telNil [ConstrFunctor| constConstrFunctor θ{Unit}, idConstrFunctor].
+let listTest :=
+  mkDatatypeData "ListTest"
+                 [Param| mkParam false (mkPreParam "A" θ{*})]
+                 [ConstrFunctor| constConstrFunctor θ{Unit}, pairConstrFunctor "_" (constConstrFunctor θ{A}) idConstrFunctor].
+let dSumTest :=
+  mkDatatypeData "DSumTest"
+                 [Param| mkParam false (mkPreParam "A" θ{*}), mkParam false (mkPreParam "B" θ{Π _ : A. *})]
+                 [ConstrFunctor|pairConstrFunctor "a" (constConstrFunctor θ{A}) (constConstrFunctor θ{B a})].

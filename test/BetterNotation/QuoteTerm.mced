@@ -8,8 +8,8 @@ b-let recursionTerm [X : *]
   (fbind : Π _ : Binder. Π _ : init$string. Π _ : Term. Π _ : Term. Π _ : X. Π _ : X. X)
   (fapp : Π _ : Term. Π _ : List App. Π _ : X. Π _ : List (Product Bool X). X)
   (funq : Π _ : Term. Π _ : X. X)
-  (t : Term) : X :=
-  pr1 ?X ?Term (t ?(Product X Term)
+  (term : Term) : X :=
+  pr1 ?X ?Term (term ?(Product X Term)
     (λ v : init$var. prodPair ?X ?Term (fvar v) (varTerm v))
     (λ s : init$sort. prodPair ?X ?Term (fsort s) (sortTerm s))
     (λ b : Binder. λ n : init$string. λ T : Product X Term. λ t : Product X Term.
@@ -53,7 +53,7 @@ b-let quoteTerm (t : Term) : Term :=
       appLTerm (sVarTerm "binderTerm") (toAppU [Term| quoteBinder b, quote$String n, recT, rect]))
     (λ t : Term. λ l : List App. λ rect : Term. λ recl : List App.
       appDouble (sVarTerm "appLTerm") rect (quoteTermList (sVarTerm "App") (map ?App ?Term quoteAppLeft recl)))
-    (λ u : Term. λ rect : Term. u)
+    (λ u : Term. λ recuf : Term. u)
     t.
 
 b-let init$singleTerm$=theta==lbrace=_space'__multiTerm_=rbrace= (_ : init$space') (t : Term) : Term := quoteTerm t.
