@@ -33,7 +33,8 @@ b-let digitListToIndex : Π _ : List Dec. init$index :=
     (init$index$0_index'_ init$index'$)
     (λ d : Dec. λ ds : List Dec. λ _ : init$index. consDecToIndex (digitListToIndex' ds) d).
 
-b-let showListOfDecs [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string := stringConcat (map ?X ?init$string showX l).
+b-let showListOfDecs [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string :=
+  stringConcat (map ?X ?init$string showX (reverse ?X l)).
 
 b-let incrementBinList (l : List Bool) : List Bool :=
   recursionList ?Bool ?(List Bool)

@@ -1,2 +1,2 @@
 b-let showList [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string :=
-  stringConcat (intersperse ?init$string ", " (map ?X ?init$string showX l)).
+  stringApp "[" (stringApp (stringConcat (intersperse ?init$string ", " (map ?X ?init$string showX l))) "]").

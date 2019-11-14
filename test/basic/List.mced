@@ -40,10 +40,15 @@ let foldl := Λ A : * Λ B : * λ f : (Π _ : B Π _ : A B)
   λ b : B b]
   λ a : A λ as : [List A] λ rec : Π _ : B B λ b : B [[f [rec b]] a]].
 
+let scanl := Λ A : * Λ B : * λ f : (Π _ : B Π _ : A B) λ b : B
+  [[<<recursionList A> [List B]>
+  [<pureList B> b]]
+  λ a : A λ as : [List A] λ rec : [List B] [[<cons B> [[[<<foldl A> B> f] [[<cons A> a] as]] b]] rec]].
+
 let map := Λ X : * Λ Y : * λ f : Π _ : X Y
   [[<<recursionList X> [List Y]> <nil Y>] λ x : X λ _ : [List X] λ rec : [List Y] [[<cons Y> [f x]] rec]].
 
 let intersperse :=
   Λ X : * λ x : X λ l : [List X] [[[<<recursionList X> [List X]> <nil X>]
     λ x' : X λ l' : [List X] λ rec : [List X]
-      [[[<ifthenelse [List X]> [<isNil X> l']] l] [[<cons X> x'] [[<cons X> x] rec]]]] l].
+      [[[<ifthenelse [List X]> [<isNil X> l']] [<pureList X> x']] [[<cons X> x'] [[<cons X> x] rec]]]] l].
