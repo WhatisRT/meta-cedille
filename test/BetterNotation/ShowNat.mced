@@ -68,3 +68,5 @@ b-let showNatBinary (n : Nat) : init$string :=
   showListOfDecs ?Bool (λ b : Bool. ifthenelse ?init$string b "1" "0") (natToBinList n).
 b-let showNatDecimal (n : Nat) : init$string :=
   showListOfDecs ?Dec showDec (natToDecList n).
+
+b-let showNatList := showList ?Nat showNatDecimal.

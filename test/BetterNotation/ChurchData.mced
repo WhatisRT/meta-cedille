@@ -5,10 +5,7 @@ let foldC (F : Π _ : *. *) [X : *] (alg : AlgC F X) (fix : FixC F) : X := fix ?
 let inC (F : Π _ : *. *) (fmap : Functor F) : AlgC F (FixC F) :=
   λ fix : F (FixC F). Λ X : *. λ alg : AlgC F X. alg (fmap ?(FixC F) ?X (foldC F ?X alg) fix).
 
-let leftConstr [F1, F2 : Π _ : *. *] (fmap1 : Functor F1) (fmap2 : Functor F2) : AlgC F1 (FixC (FunctorSumF F1 F2)) :=
-  λ x : F1 (FixC (FunctorSumF F1 F2)). inC (FunctorSumF F1 F2) (FunctorSumFunctor ?F1 ?F2 fmap1 fmap2)
-    (inl ?(F1 (FixC (FunctorSumF F1 F2))) ?(F2 (FixC (FunctorSumF F1 F2))) x).
-
-let rightConstr [F1, F2 : Π _ : *. *] (fmap1 : Functor F1) (fmap2 : Functor F2) : AlgC F2 (FixC (FunctorSumF F1 F2)) :=
-  λ x : F2 (FixC (FunctorSumF F1 F2)). inC (FunctorSumF F1 F2) (FunctorSumFunctor ?F1 ?F2 fmap1 fmap2)
-    (inr ?(F1 (FixC (FunctorSumF F1 F2))) ?(F2 (FixC (FunctorSumF F1 F2))) x).
+let composeLeft [X : *] [F1, F2 : Π _ : *. *] (alg : AlgC (FunctorSumF F1 F2) X) : AlgC F1 X :=
+  λ x : F1 X. alg (inl ?(F1 X) ?(F2 X) x).
+let composeRight [X : *] [F1, F2 : Π _ : *. *] (alg : AlgC (FunctorSumF F1 F2) X) : AlgC F2 X :=
+  λ x : F2 X. alg (inr ?(F1 X) ?(F2 X) x).

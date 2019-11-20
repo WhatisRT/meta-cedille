@@ -29,6 +29,3 @@ let covHomFTerm (A : Term) : functorTerm := mkFunctorTerm θ{covHomF γ{A}} θ{c
 let constF (A : *) (X : *) : * := A.
 let constFunctor (A : *) : Functor (constF A) := Λ X : *. Λ Y : *. λ f : (Π _ : X. Y). λ a : constF A X. a.
 let constFTerm (A : Term) : functorTerm := mkFunctorTerm θ{constF γ{A}} θ{constFunctor γ{A}}.
-
---let FunctorDSumF (F1 : Π _ : *. *) (F2 : Π X : *. Π x : F1 x. *) (X : *) : * :=
---  DSum (F1 X) (λ x : F1 X. )

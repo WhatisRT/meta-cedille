@@ -1,2 +1,20 @@
 b-let showList [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string :=
   stringApp "[" (stringApp (stringConcat (intersperse ?init$string ", " (map ?X ?init$string showX l))) "]").
+
+b-let initsNonEmpty [A : *] (l : List A) : List (Product A (List A)) :=
+  recursionList ?A ?(List (Product A (List A)))
+    [Product A (List A)|]
+    (λ a : A. λ as : List A. λ rec : List (Product A (List A)). cons ?(Product A (List A)) (prodPair ?A ?(List A) a as) rec)
+    l.
+
+b-let tailsNonEmpty [A : *] (l : List A) : List (Product A (List A)) :=
+  reverse ?(Product A (List A)) (initsNonEmpty ?A (reverse ?A l)).
+
+b-let zipWith [A, B, C : *] (f : Π _ : A. Π _ : B. C) (l : List A) (l' : List B) : List C :=
+  recursionList ?A ?(Π _ : List B. List C)
+    (λ _ : List B. [C|])
+    (λ a : A. λ as : List A. λ rec : Π _ : List B. List C.
+      recursionList ?B ?(List C) [C|] (λ b : B. λ bs : List B. λ _ : List C. cons ?C (f a b) (rec bs)))
+    l l'.
+
+b-let zip [A, B : *] (l : List A) (l' : List B) : List (Product A B) := zipWith ?A ?B ?(Product A B) (prodPair ?A ?B) l l'.

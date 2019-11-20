@@ -109,10 +109,13 @@ let init$constrs$=pipe=_space__constr__constrs_ (_ : init$space) (c : Constr) (c
 
 let init$data$_string__space__telescope_where_space__constrs_
   (name : init$string) (_ : init$space) (t : Telescope) (_ : init$space) (cs : Constrs) : Error DatatypeData :=
-  mapError ?(List ConstrFunctor) ?DatatypeData (mkDatatypeData name t)
-           (traverseErrorList ?Constr ?ConstrFunctor (λ c : Constr. constrToFunctor (ConstrType c) (getMatch name t)) cs).
+  mapError ?(List (Product init$string ConstrFunctor)) ?DatatypeData (mkDatatypeData name t)
+           (traverseErrorList ?Constr ?(Product init$string ConstrFunctor)
+                              (λ c : Constr. mapError ?ConstrFunctor ?(Product init$string ConstrFunctor)
+                                                      (prodPair ?init$string ?ConstrFunctor (ConstrName c))
+                                                      (constrToFunctor (ConstrType c) (getMatch name t))) cs).
 
 let init$newStmt'$data_space__data_=dot= (_ : init$space) (d : Error DatatypeData) : init$newStmt :=
-  catchError ?DatatypeData ?init$newStmt d (λ e : init$string. echoStmt (stringApp "Error: not a valid datatype! " e)) functorToLet.
+  catchError ?DatatypeData ?init$newStmt d (λ e : init$string. echoStmt (stringApp "Error: not a valid datatype! " e)) datatypeToLet.
 
 o-seteval [evalNewStmt emptyEvaluatorState] init newStmt.
