@@ -43,7 +43,7 @@ let constrArgToFunctor (t : Term) (match : List init$string) : Error ConstrFunct
         b ?(Error ConstrFunctor)
           (error ?ConstrFunctor "Can only have pi binder in constructors")
           (error ?ConstrFunctor "Can only have pi binder in constructors")
-          (mapError ?ConstrFunctor ?ConstrFunctor (covHomConstrFunctor T) rect)
+          (mapError ?ConstrFunctor ?ConstrFunctor (covDHomConstrFunctor n T) rect)
           (error ?ConstrFunctor "Can only have pi binder in constructors"))
       (λ t : Term. λ l : List App. λ _ : Error ConstrFunctor. λ _ : List (Product Bool (Error ConstrFunctor)).
         pureError ?ConstrFunctor (constConstrFunctor (appLTerm t l)))
