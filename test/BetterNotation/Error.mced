@@ -1,19 +1,19 @@
-let Error (A : *) : * := Sum init$string A.
+b-let Error (A : *) : * := Sum init$string A.
 
-let pureError [A : *] (a : A) : Error A := inr ?init$string ?A a.
-let error [A : *] (s : init$string) : Error A := inl ?init$string ?A s.
-let catchError [A, B : *] (a : Error A) (f : Π _ : init$string. B) (g : Π _ : A. B) : B :=
+b-let pureError [A : *] (a : A) : Error A := inr ?init$string ?A a.
+b-let error [A : *] (s : init$string) : Error A := inl ?init$string ?A s.
+b-let catchError [A, B : *] (a : Error A) (f : Π _ : init$string. B) (g : Π _ : A. B) : B :=
   inductionSum ?init$string ?A ?(λ _ : Sum init$string A. B) f g a.
 
-let bindError [A, B : *] (f : Π _ : A. Error B) (x : Error A) : Error B :=
+b-let bindError [A, B : *] (f : Π _ : A. Error B) (x : Error A) : Error B :=
   inductionSum ?init$string ?A ?(λ _ : Sum init$string A. Error B) (λ s : init$string. error ?B s) (λ a : A. f a) x.
 
-let mapError [A, B : *] (f : Π _ : A. B) (x : Error A) : Error B :=
+b-let mapError [A, B : *] (f : Π _ : A. B) (x : Error A) : Error B :=
   bindError ?A ?B (λ a : A. pureError ?B (f a)) x.
-let liftError2 [A, B, C : *] (f : Π _ : A. Π _ : B. C) (a : Error A) (b : Error B) : Error C :=
+b-let liftError2 [A, B, C : *] (f : Π _ : A. Π _ : B. C) (a : Error A) (b : Error B) : Error C :=
   bindError ?A ?C (λ a' : A. mapError ?B ?C (f a') b) a.
 
-let traverseErrorList [X, Y : *] (f : Π _ : X. Error Y) : Π _ : List X. Error (List Y) :=
+b-let traverseErrorList [X, Y : *] (f : Π _ : X. Error Y) : Π _ : List X. Error (List Y) :=
   recursionList ?X ?(Error (List Y))
     (pureError ?(List Y) [Y|])
     (λ x : X. λ xs : List X. λ rec : Error (List Y). liftError2 ?Y ?(List Y) ?(List Y) (cons ?Y) (f x) rec).

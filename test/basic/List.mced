@@ -40,6 +40,8 @@ let foldl := Λ A : * Λ B : * λ f : (Π _ : B Π _ : A B)
   λ b : B b]
   λ a : A λ as : [List A] λ rec : Π _ : B B λ b : B [[f [rec b]] a]].
 
+let foldr := Λ A : * Λ B : * λ f : (Π _ : B Π _ : A B) λ l : [List A] [[<<foldl A> B> f] [<reverse A> l]].
+
 let scanl := Λ A : * Λ B : * λ f : (Π _ : B Π _ : A B) λ b : B
   [[<<recursionList A> [List B]>
   [<pureList B> b]]

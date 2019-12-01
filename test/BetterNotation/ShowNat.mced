@@ -64,6 +64,9 @@ b-let natToDecList (n : Nat) : List Dec :=
     (λ _ : Nat. λ rec : List Dec. incrementDecList rec)
     n.
 
+b-let natToIndex (n : Nat) : init$index := digitListToIndex (natToDecList n).
+b-let natToVar (n : Nat) : Term := varTerm (init$var$_index_ (natToIndex n)).
+
 b-let showNatBinary (n : Nat) : init$string :=
   showListOfDecs ?Bool (λ b : Bool. ifthenelse ?init$string b "1" "0") (natToBinList n).
 b-let showNatDecimal (n : Nat) : init$string :=

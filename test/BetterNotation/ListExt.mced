@@ -18,3 +18,6 @@ b-let zipWith [A, B, C : *] (f : Π _ : A. Π _ : B. C) (l : List A) (l' : List 
     l l'.
 
 b-let zip [A, B : *] (l : List A) (l' : List B) : List (Product A B) := zipWith ?A ?B ?(Product A B) (prodPair ?A ?B) l l'.
+
+b-let zipWith3 [A, B, C, D : *] (f : Π _ : A. Π _ : B. Π _ : C. D) (l : List A) (l' : List B) (l'' : List C) : List D :=
+  zipWith ?A ?(Product B C) ?D (λ a : A. λ bc : Product B C. f a (pr1 ?B ?C bc) (pr2 ?B ?C bc)) l (zip ?B ?C l' l'').

@@ -11,3 +11,15 @@ data TestList (A : *) where
 
 data TestDSum (A : *) (B : Π _ : A. *) where
 | pairTest : Π a : A. Π _ : B a. TestDSum A B.
+
+let Eq (A : *) (a, a' : A) : * := Π P : Π _ : A. *. Π _ : P a. P a'.
+let refl (A : *) (a : A) : Eq A a a := λ P : Π _ : A. *. λ h : P a. h.
+
+data Category (obj : *) (hom : Π _ : obj. Π _ : obj. *) where
+| mkCategory : Π identity      : Π a : obj. hom a a.
+               Π composition   : Π a : obj. Π b : obj. Π c : obj. Π _ : hom b c. Π _ : hom a b. hom a c.
+               Π leftIdentity  : Π a : obj. Π b : obj. Π f : hom a b. Eq (hom a b) (composition a b b (identity b) f) f.
+               Π rightIdentity : Π a : obj. Π b : obj. Π f : hom a b. Eq (hom a b) (composition a a b f (identity a)) f.
+               Π associativity : Π a : obj. Π b : obj. Π c : obj. Π d : obj. Π f : hom a b. Π g : hom b c. Π h : hom c d.
+                 Eq (hom a d) (composition a b d (composition b c d h g) f) (composition a c d h (composition a b c g f)).
+               Category obj hom.

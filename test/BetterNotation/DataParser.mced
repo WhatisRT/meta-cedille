@@ -1,99 +1,3 @@
-let liftMaybe2 [X, Y, Z : *] (f : Π _ : X. Π _ : Y. Z) (x : Maybe' X) (y : Maybe' Y) : Maybe' Z :=
-  maybe' ?X ?(Maybe' Z) (nothing' ?Z) (λ x' : X. mapMaybe' ?Y ?Z (λ y' : Y. f x' y') y) x.
-
-let traverseMaybeList [X, Y : *] (f : Π _ : X. Maybe' Y) : Π _ : List X. Maybe' (List Y) :=
-  recursionList ?X ?(Maybe' (List Y))
-    (just' ?(List Y) [Y|])
-    (λ x : X. λ xs : List X. λ rec : Maybe' (List Y). liftMaybe2 ?Y ?(List Y) ?(List Y) (cons ?Y) (f x) rec).
-
-let varToName (v : init$var) : Maybe' init$string :=
-  v ?(Maybe' init$string) (just' ?init$string) (λ _ : init$index. nothing' ?init$string).
-
--- if t is a name, returns that name
-let termToName (t : Term) : Maybe' init$string :=
-  t ?(Maybe' init$string)
-    varToName
-    (λ s : init$sort. nothing' ?init$string)
-    (λ b : Binder. λ n : init$string. λ _ : Maybe' init$string. λ _ : Maybe' init$string. nothing' ?init$string)
-    (λ t : Maybe' init$string. λ l : List (Product Bool (Maybe' init$string)). nothing' ?init$string)
-    (λ _ : Maybe' init$string. nothing' ?init$string).
-
--- if t is of the form n n1 ... nk, returns that list
-let termToNameList (t : Term) : Maybe' (List init$string) :=
-  recursionTerm ?(Maybe' (List init$string))
-    (λ v : init$var. mapMaybe' ?init$string ?(List init$string) (pureList ?init$string) (varToName v))
-    (λ s : init$sort. nothing' ?(List init$string))
-    (λ b : Binder. λ n : init$string. λ _ : Term. λ _ : Term. λ _ : Maybe' (List init$string). λ _ : Maybe' (List init$string).
-      nothing' ?(List init$string))
-    (λ _ : Term. λ l : List App. λ ns : Maybe' (List init$string). λ _ : List (Product Bool (Maybe' (List init$string))).
-      liftMaybe2 ?(List init$string) ?(List init$string) ?(List init$string) (app ?init$string)
-                 ns (traverseMaybeList ?App ?init$string (λ a : App. termToName (appTerm a)) l))
-    (λ _ : Term. λ _ : Maybe' (List init$string). nothing' ?(List init$string))
-    t.
-
-let matchTerm (t : Term) (match : List init$string) : Bool :=
-  maybe' ?(List init$string) ?Bool false (λ ns : List init$string. listEq ?init$string stringEq match ns) (termToNameList t).
-
-let constrArgToFunctor (t : Term) (match : List init$string) : Error ConstrFunctor :=
-  ifthenelse ?(Error ConstrFunctor) (matchTerm t match) (pureError ?ConstrFunctor idConstrFunctor)
-    (recursionTerm ?(Error ConstrFunctor)
-      (λ v : init$var. pureError ?ConstrFunctor (constConstrFunctor t))
-      (λ s : init$sort. error ?ConstrFunctor "Cannot turn sort into functor")
-      (λ b : Binder. λ n : init$string. λ T : Term. λ _ : Term. λ _ : Error ConstrFunctor. λ rect : Error ConstrFunctor.
-        b ?(Error ConstrFunctor)
-          (error ?ConstrFunctor "Can only have pi binder in constructors")
-          (error ?ConstrFunctor "Can only have pi binder in constructors")
-          (mapError ?ConstrFunctor ?ConstrFunctor (covDHomConstrFunctor n T) rect)
-          (error ?ConstrFunctor "Can only have pi binder in constructors"))
-      (λ t : Term. λ l : List App. λ _ : Error ConstrFunctor. λ _ : List (Product Bool (Error ConstrFunctor)).
-        pureError ?ConstrFunctor (constConstrFunctor (appLTerm t l)))
-      (λ u : Term. λ _ : Error ConstrFunctor. error ?ConstrFunctor "Cannot turn unquote into functor")
-      t).
-
-let ConstrData := Product Telescope Term.
-let mkConstrData := prodPair ?Telescope ?Term.
-let noArgConstrData : Π _ : Term. ConstrData := mkConstrData telNil.
-let consArgConstrData (p : Param) (d : ConstrData) : ConstrData :=
-  mkConstrData (cons ?Param p (pr1 ?Telescope ?Term d)) (pr2 ?Telescope ?Term d).
-let ConstrDataTelescope := pr1 ?Telescope ?Term.
-let ConstrDataTerm := pr2 ?Telescope ?Term.
-
-let reduceTerm (term : Term) : Term :=
-  term ?Term varTerm sortTerm binderTerm
-    (λ t : Term. λ l : List App. ifthenelse ?Term (isNil ?App l) t (appLTerm t l))
-    unquoteTerm.
-
-let toConstrData (term : Term) : ConstrData :=
-  recursionTerm ?ConstrData
-    (λ v : init$var. noArgConstrData (varTerm v))
-    (λ s : init$sort. noArgConstrData (sortTerm s))
-    (λ b : Binder. λ n : init$string. λ T : Term. λ t : Term. λ recT : ConstrData. λ rect : ConstrData.
-      b ?ConstrData
-        (noArgConstrData (binderTerm b n T t)) (noArgConstrData (binderTerm b n T t))
-        (consArgConstrData (mkParam false (mkPreParam n T)) rect)
-        (consArgConstrData (mkParam true (mkPreParam n T)) rect))
-    (λ t : Term. λ l : List App. λ _ : ConstrData. λ _ : List (Product Bool ConstrData). noArgConstrData (appLTerm t l))
-    (λ u : Term. λ recu : ConstrData. recu)
-    (reduceTerm term).
-
-let constrToFunctor (t : Term) (match : List init$string) : Error ConstrFunctor :=
-  (λ d : ConstrData.
-    ifthenelse ?(Error ConstrFunctor) (matchTerm (reduceTerm (ConstrDataTerm d)) match)
-      (foldl ?Param ?(Error ConstrFunctor)
-             (λ f : Error ConstrFunctor. λ p : Param.
-               liftError2 ?ConstrFunctor ?ConstrFunctor ?ConstrFunctor (pairConstrFunctor (paramName p))
-                          (constrArgToFunctor (paramType p) match) f)
-             (ConstrDataTelescope d) (pureError ?ConstrFunctor (constConstrFunctor θ{Unit})))
-      (error ?ConstrFunctor
-             (stringConcat [init$string|
-               "The final term in the constructor doesn't match! ",
-               showTerm (ConstrDataTerm d),
-               " and ",
-               showList ?init$string (λ s : init$string. s) match])))
-  (toConstrData t).
-
-let getMatch (n : init$string) (t : Telescope) : List init$string := cons ?init$string n (map ?Param ?init$string paramName t).
-
 let Constr := Product init$string Term.
 let ConstrName := pr1 ?init$string ?Term.
 let ConstrType := pr2 ?init$string ?Term.
@@ -109,11 +13,12 @@ let init$constrs$=pipe=_space__constr__constrs_ (_ : init$space) (c : Constr) (c
 
 let init$data$_string__space__telescope_where_space__constrs_
   (name : init$string) (_ : init$space) (t : Telescope) (_ : init$space) (cs : Constrs) : Error DatatypeData :=
-  mapError ?(List (Product init$string ConstrFunctor)) ?DatatypeData (mkDatatypeData name t)
-           (traverseErrorList ?Constr ?(Product init$string ConstrFunctor)
-                              (λ c : Constr. mapError ?ConstrFunctor ?(Product init$string ConstrFunctor)
-                                                      (prodPair ?init$string ?ConstrFunctor (ConstrName c))
-                                                      (constrToFunctor (ConstrType c) (getMatch name t))) cs).
+  mapError ?(List (TripleProduct init$string ConstrData ConstrFunctor)) ?DatatypeData (mkDatatypeData name t)
+           (traverseErrorList ?Constr ?(TripleProduct init$string ConstrData ConstrFunctor)
+                              (λ c : Constr. mapError ?ConstrFunctor ?(TripleProduct init$string ConstrData ConstrFunctor)
+                                                      (mkTripleProduct ?init$string ?ConstrData ?ConstrFunctor
+                                                                       (ConstrName c) (toConstrData (ConstrType c)))
+                                                      (constrToFunctor (toConstrData (ConstrType c)) (getMatch name t))) cs).
 
 let init$newStmt'$data_space__data_=dot= (_ : init$space) (d : Error DatatypeData) : init$newStmt :=
   catchError ?DatatypeData ?init$newStmt d (λ e : init$string. echoStmt (stringApp "Error: not a valid datatype! " e)) datatypeToLet.

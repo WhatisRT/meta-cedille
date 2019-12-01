@@ -14,6 +14,7 @@ import test/BetterNotation/QuoteTerm.
 
 import test/BetterNotation/ListExt.
 import test/BetterNotation/ShowNat.
+import test/BetterNotation/Error.
 
 import test/BetterNotation/ConversionHelpers.
 import test/BetterNotation/ModuleDefinitions.
@@ -25,5 +26,4 @@ import test/BetterNotation/ShowTerm.
 import test/BetterNotation/Functors.
 import test/BetterNotation/DataFunctors.
 import test/BetterNotation/ChurchData.
-import test/BetterNotation/Error.
 import test/BetterNotation/DataParser.
