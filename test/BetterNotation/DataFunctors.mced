@@ -213,7 +213,11 @@ let datatypeToAlgTerms (name : init$string) (apply : List App) (constrs : List C
     (prodPair ?Term ?(List Term) (appLTerm (sVarTerm (stringApp name "Constrs")) apply) [Term|])).
 
 let Dcurry [A : *] [B : Π _ : A. *] [C : *] (f : Π _ : DSum A B. C) (a : A) (b : B a) : C := f (pair ?A ?B a b).
+let Duncurry [A : *] [B : Π _ : A. *] [C : *] (f : Π a : A. Π _ : B a. C) : Π _ : DSum A B. C :=
+  inductionDSum ?A ?B ?(λ _ : DSum A B. C) (λ a : A. λ b : B a. f a b).
+
 let removeUnit [A : *] (f : Π _ : Unit. A) : A := f tt.
+let addUnit [A : *] (a : A) : Π _ : Unit. A := λ _ : Unit. a.
 
 let convertAlgToConstr (name : init$string) (tel : Telescope) (d : ConstrData) (alg : Term) : Term :=
   foldWithLambdas (ConstrDataTelescope d) (foldr ?(Π _ : Term. Term) ?Term
@@ -249,6 +253,18 @@ let datatypeToConstrs (d : DatatypeData) : List LetInfo :=
     (map ?(TripleProduct init$string ConstrData ConstrFunctor) ?init$string (pr31 ?init$string ?ConstrData ?ConstrFunctor) (DatatypeConstrs d))
     (map ?(TripleProduct init$string ConstrData ConstrFunctor) ?ConstrData (pr32 ?init$string ?ConstrData ?ConstrFunctor) (DatatypeConstrs d)).
 
+let datatypeToRec (name : init$string) (constrs : List ConstrFunctor) (apply : List App) : Term :=
+  θ{λ X : *. γ{foldl ?ConstrFunctor ?Term
+    (λ t : Term. λ c : ConstrFunctor. lambdaTerm "_" θ{Π _ : γ{ConstrFunctorF name c} X. X} t)
+    constrs
+    θ{foldC γ{appLTerm (sVarTerm (stringApp name "F")) apply} ?X γ{recursionList ?(Product ConstrFunctor (List ConstrFunctor)) ?Term
+      θ{voidElim ?X}
+      (λ c : Product ConstrFunctor (List ConstrFunctor). λ cs : List (Product ConstrFunctor (List ConstrFunctor)). λ t : Term.
+        θ{sumAlg ?X ?γ{ConstrFunctorF name (pr1 ?ConstrFunctor ?(List ConstrFunctor) c)}
+                 ?γ{ConstrsFunctorF' name (pr2 ?ConstrFunctor ?(List ConstrFunctor) c)}
+                 γ{natToVar (length ?(Product ConstrFunctor (List ConstrFunctor)) cs)} γ{t}})
+      (initsNonEmpty ?ConstrFunctor constrs)}}}}.
+
 let datatypeToLet (d : DatatypeData) : init$newStmt :=
   (λ name : Π _ : init$string. init$string. λ apply : List App.
     seqNewStmts (map ?LetInfo ?init$newStmt (λ i : LetInfo. letInfoToNewStmt (appendTelToLetInfo (DatatypeTelescope d) i))
@@ -258,6 +274,7 @@ let datatypeToLet (d : DatatypeData) : init$newStmt :=
         mkLetInfo (name "") θ{FixC γ{appLTerm (sVarTerm (name "F")) apply}} (just' ?Term θ{*}),
         mkLetInfo (name "Constrs")
                   θ{inC γ{appLTerm (sVarTerm (name "F")) apply} γ{appLTerm (sVarTerm (name "Functor")) apply}}
-                  (just' ?Term θ{AlgC γ{appLTerm (sVarTerm (name "F")) apply} γ{appLTerm (sVarTerm (name "")) apply}})]
+                  (just' ?Term θ{AlgC γ{appLTerm (sVarTerm (name "F")) apply} γ{appLTerm (sVarTerm (name "")) apply}}),
+        mkLetInfo (name "Fold") (datatypeToRec (DatatypeName d) (DatatypeConstrs' d) apply) (nothing' ?Term)]
         (datatypeToConstrs d))))
   (stringApp (DatatypeName d)) (telescopeToApp (DatatypeTelescope d)).
