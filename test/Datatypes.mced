@@ -5,15 +5,35 @@ data TestNat where
 | zeroTest : TestNat
 | succTest : Π _ : TestNat. TestNat.
 
+let TestNatFold' (X : *) (foldZero : X) (foldSucc : Π _ : X. X) : Π _ : TestNat. X :=
+  TestNatFold X (addUnit ?X foldZero) (Duncurry ?X ?(λ _ : X. Unit) ?X (λ x : X. addUnit ?X (foldSucc x))).
+
+let TestNatRec (X : *) (recZero : X) (recSucc : Π _ : X. Π _ : TestNat. X) (n : TestNat) : X :=
+  pr1 ?X ?TestNat (TestNatFold' (Product X TestNat)
+    (prodPair ?X ?TestNat recZero zeroTest)
+    (λ x : Product X TestNat. prodPair ?X ?TestNat (recSucc (pr1 ?X ?TestNat x) (pr2 ?X ?TestNat x)) (succTest (pr2 ?X ?TestNat x)))
+    n).
+
+let plus (n, m : TestNat) : TestNat := TestNatRec TestNat m (λ _ : TestNat. λ rec : TestNat. succTest rec) n.
+
 data TestList (A : *) where
 | nilTest : TestList A
 | consTest : Π _ : A. Π _ : TestList A. TestList A.
+
+let TestListFold' (A, X : *) (foldNil : X) (foldCons : Π _ : A. Π _ : X. X) : Π _ : TestList A. X :=
+  TestListFold A X (addUnit ?X foldNil)
+    (Duncurry ?A ?(λ _ : A. DSum X (λ _ : X. Unit)) ?X
+      (λ a : A. Duncurry ?X ?(λ _ : X. Unit) ?X (λ x : X. addUnit ?X (foldCons a x)))).
 
 data TestDSum (A : *) (B : Π _ : A. *) where
 | pairTest : Π a : A. Π _ : B a. TestDSum A B.
 
 let Eq (A : *) (a, a' : A) : * := Π P : Π _ : A. *. Π _ : P a. P a'.
 let refl (A : *) (a : A) : Eq A a a := λ P : Π _ : A. *. λ h : P a. h.
+let sym (A : *) (a, a' : A) (eq : Eq A a a') : Eq A a' a := λ P : Π _ : A. *. eq (λ x : A. Π _ : P x. P a) (λ h : P a. h).
+let trans (A : *) (a, a', a'' : A) (eq : Eq A a a') (eq' : Eq A a' a'') : Eq A a a'' := λ P : Π _ : A. *. λ h : P a. eq' P (eq P h).
+
+let zeroPlus (n : TestNat) : Eq TestNat (plus zeroTest n) n := refl TestNat n.
 
 data Category (obj : *) (hom : Π _ : obj. Π _ : obj. *) where
 | mkCategory : Π identity      : Π a : obj. hom a a.

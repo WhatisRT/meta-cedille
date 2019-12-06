@@ -17,6 +17,7 @@ let ten := suc nine.
 let add (n, m : Nat) : Nat := recNat ?Nat n (λ _ : Nat. λ rec : Nat. suc rec) m.
 let mul (n, m : Nat) : Nat := recNat ?Nat zero (λ _ : Nat. λ rec : Nat. add rec n) m.
 let pred (n : Nat) : Nat := recNat ?Nat zero (λ n' : Nat. λ _ : Nat. n') n.
+let sub (n, m : Nat) : Nat := recNat ?Nat n (λ _ : Nat. λ rec : Nat. pred rec) m.
 
 let isZero : Π _ : Nat. Bool := recNat ?Bool true (λ _ : Nat. λ _ : Bool. false).
 
