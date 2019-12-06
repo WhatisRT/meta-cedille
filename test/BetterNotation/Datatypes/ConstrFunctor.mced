@@ -1,0 +1,83 @@
+let ConstrFunctor := ∀ X : *.
+  Π _ : X. -- id
+  Π _ : (Π _ : Term. X). -- const
+  Π _ : (Π _ : init$string. Π _ : Term. Π _ : X. X). -- covHom with inner functor
+  Π _ : (Π _ : init$string. Π _ : X. Π _ : X. X). -- dependent pair
+  X.
+
+let idConstrFunctor := Λ X : *.
+  λ i : X.
+  λ _ : (Π _ : Term. X).
+  λ _ : (Π _ : init$string. Π _ : Term. Π _ : X. X).
+  λ _ : (Π _ : init$string. Π _ : X. Π _ : X. X).
+  i.
+
+let constConstrFunctor := λ t : Term. Λ X : *.
+  λ _ : X.
+  λ c : (Π _ : Term. X).
+  λ _ : (Π _ : init$string. Π _ : Term. Π _ : X. X).
+  λ _ : (Π _ : init$string. Π _ : X. Π _ : X. X).
+  c t.
+
+let covDHomConstrFunctor := λ n : init$string. λ t : Term. λ f : ConstrFunctor. Λ X : *.
+  λ i : X.
+  λ c : (Π _ : Term. X).
+  λ h : (Π _ : init$string. Π _ : Term. Π _ : X. X).
+  λ p : (Π _ : init$string. Π _ : X. Π _ : X. X).
+  h n t (f ?X i c h p).
+
+let pairConstrFunctor := λ s : init$string. λ f : ConstrFunctor. λ f' : ConstrFunctor. Λ X : *.
+  λ i : X.
+  λ c : (Π _ : Term. X).
+  λ h : (Π _ : init$string. Π _ : Term. Π _ : X. X).
+  λ p : (Π _ : init$string. Π _ : X. Π _ : X. X).
+  p s (f ?X i c h p) (f' ?X i c h p).
+
+let recursionConstrFunctor [X : *]
+  (idf : X)
+  (constf : (Π _ : Term. X))
+  (covHomf : (Π _ : init$string. Π _ : Term. Π _ : ConstrFunctor. Π _ : X. X))
+  (pairf : (Π _ : init$string. Π _ : ConstrFunctor. Π _ : ConstrFunctor. Π _ : X. Π _ : X. X))
+  (f : ConstrFunctor) : X :=
+  pr1 ?X ?ConstrFunctor (f ?(Product X ConstrFunctor)
+    (prodPair ?X ?ConstrFunctor idf idConstrFunctor)
+    (λ t : Term. prodPair ?X ?ConstrFunctor (constf t) (constConstrFunctor t))
+    (λ n : init$string. λ t : Term. λ t' : Product X ConstrFunctor.
+      prodPair ?X ?ConstrFunctor
+        (covHomf n t (pr2 ?X ?ConstrFunctor t') (pr1 ?X ?ConstrFunctor t'))
+        (covDHomConstrFunctor n t (pr2 ?X ?ConstrFunctor t')))
+    (λ s : init$string. λ t : Product X ConstrFunctor. λ t' : Product X ConstrFunctor.
+      prodPair ?X ?ConstrFunctor
+        (pairf s (pr2 ?X ?ConstrFunctor t) (pr2 ?X ?ConstrFunctor t') (pr1 ?X ?ConstrFunctor t) (pr1 ?X ?ConstrFunctor t'))
+        (pairConstrFunctor s (pr2 ?X ?ConstrFunctor t) (pr2 ?X ?ConstrFunctor t')))).
+
+let ConstrFunctorF (name : init$string) (f : ConstrFunctor) : Term :=
+  lambdaTerm name θ{*} (f ?Term
+    (sVarTerm name)
+    (λ t : Term. t)
+    (λ n : init$string. λ t : Term. λ recF : Term. piTerm n t recF)
+    (λ s : init$string. λ recF : Term. λ recF' : Term. θ{DSum γ{recF} γ{lambdaTerm s recF recF'}})).
+
+let ConstrsFunctorF' (name : init$string) : Π _ : List ConstrFunctor. Term :=
+  recursionList ?ConstrFunctor ?Term θ{constF Void}
+    (λ f : ConstrFunctor. λ fs : List ConstrFunctor. λ rec : Term. θ{FunctorSumF γ{ConstrFunctorF name f} γ{rec}}).
+
+let ConstrFunctorFunctor (name : init$string) (outerFun : ConstrFunctor) : Term :=
+  θ{Λ DataX : *. Λ DataY : *. λ DataF : (Π _ : DataX. DataY). γ{recursionConstrFunctor ?Term
+    θ{idFunctor ?DataX ?DataY DataF}
+    (λ t : Term. θ{constFunctor γ{t} ?DataX ?DataY DataF})
+    (λ n : init$string. λ t : Term. λ fun : ConstrFunctor. λ intFmap : Term.
+      θ{mapDHom ?γ{t} ?γ{lambdaTerm n t θ{γ{ConstrFunctorF name fun} DataX}} ?γ{lambdaTerm n t θ{γ{ConstrFunctorF name fun} DataY}}
+                γ{lambdaTerm n t intFmap}})
+    (λ s : init$string. λ fun : ConstrFunctor. λ fun' : ConstrFunctor. λ intFmap : Term. λ intFmap' : Term.
+      θ{mapDSum ?(γ{ConstrFunctorF name fun} DataX) ?(γ{ConstrFunctorF name fun} DataY)
+                ?γ{lambdaTerm s θ{γ{ConstrFunctorF name fun} DataX} θ{γ{ConstrFunctorF name fun'} DataX}}
+                ?γ{lambdaTerm s θ{γ{ConstrFunctorF name fun} DataY} θ{γ{ConstrFunctorF name fun'} DataY}}
+                γ{intFmap}
+                γ{lambdaTerm s θ{γ{ConstrFunctorF name fun} DataX} intFmap'}}) outerFun}}.
+
+let ConstrsFunctorFunctor' (name : init$string) (constrs : List ConstrFunctor) : Term :=
+  recursionList ?ConstrFunctor ?Term θ{constFunctor Void}
+    (λ f : ConstrFunctor. λ fs : List ConstrFunctor. λ rec : Term.
+      θ{FunctorSumFunctor ?γ{ConstrFunctorF name f} ?γ{ConstrsFunctorF' name fs} γ{ConstrFunctorFunctor name f} γ{rec}})
+    constrs.

@@ -23,7 +23,3 @@ import test/BetterNotation/ModuleFunction.
 import test/BetterNotation/BetterSyntax.
 
 import test/BetterNotation/ShowTerm.
-import test/BetterNotation/Functors.
-import test/BetterNotation/DataFunctors.
-import test/BetterNotation/ChurchData.
-import test/BetterNotation/DataParser.

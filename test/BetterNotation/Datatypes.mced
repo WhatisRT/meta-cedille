@@ -1,0 +1,7 @@
+import test/BetterNotation/Datatypes/Helpers.
+import test/BetterNotation/Datatypes/Functors.
+import test/BetterNotation/Datatypes/Church.
+import test/BetterNotation/Datatypes/Match.
+import test/BetterNotation/Datatypes/ConstrFunctor.
+import test/BetterNotation/Datatypes/ConvertData.
+import test/BetterNotation/Datatypes/Parser.
