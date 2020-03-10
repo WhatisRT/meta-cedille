@@ -15,3 +15,4 @@ import test/basic/Char.
 import test/basic/Nat.
 import test/basic/Bool.
 import test/basic/List.
+import test/basic/Maybe.

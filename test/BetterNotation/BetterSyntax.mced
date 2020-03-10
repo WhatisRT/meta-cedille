@@ -37,4 +37,4 @@ b-let evalNewStmt (s : EvaluatorState) (stmt : init$newStmt) : M (Product metaRe
 seteval [evalNewStmt emptyEvaluatorState] init newStmt.
 
 -- this defines the initial dictionary
-runMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDict) θ{emptyModuleDict} (just' ?Term θ{ModuleDict}))).
+runMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDict) θ{emptyModuleDict} (just ?Term θ{ModuleDict}))).

@@ -25,19 +25,19 @@ b-let mkModule (name : ModuleName) (version : Nat) (t : Telescope) (contents : L
 b-let mkInitModule (name : ModuleName) (version : Nat) (t : Telescope) : Module :=
   mkModule name version t [init$string|].
 
-b-let ModuleDict := Product Nat (Π _ : ModuleName. Maybe' Module).
-b-let mkModuleDict := prodPair ?Nat ?(Π _ : ModuleName. Maybe' Module).
-b-let ModuleDictVersion := pr1 ?Nat ?(Π _ : ModuleName. Maybe' Module).
-b-let ModuleDictDict := pr2 ?Nat ?(Π _ : ModuleName. Maybe' Module).
-b-let emptyModuleDict : ModuleDict := mkModuleDict zero (λ _ : ModuleName. nothing' ?Module).
+b-let ModuleDict := Product Nat (Π _ : ModuleName. Maybe Module).
+b-let mkModuleDict := prodPair ?Nat ?(Π _ : ModuleName. Maybe Module).
+b-let ModuleDictVersion := pr1 ?Nat ?(Π _ : ModuleName. Maybe Module).
+b-let ModuleDictDict := pr2 ?Nat ?(Π _ : ModuleName. Maybe Module).
+b-let emptyModuleDict : ModuleDict := mkModuleDict zero (λ _ : ModuleName. nothing ?Module).
 b-let insertModuleDict (m : Module) (dict : ModuleDict) : ModuleDict :=
   (λ k : ModuleName.
     mkModuleDict
       (suc (ModuleDictVersion dict))
       (λ n : ModuleName.
-        ifthenelse ?(Maybe' Module) (moduleNameEq n k) (just' ?Module m) (ModuleDictDict dict k)))
+        ifthenelse ?(Maybe Module) (moduleNameEq n k) (just ?Module m) (ModuleDictDict dict k)))
     (ModuleModuleName m).
-b-let lookupModuleDict (k : ModuleName) (dict : ModuleDict) : Maybe' Module := ModuleDictDict dict k.
+b-let lookupModuleDict (k : ModuleName) (dict : ModuleDict) : Maybe Module := ModuleDictDict dict k.
 
 b-let ModuleNameToName (n : ModuleName) : init$string := stringConcat n.
 b-let mkShortModulePrefix (i : ModuleInfo) : init$string :=
