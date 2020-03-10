@@ -1,3 +1,26 @@
+--------------------------------------------------------------------------------
+-- Helper functions for strings
+--------------------------------------------------------------------------------
+
+b-let stringToList (s : init$string) : List init$char :=
+  s ?(List init$char) (λ c : init$char. λ rec : List init$char. cons ?init$char c rec) (nil ?init$char).
+
+b-let stringFromList (s : List init$char) : init$string :=
+  recursionList ?init$char ?init$string init$string$nil
+    (λ c : init$char. λ cs : List init$char. λ rec : init$string. init$string$cons c rec)
+    s.
+
+b-let stringApp (s, s' : init$string) : init$string :=
+  stringFromList (app ?init$char (stringToList s) (stringToList s')).
+
+b-let stringConcat (l : List init$string) : init$string :=
+  recursionList ?init$string ?init$string
+    init$string$nil
+    (λ s : init$string. λ _ : List init$string. λ rec : init$string. stringApp s rec)
+    l.
+
+-- Equality
+
 b-let bitEq (b, b' : init$bit) : Bool := b ?Bool (b' ?Bool true false) (b' ?Bool false true).
 
 b-let byteEq (b, b' : init$byte) : Bool :=

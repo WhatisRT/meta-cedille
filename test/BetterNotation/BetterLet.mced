@@ -1,22 +1,11 @@
--- use b-let f (x1, ..., xn : T1) ... (... : Tn) : T := def. to define a term
+--------------------------------------------------------------------------------
+-- ML-style let syntax
+--
+-- Use `let f (x1, ..., xn : T1) ... (... : Tn) : T := t.` to define a term
+--------------------------------------------------------------------------------
 
-let Maybe' := λ A : * [[Sum A] Unit].
-let just' := Λ A : * λ a : A [<<inl A> Unit> a].
-let nothing' := Λ A : * [<<inr A> Unit> tt].
-
-let maybe' := Λ A : * Λ B : * λ default : B λ f : Π _ : A B λ x : [Maybe' A]
-  [[[<<<recursionSum A> Unit> B> (λ a : A [f a])] (λ _ : Unit default)] x].
-let mapMaybe' :=
-  Λ A : * Λ B : * λ f : Π _ : A B λ x : [Maybe' A]
-    [[[<<maybe' A> [Maybe' B]> [<<inr B> Unit> tt]] λ a : A [<just' B> [f a]]] x].
-
-let LetInfo := [[[TripleProduct init$string] Term] [Maybe' Term]].
-let mkLetInfo := <<<mkTripleProduct init$string> Term> [Maybe' Term]>
-  : Π _ : init$string Π _ : Term Π _ : [Maybe' Term] LetInfo.
-let letInfoName := λ i : LetInfo [<<<pr31 init$string> Term> [Maybe' Term]> i].
-let letInfoTerm := λ i : LetInfo [<<<pr32 init$string> Term> [Maybe' Term]> i].
-let letInfoType := λ i : LetInfo [<<<pr33 init$string> Term> [Maybe' Term]> i].
-let letInfoHasAnn := λ i : LetInfo [[[<<maybe' Term> Bool> false] λ _ : Term true] [letInfoType i]].
+-- Functions to turn a Telescope into an actual telescope that can be applied to
+-- a term.
 
 let paramToLambda := λ t : Term λ p : Param
   [[[[[
@@ -38,25 +27,39 @@ let paramToPi := λ t : Term λ p : Param
 
 let foldWithPi := [<<foldl Param> Term> paramToPi] : Π _ : Telescope Π _ : Term Term.
 
+-- LetInfo contains all the data associated to a `let`
+
+let LetInfo := [[[TripleProduct init$string] Term] [Maybe Term]].
+let mkLetInfo := <<<mkTripleProduct init$string> Term> [Maybe Term]>
+  : Π _ : init$string Π _ : Term Π _ : [Maybe Term] LetInfo.
+let letInfoName := λ i : LetInfo [<<<pr31 init$string> Term> [Maybe Term]> i].
+let letInfoTerm := λ i : LetInfo [<<<pr32 init$string> Term> [Maybe Term]> i].
+let letInfoType := λ i : LetInfo [<<<pr33 init$string> Term> [Maybe Term]> i].
+let letInfoHasAnn := λ i : LetInfo [[[<<maybe Term> Bool> false] λ _ : Term true] [letInfoType i]].
+
 let appendTelToLetInfo := λ tel : Telescope λ i : LetInfo
   [[[mkLetInfo
     [letInfoName i]]
     [[foldWithLambdas tel] [letInfoTerm i]]]
-    [[<<mapMaybe' Term> Term> [foldWithPi tel]] [letInfoType i]]].
+    [[<<mapMaybe Term> Term> [foldWithPi tel]] [letInfoType i]]].
+
+-- converts a `LetInfo` to a let `init$stmt'`
+
+let convertLetInfo :=
+  λ i : LetInfo
+    [[[<<maybe Term> init$stmt'>
+      [[quote$simpleLet' [letInfoName i]] [TermToInitTerm [letInfoTerm i]]]]
+      λ type : Term [[[quote$annotatedLet' [letInfoName i]] [TermToInitTerm [letInfoTerm i]]] [TermToInitTerm type]]]
+      [letInfoType i]].
+
+-- Syntax for `let`
 
 let init$betterLetType$ := [<<inr Term> Unit> tt].
 let init$betterLetType$_space__multiTerm_=colon= := λ _ : init$space λ t : Term [<<inl Term> Unit> t].
 
 let init$betterLet$_string__space__telescope_=colon=_betterLetType_=equal=_space'__multiTerm_=dot= :=
-  λ n : init$string λ _ : init$space λ tel : Telescope λ maybeType : [Maybe' Term] λ _ : init$space' λ term : Term
-    [[[mkLetInfo n] [[foldWithLambdas tel] term]] [[<<mapMaybe' Term> Term> [foldWithPi tel]] maybeType]].
-
-let convertLetInfo :=
-  λ i : LetInfo
-    [[[<<maybe' Term> init$stmt'>
-      [[quote$simpleLet' [letInfoName i]] [TermToInitTerm [letInfoTerm i]]]]
-      λ type : Term [[[quote$annotatedLet' [letInfoName i]] [TermToInitTerm [letInfoTerm i]]] [TermToInitTerm type]]]
-      [letInfoType i]].
+  λ n : init$string λ _ : init$space λ tel : Telescope λ maybeType : [Maybe Term] λ _ : init$space' λ term : Term
+    [[appendTelToLetInfo tel] [[[mkLetInfo n] term] maybeType]].
 
 let init$stmt'$b=minus=let_space__betterLet_ := λ _ : init$space convertLetInfo.
 

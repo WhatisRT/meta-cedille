@@ -1,12 +1,20 @@
+--------------------------------------------------------------------------------
+-- Parameters and telescopes
+--------------------------------------------------------------------------------
+
+-- A parameter without erasure information
 let PreParam := [[Product init$string] Term].
 let mkPreParam := <<prodPair init$string> Term>.
-let Param := [[Product Bool] PreParam]. -- potentially erased
+
+-- If the first entry in the product is `true` the argument is erased
+let Param := [[Product Bool] PreParam].
 let mkParam := <<prodPair Bool> PreParam>.
 
 let paramErased := <<pr1 Bool> PreParam> : Π _ : Param Bool.
 let paramName := λ p : Param [<<pr1 init$string> Term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$string.
 let paramType := λ p : Param [<<pr2 init$string> Term> [<<pr2 Bool> PreParam> p]] : Π _ : Param Term.
 
+-- Constructs a `List PreParam` from some names and a type
 let namesToPreParams :=
   λ ns : [List init$string] λ t : Term [[<<map init$string> PreParam> (λ n : init$string [[mkPreParam n] t])] ns].
 
@@ -15,7 +23,9 @@ let telApp := λ p : [List PreParam] [<app Param> [[<<map PreParam> Param> [mkPa
 let telAppE := λ p : [List PreParam] [<app Param> [[<<map PreParam> Param> [mkParam true]] p]].
 let telNil := <nil Param>.
 
--- parsing rules
+--------------------------------------------------------------------------------
+-- Parsing rules for telescopes
+--------------------------------------------------------------------------------
 
 let init$nameparams'$ := <nil init$string>.
 let init$nameparams'$=comma=_space'__string__nameparams'_ := λ _ : init$space' <cons init$string>.

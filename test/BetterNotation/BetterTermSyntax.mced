@@ -1,4 +1,11 @@
--- Application: use [f x1 ... xn] where erased arguments are prefixed with a '?'
+--------------------------------------------------------------------------------
+-- Syntax for new terms
+--
+-- Application: use f x1 ... xn where erased arguments are prefixed with a '?'
+-- Others: use *, □, "...", (...), {Π ∀ λ Λ} x : T. t,
+--------------------------------------------------------------------------------
+
+-- Syntax for application
 
 let init$app$_singleTerm_ := mkAppU.
 let init$app$=question=_singleTerm_ := mkAppE.
@@ -9,7 +16,9 @@ let init$applist$_app__maybeApplist_ := λ a : App λ as : [List App] [[<cons Ap
 let init$maybeApplist$ := <nil App>.
 let init$maybeApplist$_space__applist_ := λ _ : init$space λ l : [List App] l.
 
--- term syntax below
+-- Syntax for terms in general
+-- multiTerm is a potential application of multiple terms
+-- singleTerm is for anything except application
 
 let init$multiTerm$_singleTerm__maybeApplist_ := appLTerm.
 

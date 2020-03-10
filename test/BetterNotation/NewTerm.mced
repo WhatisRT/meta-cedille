@@ -1,3 +1,7 @@
+--------------------------------------------------------------------------------
+-- This file contains terms for use with the new syntax
+--------------------------------------------------------------------------------
+
 let Binder := ∀ X : * Π _ : X Π _ : X Π _ : X Π _ : X X.
 let lambdaBinder := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X lambda.
 let LambdaBinder := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X Lambda.

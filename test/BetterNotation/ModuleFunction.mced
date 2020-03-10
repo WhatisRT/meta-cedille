@@ -42,7 +42,7 @@ b-let updateTempModule (n : init$string) (m : Module) : init$newStmt :=
         (just ?Term θ{Module})))
     (setModule (just ?Module (consModule n m))).
 
-b-let nameToModuleName (m : Module) (n : init$string) : init$string := stringApp (mkModulePrefix (ModuleModuleInfo m)) n.
+b-let nameToModuleName (m : Module) (n : init$string) : init$string := stringApp (mkModuleContentPrefix (ModuleModuleInfo m)) n.
 b-let nameToMaybeModuleName (x : Maybe Module) (n : init$string) : init$string :=
   maybe ?Module ?init$string n (λ m : Module. nameToModuleName m n) x.
 
@@ -53,7 +53,7 @@ b-let modifyLetInfo (i : LetInfo) (m : Module) : LetInfo :=
       (prefixNamesInTerm prefix (foldWithLambdas (ModuleTelescope m) (letInfoTerm i)))
       (maybe ?Term ?(Maybe Term)
         (nothing ?Term) (λ t : Term. just ?Term (prefixNamesInTerm prefix t)) (letInfoType i)))
-  (mkModulePrefix (ModuleModuleInfo m)).
+  (mkModuleContentPrefix (ModuleModuleInfo m)).
 
 b-let letInModule (i : LetInfo) (m : Module) : init$newStmt :=
   seqNewStmt
@@ -122,3 +122,12 @@ b-let init$moduleName'$=slash=_string__moduleName'_ (s : init$string) (n : Modul
 b-let init$moduleName'$ := nil ?init$string.
 
 b-let init$moduleName$_string__moduleName'_ (s : init$string) (n : ModuleName) := cons ?init$string s n.
+
+-- Top-level statements
+
+b-let init$newStmt'$module_space__string__telescope'_=dot=
+  (_ : init$space) (n : init$string) (t : Telescope) : init$newStmt :=
+  initModule [init$string|n] zero t.
+b-let init$newStmt'$EndModule=dot= : init$newStmt := endModule.
+b-let init$newStmt'$Import_space__moduleName__maybeApplist_=dot= (_ : init$space) (n : ModuleName) (l : List App) : init$newStmt :=
+  loadAndImportModule n l "test/".

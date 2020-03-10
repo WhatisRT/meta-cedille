@@ -1,3 +1,7 @@
+--------------------------------------------------------------------------------
+-- Error monad (with strings as error messages)
+--------------------------------------------------------------------------------
+
 b-let Error (A : *) : * := Sum init$string A.
 
 b-let pureError [A : *] (a : A) : Error A := inr ?init$string ?A a.

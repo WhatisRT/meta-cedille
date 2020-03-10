@@ -10,9 +10,7 @@ import test/LambdaCalcExample.
 import test/Nat.
 import test/NatSyntax.
 
-import test/Datatypes.
+-- import test/Datatypes.
 
 Import ModuleTest ?Unit.
 Import ModuleTest ?Unit. -- currently need to do it twice, fix later
-
--- import test/BetterNotation/DataParser.

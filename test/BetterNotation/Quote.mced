@@ -1,3 +1,9 @@
+--------------------------------------------------------------------------------
+-- This file exports functions for writing terms with less overhead
+--
+-- Please use the quotation mechanism defined in `QuoteTerm` whenever possible.
+--------------------------------------------------------------------------------
+
 let quote$noSpace := init$space'$ : init$space'.
 let quote$singleSpace := [init$space$=space=_space'_ init$space'$] : init$space.
 

@@ -42,5 +42,5 @@ let importModule (n : ModuleName) (app : List App) : init$newStmt :=
     (λ m : Module. bindEvalState ?init$string ?metaResult getCurrentModuleName
       (λ current : init$string.
         seqNewStmts (map ?init$string ?init$newStmt
-                      (λ n : init$string. prefixNameAndAppToStmt (mkModulePrefix (ModuleModuleInfo m)) current n app)
+                      (λ n : init$string. prefixNameAndAppToStmt (mkModuleContentPrefix (ModuleModuleInfo m)) current n app)
                       (ModuleContents m)))).

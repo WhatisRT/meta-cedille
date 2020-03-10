@@ -1,8 +1,11 @@
 import test/basic/Comment.
 import test/basic/Parens.
-import test/basic/MetaAliases.
 
 seteval eval init stmt.
+
+-- Define some standard datatypes and functions now
+
+import test/basic/MetaAliases.
 
 import test/basic/DSum.
 import test/basic/Product.

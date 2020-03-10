@@ -1,5 +1,33 @@
 -- This file provides the function datatypeToLet
 
+-- Generating indices from Nats
+
+b-let consDecToIndex' (i : init$index') (d : Dec) : init$index' :=
+  (d ?(Π _ : init$index'. init$index')
+    init$index'$0_index'_ init$index'$1_index'_ init$index'$2_index'_ init$index'$3_index'_ init$index'$4_index'_
+    init$index'$5_index'_ init$index'$6_index'_ init$index'$7_index'_ init$index'$8_index'_ init$index'$9_index'_) i.
+
+b-let consDecToIndex (i : init$index') (d : Dec) : init$index :=
+  (d ?(Π _ : init$index'. init$index)
+    init$index$0_index'_ init$index$1_index'_ init$index$2_index'_ init$index$3_index'_ init$index$4_index'_
+    init$index$5_index'_ init$index$6_index'_ init$index$7_index'_ init$index$8_index'_ init$index$9_index'_) i.
+
+b-let indexToIndex' (i : init$index) : init$index' :=
+  i ?init$index'
+    init$index'$0_index'_ init$index'$1_index'_ init$index'$2_index'_ init$index'$3_index'_ init$index'$4_index'_
+    init$index'$5_index'_ init$index'$6_index'_ init$index'$7_index'_ init$index'$8_index'_ init$index'$9_index'_.
+
+b-let digitListToIndex' (l : List Dec) : init$index' := foldl ?Dec ?init$index' consDecToIndex' l init$index'$.
+b-let digitListToIndex : Π _ : List Dec. init$index :=
+  recursionList ?Dec ?init$index
+    (init$index$0_index'_ init$index'$)
+    (λ d : Dec. λ ds : List Dec. λ _ : init$index. consDecToIndex (digitListToIndex' ds) d).
+
+b-let natToIndex (n : Nat) : init$index := digitListToIndex (natToDecList n).
+b-let natToVar (n : Nat) : Term := varTerm (init$var$_index_ (natToIndex n)).
+
+-- Provide a type for holding constructor data
+
 let ConstrData := Product Telescope Term.
 let mkConstrData := prodPair ?Telescope ?Term.
 let noArgConstrData : Π _ : Term. ConstrData := mkConstrData telNil.

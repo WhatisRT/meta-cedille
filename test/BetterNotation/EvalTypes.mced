@@ -1,10 +1,20 @@
+--------------------------------------------------------------------------------
+-- We define functions for the new evaluator here
+--------------------------------------------------------------------------------
+
+-- Flags that can be used to control the evaluator (currently only one)
 b-let EvalFlags : * := Bool.
 b-let defaultFlags : EvalFlags := false.
 b-let quoteEvalFlags (f : EvalFlags) : Term :=
   ifthenelse ?Term f θ{true} θ{false}.
 
+-- Controls whether `let` has to have a type annotation at the end to be accepted
 b-let getAnnReq (f : EvalFlags) : Bool := f.
 b-let modifyAnnReq (b : Bool) (_ : EvalFlags) : EvalFlags := b.
+
+-- ModuleState contains a module if we are in the process of defining one, as
+-- well as the module dictionary. Quoting ModuleState requires the Module and
+-- ModuleDict to be defined in the environment.
 
 b-let ModuleState : * := Product (Maybe Module) ModuleDict.
 b-let mkModuleState (m : Maybe Module) (d : ModuleDict) : ModuleState := prodPair ?(Maybe Module) ?ModuleDict m d.
@@ -20,6 +30,7 @@ b-let quoteDict (d : ModuleDict) : Term := sVarTerm (mkModuleDictName d).
 b-let quoteModuleState (s : ModuleState) : Term :=
   θ{mkModuleState γ{quoteMaybeModule (ModuleStateModule s)} γ{quoteDict (ModuleStateDict s)}}.
 
+-- The additional state in the evaluator contains the ModuleState as well as the flags
 b-let EvaluatorState : * := Product EvalFlags ModuleState.
 b-let mkEvaluatorState (f : EvalFlags) (s : ModuleState) : EvaluatorState := prodPair ?EvalFlags ?ModuleState f s.
 b-let getEvalFlags := pr1 ?EvalFlags ?ModuleState.
@@ -37,6 +48,8 @@ b-let quoteEvaluatorState (s : EvaluatorState) : Term :=
   θ{mkEvaluatorState γ{quoteEvalFlags (getEvalFlags s)} γ{quoteModuleState (getModuleState s)}}.
 
 b-let emptyEvaluatorState : EvaluatorState := mkEvaluatorState defaultFlags emptyModState.
+
+-- EvalState monad. This is a combination of the state and meta monads to give us access to the mutable state
 
 b-let EvalState : Π _ : *. * := λ T : *. Π _ : EvaluatorState. M (Product T EvaluatorState).
 b-let pureEvalState [T : *] (t : T) : EvalState T :=
@@ -83,22 +96,6 @@ b-let modifyEvalFlags (f : Π _ : EvalFlags. EvalFlags) : EvalState Unit :=
 b-let modifyModuleState (f : Π _ : ModuleState. ModuleState) : EvalState Unit :=
   modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (getEvalFlags s) (f (getModuleState s))).
 
-b-let echoCommand (s : init$string) : M metaResult :=
-  mapMeta ?init$string ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [init$string | s])).
-
-b-let echoStmt (s : init$string) : init$newStmt :=
-  liftMtoEvalState ?metaResult (echoCommand s).
-
-b-let simpleCommand (s : init$string) : M metaResult :=
-  mapMeta ?init$string ?metaResult strToMetaResult (shellCmd s (listToStringList [init$string |])).
-
-b-let letInfoTermToQuoted (i : LetInfo) : LetInfo :=
-  mkLetInfo (stringApp "qTerm" (letInfoName i)) (quoteTerm (letInfoTerm i)) (just ?Term θ{Term}).
-
-b-let runMetaCommand (t : Term) : init$newStmt :=
-  λ s : EvaluatorState.
-    bindMeta ?init$newStmt ?(Product metaResult EvaluatorState) (checkTerm init$newStmt (TermToInitTerm t)) (λ stmt : init$newStmt. stmt s).
-
 b-let stmtToMmetaRes (stmt : init$stmt') : M metaResult := eval' (quote$stmt'ToStmt stmt).
 
 b-let emptyStmt : init$newStmt := stmtToNewStmt init$stmt'$.
@@ -109,22 +106,22 @@ b-let seqNewStmt (s, s' : init$newStmt) : init$newStmt :=
 b-let seqNewStmts (l : List init$newStmt) : init$newStmt :=
   foldl ?init$newStmt ?init$newStmt seqNewStmt (reverse ?init$newStmt l) emptyStmt.
 
-b-let updateModuleState (s : ModuleState) : EvalState Unit :=
-  bindEvalState ?EvaluatorState ?Unit getEvalState
-    (λ s' : EvaluatorState. setEvalState (mkEvaluatorState (getEvalFlags s') s)).
-
 b-let evalStateUnitToNewStmt (x : EvalState Unit) : init$newStmt :=
   seqEvalState ?Unit ?metaResult x (pureEvalState ?metaResult emptyMetaResult).
 
 b-let modifyEvalStateStmt (f : Π _ : EvaluatorState. EvaluatorState) : init$newStmt :=
   evalStateUnitToNewStmt (modifyEvalState f).
 
+b-let updateModuleState (s : ModuleState) : EvalState Unit :=
+  bindEvalState ?EvaluatorState ?Unit getEvalState
+    (λ s' : EvaluatorState. setEvalState (mkEvaluatorState (getEvalFlags s') s)).
+
+b-let echoStmt (s : init$string) : init$newStmt :=
+  liftMtoEvalState ?metaResult
+    (mapMeta ?init$string ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [init$string | s]))).
+
 b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
   bindEvalState ?EvalFlags ?metaResult getFlags (λ f : EvalFlags.
     ifthenelse ?init$newStmt (or (not (getAnnReq f)) (letInfoHasAnn i))
       (stmtToNewStmt (convertLetInfo i))
       (echoStmt "The provided command has no type annotation!")).
-
-b-let printModuleDictName : init$newStmt :=
-  bindEvalState ?ModuleState ?metaResult getModuleState' (λ s : ModuleState.
-    echoStmt (mkModuleDictName (ModuleStateDict s))).

@@ -6,8 +6,8 @@ import test/BetterNotation/Telescope.
 import test/BetterNotation/BetterTermSyntax.
 import test/BetterNotation/BetterLet.
 
-import test/BetterNotation/String.
-import test/BetterNotation/StringEquality.
+import test/BetterNotation/StringNotation.
+import test/BetterNotation/StringHelpers.
 import test/BetterNotation/ListNotation.
 
 import test/BetterNotation/QuoteTerm.

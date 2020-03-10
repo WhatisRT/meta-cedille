@@ -1,3 +1,7 @@
+--------------------------------------------------------------------------------
+-- Functions for quoting strings and syntax to use with the new terms
+--------------------------------------------------------------------------------
+
 let bitFalse := init$bit$false.
 let bitTrue := init$bit$true.
 let byteBits := init$byte$bits.
@@ -22,6 +26,8 @@ b-let quote$String (s : init$string) : Term :=
     (λ c : init$char. λ rec : Term. appSingle (appSingle quote$stringCons (quote$char c)) rec)
     quote$stringNil.
 
+-- Syntax
+
 b-let init$stringchar$!=doublequote=! (c : init$char) : init$char := c.
 
 let init$newstring$ := init$string$nil : init$string.
@@ -30,22 +36,5 @@ let init$newstring$_stringchar__newstring_ := init$string$cons : Π _ : init$cha
 --let init$singleTerm$=singlequote=_stringchar_=singlequote= := quote$char : Π _ : init$char Term.
 let init$singleTerm$=doublequote=_newstring_=doublequote= := quote$String : Π _ : init$string Term.
 let init$term$=doublequote=_newstring_=doublequote= := quote$String : Π _ : init$string Term.
-
-b-let stringToList (s : init$string) : List init$char :=
-  s ?(List init$char) (λ c : init$char. λ rec : List init$char. cons ?init$char c rec) (nil ?init$char).
-
-b-let stringFromList (s : List init$char) : init$string :=
-  recursionList ?init$char ?init$string init$string$nil
-    (λ c : init$char. λ cs : List init$char. λ rec : init$string. init$string$cons c rec)
-    s.
-
-b-let stringApp (s, s' : init$string) : init$string :=
-  stringFromList (app ?init$char (stringToList s) (stringToList s')).
-
-b-let stringConcat (l : List init$string) : init$string :=
-  recursionList ?init$string ?init$string
-    init$string$nil
-    (λ s : init$string. λ _ : List init$string. λ rec : init$string. stringApp s rec)
-    l.
 
 seteval eval init stmt.

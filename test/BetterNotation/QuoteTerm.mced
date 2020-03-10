@@ -1,3 +1,9 @@
+--------------------------------------------------------------------------------
+-- Quotation and antiquotation for terms
+--
+-- The syntax is θ{...} for quotation and γ{...} for antiquotation.
+--------------------------------------------------------------------------------
+
 b-let mapAppList [X, Y : *] (f : Π _ : X. Y) (l : List (Product Bool X)) : List (Product Bool Y) :=
   map ?(Product Bool X) ?(Product Bool Y)
     (λ bx : Product Bool X. prodPair ?Bool ?Y (pr1 ?Bool ?X bx) (f (pr2 ?Bool ?X bx))) l.
@@ -24,18 +30,18 @@ b-let recursionTerm [X : *]
     (λ u : Product X Term.
       prodPair ?X ?Term (funq (pr2 ?X ?Term u) (pr1 ?X ?Term u)) (unquoteTerm (pr2 ?X ?Term u)))).
 
--- quotation syntax is θ{term}
+-- We want to define quoteTerm, the rest are helper functions
 
 b-let appDouble (t, t', t'' : Term) :=  appLTerm t [App| mkAppU t', mkAppU t''].
 
 b-let quoteAst : Term := sortTerm init$sort$=ast=.
 b-let quoteSq : Term := sortTerm init$sort$=sq=.
-b-let quoteTemp : Term := quoteSq.
+b-let quoteTemp : Term := quoteSq. -- this is for things that are not yet implemented
 
 b-let quoteVar (v : init$var) : Term :=
   appSingle
     (sVarTerm "sVarTerm")
-    (v ?Term (λ n : init$string. quote$String n) (λ i : init$index. quoteTemp)).
+    (v ?Term (λ n : init$string. quote$String n) (λ i : init$index. quoteTemp)). -- quotation of indices is not supported
 
 b-let quoteBinder (b : Binder) : Term :=
   b ?Term (sVarTerm "lambdaBinder") (sVarTerm "LambdaBinder") (sVarTerm "piBinder") (sVarTerm "forallBinder").
@@ -56,7 +62,10 @@ b-let quoteTerm (t : Term) : Term :=
     (λ u : Term. λ recuf : Term. u)
     t.
 
+-- Syntax
+
 b-let init$singleTerm$=theta==lbrace=_space'__multiTerm_=rbrace= (_ : init$space') (t : Term) : Term := quoteTerm t.
 b-let init$singleTerm$=gamma==lbrace=_space'__multiTerm_=rbrace= (_ : init$space') (t : Term) : Term := unquoteTerm t.
+-- unquoteTerm is just a constructor of Term
 
 seteval eval init stmt.

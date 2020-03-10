@@ -1,3 +1,7 @@
+--------------------------------------------------------------------------------
+-- List functions that are more pleasantly written now
+--------------------------------------------------------------------------------
+
 b-let showList [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string :=
   stringApp "[" (stringApp (stringConcat (intersperse ?init$string ", " (map ?X ?init$string showX l))) "]").
 

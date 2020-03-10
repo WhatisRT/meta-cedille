@@ -1,3 +1,9 @@
+--------------------------------------------------------------------------------
+-- Providing conversions for the built-in types to more natural ones
+--
+-- Maybe this should be moved elsewhere?
+--------------------------------------------------------------------------------
+
 b-let metaResult : * := Product (List init$string) (List init$term).
 b-let mkMetaResult (l : List init$string) (l' : List init$term) := prodPair ?(List init$string) ?(List init$term) l l'.
 b-let emptyMetaResult : metaResult := mkMetaResult [init$string|] [init$term|].
