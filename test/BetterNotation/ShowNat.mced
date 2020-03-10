@@ -53,13 +53,13 @@ b-let incrementDecList (l : List Dec) : List Dec :=
     l.
 
 b-let natToBinList (n : Nat) : List Bool :=
-  inductionNat ?(λ _ : Nat. List Bool)
+  recursionNat ?(List Bool)
     [Bool | false]
     (λ _ : Nat. λ rec : List Bool. incrementBinList rec)
     n.
 
 b-let natToDecList (n : Nat) : List Dec :=
-  inductionNat ?(λ _ : Nat. List Dec)
+  recursionNat ?(List Dec)
     [Dec | Dec0]
     (λ _ : Nat. λ rec : List Dec. incrementDecList rec)
     n.

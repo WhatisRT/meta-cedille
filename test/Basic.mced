@@ -4,9 +4,14 @@ import test/basic/MetaAliases.
 
 seteval eval init stmt.
 
-import test/basic/Datatypes.
-import test/basic/DatatypesRedef.
+import test/basic/DSum.
+import test/basic/Product.
+import test/basic/Sum.
 
+import test/basic/Void.
+import test/basic/Unit.
+import test/basic/Char.
+
+import test/basic/Nat.
 import test/basic/Bool.
 import test/basic/List.
-import test/basic/Product.

@@ -1,4 +1,23 @@
-let ifthenelse := Λ X : * λ b : Bool λ ift : X λ iff : X [[[<inductionBool λ _ : Bool X> ift] iff] b] : ∀ X : * Π _ : Bool Π _ : X Π _ : X X.
+let Bool := ∀ X : *
+  Π _ : X
+  Π _ : X
+    X.
+
+let true := Λ X : *
+  λ t : X
+  λ f : X
+    t : Bool.
+
+let false := Λ X : *
+  λ t : X
+  λ f : X
+    f : Bool.
+
+let recursionBool :=
+  Λ X : * λ t : X λ f : X λ b : Bool [[<b X> t] f]
+    : ∀ X : * Π _ : X Π _ : X Π _ : Bool X.
+
+let ifthenelse := Λ X : * λ b : Bool λ ift : X λ iff : X [[[<recursionBool X> ift] iff] b] : ∀ X : * Π _ : Bool Π _ : X Π _ : X X.
 
 let and := λ b : Bool λ b' : Bool [[[<ifthenelse Bool> b] b'] false].
 let or := λ b : Bool λ b' : Bool [[[<ifthenelse Bool> b] b] b'].

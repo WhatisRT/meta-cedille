@@ -12,7 +12,7 @@ b-let prefixNamesInTerm (p : init$string) (t : Term) : Term :=
     (λ u : Term. unquoteTerm u).
 
 b-let quoteNat (n : Nat) : Term :=
-  inductionNat ?(λ _ : Nat. Term) θ{zero} (λ _ : Nat. λ rec : Term. θ{suc γ{rec}}) n.
+  recursionNat ?Term θ{zero} (λ _ : Nat. λ rec : Term. θ{suc γ{rec}}) n.
 
 b-let quoteParam (p : Param) : Term :=
   θ{mkParam γ{quoteBool (paramErased p)} (mkPreParam γ{quote$String (paramName p)} γ{quoteTerm (paramType p)})}.

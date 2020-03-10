@@ -1,7 +1,7 @@
 -- the definition of Nat is in Induction.mced
 
 let recNat [X : *] (x : X) (step : Π _ : Nat. Π _ : X. X) : Π _ : Nat. X :=
-  inductionNat ?(λ _ : Nat. X) x step.
+  recursionNat ?X x step.
 
 let one := suc zero.
 let two := suc one.

@@ -1,0 +1,10 @@
+let DSum := λ A : * λ B : Π _ : A * ∀ X : *
+  Π _ : Π a : A Π _ : [B a] X
+    X.
+
+let pair := Λ A : * Λ B : Π _ : A * λ a : A λ b : [B a] Λ X : *
+  λ p : Π a : A Π _ : [B a] X
+    [[p a] b] : ∀ A : * ∀ B : Π _ : A * Π a : A Π b : [B a] [[DSum A] B].
+
+let recursionDSum :=
+  Λ A : * Λ B : Π _ : A * Λ X : * λ ppair : Π a : A Π b : [B a] X λ x : [[DSum A] B] [<x X> ppair].

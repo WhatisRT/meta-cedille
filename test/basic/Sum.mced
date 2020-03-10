@@ -1,0 +1,18 @@
+let Sum := λ A : * λ B : * ∀ X : *
+  Π _ : Π _ : A X
+  Π _ : Π _ : B X
+    X.
+
+let inl := Λ A : * Λ B : * λ a : A Λ X : *
+  λ l : Π _ : A X
+  λ r : Π _ : B X
+    [l a].
+
+let inr := Λ A : * Λ B : * λ b : B Λ X : *
+  λ l : Π _ : A X
+  λ r : Π _ : B X
+    [r b].
+
+let recursionSum :=
+  Λ A : * Λ B : * Λ X : * λ l : Π _ : A X λ r : Π _ : B X λ x : [[Sum A] B] [[<x X> l] r]
+    : ∀ A : * ∀ B : * ∀ X : * Π _ : Π _ : A X Π _ : Π _ : B X Π _ : [[Sum A] B] X.

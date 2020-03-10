@@ -1,6 +1,26 @@
--- the definition of List is in Induction.mced
+let List := λ A : * ∀ X : *
+  Π _ : X
+  Π _ : (Π _ : A Π _ : X X)
+    X.
 
-let recursionList := Λ X : * Λ Y : * <<inductionList X> λ _ : [List X] Y>.
+let nil := Λ A : * Λ X : *
+  λ n : X
+  λ c : (Π _ : A Π _ : X X)
+    n.
+
+let cons := Λ A : * λ x : A λ xs : [List A] Λ X : *
+  λ n : X
+  λ c : (Π _ : A Π _ : X X)
+    [[c x] [[<xs X> n] c]].
+
+let recursionList := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : [List A] Π _ : X X λ l : [List A]
+  [<<pr2 [List A]> X>
+    [[<l [[Product [List A]] X]>
+      [[<<prodPair [List A]> X> <nil A>] rn]]
+      λ a : A λ p : [[Product [List A]] X]
+        [[<<prodPair [List A]> X>
+          [[<cons A> a] [<<pr1 [List A]> X> p]]]
+          [[[rc a] [<<pr1 [List A]> X> p]] [<<pr2 [List A]> X> p]]]]].
 
 let length := Λ X : *
   [[<<recursionList X> Nat> zero] λ x : X λ xs : [List X] λ n : Nat [suc n]]

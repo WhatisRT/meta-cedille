@@ -1,0 +1,2 @@
+let Unit := ∀ X : * Π _ : X X.
+let tt := Λ X : * λ x : X x.
