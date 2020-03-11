@@ -1,9 +1,6 @@
 import test/BetterNotation/Quote.
 
 import test/BetterNotation/NewTerm.
-import test/BetterNotation/Telescope.
-
-import test/BetterNotation/BetterTermSyntax.
 import test/BetterNotation/BetterLet.
 
 import test/BetterNotation/StringNotation.
