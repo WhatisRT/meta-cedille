@@ -18,8 +18,8 @@ let quote$stringNil := [sVarTerm [[stringCons quote$s] [[stringCons quote$t] [[s
 let quote$stringCons := [sVarTerm [[stringCons quote$s] [[stringCons quote$t] [[stringCons quote$r] [[stringCons quote$i] [[stringCons quote$n] [[stringCons quote$g] [[stringCons quote$C] [[stringCons quote$o] [[stringCons quote$n] [[stringCons quote$s] stringNil]]]]]]]]]]] : Term.
 
 b-let quote$bit (b : init$bit) : Term := b ?Term quote$bitTrue quote$bitFalse.
-b-let quote$byte (b : init$byte) : Term := b ?Term λ x1 : init$bit. λ x2 : init$bit. λ x3 : init$bit. λ x4 : init$bit. λ x5 : init$bit. λ x6 : init$bit. λ x7 : init$bit. λ x8 : init$bit. ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle quote$byteBits) (quote$bit x1))) (quote$bit x2))) (quote$bit x3))) (quote$bit x4))) (quote$bit x5))) (quote$bit x6))) (quote$bit x7))) (quote$bit x8)).
-b-let quote$char (c : init$char) : Term := c ?Term λ x1 : init$byte. λ x2 : init$byte. λ x3 : init$byte. λ x4 : init$byte. ((appSingle ((appSingle ((appSingle ((appSingle quote$charBytes) (quote$byte x1))) (quote$byte x2))) (quote$byte x3))) (quote$byte x4)).
+b-let quote$byte (b : init$byte) : Term := b ?Term λ x1, x2, x3, x4, x5, x6, x7, x8 : init$bit. ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle ((appSingle quote$byteBits) (quote$bit x1))) (quote$bit x2))) (quote$bit x3))) (quote$bit x4))) (quote$bit x5))) (quote$bit x6))) (quote$bit x7))) (quote$bit x8)).
+b-let quote$char (c : init$char) : Term := c ?Term λ x1, x2, x3, x4 : init$byte. ((appSingle ((appSingle ((appSingle ((appSingle quote$charBytes) (quote$byte x1))) (quote$byte x2))) (quote$byte x3))) (quote$byte x4)).
 
 b-let quote$String (s : init$string) : Term :=
   s ?Term

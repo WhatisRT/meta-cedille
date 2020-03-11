@@ -12,7 +12,7 @@ let showTerm (t : Term) : init$string :=
   t ?init$string
     (λ v : init$var. showVar v)
     (λ s : init$sort. showSort s)
-    (λ b : Binder. λ n : init$string. λ T : init$string. λ t : init$string.
+    (λ b : Binder. λ n : init$string. λ T, t : init$string.
       stringConcat [init$string| showBinder b, " ", n, " : ", T, ". ", t])
     (λ t : init$string. λ l : List (Product Bool init$string).
       stringConcat (cons ?init$string t

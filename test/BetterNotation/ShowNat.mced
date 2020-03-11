@@ -2,17 +2,17 @@
 -- Show for natural numbers and binary numbers
 --------------------------------------------------------------------------------
 
-b-let Dec := ∀ X : *. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. Π _ : X. X.
-b-let Dec0 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d0.
-b-let Dec1 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d1.
-b-let Dec2 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d2.
-b-let Dec3 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d3.
-b-let Dec4 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d4.
-b-let Dec5 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d5.
-b-let Dec6 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d6.
-b-let Dec7 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d7.
-b-let Dec8 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d8.
-b-let Dec9 : Dec := Λ X : *. λ d0 : X. λ d1 : X. λ d2 : X. λ d3 : X. λ d4 : X. λ d5 : X. λ d6 : X. λ d7 : X. λ d8 : X. λ d9 : X. d9.
+b-let Dec := ∀ X : *. Π _, _, _, _, _, _, _, _, _, _ : X. X.
+b-let Dec0 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d0.
+b-let Dec1 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d1.
+b-let Dec2 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d2.
+b-let Dec3 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d3.
+b-let Dec4 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d4.
+b-let Dec5 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d5.
+b-let Dec6 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d6.
+b-let Dec7 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d7.
+b-let Dec8 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d8.
+b-let Dec9 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d9.
 
 b-let showDec (d : Dec) : init$string := d ?init$string "0" "1" "2" "3" "4" "5" "6" "7" "8" "9".
 

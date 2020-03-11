@@ -2,8 +2,6 @@ o-let Top := = λ x : * x λ x : * x.
 
 let lambdaTermToTerm : Π _ : init$term. init$term := quote$beta (TermToInitTerm θ{λ x : *. x}).
 
-let init$lambdaTerm : * :=
-  ∀ X : *. Π _ : (Π _ : init$string. X). Π _ : (Π _ : X. Π _ : X. X). Π _ : (Π _ : init$string. Π _ : X. X). X.
 let init$lambdaTerm$_string_ : Π _ : init$string. init$term := quote$var.
 let init$lambdaTerm$=lsquare=_space'__lambdaTerm__space__lambdaTerm__space'_=rsquare=
   (_ : init$space') (t : init$term) (_ : init$space) (t' : init$term) (_ : init$space') : init$term :=
