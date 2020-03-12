@@ -6,7 +6,6 @@ module Escape where
 
 import Data.Maybe
 open import Class.Map
-open import Data.List hiding (lookup)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
 
@@ -14,7 +13,6 @@ open import Prelude
 open import Prelude.Strings
 
 private
-
   translationTable : SimpleMap String Char
   translationTable =
     ("newline" , '\n') ∷ ("space" , ' ') ∷ ("ast" , '*') ∷ ("sq" , '□') ∷

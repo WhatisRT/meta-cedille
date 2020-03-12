@@ -2,12 +2,11 @@ module Data.Tree.Base where
 
 open import Class.Monoid
 open import Class.Show
-open import Data.List hiding (concat)
+open import Data.List using (List; sum; map; replicate; intersperse)
 open import Data.Nat using (ℕ; suc)
 open import Data.Nat.Instance
-open import Data.String using (String; concat)
+open import Data.String using (String)
 open import Data.String.Instance
-open import Data.Unit
 open import Function
 
 data Tree (A : Set) : Set where

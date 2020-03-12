@@ -4,7 +4,7 @@ open import Class.Monad
 open import Class.Monad.IO
 open import Class.Monad.State
 open import Data.List
-open import Data.Maybe
+open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Nat using (ℕ)
 open import Data.Product
 open import Data.Unit

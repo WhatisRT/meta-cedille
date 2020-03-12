@@ -14,7 +14,7 @@ open import Class.Monad.IO
 open import Class.Monad.Profiler
 open import Class.Monad.State
 open import Class.Traversable
-open import Data.List using (concat; map; length)
+open import Data.List using (map; length)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
 open import Data.String.Exts

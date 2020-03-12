@@ -7,7 +7,7 @@ open import Class.Show
 open import Class.Traversable
 open import Data.Bool using (Bool; _∧_; true; false)
 open import Data.List hiding (concat)
-open import Data.String using (String; concat)
+open import Data.String using (String)
 open import Data.String.Instance
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary

@@ -8,7 +8,7 @@ module InitEnv where
 open import Class.Map
 open import Class.Traversable
 open import Data.Char.Ranges
-open import Data.List
+open import Data.List using (dropWhile; takeWhile)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
 open import Data.Word32

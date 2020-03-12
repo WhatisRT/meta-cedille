@@ -5,7 +5,7 @@ module meta-cedille where
 import IO.Primitive as Prim
 open import Class.Monad.Profiler using (logTime)
 open import Data.List using (null; intersperse; span; map)
-open import Data.String using (toList; concat)
+open import Data.String using (toList)
 open import IO using (IO; putStr; run; appendFile; writeFile)
 open import IO.Exts
 open import IO.Instance

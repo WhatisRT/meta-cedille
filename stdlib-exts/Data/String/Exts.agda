@@ -1,8 +1,8 @@
 module Data.String.Exts where
 
-open import Data.Bool
-open import Data.Char
-open import Data.String
+open import Data.Bool hiding (_<?_)
+open import Data.Char hiding (_<?_)
+open import Data.String hiding (_<?_)
 open import Data.Maybe
 open import Data.Nat
 open import Data.Product

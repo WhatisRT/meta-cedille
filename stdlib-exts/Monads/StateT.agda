@@ -47,5 +47,3 @@ instance
     { tell = λ w s -> tell w >>= λ _ -> return (lift tt , s)
     ; listen = λ x s -> listen (x s) >>= λ { ((a , s') , w) -> return ((a , w) , s') }
     ; pass = λ x s -> x s >>= λ { (x' , s') -> pass (return x') >>= λ a -> return (a , s') } }
-
-

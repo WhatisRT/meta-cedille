@@ -7,7 +7,7 @@ module Profiling where
 
 import Agda.Builtin.Nat
 open import Data.List hiding (concat; lookup)
-open import Data.String using (toList; fromList; concat)
+open import Data.String using (toList; fromList)
 open import Data.String.Exts
 open import Data.These hiding (alignWith; map)
 

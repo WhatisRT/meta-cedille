@@ -6,7 +6,7 @@ open import Data.Nat
 open import Function
 
 charRange : ℕ -> ℕ -> List Char
-charRange start amount = applyUpTo (λ x -> fromNat $ x + start) amount
+charRange start amount = applyUpTo (λ x -> fromℕ $ x + start) amount
 
 UCletters : List Char
 UCletters = charRange 65 26
@@ -22,10 +22,10 @@ greekUCletters = charRange 913 25
 
 symbols : List Char
 symbols =
-  applyUpTo (λ x -> fromNat $ x + 33) 15
-  ++ applyUpTo (λ x -> fromNat $ x + 58) 7
-  ++ applyUpTo (λ x -> fromNat $ x + 91) 6
-  ++ applyUpTo (λ x -> fromNat $ x + 123) 4
+  applyUpTo (λ x -> fromℕ $ x + 33) 15
+  ++ applyUpTo (λ x -> fromℕ $ x + 58) 7
+  ++ applyUpTo (λ x -> fromℕ $ x + 91) 6
+  ++ applyUpTo (λ x -> fromℕ $ x + 123) 4
 
 digits : List Char
 digits = charRange 48 10
