@@ -12,11 +12,10 @@ b-let stringListToList (l : init$stringList) : List init$string :=
   l ?(List init$string) (nil ?init$string)
     (λ s : init$string. λ rec : List init$string. cons ?init$string s rec).
 
-b-let listToStringList (l : List init$string) : init$stringList :=
-  (recursionList ?init$string ?init$stringList
-                 init$stringList$nil
-                 (λ s : init$string. λ _ : List init$string. λ rec : init$stringList. init$stringList$cons s rec))
-    l.
+b-let listToStringList : Π _ : List init$string. init$stringList :=
+  recursionList ?init$string ?init$stringList
+                init$stringList$nil
+                (λ s : init$string. λ _ : List init$string. λ rec : init$stringList. init$stringList$cons s rec).
 
 b-let termListToList (l : init$termList) : List init$term :=
   l ?(List init$term) (nil ?init$term)

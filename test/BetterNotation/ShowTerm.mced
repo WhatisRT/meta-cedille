@@ -4,11 +4,11 @@
 -- TODO: move somewhere else?
 --------------------------------------------------------------------------------
 
-let showVar (v : init$var) : init$string := v ?init$string (λ s : init$string. s) (λ i : init$index. "INDEX").
-let showSort (s : init$sort) : init$string := s ?init$string "*" "□".
-let showBinder (b : Binder) : init$string := b ?init$string "λ" "Λ" "Π" "∀".
+b-let showVar (v : init$var) : init$string := v ?init$string (λ s : init$string. s) (λ i : init$index. "INDEX").
+b-let showSort (s : init$sort) : init$string := s ?init$string "*" "□".
+b-let showBinder (b : Binder) : init$string := b ?init$string "λ" "Λ" "Π" "∀".
 
-let showTerm (t : Term) : init$string :=
+b-let showTerm (t : Term) : init$string :=
   t ?init$string
     (λ v : init$var. showVar v)
     (λ s : init$sort. showSort s)

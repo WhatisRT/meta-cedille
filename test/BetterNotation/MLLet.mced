@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- ML-style let syntax
 --
--- Use `let f (x1, ..., xn : T1) ... (... : Tn) : T := t.` to define a term
+-- Use `b-let f (x1, ..., xn : T1) ... (... : Tn) : T := t.` to define a term
 --------------------------------------------------------------------------------
 
 -- Functions to turn a Telescope into an actual telescope that can be applied to

@@ -19,5 +19,5 @@ b-let liftError2 [A, B, C : *] (f : Π _ : A. Π _ : B. C) (a : Error A) (b : Er
 
 b-let traverseErrorList [X, Y : *] (f : Π _ : X. Error Y) : Π _ : List X. Error (List Y) :=
   recursionList ?X ?(Error (List Y))
-    (pureError ?(List Y) [Y|])
+    (pureError ?(List Y) (nil ?Y))
     (λ x : X. λ xs : List X. λ rec : Error (List Y). liftError2 ?Y ?(List Y) ?(List Y) (cons ?Y) (f x) rec).

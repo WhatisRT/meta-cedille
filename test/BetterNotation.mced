@@ -1,22 +1,20 @@
-import test/BetterNotation/Quote.
+import test/BetterNotation/Term.
+import test/BetterNotation/MLLet.
 
-import test/BetterNotation/NewTerm.
-import test/BetterNotation/BetterLet.
+import test/BetterNotation/TermRec.
+import test/BetterNotation/StringHelpers.
+import test/BetterNotation/Error.
 
 import test/BetterNotation/StringNotation.
-import test/BetterNotation/StringHelpers.
 import test/BetterNotation/ListNotation.
-
 import test/BetterNotation/QuoteTerm.
 
 import test/BetterNotation/ListExt.
 import test/BetterNotation/ShowNat.
-import test/BetterNotation/Error.
-
+import test/BetterNotation/ShowTerm.
 import test/BetterNotation/ConversionHelpers.
+
 import test/BetterNotation/ModuleDefinitions.
 import test/BetterNotation/EvalTypes.
 import test/BetterNotation/ModuleFunction.
 import test/BetterNotation/BetterSyntax.
-
-import test/BetterNotation/ShowTerm.

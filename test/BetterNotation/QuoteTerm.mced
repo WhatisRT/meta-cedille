@@ -4,32 +4,6 @@
 -- The syntax is θ{...} for quotation and γ{...} for antiquotation.
 --------------------------------------------------------------------------------
 
-b-let mapAppList [X, Y : *] (f : Π _ : X. Y) (l : List (Product Bool X)) : List (Product Bool Y) :=
-  map ?(Product Bool X) ?(Product Bool Y)
-    (λ bx : Product Bool X. prodPair ?Bool ?Y (pr1 ?Bool ?X bx) (f (pr2 ?Bool ?X bx))) l.
-
-b-let recursionTerm [X : *]
-  (fvar : Π _ : init$var. X)
-  (fsort : Π _ : init$sort. X)
-  (fbind : Π _ : Binder. Π _ : init$string. Π _ : Term. Π _ : Term. Π _ : X. Π _ : X. X)
-  (fapp : Π _ : Term. Π _ : List App. Π _ : X. Π _ : List (Product Bool X). X)
-  (funq : Π _ : Term. Π _ : X. X)
-  (term : Term) : X :=
-  pr1 ?X ?Term (term ?(Product X Term)
-    (λ v : init$var. prodPair ?X ?Term (fvar v) (varTerm v))
-    (λ s : init$sort. prodPair ?X ?Term (fsort s) (sortTerm s))
-    (λ b : Binder. λ n : init$string. λ T : Product X Term. λ t : Product X Term.
-      prodPair ?X ?Term
-        (fbind b n (pr2 ?X ?Term T) (pr2 ?X ?Term t) (pr1 ?X ?Term T) (pr1 ?X ?Term t))
-        (binderTerm b n (pr2 ?X ?Term T) (pr2 ?X ?Term t)))
-    (λ t : Product X Term. λ l : List (Product Bool (Product X Term)).
-      prodPair ?X ?Term
-        (fapp (pr2 ?X ?Term t) (mapAppList ?(Product X Term) ?Term (pr2 ?X ?Term) l)
-              (pr1 ?X ?Term t) (mapAppList ?(Product X Term) ?X (pr1 ?X ?Term) l))
-        (appLTerm (pr2 ?X ?Term t) (mapAppList ?(Product X Term) ?Term (pr2 ?X ?Term) l)))
-    (λ u : Product X Term.
-      prodPair ?X ?Term (funq (pr2 ?X ?Term u) (pr1 ?X ?Term u)) (unquoteTerm (pr2 ?X ?Term u)))).
-
 -- We want to define quoteTerm, the rest are helper functions
 
 b-let appDouble (t, t', t'' : Term) :=  appLTerm t [App| mkAppU t', mkAppU t''].

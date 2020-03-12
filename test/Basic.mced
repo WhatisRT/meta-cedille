@@ -6,6 +6,7 @@ seteval eval init stmt.
 -- Define some standard datatypes and functions now
 
 import test/basic/MetaAliases.
+import test/basic/Quote.
 
 import test/basic/DSum.
 import test/basic/Product.
