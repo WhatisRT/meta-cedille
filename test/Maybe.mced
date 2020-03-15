@@ -1,11 +1,11 @@
-data Maybe (A : *) where
-| nothing : Maybe A
-| just    : Π _ : A. Maybe A.
+data Maybe' (A : *) where
+| nothing' : Maybe' A
+| just'    : Π _ : A. Maybe' A.
 
-let MaybeFold' (A, B : *) (foldNothing : B) (foldJust : Π _ : A. B) (x : Maybe A) : B :=
-  MaybeFold A B (addUnit ?B foldNothing) (Duncurry ?A ?(λ _ : A. Unit) ?B (λ a : A. addUnit ?B (foldJust a))) x.
+let MaybeFold' (A, B : *) (foldNothing : B) (foldJust : Π _ : A. B) (x : Maybe' A) : B :=
+  Maybe'Fold A B (addUnit ?B foldNothing) (Duncurry ?A ?(λ _ : A. Unit) ?B (λ a : A. addUnit ?B (foldJust a))) x.
 
-let maybe [A : *] [B : *] (default : B) (f : Π _ : A. B) (x : Maybe A) : B := MaybeFold' A B default f x.
+let maybe' [A : *] [B : *] (default : B) (f : Π _ : A. B) (x : Maybe' A) : B := MaybeFold' A B default f x.
 
-let maybeToList [A : *] (x : Maybe A) : List A :=
-  maybe ?A ?(List A) [A|] (λ a : A. [A|a]) x.
+let maybeToList [A : *] (x : Maybe' A) : List A :=
+  maybe' ?A ?(List A) [A|] (λ a : A. [A|a]) x.

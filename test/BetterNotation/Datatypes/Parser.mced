@@ -1,3 +1,7 @@
+--------------------------------------------------------------------------------
+-- Parsing datatype declarations
+--------------------------------------------------------------------------------
+
 let Constr := Product init$string Term.
 let ConstrName := pr1 ?init$string ?Term.
 let ConstrType := pr2 ?init$string ?Term.
@@ -13,12 +17,7 @@ let init$constrs$=pipe=_space__constr__constrs_ (_ : init$space) (c : Constr) (c
 
 let init$data$_string__space__telescope_where_space__constrs_
   (name : init$string) (_ : init$space) (t : Telescope) (_ : init$space) (cs : Constrs) : Error DatatypeData :=
-  mapError ?(List (TripleProduct init$string ConstrData ConstrFunctor)) ?DatatypeData (mkDatatypeData name t)
-           (traverseErrorList ?Constr ?(TripleProduct init$string ConstrData ConstrFunctor)
-                              (λ c : Constr. mapError ?ConstrFunctor ?(TripleProduct init$string ConstrData ConstrFunctor)
-                                                      (mkTripleProduct ?init$string ?ConstrData ?ConstrFunctor
-                                                                       (ConstrName c) (toConstrData (ConstrType c)))
-                                                      (constrToFunctor (toConstrData (ConstrType c)) (getMatch name t))) cs).
+    mkDatatypeData name t cs.
 
 let init$newStmt'$data_space__data_=dot= (_ : init$space) (d : Error DatatypeData) : init$newStmt :=
   catchError ?DatatypeData ?init$newStmt d (λ e : init$string. echoStmt (stringApp "Error: not a valid datatype! " e)) datatypeToLet.

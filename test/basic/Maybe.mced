@@ -4,6 +4,16 @@ let nothing := Λ A : * [<<inr A> Unit> tt].
 
 let maybe := Λ A : * Λ B : * λ default : B λ f : Π _ : A B λ x : [Maybe A]
   [[[<<<recursionSum A> Unit> B> (λ a : A [f a])] (λ _ : Unit default)] x].
+
 let mapMaybe :=
   Λ A : * Λ B : * λ f : Π _ : A B λ x : [Maybe A]
     [[[<<maybe A> [Maybe B]> [<<inr B> Unit> tt]] λ a : A [<just B> [f a]]] x].
+let liftMaybe2 :=
+  Λ X : * Λ Y : * Λ Z : * λ f : Π _ : X Π _ : Y Z λ x : [Maybe X] λ y : [Maybe Y]
+    [[[<<maybe X> [Maybe Z]> <nothing Z>] λ x' : X [[<<mapMaybe Y> Z> λ y' : Y [[f x'] y']] y]] x].
+
+let traverseMaybeList := Λ X : * Λ Y : * λ f : Π _ : X [Maybe Y]
+  [[<<recursionList X> [Maybe [List Y]]>
+    [<just [List Y]> <nil Y>]]
+    λ x : X λ xs : [List X] λ rec : [Maybe [List Y]]
+      [[[<<<liftMaybe2 Y> [List Y]> [List Y]> <cons Y>] [f x]] rec]].

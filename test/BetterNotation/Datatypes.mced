@@ -3,5 +3,7 @@ import test/BetterNotation/Datatypes/Functors.
 import test/BetterNotation/Datatypes/Church.
 import test/BetterNotation/Datatypes/Match.
 import test/BetterNotation/Datatypes/ConstrFunctor.
+import test/BetterNotation/Datatypes/NatToVar.
+import test/BetterNotation/Datatypes/Constructor.
 import test/BetterNotation/Datatypes/ConvertData.
 import test/BetterNotation/Datatypes/Parser.

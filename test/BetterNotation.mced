@@ -18,3 +18,5 @@ import test/BetterNotation/ModuleDefinitions.
 import test/BetterNotation/EvalTypes.
 import test/BetterNotation/ModuleFunction.
 import test/BetterNotation/BetterSyntax.
+
+import test/BetterNotation/Datatypes.

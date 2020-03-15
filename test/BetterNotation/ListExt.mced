@@ -25,3 +25,12 @@ b-let zip [A, B : *] (l : List A) (l' : List B) : List (Product A B) := zipWith 
 
 b-let zipWith3 [A, B, C, D : *] (f : Π _ : A. Π _ : B. Π _ : C. D) (l : List A) (l' : List B) (l'' : List C) : List D :=
   zipWith ?A ?(Product B C) ?D (λ a : A. λ bc : Product B C. f a (pr1 ?B ?C bc) (pr2 ?B ?C bc)) l (zip ?B ?C l' l'').
+
+b-let zip3 [A, B, C : *] (l : List A) (l' : List B) (l'' : List C) : List (TripleProduct A B C) :=
+  zipWith3 ?A ?B ?C ?(TripleProduct A B C) (mkTripleProduct ?A ?B ?C) l l' l''.
+
+b-let zipWith4 [A, B, C, D, E : *] (f : Π _ : A. Π _ : B. Π _ : C. Π _ : D. E)
+  (l : List A) (l' : List B) (l'' : List C) (l''' : List D) : List E :=
+  zipWith ?A ?(TripleProduct B C D) ?E
+    (λ a : A. λ bcd : TripleProduct B C D.
+      f a (pr31 ?B ?C ?D bcd) (pr32 ?B ?C ?D bcd) (pr33 ?B ?C ?D bcd)) l (zip3 ?B ?C ?D l' l'' l''').

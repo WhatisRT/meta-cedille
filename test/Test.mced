@@ -6,11 +6,11 @@ import test/BetterNotation.
 import test/LambdaCalc.
 import test/LambdaCalcExample.
 
--- import test/Maybe.
+import test/Maybe.
 import test/Nat.
 import test/NatSyntax.
 
--- import test/Datatypes.
+import test/Datatypes.
 
 Import ModuleTest ?Unit.
 Import ModuleTest ?Unit. -- currently need to do it twice, fix later

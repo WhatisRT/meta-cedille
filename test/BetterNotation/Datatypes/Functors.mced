@@ -1,6 +1,11 @@
+--------------------------------------------------------------------------------
+-- Datatypes for functors and functions for working with them
+--------------------------------------------------------------------------------
+
 let Functor (F : Π _ : *. *) := ∀ X : *. ∀ Y : *. Π _ : (Π _ : X. Y). Π _ : F X. F Y.
 
-let functorTerm := Product Term Term. -- first F, then fmap
+-- A pair of terms representing a functor. First F, then fmap
+let functorTerm := Product Term Term.
 let mkFunctorTerm := prodPair ?Term ?Term.
 let getF := pr1 ?Term ?Term.
 let getFunctor := pr2 ?Term ?Term.
@@ -8,7 +13,7 @@ let getFunctor := pr2 ?Term ?Term.
 let FunctorSumF (F1, F2 : Π _ : *. *) := λ X : *. Sum (F1 X) (F2 X).
 let FunctorSumFunctor [F1, F2 : Π _ : *. *] (fmap1 : Functor F1) (fmap2 : Functor F2) : Functor (FunctorSumF F1 F2) :=
   Λ X : *. Λ Y : *. λ f : (Π _ : X. Y). λ x : Sum (F1 X) (F2 X).
-    inductionSum ?(F1 X) ?(F2 X) ?(λ _ : Sum (F1 X) (F2 X). Sum (F1 Y) (F2 Y))
+    recursionSum ?(F1 X) ?(F2 X) ?(Sum (F1 Y) (F2 Y))
       (λ f1x : F1 X. inl ?(F1 Y) ?(F2 Y) (fmap1 ?X ?Y f f1x))
       (λ f2x : F2 X. inr ?(F1 Y) ?(F2 Y) (fmap2 ?X ?Y f f2x)) x.
 

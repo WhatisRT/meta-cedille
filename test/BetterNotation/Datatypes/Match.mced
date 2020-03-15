@@ -1,39 +1,37 @@
--- Provides functions to verify if a term is of the form n n1 ... nk for some names
+--------------------------------------------------------------------------------
+-- Provides functions to verify if a term is of the form n n1 ... nk for some
+-- names. This is used when we define a type `T A1 ... Ak` to find out where a
+-- type appears in its own definition.
+--------------------------------------------------------------------------------
 
-let liftMaybe2 [X, Y, Z : *] (f : Π _ : X. Π _ : Y. Z) (x : Maybe' X) (y : Maybe' Y) : Maybe' Z :=
-  maybe' ?X ?(Maybe' Z) (nothing' ?Z) (λ x' : X. mapMaybe' ?Y ?Z (λ y' : Y. f x' y') y) x.
-
-let traverseMaybeList [X, Y : *] (f : Π _ : X. Maybe' Y) : Π _ : List X. Maybe' (List Y) :=
-  recursionList ?X ?(Maybe' (List Y))
-    (just' ?(List Y) [Y|])
-    (λ x : X. λ xs : List X. λ rec : Maybe' (List Y). liftMaybe2 ?Y ?(List Y) ?(List Y) (cons ?Y) (f x) rec).
-
-let varToName (v : init$var) : Maybe' init$string :=
-  v ?(Maybe' init$string) (just' ?init$string) (λ _ : init$index. nothing' ?init$string).
+let varToName (v : init$var) : Maybe init$string :=
+  v ?(Maybe init$string) (just ?init$string) (λ _ : init$index. nothing ?init$string).
 
 -- if t is a name, returns that name
-let termToName (t : Term) : Maybe' init$string :=
-  t ?(Maybe' init$string)
+let termToName (t : Term) : Maybe init$string :=
+  t ?(Maybe init$string)
     varToName
-    (λ s : init$sort. nothing' ?init$string)
-    (λ b : Binder. λ n : init$string. λ _ : Maybe' init$string. λ _ : Maybe' init$string. nothing' ?init$string)
-    (λ t : Maybe' init$string. λ l : List (Product Bool (Maybe' init$string)). nothing' ?init$string)
-    (λ _ : Maybe' init$string. nothing' ?init$string).
+    (λ s : init$sort. nothing ?init$string)
+    (λ b : Binder. λ n : init$string. λ _ : Maybe init$string. λ _ : Maybe init$string. nothing ?init$string)
+    (λ t : Maybe init$string. λ l : List (Product Bool (Maybe init$string)). nothing ?init$string)
+    (λ _ : Maybe init$string. nothing ?init$string).
 
 -- if t is of the form n n1 ... nk, returns that list
-let termToNameList (t : Term) : Maybe' (List init$string) :=
-  recursionTerm ?(Maybe' (List init$string))
-    (λ v : init$var. mapMaybe' ?init$string ?(List init$string) (pureList ?init$string) (varToName v))
-    (λ s : init$sort. nothing' ?(List init$string))
-    (λ b : Binder. λ n : init$string. λ _ : Term. λ _ : Term. λ _ : Maybe' (List init$string). λ _ : Maybe' (List init$string).
-      nothing' ?(List init$string))
-    (λ _ : Term. λ l : List App. λ ns : Maybe' (List init$string). λ _ : List (Product Bool (Maybe' (List init$string))).
+let termToNameList (t : Term) : Maybe (List init$string) :=
+  recursionTerm ?(Maybe (List init$string))
+    (λ v : init$var. mapMaybe ?init$string ?(List init$string) (pureList ?init$string) (varToName v))
+    (λ s : init$sort. nothing ?(List init$string))
+    (λ b : Binder. λ n : init$string. λ _ : Term. λ _ : Term. λ _ : Maybe (List init$string). λ _ : Maybe (List init$string).
+      nothing ?(List init$string))
+    (λ _ : Term. λ l : List App. λ ns : Maybe (List init$string). λ _ : List (Product Bool (Maybe (List init$string))).
       liftMaybe2 ?(List init$string) ?(List init$string) ?(List init$string) (app ?init$string)
                  ns (traverseMaybeList ?App ?init$string (λ a : App. termToName (appTerm a)) l))
-    (λ _ : Term. λ _ : Maybe' (List init$string). nothing' ?(List init$string))
+    (λ _ : Term. λ _ : Maybe (List init$string). nothing ?(List init$string))
     t.
 
+-- returns true iff t is of the form n n1 ... nk and the list of names equals `match`
 let matchTerm (t : Term) (match : List init$string) : Bool :=
-  maybe' ?(List init$string) ?Bool false (λ ns : List init$string. listEq ?init$string stringEq match ns) (termToNameList t).
+  maybe ?(List init$string) ?Bool false (λ ns : List init$string. listEq ?init$string stringEq match ns) (termToNameList t).
 
+-- this function is used to get the data to match against from a definition
 let getMatch (n : init$string) (t : Telescope) : List init$string := cons ?init$string n (map ?Param ?init$string paramName t).

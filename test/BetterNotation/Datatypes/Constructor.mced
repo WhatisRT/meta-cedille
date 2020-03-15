@@ -1,0 +1,54 @@
+--------------------------------------------------------------------------------
+-- Parsing and datastructures for constructors
+--------------------------------------------------------------------------------
+
+-- The telescope of arguments and the rest
+let ConstrData := Product Telescope Term.
+let mkConstrData := prodPair ?Telescope ?Term.
+let noArgConstrData : Π _ : Term. ConstrData := mkConstrData telNil.
+let consArgConstrData (p : Param) (d : ConstrData) : ConstrData :=
+  mkConstrData (cons ?Param p (pr1 ?Telescope ?Term d)) (pr2 ?Telescope ?Term d).
+let ConstrDataTelescope := pr1 ?Telescope ?Term.
+let ConstrDataTerm := pr2 ?Telescope ?Term.
+
+let toConstrData (term : Term) : ConstrData :=
+  recursionTerm ?ConstrData
+    (λ v : init$var. noArgConstrData (varTerm v))
+    (λ s : init$sort. noArgConstrData (sortTerm s))
+    (λ b : Binder. λ n : init$string. λ T, t : Term. λ recT, rect : ConstrData.
+      b ?ConstrData
+        (noArgConstrData (binderTerm b n T t)) (noArgConstrData (binderTerm b n T t))
+        (consArgConstrData (mkParam false (mkPreParam n T)) rect)
+        (consArgConstrData (mkParam true (mkPreParam n T)) rect))
+    (λ t : Term. λ l : List App. λ _ : ConstrData. λ _ : List (Product Bool ConstrData). noArgConstrData (appLTerm t l))
+    (λ u : Term. λ recu : ConstrData. recu)
+    (reduceTerm term).
+
+let constrArgToFunctor (t : Term) (match : List init$string) : Error ConstrFunctor :=
+  ifthenelse ?(Error ConstrFunctor) (matchTerm t match) (pureError ?ConstrFunctor idConstrFunctor)
+    (recursionTerm ?(Error ConstrFunctor)
+      (λ v : init$var. pureError ?ConstrFunctor (constConstrFunctor t))
+      (λ s : init$sort. error ?ConstrFunctor "Cannot turn sort into functor")
+      (λ b : Binder. λ n : init$string. λ T : Term. λ _ : Term. λ _ : Error ConstrFunctor. λ rect : Error ConstrFunctor.
+        b ?(Error ConstrFunctor)
+          (error ?ConstrFunctor "Can only have pi binder in constructors")
+          (error ?ConstrFunctor "Can only have pi binder in constructors")
+          (mapError ?ConstrFunctor ?ConstrFunctor (covDHomConstrFunctor n T) rect)
+          (error ?ConstrFunctor "Can only have pi binder in constructors"))
+      (λ t : Term. λ l : List App. λ _ : Error ConstrFunctor. λ _ : List (Product Bool (Error ConstrFunctor)).
+        pureError ?ConstrFunctor (constConstrFunctor (appLTerm t l)))
+      (λ u : Term. λ _ : Error ConstrFunctor. error ?ConstrFunctor "Cannot turn unquote into functor")
+      t).
+
+let constrToFunctorData (d : ConstrData) (match : List init$string) : Error ConstrFunctorData :=
+  ifthenelse ?(Error ConstrFunctorData) (matchTerm (reduceTerm (ConstrDataTerm d)) match)
+    (traverseErrorList ?Param ?(Product init$string ConstrFunctor)
+      (λ p : Param. mapError ?ConstrFunctor ?(Product init$string ConstrFunctor)
+        (prodPair ?init$string ?ConstrFunctor (paramName p)) (constrArgToFunctor (paramType p) match))
+      (ConstrDataTelescope d))
+    (error ?ConstrFunctorData
+           (stringConcat [init$string|
+             "The final term in the constructor doesn't match! ",
+             showTerm (ConstrDataTerm d),
+             " and ",
+             showList ?init$string (λ s : init$string. s) match])).

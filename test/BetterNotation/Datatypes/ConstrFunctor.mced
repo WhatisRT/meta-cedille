@@ -1,3 +1,15 @@
+--------------------------------------------------------------------------------
+-- ConstrFunctor is the datatype holding all the information of a constructor
+--
+-- Constructors are of the form n1 : T1 -> ... -> nk : Tk -> T and the functor
+-- associated to such a constructor is
+-- T ↦ Σ (n1 : T1) ... Σ (n(k-1) : T(k-1)) -- Tk if k ≠ 0 and T ↦ Unit if k = 0.
+-- Isomorphically, we can also use:
+-- T ↦ Σ (n1 : T1) ... Σ (nk : Tk) Unit
+-- ConstrFunctorData holds the ni's and Ti's.
+--------------------------------------------------------------------------------
+
+-- Don't use this datatype directly, use ConstrFunctorData instead
 let ConstrFunctor := ∀ X : *.
   Π _ : X. -- id
   Π _ : (Π _ : Term. X). -- const
@@ -37,7 +49,7 @@ let recursionConstrFunctor [X : *]
   (idf : X)
   (constf : (Π _ : Term. X))
   (covHomf : (Π _ : init$string. Π _ : Term. Π _ : ConstrFunctor. Π _ : X. X))
-  (pairf : (Π _ : init$string. Π _ : ConstrFunctor. Π _ : ConstrFunctor. Π _ : X. Π _ : X. X))
+  (pairf : (Π _ : init$string. Π _, _ : ConstrFunctor. Π _, _ : X. X))
   (f : ConstrFunctor) : X :=
   pr1 ?X ?ConstrFunctor (f ?(Product X ConstrFunctor)
     (prodPair ?X ?ConstrFunctor idf idConstrFunctor)
@@ -46,38 +58,52 @@ let recursionConstrFunctor [X : *]
       prodPair ?X ?ConstrFunctor
         (covHomf n t (pr2 ?X ?ConstrFunctor t') (pr1 ?X ?ConstrFunctor t'))
         (covDHomConstrFunctor n t (pr2 ?X ?ConstrFunctor t')))
-    (λ s : init$string. λ t : Product X ConstrFunctor. λ t' : Product X ConstrFunctor.
+    (λ s : init$string. λ t, t' : Product X ConstrFunctor.
       prodPair ?X ?ConstrFunctor
         (pairf s (pr2 ?X ?ConstrFunctor t) (pr2 ?X ?ConstrFunctor t') (pr1 ?X ?ConstrFunctor t) (pr1 ?X ?ConstrFunctor t'))
         (pairConstrFunctor s (pr2 ?X ?ConstrFunctor t) (pr2 ?X ?ConstrFunctor t')))).
 
-let ConstrFunctorF (name : init$string) (f : ConstrFunctor) : Term :=
+let ConstrFunctorData := List (Product init$string ConstrFunctor).
+let FoldConstrFunctorData (d : ConstrFunctorData) : ConstrFunctor :=
+  foldl ?(Product init$string ConstrFunctor) ?ConstrFunctor
+    (λ f : ConstrFunctor. λ x : Product init$string ConstrFunctor.
+      pairConstrFunctor (pr1 ?init$string ?ConstrFunctor x) (pr2 ?init$string ?ConstrFunctor x) f)
+    d (constConstrFunctor θ{Unit}).
+
+let ConstrFunctorF' (name : init$string) (f : ConstrFunctor) : Term :=
   lambdaTerm name θ{*} (f ?Term
     (sVarTerm name)
     (λ t : Term. t)
-    (λ n : init$string. λ t : Term. λ recF : Term. piTerm n t recF)
-    (λ s : init$string. λ recF : Term. λ recF' : Term. θ{DSum γ{recF} γ{lambdaTerm s recF recF'}})).
+    (λ n : init$string. λ t, recF : Term. piTerm n t recF)
+    (λ s : init$string. λ recF, recF' : Term. θ{DSum γ{recF} γ{lambdaTerm s recF recF'}})).
 
-let ConstrsFunctorF' (name : init$string) : Π _ : List ConstrFunctor. Term :=
-  recursionList ?ConstrFunctor ?Term θ{constF Void}
-    (λ f : ConstrFunctor. λ fs : List ConstrFunctor. λ rec : Term. θ{FunctorSumF γ{ConstrFunctorF name f} γ{rec}}).
+let ConstrFunctorF (name : init$string) (f : ConstrFunctorData) : Term := ConstrFunctorF' name (FoldConstrFunctorData f).
 
-let ConstrFunctorFunctor (name : init$string) (outerFun : ConstrFunctor) : Term :=
-  θ{Λ DataX : *. Λ DataY : *. λ DataF : (Π _ : DataX. DataY). γ{recursionConstrFunctor ?Term
+let ConstrFunctorFunctor' (name : init$string) (f : ConstrFunctor) : Term :=
+  θ{Λ DataX, DataY : *. λ DataF : (Π _ : DataX. DataY). γ{recursionConstrFunctor ?Term
     θ{idFunctor ?DataX ?DataY DataF}
     (λ t : Term. θ{constFunctor γ{t} ?DataX ?DataY DataF})
     (λ n : init$string. λ t : Term. λ fun : ConstrFunctor. λ intFmap : Term.
-      θ{mapDHom ?γ{t} ?γ{lambdaTerm n t θ{γ{ConstrFunctorF name fun} DataX}} ?γ{lambdaTerm n t θ{γ{ConstrFunctorF name fun} DataY}}
+      θ{mapDHom ?γ{t} ?γ{lambdaTerm n t θ{γ{ConstrFunctorF' name fun} DataX}} ?γ{lambdaTerm n t θ{γ{ConstrFunctorF' name fun} DataY}}
                 γ{lambdaTerm n t intFmap}})
-    (λ s : init$string. λ fun : ConstrFunctor. λ fun' : ConstrFunctor. λ intFmap : Term. λ intFmap' : Term.
-      θ{mapDSum ?(γ{ConstrFunctorF name fun} DataX) ?(γ{ConstrFunctorF name fun} DataY)
-                ?γ{lambdaTerm s θ{γ{ConstrFunctorF name fun} DataX} θ{γ{ConstrFunctorF name fun'} DataX}}
-                ?γ{lambdaTerm s θ{γ{ConstrFunctorF name fun} DataY} θ{γ{ConstrFunctorF name fun'} DataY}}
+    (λ s : init$string. λ fun, fun' : ConstrFunctor. λ intFmap, intFmap' : Term.
+      θ{mapDSum ?(γ{ConstrFunctorF' name fun} DataX) ?(γ{ConstrFunctorF' name fun} DataY)
+                ?γ{lambdaTerm s θ{γ{ConstrFunctorF' name fun} DataX} θ{γ{ConstrFunctorF' name fun'} DataX}}
+                ?γ{lambdaTerm s θ{γ{ConstrFunctorF' name fun} DataY} θ{γ{ConstrFunctorF' name fun'} DataY}}
                 γ{intFmap}
-                γ{lambdaTerm s θ{γ{ConstrFunctorF name fun} DataX} intFmap'}}) outerFun}}.
+                γ{lambdaTerm s θ{γ{ConstrFunctorF' name fun} DataX} intFmap'}}) f}}.
 
-let ConstrsFunctorFunctor' (name : init$string) (constrs : List ConstrFunctor) : Term :=
-  recursionList ?ConstrFunctor ?Term θ{constFunctor Void}
-    (λ f : ConstrFunctor. λ fs : List ConstrFunctor. λ rec : Term.
+let ConstrFunctorFunctor (name : init$string) (f : ConstrFunctorData) : Term :=
+  ConstrFunctorFunctor' name (FoldConstrFunctorData f).
+
+-- Turn a list of constructors into a functor
+let ConstrsFunctorF' (name : init$string) (constrs : List ConstrFunctorData) : Term :=
+  recursionList ?ConstrFunctorData ?Term θ{constF Void}
+    (λ f : ConstrFunctorData. λ fs : List ConstrFunctorData. λ rec : Term. θ{FunctorSumF γ{ConstrFunctorF name f} γ{rec}})
+    constrs.
+
+let ConstrsFunctorFunctor' (name : init$string) (constrs : List ConstrFunctorData) : Term :=
+  recursionList ?ConstrFunctorData ?Term θ{constFunctor Void}
+    (λ f : ConstrFunctorData. λ fs : List ConstrFunctorData. λ rec : Term.
       θ{FunctorSumFunctor ?γ{ConstrFunctorF name f} ?γ{ConstrsFunctorF' name fs} γ{ConstrFunctorFunctor name f} γ{rec}})
     constrs.
