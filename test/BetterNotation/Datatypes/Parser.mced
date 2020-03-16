@@ -2,24 +2,40 @@
 -- Parsing datatype declarations
 --------------------------------------------------------------------------------
 
-let Constr := Product init$string Term.
-let ConstrName := pr1 ?init$string ?Term.
-let ConstrType := pr2 ?init$string ?Term.
-let mkConstr (n : init$string) (t : Term) := prodPair ?init$string ?Term n t.
+let Entries := List PreParam.
 
-let init$constr$_string__space_=colon=_space__multiTerm_
-  (name : init$string) (_, _ : init$space) (type : Term) : Constr := mkConstr name type.
+let DatatypeDecl := TripleProduct init$string Telescope Entries.
 
-let Constrs := List Constr.
+let toRecordDecl (d : DatatypeDecl) : DatatypeDecl :=
+  recursionTripleProduct ?init$string ?Telescope ?Entries ?DatatypeDecl
+    (λ name : init$string. λ t : Telescope. λ es : Entries.
+      mkTripleProduct ?init$string ?Telescope ?Entries name t
+        [PreParam| prodPair ?init$string ?Term
+          (stringApp "mk" name)
+          (applyMultiBinder piBinder es (appLTerm (sVarTerm name) (telescopeToApp t)))])
+    d.
 
-let init$constrs$ : Constrs := nil ?Constr.
-let init$constrs$=pipe=_space__constr__constrs_ (_ : init$space) (c : Constr) (cs : Constrs) := cons ?Constr c cs.
+let DatatypeDeclToStmt (d : DatatypeDecl) (m : init$string) : init$newStmt :=
+  catchError ?DatatypeData ?init$newStmt
+    (recursionTripleProduct ?init$string ?Telescope ?Entries ?(Error DatatypeData) mkDatatypeData d)
+    (λ e : init$string. echoStmt (stringApp m e))
+    datatypeToLet.
 
-let init$data$_string__space__telescope_where_space__constrs_
-  (name : init$string) (_ : init$space) (t : Telescope) (_ : init$space) (cs : Constrs) : Error DatatypeData :=
-    mkDatatypeData name t cs.
+let init$entry$_string__space_=colon=_space__multiTerm_
+  (name : init$string) (_, _ : init$space) (type : Term) : PreParam := mkPreParam name type.
 
-let init$newStmt'$data_space__data_=dot= (_ : init$space) (d : Error DatatypeData) : init$newStmt :=
-  catchError ?DatatypeData ?init$newStmt d (λ e : init$string. echoStmt (stringApp "Error: not a valid datatype! " e)) datatypeToLet.
+let init$entries$ : Entries := nil ?PreParam.
+let init$entries$=pipe=_space__entry__entries_ (_ : init$space) (e : PreParam) (es : Entries) := cons ?PreParam e es.
+
+let init$data$_string__space__telescope_where_space__entries_
+  (name : init$string) (_ : init$space) (t : Telescope) (_ : init$space) (es : Entries)
+  : DatatypeDecl :=
+    mkTripleProduct ?init$string ?Telescope ?Entries name t es.
+
+let init$newStmt'$data_space__data_=dot= (_ : init$space) (d : DatatypeDecl) : init$newStmt :=
+  DatatypeDeclToStmt d "Error: not a valid datatype! ".
+
+let init$newStmt'$record_space__data_=dot= (_ : init$space) (d : DatatypeDecl) : init$newStmt :=
+  DatatypeDeclToStmt (toRecordDecl d) "Error: not a valid record! ".
 
 o-seteval [evalNewStmt emptyEvaluatorState] init newStmt.

@@ -32,20 +32,33 @@ let DatatypeFunctor (d : DatatypeData) : Term := ConstrsFunctorFunctor' (Datatyp
 let datatypeToAlgTerms (name : init$string) (apply : List App) (constrs : List ConstrFunctorData) : List Term :=
   pr2 ?Term ?(List Term) (foldl ?(Product ConstrFunctorData (List ConstrFunctorData)) ?(Product Term (List Term))
     (λ acc : Product Term (List Term). λ arg : Product ConstrFunctorData (List ConstrFunctorData).
-      (λ lfun : ConstrFunctorData. λ rfuns : List ConstrFunctorData. λ alg : Term. λ algs : List Term.
-        prodPair ?Term ?(List Term)
-          θ{composeRight ?γ{appLTerm (sVarTerm name) apply} ?γ{ConstrFunctorF name lfun}
-                         ?γ{ConstrsFunctorF' name rfuns} γ{alg}}
-          (cons ?Term
-                θ{composeLeft ?γ{appLTerm (sVarTerm name) apply} ?γ{ConstrFunctorF name lfun}
-                              ?γ{ConstrsFunctorF' name rfuns} γ{alg}}
-                algs))
-        (pr1 ?ConstrFunctorData ?(List ConstrFunctorData) arg)
-        (pr2 ?ConstrFunctorData ?(List ConstrFunctorData) arg)
-        (pr1 ?Term ?(List Term) acc)
-        (pr2 ?Term ?(List Term) acc))
+      (λ applyCompose : Π _ : Term. Term. prodPair ?Term ?(List Term)
+          (applyCompose θ{composeRight})
+          (cons ?Term (applyCompose θ{composeLeft}) (pr2 ?Term ?(List Term) acc)))
+        (λ t : Term. θ{γ{t} ?γ{appLTerm (sVarTerm name) apply}
+                            ?γ{ConstrFunctorF name (pr1 ?ConstrFunctorData ?(List ConstrFunctorData) arg)}
+                            ?γ{ConstrsFunctorF' name (pr2 ?ConstrFunctorData ?(List ConstrFunctorData) arg)}
+                            γ{(pr1 ?Term ?(List Term) acc)}}))
     (reverse ?(Product ConstrFunctorData (List ConstrFunctorData)) (initsNonEmpty ?ConstrFunctorData constrs))
     (prodPair ?Term ?(List Term) (appLTerm (sVarTerm (stringApp name "Constrs")) apply) [Term|])).
+
+let preCurryHelper (curry : Term) (name : init$string) (tel : Telescope) (d : ConstrData) (p : Param) (ps : List Param) : Term :=
+  θ{γ{curry} ?γ{paramType p}
+             ?γ{lambdaTerm (paramName p) (paramType p)
+                θ{γ{ConstrFunctorF name
+                  (catchError ?ConstrFunctorData ?ConstrFunctorData
+                    (constrToFunctorData (mkConstrData ps (ConstrDataTerm d)) (getMatch name tel))
+                    (λ _ : init$string. [Product init$string ConstrFunctor|])
+                    -- If we can parse the whole constructor properly
+                    -- (which we can, because we have `funD`) then we
+                    -- should also be able to parse parts properly. Thus
+                    -- we should never enter this code path.
+                    (λ fun : ConstrFunctorData. fun))}
+                γ{ConstrDataTerm d}}}
+             ?γ{ConstrDataTerm d}}.
+
+let curryHelper := preCurryHelper θ{Dcurry}.
+let uncurryHelper := preCurryHelper θ{Duncurry}.
 
 -- Convert the algebra corresponding to a single constructor to a proper constructor
 let convertAlgToConstr (name : init$string) (tel : Telescope) (d : ConstrData) (funD : ConstrFunctorData) (alg : Term) : Term :=
@@ -54,22 +67,7 @@ let convertAlgToConstr (name : init$string) (tel : Telescope) (d : ConstrData) (
     (recursionList ?Param ?(List (Π _ : Term. Term))
       [Π _ : Term. Term | λ t : Term. θ{removeUnit ?γ{ConstrDataTerm d} γ{t}}]
       (λ p : Param. λ ps : List Param. λ rec : List (Π _ : Term. Term).
-        cons ?(Π _ : Term. Term)
-          (λ t : Term.
-            θ{Dcurry ?γ{paramType p}
-                     ?γ{lambdaTerm (paramName p) (paramType p)
-                        θ{γ{ConstrFunctorF name
-                          (catchError ?ConstrFunctorData ?ConstrFunctorData
-                            (constrToFunctorData (mkConstrData ps (ConstrDataTerm d)) (getMatch name tel))
-                            (λ _ : init$string. [Product init$string ConstrFunctor|])
-                            -- If we can parse the whole constructor properly
-                            -- (which we can, because we have `funD`) then we
-                            -- should also be able to parse parts properly. Thus
-                            -- we should never enter this code path.
-                            (λ fun : ConstrFunctorData. fun))}
-                        γ{ConstrDataTerm d}}}
-                     ?γ{ConstrDataTerm d} γ{t} γ{natToVar (length ?Param ps)}})
-          rec)
+        cons ?(Π _ : Term. Term) (λ t : Term. θ{γ{curryHelper name tel d p ps} γ{t} γ{natToVar (length ?Param ps)}}) rec)
       (ConstrDataTelescope d))
     alg).
 
@@ -94,7 +92,8 @@ let datatypeToConstrs (d : DatatypeData) : List LetInfo :=
     (map ?(TripleProduct init$string ConstrData ConstrFunctorData) ?ConstrFunctorData
       (pr33 ?init$string ?ConstrData ?ConstrFunctorData) (DatatypeConstrs d)).
 
--- let uncurryFoldArg (c : ConstrFunctor) (tel : Telescope) (arg : Term) :=
+-- -- Transform inputs to Π _ : F X. X
+-- let uncurryFoldArg (c : ConstrFunctorData) (tel : Telescope) (arg : Term) :=
 --   recursionList ?Param ?Term
 --     θ{γ{arg} n n-1 ... 0}
 --     (λ p : Param. λ ps : List Param. λ rec : Term.
