@@ -2,8 +2,9 @@
 -- This file provides the function datatypeToLet
 --
 -- It takes a `DatatypeData` and turns it into all the definitions for a
--- datatype, including constructors and a fold. Some aspects are still
--- incomplete.
+-- datatype, including constructors and a fold. Recursion and induction are not
+-- generated and there is no support for indices yet. Also, projections for
+-- records are currently not automatically generated.
 --------------------------------------------------------------------------------
 
 let DatatypeData := TripleProduct init$string Telescope (List (TripleProduct init$string ConstrData ConstrFunctorData)).
@@ -74,16 +75,16 @@ let datatypeToConstrs (d : DatatypeData) : List LetInfo :=
            (pr33 ?init$string ?ConstrData ?ConstrFunctorData) (DatatypeConstrs d))).
 
 -- Transform inputs to Π _ : F X. X
-let uncurryFoldArg (name : init$string) (c : ConstrFunctorData) (d : ConstrData) (arg : Term) :=
+let uncurryFoldArg (name : init$string) (c : ConstrFunctorData) (arg : Term) :=
   recursionList ?CFParam ?Term
-    θ{addUnit ?X (appLTerm γ{arg} (map ?Nat ?App (λ n : Nat. mkAppU (natToVar n)) (countToZero n)))}
+    θ{addUnit ?X γ{appLTerm arg (map ?Nat ?App (λ n : Nat. mkAppU (natToVar n)) (countToZeroExc (length ?CFParam c)))}}
     (λ p : CFParam. λ ps : List CFParam. λ rec : Term.
-      θ{γ{uncurryHelper name θ{X} p ps} γ{lambdaTerm "_" (ApplyConstrFunctor arg (cfParamFunctor p)) rec}})
+      θ{γ{uncurryHelper name θ{X} p ps} γ{lambdaTerm (cfParamName p) (ApplyConstrFunctor θ{X} (cfParamFunctor p)) rec}})
     c.
 
 let datatypeToFold (name : init$string) (constrs : List ConstrFunctorData) (apply : List App) : Term :=
   θ{λ X : *. γ{foldl ?ConstrFunctorData ?Term
-    (λ t : Term. λ c : ConstrFunctorData. lambdaTerm "_" θ{Π _ : γ{ConstrFunctorF name c} X. X} t)
+    (λ t : Term. λ c : ConstrFunctorData. lambdaTerm "_" (ApplyConstrFunctorData c θ{X}) t)
     constrs
     θ{foldC γ{appLTerm (sVarTerm (stringApp name "F")) apply} ?X
       γ{recursionList ?(Product ConstrFunctorData (List ConstrFunctorData)) ?Term
@@ -93,19 +94,23 @@ let datatypeToFold (name : init$string) (constrs : List ConstrFunctorData) (appl
         λ t : Term.
           θ{sumAlg ?X ?γ{ConstrFunctorF name (pr1 ?ConstrFunctorData ?(List ConstrFunctorData) c)}
                    ?γ{ConstrsFunctorF' name (pr2 ?ConstrFunctorData ?(List ConstrFunctorData) c)}
-                   γ{natToVar (length ?(Product ConstrFunctorData (List ConstrFunctorData)) cs)} γ{t}})
+                   γ{uncurryFoldArg name (pr1 ?ConstrFunctorData ?(List ConstrFunctorData) c)
+                                         (natToVar (add
+                                           (length ?(Product ConstrFunctorData (List ConstrFunctorData)) cs)
+                                           (length ?CFParam (pr1 ?ConstrFunctorData ?(List ConstrFunctorData) c))))}
+                   γ{t}})
         (initsNonEmpty ?ConstrFunctorData constrs)}}}}.
 
 let datatypeToLet (d : DatatypeData) : init$newStmt :=
-  (λ name : Π _ : init$string. init$string. λ apply : List App.
+  (λ name : Π _ : init$string. init$string. λ appName : Π _ : init$string. Term.
     seqNewStmts (map ?LetInfo ?init$newStmt (λ i : LetInfo. letInfoToNewStmt (appendTelToLetInfo (DatatypeTelescope d) i))
       (app ?LetInfo [LetInfo|
         mkLetInfo (name "F") (DatatypeF d) (just ?Term θ{Π _ : *. *}),
         mkLetInfo (name "Functor") (DatatypeFunctor d) (just ?Term θ{Functor γ{DatatypeF d}}),
-        mkLetInfo (name "") θ{FixC γ{appLTerm (sVarTerm (name "F")) apply}} (just ?Term θ{*}),
-        mkLetInfo (name "Constrs")
-                  θ{inC γ{appLTerm (sVarTerm (name "F")) apply} γ{appLTerm (sVarTerm (name "Functor")) apply}}
-                  (just ?Term θ{AlgC γ{appLTerm (sVarTerm (name "F")) apply} γ{appLTerm (sVarTerm (name "")) apply}}),
-        mkLetInfo (name "Fold") (datatypeToFold (DatatypeName d) (DatatypeConstrs' d) apply) (nothing ?Term)]
+        mkLetInfo (name "") θ{FixC γ{appName "F"}} (just ?Term θ{*}),
+        mkLetInfo (name "Constrs") θ{inC γ{appName "F"} γ{appName "Functor"}} (just ?Term θ{AlgC γ{appName "F"} γ{appName ""}}),
+        mkLetInfo (name "Fold")
+                  (datatypeToFold (DatatypeName d) (DatatypeConstrs' d) (telescopeToApp (DatatypeTelescope d))) (nothing ?Term)]
         (datatypeToConstrs d))))
-  (stringApp (DatatypeName d)) (telescopeToApp (DatatypeTelescope d)).
+  (stringApp (DatatypeName d))
+  (λ x : init$string. appLTerm (sVarTerm (stringApp (DatatypeName d) x)) (telescopeToApp (DatatypeTelescope d))).

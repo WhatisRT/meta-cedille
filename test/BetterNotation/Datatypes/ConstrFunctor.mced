@@ -86,6 +86,12 @@ let ConstrFunctorF' (name : init$string) (f : ConstrFunctor) : Term :=
 
 let ConstrFunctorF (name : init$string) (f : ConstrFunctorData) : Term := ConstrFunctorF' name (FoldConstrFunctorData f).
 
+let ApplyConstrFunctorData (f : ConstrFunctorData) (t : Term) : Term :=
+  recursionList ?CFParam ?Term
+    t
+    (λ p : CFParam. λ ps : List CFParam. λ rec : Term. piTerm (cfParamName p) (ApplyConstrFunctor t (cfParamFunctor p)) rec)
+    f.
+
 let ConstrFunctorFunctor' (name : init$string) (f : ConstrFunctor) : Term :=
   θ{Λ DataX, DataY : *. λ DataF : (Π _ : DataX. DataY). γ{recursionConstrFunctor ?Term
     θ{idFunctor ?DataX ?DataY DataF}

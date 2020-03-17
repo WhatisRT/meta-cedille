@@ -20,6 +20,12 @@ b-let countToZero (n : Nat) :=
     (λ m : Nat. λ rec : List Nat. cons ?Nat (suc m) rec)
     n.
 
+b-let countToZeroExc (n : Nat) :=
+  recursionNat ?(List Nat)
+    [Nat|]
+    (λ m : Nat. λ rec : List Nat. cons ?Nat m rec)
+    n.
+
 b-let zipWith [A, B, C : *] (f : Π _ : A. Π _ : B. C) (l : List A) (l' : List B) : List C :=
   recursionList ?A ?(Π _ : List B. List C)
     (λ _ : List B. [C|])
