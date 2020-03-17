@@ -63,19 +63,26 @@ let recursionConstrFunctor [X : *]
         (pairf s (pr2 ?X ?ConstrFunctor t) (pr2 ?X ?ConstrFunctor t') (pr1 ?X ?ConstrFunctor t) (pr1 ?X ?ConstrFunctor t'))
         (pairConstrFunctor s (pr2 ?X ?ConstrFunctor t) (pr2 ?X ?ConstrFunctor t')))).
 
-let ConstrFunctorData := List (Product init$string ConstrFunctor).
+let CFParam := Product init$string ConstrFunctor.
+let cfParamName := pr1 ?init$string ?ConstrFunctor.
+let cfParamFunctor := pr2 ?init$string ?ConstrFunctor.
+
+let ConstrFunctorData := List CFParam.
+
 let FoldConstrFunctorData (d : ConstrFunctorData) : ConstrFunctor :=
   foldl ?(Product init$string ConstrFunctor) ?ConstrFunctor
-    (λ f : ConstrFunctor. λ x : Product init$string ConstrFunctor.
-      pairConstrFunctor (pr1 ?init$string ?ConstrFunctor x) (pr2 ?init$string ?ConstrFunctor x) f)
+    (λ f : ConstrFunctor. λ x : Product init$string ConstrFunctor. pairConstrFunctor (cfParamName x) (cfParamFunctor x) f)
     d (constConstrFunctor θ{Unit}).
 
-let ConstrFunctorF' (name : init$string) (f : ConstrFunctor) : Term :=
-  lambdaTerm name θ{*} (f ?Term
-    (sVarTerm name)
+let ApplyConstrFunctor (term : Term) (f : ConstrFunctor) : Term :=
+  f ?Term
+    term
     (λ t : Term. t)
     (λ n : init$string. λ t, recF : Term. piTerm n t recF)
-    (λ s : init$string. λ recF, recF' : Term. θ{DSum γ{recF} γ{lambdaTerm s recF recF'}})).
+    (λ s : init$string. λ recF, recF' : Term. θ{DSum γ{recF} γ{lambdaTerm s recF recF'}}).
+
+let ConstrFunctorF' (name : init$string) (f : ConstrFunctor) : Term :=
+  lambdaTerm name θ{*} (ApplyConstrFunctor (sVarTerm name) f).
 
 let ConstrFunctorF (name : init$string) (f : ConstrFunctorData) : Term := ConstrFunctorF' name (FoldConstrFunctorData f).
 

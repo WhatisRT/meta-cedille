@@ -29,6 +29,15 @@ let mkDatatypeData (name : init$string) (t : Telescope) (cs : List (Product init
 let DatatypeF (d : DatatypeData) : Term := ConstrsFunctorF' (DatatypeName d) (DatatypeConstrs' d).
 let DatatypeFunctor (d : DatatypeData) : Term := ConstrsFunctorFunctor' (DatatypeName d) (DatatypeConstrs' d).
 
+-- Helper functions
+let preCurryHelper (curry : Term) (name : init$string) (tel : Telescope) (t : Term)
+  (p : CFParam) (ps : List CFParam) : Term :=
+  θ{γ{curry} ?γ{ApplyConstrFunctor t (cfParamFunctor p)} ?γ{lambdaTerm (cfParamName p) (ApplyConstrFunctor t (cfParamFunctor p)) θ{γ{ConstrFunctorF name ps} γ{t}}} ?γ{t}}.
+
+let curryHelper := preCurryHelper θ{Dcurry}.
+let uncurryHelper := preCurryHelper θ{Duncurry}.
+
+-- Generate algebras for constructors
 let datatypeToAlgTerms (name : init$string) (apply : List App) (constrs : List ConstrFunctorData) : List Term :=
   pr2 ?Term ?(List Term) (foldl ?(Product ConstrFunctorData (List ConstrFunctorData)) ?(Product Term (List Term))
     (λ acc : Product Term (List Term). λ arg : Product ConstrFunctorData (List ConstrFunctorData).
@@ -42,33 +51,16 @@ let datatypeToAlgTerms (name : init$string) (apply : List App) (constrs : List C
     (reverse ?(Product ConstrFunctorData (List ConstrFunctorData)) (initsNonEmpty ?ConstrFunctorData constrs))
     (prodPair ?Term ?(List Term) (appLTerm (sVarTerm (stringApp name "Constrs")) apply) [Term|])).
 
-let preCurryHelper (curry : Term) (name : init$string) (tel : Telescope) (d : ConstrData) (p : Param) (ps : List Param) : Term :=
-  θ{γ{curry} ?γ{paramType p}
-             ?γ{lambdaTerm (paramName p) (paramType p)
-                θ{γ{ConstrFunctorF name
-                  (catchError ?ConstrFunctorData ?ConstrFunctorData
-                    (constrToFunctorData (mkConstrData ps (ConstrDataTerm d)) (getMatch name tel))
-                    (λ _ : init$string. [Product init$string ConstrFunctor|])
-                    -- If we can parse the whole constructor properly
-                    -- (which we can, because we have `funD`) then we
-                    -- should also be able to parse parts properly. Thus
-                    -- we should never enter this code path.
-                    (λ fun : ConstrFunctorData. fun))}
-                γ{ConstrDataTerm d}}}
-             ?γ{ConstrDataTerm d}}.
-
-let curryHelper := preCurryHelper θ{Dcurry}.
-let uncurryHelper := preCurryHelper θ{Duncurry}.
-
 -- Convert the algebra corresponding to a single constructor to a proper constructor
-let convertAlgToConstr (name : init$string) (tel : Telescope) (d : ConstrData) (funD : ConstrFunctorData) (alg : Term) : Term :=
-  foldWithLambdas (ConstrDataTelescope d) (foldr ?(Π _ : Term. Term) ?Term
+let convertAlgToConstr (name : init$string) (tel : Telescope) (type : Term) (d : ConstrFunctorData) (alg : Term) : Term :=
+  foldWithLambdas (functorDataToTelescope d type) (foldr ?(Π _ : Term. Term) ?Term
     (λ acc : Term. λ f : Π _ : Term. Term. f acc)
-    (recursionList ?Param ?(List (Π _ : Term. Term))
-      [Π _ : Term. Term | λ t : Term. θ{removeUnit ?γ{ConstrDataTerm d} γ{t}}]
-      (λ p : Param. λ ps : List Param. λ rec : List (Π _ : Term. Term).
-        cons ?(Π _ : Term. Term) (λ t : Term. θ{γ{curryHelper name tel d p ps} γ{t} γ{natToVar (length ?Param ps)}}) rec)
-      (ConstrDataTelescope d))
+    (recursionList ?(Product init$string ConstrFunctor) ?(List (Π _ : Term. Term))
+      [Π _ : Term. Term | λ t : Term. θ{removeUnit ?γ{type} γ{t}}]
+      (λ x : Product init$string ConstrFunctor. λ xs : List (Product init$string ConstrFunctor). λ rec : List (Π _ : Term. Term).
+        cons ?(Π _ : Term. Term)
+          (λ t : Term. θ{γ{curryHelper name tel type x xs} γ{t} γ{natToVar (length ?(Product init$string ConstrFunctor) xs)}}) rec)
+      d)
     alg).
 
 let datatypeToConstrs'
@@ -76,7 +68,7 @@ let datatypeToConstrs'
   (constrs : List ConstrData) (constrDatas : List ConstrFunctorData) : List LetInfo :=
   zipWith4 ?init$string ?ConstrData ?ConstrFunctorData ?Term ?LetInfo
     (λ constrName : init$string. λ d : ConstrData. λ funD : ConstrFunctorData. λ alg : Term.
-      mkLetInfo constrName (convertAlgToConstr name t d funD alg) (nothing ?Term))
+      mkLetInfo constrName (convertAlgToConstr name t (ConstrDataTerm d) funD alg) (nothing ?Term))
     (reverse ?init$string constrNames) (reverse ?ConstrData constrs)
     (reverse ?ConstrFunctorData constrDatas)
     (datatypeToAlgTerms name apply constrDatas).

@@ -52,3 +52,12 @@ let constrToFunctorData (d : ConstrData) (match : List init$string) : Error Cons
              showTerm (ConstrDataTerm d),
              " and ",
              showList ?init$string (λ s : init$string. s) match])).
+
+let functorDataToTelescope (d : ConstrFunctorData) (t : Term) : Telescope :=
+  map ?(Product init$string ConstrFunctor) ?Param
+    (λ x : Product init$string ConstrFunctor.
+      mkParam false (mkPreParam (pr1 ?init$string ?ConstrFunctor x) (ApplyConstrFunctor t (pr2 ?init$string ?ConstrFunctor x))))
+    d.
+
+let functorDataToConstrData (d : ConstrFunctorData) (t : Term) : ConstrData :=
+  mkConstrData (functorDataToTelescope d t) t.
