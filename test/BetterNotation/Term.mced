@@ -135,6 +135,8 @@ let preParamToBinder := λ b : Binder λ t : Term λ p : PreParam
 
 let applyMultiBinder := λ b : Binder [<<foldl PreParam> Term> [preParamToBinder b]].
 
+let telescopeToApp := λ tel : Telescope [[<<map Param> App> λ p : Param [[mkApp [paramErased p]] [sVarTerm [paramName p]]]] tel].
+
 --------------------------------------------------------------------------------
 -- Parsing rules for telescopes
 --------------------------------------------------------------------------------
