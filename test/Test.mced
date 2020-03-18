@@ -9,7 +9,10 @@ import test/LambdaCalcExample.
 import test/Nat.
 import test/NatSyntax.
 
+import test/Eq.
+
 Import ModuleTest ?Unit.
 Import ModuleTest ?Unit. -- currently need to do it twice, fix later
 
+import test/Datatypes.
 import test/DatatypesTest.

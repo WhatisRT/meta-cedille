@@ -1,0 +1,3 @@
+data TestList (A : *) where
+| nilTest : TestList A
+| consTest : Π _ : A. Π _ : TestList A. TestList A.

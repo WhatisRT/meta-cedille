@@ -1,0 +1,2 @@
+data TestUnit where
+| ttTest : TestUnit.

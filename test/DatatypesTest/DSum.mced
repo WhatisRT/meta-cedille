@@ -1,0 +1,2 @@
+data TestDSum (A : *) (B : Π _ : A. *) where
+| pairTest : Π a : A. Π _ : B a. TestDSum A B.

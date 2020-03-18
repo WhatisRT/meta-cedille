@@ -1,0 +1,13 @@
+data TestNat where
+| zeroTest : TestNat
+| succTest : Π _ : TestNat. TestNat.
+
+let TestNatRec (X : *) (recZero : X) (recSucc : Π _ : X. Π _ : TestNat. X) (n : TestNat) : X :=
+  pr1 ?X ?TestNat (TestNatFold (Product X TestNat)
+    (prodPair ?X ?TestNat recZero zeroTest)
+    (λ x : Product X TestNat. prodPair ?X ?TestNat (recSucc (pr1 ?X ?TestNat x) (pr2 ?X ?TestNat x)) (succTest (pr2 ?X ?TestNat x)))
+    n).
+
+let plus (n, m : TestNat) : TestNat := TestNatRec TestNat m (λ _, rec : TestNat. succTest rec) n.
+
+let zeroPlus (n : TestNat) : Eq TestNat (plus zeroTest n) n := refl TestNat n.

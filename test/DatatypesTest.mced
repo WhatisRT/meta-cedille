@@ -1,3 +1,8 @@
-import test/BetterNotation/Datatypes.
-import test/Maybe.
-import test/Datatypes.
+import test/DatatypesTest/Unit.
+import test/DatatypesTest/DSum.
+
+import test/DatatypesTest/Maybe.
+import test/DatatypesTest/List.
+import test/DatatypesTest/Nat.
+
+import test/DatatypesTest/Category.

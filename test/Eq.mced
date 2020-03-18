@@ -1,0 +1,5 @@
+let Eq (A : *) (a, a' : A) : * := Π P : Π _ : A. *. Π _ : P a. P a'.
+
+let refl (A : *) (a : A) : Eq A a a := λ P : Π _ : A. *. λ h : P a. h.
+let sym (A : *) (a, a' : A) (eq : Eq A a a') : Eq A a' a := λ P : Π _ : A. *. eq (λ x : A. Π _ : P x. P a) (λ h : P a. h).
+let trans (A : *) (a, a', a'' : A) (eq : Eq A a a') (eq' : Eq A a' a'') : Eq A a a'' := λ P : Π _ : A. *. λ h : P a. eq' P (eq P h).
