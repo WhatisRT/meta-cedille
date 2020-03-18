@@ -1,13 +1,23 @@
-data TestNat where
-| zeroTest : TestNat
-| succTest : Π _ : TestNat. TestNat.
+module Nat.
 
-let TestNatRec (X : *) (recZero : X) (recSucc : Π _ : X. Π _ : TestNat. X) (n : TestNat) : X :=
-  pr1 ?X ?TestNat (TestNatFold (Product X TestNat)
-    (prodPair ?X ?TestNat recZero zeroTest)
-    (λ x : Product X TestNat. prodPair ?X ?TestNat (recSucc (pr1 ?X ?TestNat x) (pr2 ?X ?TestNat x)) (succTest (pr2 ?X ?TestNat x)))
+-- Temporary workaround to make all the names that `data` needs available
+import test/Datatypes/ModuleCompatibility.
+
+Given Eq.
+Given refl.
+
+data Nat where
+| zero : Nat
+| succ : Π _ : Nat. Nat.
+
+let NatRec (X : *) (recZero : X) (recSucc : Π _ : X. Π _ : Nat. X) (n : Nat) : X :=
+  pr1 ?X ?Nat (NatFold (Product X Nat)
+    (prodPair ?X ?Nat recZero zero)
+    (λ x : Product X Nat. prodPair ?X ?Nat (recSucc (pr1 ?X ?Nat x) (pr2 ?X ?Nat x)) (succ (pr2 ?X ?Nat x)))
     n).
 
-let plus (n, m : TestNat) : TestNat := TestNatRec TestNat m (λ _, rec : TestNat. succTest rec) n.
+let plus (n, m : Nat) : Nat := NatRec Nat m (λ _, rec : Nat. succ rec) n.
 
-let zeroPlus (n : TestNat) : Eq TestNat (plus zeroTest n) n := refl TestNat n.
+let zeroPlus (n : Nat) : Eq Nat (plus zero n) n := refl Nat n.
+
+EndModule.

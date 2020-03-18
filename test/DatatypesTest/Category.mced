@@ -1,3 +1,10 @@
+module Category.
+
+-- Temporary workaround to make all the names that `data` needs available
+import test/Datatypes/ModuleCompatibility.
+
+import test/Eq.
+
 record Category (obj : *) (hom : Π _, _ : obj. *) where
 | identity      : Π a : obj. hom a a
 | composition   : Π a, b, c : obj. Π _ : hom b c. Π _ : hom a b. hom a c
@@ -31,3 +38,5 @@ record Iso (obj : *) (hom : Π _, _ : obj. *) (C : Category obj hom) (a, b : obj
 | inv : hom b a
 | lInv : Eq (hom a a) (composition obj hom C a b a inv f) (identity obj hom C a)
 | rInv : Eq (hom b b) (composition obj hom C b a b f inv) (identity obj hom C b).
+
+EndModule.

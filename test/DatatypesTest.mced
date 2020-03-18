@@ -1,8 +1,9 @@
 import test/DatatypesTest/Unit.
 import test/DatatypesTest/DSum.
 
-import test/DatatypesTest/Maybe.
+-- The following use the module system
 import test/DatatypesTest/List.
+import test/DatatypesTest/Maybe.
 import test/DatatypesTest/Nat.
 
 import test/DatatypesTest/Category.

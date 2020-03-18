@@ -1,3 +1,14 @@
-data TestList (A : *) where
-| nilTest : TestList A
-| consTest : Π _ : A. Π _ : TestList A. TestList A.
+module List.
+
+-- Temporary workaround to make all the names that `data` needs available
+import test/Datatypes/ModuleCompatibility.
+
+data List (A : *) where
+| nil' : List A
+| cons' : Π _ : A. Π _ : List A. List A.
+
+-- List notation needs these types for the constructors
+let nil [A : *] := nil' A.
+let cons [A : *] := cons' A.
+
+EndModule.

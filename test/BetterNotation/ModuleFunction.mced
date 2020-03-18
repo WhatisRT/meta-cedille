@@ -46,6 +46,9 @@ b-let nameToModuleName (m : Module) (n : init$string) : init$string := stringApp
 b-let nameToMaybeModuleName (x : Maybe Module) (n : init$string) : init$string :=
   maybe ?Module ?init$string n (λ m : Module. nameToModuleName m n) x.
 
+b-let importExternalLetInfo (name : init$string) (m : Module) : LetInfo :=
+  mkLetInfo (nameToModuleName m name) (sVarTerm name) (nothing ?Term).
+
 b-let modifyLetInfo (i : LetInfo) (m : Module) : LetInfo :=
   (λ prefix : init$string.
     mkLetInfo
@@ -65,6 +68,13 @@ b-let letInMaybeModule (i : LetInfo) (x : Maybe Module) : init$newStmt :=
     (stmtToNewStmt (convertLetInfo i))
     (letInModule i)
     x.
+
+b-let importExternalStmt (name : init$string) : init$newStmt :=
+  bindEvalState ?EvaluatorState ?metaResult getEvalState (λ s : EvaluatorState.
+    maybe ?Module ?init$newStmt
+      (echoStmt "External imports are only possible in modules!")
+      (λ m : Module. stmtToNewStmt (convertLetInfo (importExternalLetInfo name m)))
+      (ModuleStateModule (getModuleState s))).
 
 b-let letInfoToNewStmtMod (i : LetInfo) : init$newStmt :=
   bindEvalState ?EvaluatorState ?metaResult getEvalState (λ s : EvaluatorState.
@@ -114,9 +124,11 @@ b-let importModuleOrStmt (n : ModuleName) (l : List App) (stmt : init$newStmt) :
   bindEvalState ?(Maybe Module) ?metaResult (findModule n)
     (maybe ?Module ?init$newStmt stmt (λ m : Module. importModule m l)).
 
-b-let loadAndImportModule (n : ModuleName) (l : List App) (prefix : init$string) : init$newStmt :=
-  importModuleOrStmt n l
-    (seqNewStmt (importFile (stringApp prefix (moduleNameToPath n))) (importModuleOrStmt n l (echoStmt "Could not find module!"))).
+b-let loadModule (n : ModuleName) (prefix : init$string) : init$newStmt :=
+  importFile (stringApp prefix (moduleNameToPath n)).
+
+b-let importModule' (n : ModuleName) (l : List App) : init$newStmt :=
+  importModuleOrStmt n l (echoStmt "Could not find module!").
 
 b-let init$moduleName'$=slash=_string__moduleName'_ (s : init$string) (n : ModuleName) := cons ?init$string s n.
 b-let init$moduleName'$ := nil ?init$string.
@@ -129,5 +141,8 @@ b-let init$newStmt'$module_space__string__telescope'_=dot=
   (_ : init$space) (n : init$string) (t : Telescope) : init$newStmt :=
   initModule [init$string|n] zero t.
 b-let init$newStmt'$EndModule=dot= : init$newStmt := endModule.
+b-let init$newStmt'$LoadModule_space__moduleName_=dot= (_ : init$space) (n : ModuleName) : init$newStmt := loadModule n "test/".
 b-let init$newStmt'$Import_space__moduleName__maybeApplist_=dot= (_ : init$space) (n : ModuleName) (l : List App) : init$newStmt :=
-  loadAndImportModule n l "test/".
+  importModule' n l.
+b-let init$newStmt'$Given_space__string_=dot= (_ : init$space) (name : init$string) : init$newStmt :=
+  importExternalStmt name.

@@ -1,8 +1,17 @@
-data Maybe' (A : *) where
-| nothing' : Maybe' A
-| just'    : Π _ : A. Maybe' A.
+module Maybe.
 
-let maybe' [A : *] [B : *] (default : B) (f : Π _ : A. B) (x : Maybe' A) : B := Maybe'Fold A B default f x.
+-- Temporary workaround to make all the names that `data` needs available
+import test/Datatypes/ModuleCompatibility.
 
-let maybeToList [A : *] (x : Maybe' A) : List A :=
-  maybe' ?A ?(List A) [A|] (λ a : A. [A|a]) x.
+Import List.
+
+data Maybe (A : *) where
+| nothing : Maybe A
+| just    : Π _ : A. Maybe A.
+
+let maybe [A : *] [B : *] (default : B) (f : Π _ : A. B) (x : Maybe A) : B := MaybeFold A B default f x.
+
+let maybeToList [A : *] (x : Maybe A) : List A :=
+  maybe ?A ?(List A) [A|] (λ a : A. [A|a]) x.
+
+EndModule.

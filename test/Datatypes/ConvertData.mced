@@ -103,7 +103,7 @@ let datatypeToFold (name : init$string) (constrs : List ConstrFunctorData) (appl
 
 let datatypeToLet (d : DatatypeData) : init$newStmt :=
   (λ name : Π _ : init$string. init$string. λ appName : Π _ : init$string. Term.
-    seqNewStmts (map ?LetInfo ?init$newStmt (λ i : LetInfo. letInfoToNewStmt (appendTelToLetInfo (DatatypeTelescope d) i))
+    seqNewStmts (map ?LetInfo ?init$newStmt (λ i : LetInfo. letInfoToNewStmtMod (appendTelToLetInfo (DatatypeTelescope d) i))
       (app ?LetInfo [LetInfo|
         mkLetInfo (name "F") (DatatypeF d) (just ?Term θ{Π _ : *. *}),
         mkLetInfo (name "Functor") (DatatypeFunctor d) (just ?Term θ{Functor γ{DatatypeF d}}),
