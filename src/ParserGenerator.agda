@@ -107,8 +107,8 @@ showMultiChar : MultiChar -> String
 showMultiChar = show
 
 multiCharFromString : List⁺ Char -> MultiChar'
-multiCharFromString (head List⁺.∷ []) = [ inj₁ head ]
-multiCharFromString (head List⁺.∷ x ∷ tail) = []
+multiCharFromString (head Data.List.NonEmpty.∷ []) = [ inj₁ head ]
+multiCharFromString (head Data.List.NonEmpty.∷ x ∷ tail) = []
 
 multiChar'FromList : List (List Char) -> MultiChar'
 multiChar'FromList [] = []
@@ -176,7 +176,7 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
   bracketHelper m (inj₁ x ∷ s) = do
     (res , rest) <- bracketHelper m s
     case Data.List.NonEmpty.uncons res of λ
-      { (head , tail) → return ((x ∷ head) List⁺.∷ tail , rest) }
+      { (head , tail) → return ((x ∷ head) Data.List.NonEmpty.∷ tail , rest) }
   bracketHelper m (inj₂ x ∷ s) =
     if x ≣ m
       then return (Data.List.NonEmpty.[ [] ] , s)
@@ -185,7 +185,7 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
           then if x ≣ WildcardSeparator
             then (do
               (res , rest) <- bracketHelper m s
-              return ([] List⁺.∷ Data.List.NonEmpty.toList res , rest))
+              return ([] Data.List.NonEmpty.∷ Data.List.NonEmpty.toList res , rest))
             else throwError "Unexpected marker in a wildcard"
           else throwError "This function must be applied with a wildcard bracket"
 
@@ -248,7 +248,7 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       markedStringToRule (inj₂ NonTerminalBracket ∷ s) = do
         (nonTerm' , rest) <- bracketHelper NonTerminalBracket s
         case nonTerm' of λ
-          { (nonTerm List⁺.∷ tail) → do
+          { (nonTerm Data.List.NonEmpty.∷ tail) → do
             res <- markedStringToRule rest
             nonTerm' <- maybeToError
               (findIndex (checkRuleNameDec nonTerm) rules)

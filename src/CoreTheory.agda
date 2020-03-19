@@ -9,7 +9,6 @@ module CoreTheory where
 
 import Agda.Builtin.Nat using (_+_; _-_; _==_)
 import Data.Product
-import Data.Word.Unsafe
 open import Class.Map
 open import Class.Monad.Except
 open import Class.Monad.Profiler
@@ -17,10 +16,10 @@ open import Data.Integer using (ℤ; +_; -[1+_])
 open import Data.List using (length)
 open import Data.Maybe using () renaming (map to mapMaybe)
 open import Data.SimpleMap
-open import Data.Word
+open import Data.Word using (Word64; toℕ; fromℕ)
+open import Data.Word64.Exts
 open import Monads.Except
 open import Relation.Nullary
-open import Data.Word64.Exts
 
 open import Prelude
 
@@ -76,7 +75,7 @@ instance
 
 instance
   𝕀-Eq : Eq 𝕀
-  𝕀-Eq = record { _≟_ = Data.Word.Unsafe._≟_ }
+  𝕀-Eq = record { _≟_ = Data.Word._≟_ }
 
   𝕀-EqB : EqB 𝕀
   𝕀-EqB = record { _≣_ = λ x y -> toℕ x Agda.Builtin.Nat.== toℕ y }
