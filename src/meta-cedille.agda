@@ -138,7 +138,7 @@ initGrammar = from-inj₂ (preCoreGrammar {ExceptT Id String}
   {{ExceptT-Monad {{Id-Monad}}}} {{ExceptT-MonadExcept {{Id-Monad}}}})
 
 emptyMetaContext : MetaContext
-emptyMetaContext = [] , (initGrammar , "" , (Sort-A □))
+emptyMetaContext = emptyGlobalContext , (initGrammar , "" , (Sort-A □))
 
 loadFiles : MetaContext -> List String -> IO (MetaContext × Bool)
 loadFiles context files =

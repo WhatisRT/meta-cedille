@@ -181,7 +181,7 @@ toTerm = helper []
                     n' <- toName n
                     case findIndexList (n' ≟_) accu of (λ
                       { (just x) → return $ Var-A $ Bound $ fromℕ x
-                      ; nothing → return $ Var-A $ Free (fromList n') })) ∷
+                      ; nothing → return $ Var-A $ Free n' })) ∷
                   ((from-just $ ruleId "var" "_index_") , do
                     n' <- toIndex n
                     return $ Var-A $ Bound $ fromℕ n') ∷ []
@@ -382,9 +382,9 @@ instance
   Stmt-Show = record { show = helper }
     where
       helper : Stmt -> String
-      helper (Let x x₁ (just x₂)) = "let " + show x + " := " + show x₁ + " : " + show x₂
-      helper (Let x x₁ nothing) = "let " + show x + " := " + show x₁
-      helper (Ass x x₁) = "ass " + show x + " : " + show x₁
+      helper (Let x x₁ (just x₂)) = "let " + show {{CharList-Show}} x + " := " + show x₁ + " : " + show x₂
+      helper (Let x x₁ nothing) = "let " + show {{CharList-Show}} x + " := " + show x₁
+      helper (Ass x x₁) = "ass " + show {{CharList-Show}} x + " : " + show x₁
       helper (Normalize x) = "normalize " + show x
       helper (HeadNormalize x) = "normalize " + show x
       helper (EraseSt x) = "erase " + show x
@@ -404,7 +404,7 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
             { (_ ∷ y ∷ _ ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) → do
               n <- toName y
               t <- toTerm y'
-              return (Let (Global (fromList n)) t (toLetTail y''))
+              return (Let n t (toLetTail y''))
             ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "stmt'"
@@ -413,7 +413,7 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
             { (_ ∷ y ∷ _ ∷ _ ∷ y₁ ∷ _ ∷ []) -> do
               n <- toName y
               t <- toTerm y₁
-              return (Ass (Global (fromList n)) t)
+              return (Ass n t)
             ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "stmt'" "normalize_space__term__space'_.") ,

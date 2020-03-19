@@ -31,7 +31,7 @@ private
   simpleMapSnd f ((fst , snd) ∷ m) = (fst , f snd) ∷ (simpleMapSnd f m)
 
 instance
-  MapClass-Simple : MapClass SimpleMap
+  MapClass-Simple : {K : Set} {{_ : EqB K}} -> MapClass K (SimpleMap K)
   MapClass-Simple = record
     { insert = simpleInsert
     ; remove = simpleRemove

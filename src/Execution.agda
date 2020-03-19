@@ -15,6 +15,7 @@ open import Class.Monad.Profiler
 open import Class.Monad.State
 open import Class.Traversable
 open import Data.List using (map; length)
+open import Data.NDTrie
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
 open import Data.String.Exts
@@ -85,7 +86,7 @@ module StateHelpers {M : Set -> Set} {{_ : Monad M}}
     Γ <- getContext
     case insertInGlobalContext n d (contextToGlobal Γ) of λ
       { (inj₁ x) → throwError x
-      ; (inj₂ y) → setContext y >> return ("Defined " + show n + show d) }
+      ; (inj₂ y) → setContext y >> return ("Defined " + show {{CharList-Show}} n + show d) }
 
 open StateHelpers
 
@@ -95,9 +96,7 @@ checkInit (x ∷ l) [] = false
 checkInit (x ∷ l) (x₁ ∷ l') = x ≣ x₁ ∧ checkInit l l'
 
 getParserNamespace : GlobalContext -> List Char -> List (List Char)
-getParserNamespace Γ n = map (drop $ suc $ length n) $
-  boolFilter (λ c -> checkInit n c) $
-    map (toList ∘ (λ { (Global n) -> n }) ∘ proj₁) Γ
+getParserNamespace Γ n = map (drop 1) $ trieKeys $ lookupNDTrie n Γ
 
 ruleToConstr : List Char -> List Char
 ruleToConstr = concat ∘ helper ∘ groupEscaped
@@ -121,7 +120,7 @@ parseResultToConstrTree namespace (Node x x₁) =
   foldl (λ t t' -> App-A t t') (ruleToTerm x) (map (parseResultToConstrTree namespace) x₁)
     where
       ruleToTerm : List Char ⊎ Char -> AnnTerm
-      ruleToTerm (inj₁ x) = Var-A (Free (fromList (namespace ++ "$" ++ ruleToConstr x)))
+      ruleToTerm (inj₁ x) = Var-A (Free (namespace ++ "$" ++ ruleToConstr x))
       ruleToTerm (inj₂ y) = charToTerm y
 
 module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
@@ -203,7 +202,7 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
         T <- synthType Γ' t
         case (hnfNorm Γ' T) of λ
           { (Π u u₁) -> do
-            appendIfError (checkβη Γ' u (Var-A (Free (n + "$" + start))))
+            appendIfError (checkβη Γ' u (Var-A (Free' (n + "$" + start))))
               "The evaluator needs to accept the parse result as input"
             case (hnfNorm Γ' u₁) of λ
               { (M-A _) -> do

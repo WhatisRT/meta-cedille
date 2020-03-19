@@ -15,11 +15,12 @@ open import Class.Monad.Profiler
 open import Data.Integer using (ℤ; +_; -[1+_])
 open import Data.List using (length)
 open import Data.Maybe using () renaming (map to mapMaybe)
-open import Data.SimpleMap
+open import Data.String using (toList; fromList)
 open import Data.Word using (Word64; toℕ; fromℕ)
 open import Data.Word64.Exts
 open import Monads.Except
 open import Relation.Nullary
+open import Data.NDTrie
 
 open import Prelude
 
@@ -46,29 +47,12 @@ instance
 
   Sort-EqB = Eq→EqB {{Sort-Eq}}
 
-data GlobalName : Set where
-  Global : String -> GlobalName
+GlobalName : Set
+GlobalName = List Char
 
 instance
-  GlobalName-Eq : Eq GlobalName
-  GlobalName-Eq = record { _≟_ = helper }
-    where
-      helper : (n n' : GlobalName) -> Dec (n ≡ n')
-      helper (Global x) (Global x₁) with x ≟ x₁
-      ... | yes p rewrite p = yes refl
-      ... | no ¬p = no λ { refl -> ¬p refl }
-
-  GlobalName-EqB : EqB GlobalName
-  GlobalName-EqB = record { _≣_ = helper }
-    where
-      helper : (n n' : GlobalName) -> Bool
-      helper (Global x) (Global x₁) = x ≣ x₁
-
   GlobalName-Show : Show GlobalName
-  GlobalName-Show = record { show = helper }
-    where
-      helper : GlobalName -> String
-      helper (Global x) = x
+  GlobalName-Show = CharList-Show
 
 𝕀 : Set
 𝕀 = Word64
@@ -100,7 +84,10 @@ pred𝕀 = _-𝕀 (fromℕ 1)
 
 data Name : Set where
   Bound : 𝕀 -> Name
-  Free : String -> Name
+  Free : GlobalName -> Name
+
+Free' : String -> Name
+Free' x = Free $ Data.String.toList x
 
 instance
   Name-Eq : Eq Name
@@ -130,7 +117,7 @@ instance
     where
       helper : Name -> String
       helper (Bound x) = show x
-      helper (Free x) = x
+      helper (Free x) = show {{CharList-Show}} x
 
 data PrimMeta : Set where
   EvalStmt : PrimMeta
@@ -439,7 +426,10 @@ checkFree = helper 0
     helper k n (Ev-P CheckTerm (t , t₁)) = helper k n t ∧ helper k n t₁
 
 GlobalContext : Set
-GlobalContext = SimpleMap GlobalName EfficientDef -- TODO: go for something more efficient later
+GlobalContext = NDTrie EfficientDef
+
+emptyGlobalContext : GlobalContext
+emptyGlobalContext = emptyMap
 
 Context : Set
 Context = GlobalContext × List AnnTerm
@@ -468,7 +458,7 @@ localContextLength (fst , snd) = length snd
 efficientLookupInContext : Name -> Context -> Maybe EfficientDef
 efficientLookupInContext (Bound x) (fst , snd) =
   Data.Maybe.map (λ y → EfficientAxiom (incrementIndicesBy (suc𝕀 x) y)) (lookupMaybe (toℕ x) snd)
-efficientLookupInContext (Free x) (fst , snd) = lookup (Global x) fst
+efficientLookupInContext (Free x) (fst , snd) = lookup x fst
 
 lookupInContext : Name -> Context -> Maybe Def
 lookupInContext n Γ = mmap toDef $ efficientLookupInContext n Γ
@@ -657,7 +647,7 @@ normalizePure Γ (Ev-P m args) = Ev-P m (mapPrimMetaArgs (normalizePure Γ) args
 insertInGlobalContext : GlobalName -> Def -> GlobalContext -> String ⊎ GlobalContext
 insertInGlobalContext n d Γ =
   if is-just $ lookup n Γ
-    then inj₁ ("The name " + show n + " is already defined!")
+    then inj₁ ("The name " + show {{CharList-Show}} n + " is already defined!")
     else (inj₂ $ insert n (toEfficientDef d Γ) Γ)
   where
     toEfficientDef : Def -> GlobalContext -> EfficientDef
@@ -947,20 +937,20 @@ synthType' Γ (ε t) = do
 synthType' Γ (Ev-A EvalStmt t) = do
   T <- synthType Γ t
   appendIfError
-    (checkβη Γ T (Var-A $ Free "init$stmt"))
+    (checkβη Γ T (Var-A $ Free' "init$stmt"))
     "The term supplied to EvalStmt needs to be of type 'init$stmt'"
-  return $ M-A (Var-A $ Free "init$metaResult")
+  return $ M-A (Var-A $ Free' "init$metaResult")
 
 synthType' Γ (Ev-A ShellCmd (t , t₁)) = do
   T <- synthType Γ t
   T₁ <- synthType Γ t₁
   appendIfError
-    (checkβη Γ T (Var-A $ Free "init$string"))
+    (checkβη Γ T (Var-A $ Free' "init$string"))
     "The first term supplied to ShellCmd needs to be of type 'init$string'"
   appendIfError
-    (checkβη Γ T₁ (Var-A $ Free "init$stringList"))
+    (checkβη Γ T₁ (Var-A $ Free' "init$stringList"))
     "The second term supplied to ShellCmd needs to be of type 'init$stringList'"
-  return $ M-A (Var-A $ Free "init$string")
+  return $ M-A (Var-A $ Free' "init$string")
 
 synthType' Γ (Ev-A CheckTerm (t , t₁)) = do
   T <- synthType Γ t
@@ -969,7 +959,7 @@ synthType' Γ (Ev-A CheckTerm (t , t₁)) = do
     (checkβη Γ T (Sort-A ⋆))
     "The first term supplied to CheckTerm needs to be of type *"
   appendIfError
-    (checkβη Γ T₁ (Var-A $ Free "init$term"))
+    (checkβη Γ T₁ (Var-A $ Free' "init$term"))
     "The second term supplied to CheckTerm needs to be of type 'init$term"
   return $ M-A t
 
@@ -978,7 +968,7 @@ synthType' Γ (Ev-A CatchErr (t , t₁)) = do
   T₁ <- synthType Γ t₁
   case (hnfNorm Γ T) of λ
     { (M-A u) -> do
-      appendIfError (checkβη Γ T₁ (Π (Var-A $ Free "init$err") (incrementIndicesBy (fromℕ 1) $ M-A u)))
+      appendIfError (checkβη Γ T₁ (Π (Var-A $ Free' "init$err") (incrementIndicesBy (fromℕ 1) $ M-A u)))
         ("The second term supplied to CatchErr has type " + show T₁ +
          ", while it should have type 'init$err -> M " + show u)
       return $ M-A u

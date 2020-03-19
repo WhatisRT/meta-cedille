@@ -4,17 +4,17 @@ open import Class.Equality
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.List using (List; []; _∷_; [_])
 
-record MapClass (M : Set -> Set -> Set) : Set₁ where
+record MapClass (K : Set) {{_ : EqB K}} (M : Set -> Set) : Set₁ where
   field
-    insert : ∀ {A B} {{_ : EqB A}} -> A -> B -> M A B -> M A B
-    remove : ∀ {A B} {{_ : EqB A}} -> A -> M A B -> M A B
-    lookup : ∀ {A B} {{_ : EqB A}} -> A -> M A B -> Maybe B
-    mapSnd : ∀ {A B C} -> (B -> C) -> M A B -> M A C
-    emptyMap : ∀ {A B} -> M A B
+    insert : ∀ {V} -> K -> V -> M V -> M V
+    remove : ∀ {V} -> K -> M V -> M V
+    lookup : ∀ {V} -> K -> M V -> Maybe V
+    mapSnd : ∀ {V C} -> (V -> C) -> M V -> M C
+    emptyMap : ∀ {V} -> M V
 
 open MapClass {{...}} public
 
-mapFromList : ∀ {A B} {M} {{_ : MapClass M}} {{_ : EqB B}} -> (A -> B) -> List A -> M B (List A)
+mapFromList : ∀ {K V M} {{_ : EqB K}} {{_ : MapClass K M}} -> (V -> K) -> List V -> M (List V)
 mapFromList f [] = emptyMap
 mapFromList f (x ∷ l) with mapFromList f l
 ... | m with lookup (f x) m
