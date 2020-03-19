@@ -9,7 +9,7 @@
 
 let paramToLambda := λ t : Term λ p : Param
   [[[[[
-    [<ifthenelse Π _ : init$string Π _ : Term Π _ : Term Term> [paramErased p]]
+    [<ifthenelse Π _ : String Π _ : Term Π _ : Term Term> [paramErased p]]
       LambdaTerm]
       lambdaTerm]
     [paramName p]] [paramType p]] t]
@@ -19,7 +19,7 @@ let foldWithLambdas := [<<foldl Param> Term> paramToLambda] : Π _ : Telescope �
 
 let paramToPi := λ t : Term λ p : Param
   [[[[[
-    [<ifthenelse Π _ : init$string Π _ : Term Π _ : Term Term> [paramErased p]]
+    [<ifthenelse Π _ : String Π _ : Term Π _ : Term Term> [paramErased p]]
       forallTerm]
       piTerm]
     [paramName p]] [paramType p]] t]
@@ -29,12 +29,12 @@ let foldWithPi := [<<foldl Param> Term> paramToPi] : Π _ : Telescope Π _ : Ter
 
 -- LetInfo contains all the data associated to a `let`
 
-let LetInfo := [[[TripleProduct init$string] Term] [Maybe Term]].
-let mkLetInfo := <<<mkTripleProduct init$string> Term> [Maybe Term]>
-  : Π _ : init$string Π _ : Term Π _ : [Maybe Term] LetInfo.
-let letInfoName := λ i : LetInfo [<<<pr31 init$string> Term> [Maybe Term]> i].
-let letInfoTerm := λ i : LetInfo [<<<pr32 init$string> Term> [Maybe Term]> i].
-let letInfoType := λ i : LetInfo [<<<pr33 init$string> Term> [Maybe Term]> i].
+let LetInfo := [[[TripleProduct String] Term] [Maybe Term]].
+let mkLetInfo := <<<mkTripleProduct String> Term> [Maybe Term]>
+  : Π _ : String Π _ : Term Π _ : [Maybe Term] LetInfo.
+let letInfoName := λ i : LetInfo [<<<pr31 String> Term> [Maybe Term]> i].
+let letInfoTerm := λ i : LetInfo [<<<pr32 String> Term> [Maybe Term]> i].
+let letInfoType := λ i : LetInfo [<<<pr33 String> Term> [Maybe Term]> i].
 let letInfoHasAnn := λ i : LetInfo [[[<<maybe Term> Bool> false] λ _ : Term true] [letInfoType i]].
 
 let appendTelToLetInfo := λ tel : Telescope λ i : LetInfo
@@ -58,7 +58,7 @@ let init$betterLetType$ := [<<inr Term> Unit> tt].
 let init$betterLetType$_space__multiTerm_=colon= := λ _ : init$space λ t : Term [<<inl Term> Unit> t].
 
 let init$betterLet$_string__space__telescope_=colon=_betterLetType_=equal=_space'__multiTerm_=dot= :=
-  λ n : init$string λ _ : init$space λ tel : Telescope λ maybeType : [Maybe Term] λ _ : init$space' λ term : Term
+  λ n : String λ _ : init$space λ tel : Telescope λ maybeType : [Maybe Term] λ _ : init$space' λ term : Term
     [[appendTelToLetInfo tel] [[[mkLetInfo n] term] maybeType]].
 
 let init$stmt'$b=minus=let_space__betterLet_ := λ _ : init$space convertLetInfo.

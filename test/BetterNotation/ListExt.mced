@@ -2,8 +2,8 @@
 -- List functions that are more pleasantly written now
 --------------------------------------------------------------------------------
 
-b-let showList [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string :=
-  stringApp "[" (stringApp (stringConcat (intersperse ?init$string ", " (map ?X ?init$string showX l))) "]").
+b-let showList [X : *] (showX : Π _ : X. String) (l : List X) : String :=
+  stringApp "[" (stringApp (stringConcat (intersperse ?String ", " (map ?X ?String showX l))) "]").
 
 b-let initsNonEmpty [A : *] (l : List A) : List (Product A (List A)) :=
   recursionList ?A ?(List (Product A (List A)))

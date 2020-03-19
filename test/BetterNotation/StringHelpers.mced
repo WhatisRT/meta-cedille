@@ -2,21 +2,21 @@
 -- Helper functions for strings
 --------------------------------------------------------------------------------
 
-b-let stringToList (s : init$string) : List init$char :=
+b-let stringToList (s : String) : List init$char :=
   s ?(List init$char) (λ c : init$char. λ rec : List init$char. cons ?init$char c rec) (nil ?init$char).
 
-b-let stringFromList (s : List init$char) : init$string :=
-  recursionList ?init$char ?init$string init$string$nil
-    (λ c : init$char. λ cs : List init$char. λ rec : init$string. init$string$cons c rec)
+b-let stringFromList (s : List init$char) : String :=
+  recursionList ?init$char ?String init$string$nil
+    (λ c : init$char. λ cs : List init$char. λ rec : String. init$string$cons c rec)
     s.
 
-b-let stringApp (s, s' : init$string) : init$string :=
+b-let stringApp (s, s' : String) : String :=
   stringFromList (app ?init$char (stringToList s) (stringToList s')).
 
-b-let stringConcat (l : List init$string) : init$string :=
-  recursionList ?init$string ?init$string
+b-let stringConcat (l : List String) : String :=
+  recursionList ?String ?String
     init$string$nil
-    (λ s : init$string. λ _ : List init$string. λ rec : init$string. stringApp s rec)
+    (λ s : String. λ _ : List String. λ rec : String. stringApp s rec)
     l.
 
 -- Equality
@@ -34,5 +34,5 @@ b-let charEq (c, c' : init$char) : Bool :=
     c' ?Bool λ y1, y2, y3, y4 : init$byte.
       and (byteEq x1 y1) (and (byteEq x2 y2) (and (byteEq x3 y3) (byteEq x4 y4))).
 
-b-let stringEq (s, s' : init$string) : Bool :=
+b-let stringEq (s, s' : String) : Bool :=
   listEq ?init$char charEq (stringToList s) (stringToList s').

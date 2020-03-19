@@ -2,15 +2,15 @@
 -- Error monad (with strings as error messages)
 --------------------------------------------------------------------------------
 
-b-let Error (A : *) : * := Sum init$string A.
+b-let Error (A : *) : * := Sum String A.
 
-b-let pureError [A : *] (a : A) : Error A := inr ?init$string ?A a.
-b-let error [A : *] (s : init$string) : Error A := inl ?init$string ?A s.
-b-let catchError [A, B : *] (a : Error A) (f : Π _ : init$string. B) (g : Π _ : A. B) : B :=
-  recursionSum ?init$string ?A ?B f g a.
+b-let pureError [A : *] (a : A) : Error A := inr ?String ?A a.
+b-let error [A : *] (s : String) : Error A := inl ?String ?A s.
+b-let catchError [A, B : *] (a : Error A) (f : Π _ : String. B) (g : Π _ : A. B) : B :=
+  recursionSum ?String ?A ?B f g a.
 
 b-let bindError [A, B : *] (f : Π _ : A. Error B) (x : Error A) : Error B :=
-  recursionSum ?init$string ?A ?(Error B) (λ s : init$string. error ?B s) (λ a : A. f a) x.
+  recursionSum ?String ?A ?(Error B) (λ s : String. error ?B s) (λ a : A. f a) x.
 
 b-let mapError [A, B : *] (f : Π _ : A. B) (x : Error A) : Error B :=
   bindError ?A ?B (λ a : A. pureError ?B (f a)) x.

@@ -15,7 +15,7 @@ let toConstrData (term : Term) : ConstrData :=
   recursionTerm ?ConstrData
     (λ v : init$var. noArgConstrData (varTerm v))
     (λ s : init$sort. noArgConstrData (sortTerm s))
-    (λ b : Binder. λ n : init$string. λ T, t : Term. λ recT, rect : ConstrData.
+    (λ b : Binder. λ n : String. λ T, t : Term. λ recT, rect : ConstrData.
       b ?ConstrData
         (noArgConstrData (binderTerm b n T t)) (noArgConstrData (binderTerm b n T t))
         (consArgConstrData (mkParam false (mkPreParam n T)) rect)
@@ -24,12 +24,12 @@ let toConstrData (term : Term) : ConstrData :=
     (λ u : Term. λ recu : ConstrData. recu)
     (reduceTerm term).
 
-let constrArgToFunctor (t : Term) (match : List init$string) : Error ConstrFunctor :=
+let constrArgToFunctor (t : Term) (match : List String) : Error ConstrFunctor :=
   ifthenelse ?(Error ConstrFunctor) (matchTerm t match) (pureError ?ConstrFunctor idConstrFunctor)
     (recursionTerm ?(Error ConstrFunctor)
       (λ v : init$var. pureError ?ConstrFunctor (constConstrFunctor t))
       (λ s : init$sort. error ?ConstrFunctor "Cannot turn sort into functor")
-      (λ b : Binder. λ n : init$string. λ T : Term. λ _ : Term. λ _ : Error ConstrFunctor. λ rect : Error ConstrFunctor.
+      (λ b : Binder. λ n : String. λ T : Term. λ _ : Term. λ _ : Error ConstrFunctor. λ rect : Error ConstrFunctor.
         b ?(Error ConstrFunctor)
           (error ?ConstrFunctor "Can only have pi binder in constructors")
           (error ?ConstrFunctor "Can only have pi binder in constructors")
@@ -40,23 +40,23 @@ let constrArgToFunctor (t : Term) (match : List init$string) : Error ConstrFunct
       (λ u : Term. λ _ : Error ConstrFunctor. error ?ConstrFunctor "Cannot turn unquote into functor")
       t).
 
-let constrToFunctorData (d : ConstrData) (match : List init$string) : Error ConstrFunctorData :=
+let constrToFunctorData (d : ConstrData) (match : List String) : Error ConstrFunctorData :=
   ifthenelse ?(Error ConstrFunctorData) (matchTerm (reduceTerm (ConstrDataTerm d)) match)
-    (traverseErrorList ?Param ?(Product init$string ConstrFunctor)
-      (λ p : Param. mapError ?ConstrFunctor ?(Product init$string ConstrFunctor)
-        (prodPair ?init$string ?ConstrFunctor (paramName p)) (constrArgToFunctor (paramType p) match))
+    (traverseErrorList ?Param ?(Product String ConstrFunctor)
+      (λ p : Param. mapError ?ConstrFunctor ?(Product String ConstrFunctor)
+        (prodPair ?String ?ConstrFunctor (paramName p)) (constrArgToFunctor (paramType p) match))
       (ConstrDataTelescope d))
     (error ?ConstrFunctorData
-           (stringConcat [init$string|
+           (stringConcat [String|
              "The final term in the constructor doesn't match! ",
              showTerm (ConstrDataTerm d),
              " and ",
-             showList ?init$string (λ s : init$string. s) match])).
+             showList ?String (λ s : String. s) match])).
 
 let functorDataToTelescope (d : ConstrFunctorData) (t : Term) : Telescope :=
-  map ?(Product init$string ConstrFunctor) ?Param
-    (λ x : Product init$string ConstrFunctor.
-      mkParam false (mkPreParam (pr1 ?init$string ?ConstrFunctor x) (ApplyConstrFunctor t (pr2 ?init$string ?ConstrFunctor x))))
+  map ?(Product String ConstrFunctor) ?Param
+    (λ x : Product String ConstrFunctor.
+      mkParam false (mkPreParam (pr1 ?String ?ConstrFunctor x) (ApplyConstrFunctor t (pr2 ?String ?ConstrFunctor x))))
     d.
 
 let functorDataToConstrData (d : ConstrFunctorData) (t : Term) : ConstrData :=

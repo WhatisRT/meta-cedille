@@ -1,13 +1,13 @@
-b-let prefixVar (p : init$string) (v : init$var) : init$var :=
+b-let prefixVar (p : String) (v : init$var) : init$var :=
   v ?init$var
-    (λ s : init$string. init$var$_string_ (stringApp p s))
+    (λ s : String. init$var$_string_ (stringApp p s))
     init$var$_index_.
 
-b-let prefixNamesInTerm (p : init$string) (t : Term) : Term :=
+b-let prefixNamesInTerm (p : String) (t : Term) : Term :=
   t ?Term
     (λ v : init$var. varTerm (prefixVar p v))
     sortTerm
-    (λ b : Binder. λ n : init$string. λ T : Term. λ t : Term. binderTerm b (stringApp p n) T t)
+    (λ b : Binder. λ n : String. λ T : Term. λ t : Term. binderTerm b (stringApp p n) T t)
     (λ t : Term. λ l : List App. appLTerm t l)
     (λ u : Term. unquoteTerm u).
 
@@ -29,12 +29,12 @@ b-let initModule (n : ModuleName) (v : Nat) (t : Telescope) : init$newStmt :=
       (modifyEvalStateStmt (modifyModuleInState (λ _ : Maybe Module. just ?Module m))))
   (mkInitModule n v t).
 
-b-let consModule (n : init$string) (m : Module) : Module :=
-  mkModule (ModuleModuleName m) (ModuleVersion m) (ModuleTelescope m) (cons ?init$string n (ModuleContents m)).
+b-let consModule (n : String) (m : Module) : Module :=
+  mkModule (ModuleModuleName m) (ModuleVersion m) (ModuleTelescope m) (cons ?String n (ModuleContents m)).
 
 b-let setModule (m : Maybe Module) : init$newStmt := modifyEvalStateStmt (modifyModuleInState (λ _ : Maybe Module. m)).
 
-b-let updateTempModule (n : init$string) (m : Module) : init$newStmt :=
+b-let updateTempModule (n : String) (m : Module) : init$newStmt :=
   seqNewStmt
     (letInfoToNewStmt
       (mkLetInfo (mkTempModuleNameSuc m)
@@ -42,15 +42,15 @@ b-let updateTempModule (n : init$string) (m : Module) : init$newStmt :=
         (just ?Term θ{Module})))
     (setModule (just ?Module (consModule n m))).
 
-b-let nameToModuleName (m : Module) (n : init$string) : init$string := stringApp (mkModuleContentPrefix (ModuleModuleInfo m)) n.
-b-let nameToMaybeModuleName (x : Maybe Module) (n : init$string) : init$string :=
-  maybe ?Module ?init$string n (λ m : Module. nameToModuleName m n) x.
+b-let nameToModuleName (m : Module) (n : String) : String := stringApp (mkModuleContentPrefix (ModuleModuleInfo m)) n.
+b-let nameToMaybeModuleName (x : Maybe Module) (n : String) : String :=
+  maybe ?Module ?String n (λ m : Module. nameToModuleName m n) x.
 
-b-let importExternalLetInfo (name : init$string) (m : Module) : LetInfo :=
+b-let importExternalLetInfo (name : String) (m : Module) : LetInfo :=
   mkLetInfo (nameToModuleName m name) (sVarTerm name) (nothing ?Term).
 
 b-let modifyLetInfo (i : LetInfo) (m : Module) : LetInfo :=
-  (λ prefix : init$string.
+  (λ prefix : String.
     mkLetInfo
       (nameToModuleName m (letInfoName i))
       (prefixNamesInTerm prefix (foldWithLambdas (ModuleTelescope m) (letInfoTerm i)))
@@ -69,7 +69,7 @@ b-let letInMaybeModule (i : LetInfo) (x : Maybe Module) : init$newStmt :=
     (letInModule i)
     x.
 
-b-let importExternalStmt (name : init$string) : init$newStmt :=
+b-let importExternalStmt (name : String) : init$newStmt :=
   bindEvalState ?EvaluatorState ?metaResult getEvalState (λ s : EvaluatorState.
     maybe ?Module ?init$newStmt
       (echoStmt "External imports are only possible in modules!")
@@ -110,39 +110,39 @@ b-let findModule (n : ModuleName) : EvalState (Maybe Module) :=
 
 b-let importModule (m : Module) (l : List App) : init$newStmt :=
   bindEvalState ?ModuleState ?metaResult getModuleState' (λ s : ModuleState.
-    seqNewStmts (map ?init$string ?init$newStmt
-      (λ n : init$string. letInfoToNewStmt (mkLetInfo
+    seqNewStmts (map ?String ?init$newStmt
+      (λ n : String. letInfoToNewStmt (mkLetInfo
         (nameToMaybeModuleName (ModuleStateModule s) n)
         (appLTerm (sVarTerm (nameToModuleName m n)) l)
         (nothing ?Term)))
       (ModuleContents m))).
 
-b-let importFile (file : init$string) : init$newStmt := stmtToNewStmt (quote$import' file).
-b-let moduleNameToPath (n : ModuleName) : init$string := stringConcat (intersperse ?init$string "/" n).
+b-let importFile (file : String) : init$newStmt := stmtToNewStmt (quote$import' file).
+b-let moduleNameToPath (n : ModuleName) : String := stringConcat (intersperse ?String "/" n).
 
 b-let importModuleOrStmt (n : ModuleName) (l : List App) (stmt : init$newStmt) : init$newStmt :=
   bindEvalState ?(Maybe Module) ?metaResult (findModule n)
     (maybe ?Module ?init$newStmt stmt (λ m : Module. importModule m l)).
 
-b-let loadModule (n : ModuleName) (prefix : init$string) : init$newStmt :=
+b-let loadModule (n : ModuleName) (prefix : String) : init$newStmt :=
   importFile (stringApp prefix (moduleNameToPath n)).
 
 b-let importModule' (n : ModuleName) (l : List App) : init$newStmt :=
   importModuleOrStmt n l (echoStmt "Could not find module!").
 
-b-let init$moduleName'$=slash=_string__moduleName'_ (s : init$string) (n : ModuleName) := cons ?init$string s n.
-b-let init$moduleName'$ := nil ?init$string.
+b-let init$moduleName'$=slash=_string__moduleName'_ (s : String) (n : ModuleName) := cons ?String s n.
+b-let init$moduleName'$ := nil ?String.
 
-b-let init$moduleName$_string__moduleName'_ (s : init$string) (n : ModuleName) := cons ?init$string s n.
+b-let init$moduleName$_string__moduleName'_ (s : String) (n : ModuleName) := cons ?String s n.
 
 -- Top-level statements
 
 b-let init$newStmt'$module_space__string__telescope'_=dot=
-  (_ : init$space) (n : init$string) (t : Telescope) : init$newStmt :=
-  initModule [init$string|n] zero t.
+  (_ : init$space) (n : String) (t : Telescope) : init$newStmt :=
+  initModule [String|n] zero t.
 b-let init$newStmt'$EndModule=dot= : init$newStmt := endModule.
 b-let init$newStmt'$LoadModule_space__moduleName_=dot= (_ : init$space) (n : ModuleName) : init$newStmt := loadModule n "test/".
 b-let init$newStmt'$Import_space__moduleName__maybeApplist_=dot= (_ : init$space) (n : ModuleName) (l : List App) : init$newStmt :=
   importModule' n l.
-b-let init$newStmt'$Given_space__string_=dot= (_ : init$space) (name : init$string) : init$newStmt :=
+b-let init$newStmt'$Given_space__string_=dot= (_ : init$space) (name : String) : init$newStmt :=
   importExternalStmt name.

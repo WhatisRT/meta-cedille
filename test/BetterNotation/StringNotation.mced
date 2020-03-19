@@ -25,20 +25,20 @@ b-let quote$char (c : init$char) : Term :=
   c ?Term (λ x1, x2, x3, x4 : init$byte.
       appSingle (appSingle (appSingle (appSingle quote$charBytes (quote$byte x1)) (quote$byte x2)) (quote$byte x3)) (quote$byte x4)).
 
-b-let quote$String (s : init$string) : Term :=
+b-let quote$String (s : String) : Term :=
   s ?Term
     (λ c : init$char. λ rec : Term. appSingle (appSingle quote$stringCons (quote$char c)) rec)
     quote$stringNil.
 
 -- Syntax
 
-b-let init$stringchar$!=doublequote=! (c : init$char) : init$char := c.
+b-let init$stringchar$!=doublequote=! (c : Char) : Char := c.
 
-let init$newstring$ := init$string$nil : init$string.
-let init$newstring$_stringchar__newstring_ := init$string$cons : Π _ : init$char Π _ : init$string init$string.
+let init$newstring$ := init$string$nil : String.
+let init$newstring$_stringchar__newstring_ := init$string$cons : Π _ : init$char Π _ : String String.
 
---let init$singleTerm$=singlequote=_stringchar_=singlequote= := quote$char : Π _ : init$char Term.
-let init$singleTerm$=doublequote=_newstring_=doublequote= := quote$String : Π _ : init$string Term.
-let init$term$=doublequote=_newstring_=doublequote= := quote$String : Π _ : init$string Term.
+--let init$singleTerm$=singlequote=_stringchar_=singlequote= := quote$char : Π _ : Char Term.
+let init$singleTerm$=doublequote=_newstring_=doublequote= := quote$String : Π _ : String Term.
+let init$term$=doublequote=_newstring_=doublequote= := quote$String : Π _ : String Term.
 
 seteval eval init stmt.

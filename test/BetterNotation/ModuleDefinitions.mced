@@ -6,10 +6,10 @@
 b-let modulePrefix := "modPrefix|".
 
 -- ModuleName, each entry in the list represents a level of nesting
-b-let ModuleName := List init$string.
-b-let moduleNameEq (n, n' : ModuleName) : Bool := listEq ?init$string stringEq n n'.
-b-let ModuleNameToName (n : ModuleName) : init$string := stringConcat n.
-b-let quoteModuleName (n : ModuleName) : Term := quoteTermList θ{init$string} (map ?init$string ?Term quote$String n).
+b-let ModuleName := List String.
+b-let moduleNameEq (n, n' : ModuleName) : Bool := listEq ?String stringEq n n'.
+b-let ModuleNameToName (n : ModuleName) : String := stringConcat n.
+b-let quoteModuleName (n : ModuleName) : Term := quoteTermList θ{String} (map ?String ?Term quote$String n).
 
 -- ModuleInfo contains all the global data about the module
 b-let ModuleInfo := TripleProduct ModuleName Nat Telescope.
@@ -21,36 +21,36 @@ b-let mkModuleInfo (name : ModuleName) (version : Nat) (t : Telescope) : ModuleI
   mkTripleProduct ?ModuleName ?Nat ?Telescope name version t.
 
 -- Everything related to the module has this prefix
-b-let mkModulePrefix (i : ModuleInfo) : init$string :=
+b-let mkModulePrefix (i : ModuleInfo) : String :=
   stringApp modulePrefix (stringApp (ModuleNameToName (ModuleInfoName i)) (showNatDecimal (ModuleInfoVersion i))).
 
 -- The definitions in the module have this prefix
-b-let mkModuleContentPrefix (i : ModuleInfo) : init$string :=
+b-let mkModuleContentPrefix (i : ModuleInfo) : String :=
   stringApp (mkModulePrefix i) "|".
 
 -- All the data about a module is collected in the Module type
-b-let Module := Product ModuleInfo (List init$string).
-b-let ModuleModuleInfo (m : Module) : ModuleInfo := pr1 ?ModuleInfo ?(List init$string) m.
+b-let Module := Product ModuleInfo (List String).
+b-let ModuleModuleInfo (m : Module) : ModuleInfo := pr1 ?ModuleInfo ?(List String) m.
 b-let ModuleModuleName (m : Module) : ModuleName := ModuleInfoName (ModuleModuleInfo m).
 b-let ModuleVersion (m : Module) : Nat := ModuleInfoVersion (ModuleModuleInfo m).
 b-let ModuleTelescope (m : Module) : Telescope := ModuleInfoTelescope (ModuleModuleInfo m).
-b-let ModuleContents (m : Module) : List init$string := pr2 ?ModuleInfo ?(List init$string) m.
+b-let ModuleContents (m : Module) : List String := pr2 ?ModuleInfo ?(List String) m.
 
-b-let mkModule (name : ModuleName) (version : Nat) (t : Telescope) (contents : List init$string) : Module :=
-  prodPair ?ModuleInfo ?(List init$string) (mkModuleInfo name version t) contents.
+b-let mkModule (name : ModuleName) (version : Nat) (t : Telescope) (contents : List String) : Module :=
+  prodPair ?ModuleInfo ?(List String) (mkModuleInfo name version t) contents.
 
 b-let mkInitModule (name : ModuleName) (version : Nat) (t : Telescope) : Module :=
-  mkModule name version t [init$string|].
+  mkModule name version t [String|].
 
 -- Functions for generating module names. While they are being defined, we use
 -- the temporary names to build them incrementally.
 
-b-let mkTempModuleName' (m : Module) (n : Nat) : init$string := -- name for temporary modules
-  stringConcat [init$string | mkModulePrefix (ModuleModuleInfo m), "||", showNatDecimal n].
-b-let mkTempModuleName (m : Module) : init$string := mkTempModuleName' m (length ?init$string (ModuleContents m)).
-b-let mkTempModuleNameSuc (m : Module) : init$string := mkTempModuleName' m (suc (length ?init$string (ModuleContents m))).
-b-let mkModuleName (m : Module) : init$string :=
-  stringConcat [init$string | mkModulePrefix (ModuleModuleInfo m), "||"].
+b-let mkTempModuleName' (m : Module) (n : Nat) : String := -- name for temporary modules
+  stringConcat [String | mkModulePrefix (ModuleModuleInfo m), "||", showNatDecimal n].
+b-let mkTempModuleName (m : Module) : String := mkTempModuleName' m (length ?String (ModuleContents m)).
+b-let mkTempModuleNameSuc (m : Module) : String := mkTempModuleName' m (suc (length ?String (ModuleContents m))).
+b-let mkModuleName (m : Module) : String :=
+  stringConcat [String | mkModulePrefix (ModuleModuleInfo m), "||"].
 
 -- ModuleDict is a type that is used to collect all the modules that are
 -- currently defined. We will bind them to a global name where the version is
@@ -71,7 +71,7 @@ b-let insertModuleDict (m : Module) (dict : ModuleDict) : ModuleDict :=
     (ModuleModuleName m).
 b-let lookupModuleDict (k : ModuleName) (dict : ModuleDict) : Maybe Module := ModuleDictDict dict k.
 
-b-let mkModuleDictName' (v : Nat) (d : ModuleDict) : init$string :=
-  stringConcat [init$string| modulePrefix, "||Dict", (showNatDecimal v)].
-b-let mkModuleDictName (d : ModuleDict) : init$string := mkModuleDictName' (ModuleDictVersion d) d.
-b-let mkModuleDictNameSuc (d : ModuleDict) : init$string := mkModuleDictName' (suc (ModuleDictVersion d)) d.
+b-let mkModuleDictName' (v : Nat) (d : ModuleDict) : String :=
+  stringConcat [String| modulePrefix, "||Dict", (showNatDecimal v)].
+b-let mkModuleDictName (d : ModuleDict) : String := mkModuleDictName' (ModuleDictVersion d) d.
+b-let mkModuleDictNameSuc (d : ModuleDict) : String := mkModuleDictName' (suc (ModuleDictVersion d)) d.

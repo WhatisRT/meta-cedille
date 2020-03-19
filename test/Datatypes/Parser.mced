@@ -4,33 +4,33 @@
 
 let Entries := List PreParam.
 
-let DatatypeDecl := TripleProduct init$string Telescope Entries.
+let DatatypeDecl := TripleProduct String Telescope Entries.
 
 let toRecordDecl (d : DatatypeDecl) : DatatypeDecl :=
-  recursionTripleProduct ?init$string ?Telescope ?Entries ?DatatypeDecl
-    (λ name : init$string. λ t : Telescope. λ es : Entries.
-      mkTripleProduct ?init$string ?Telescope ?Entries name t
-        [PreParam| prodPair ?init$string ?Term
+  recursionTripleProduct ?String ?Telescope ?Entries ?DatatypeDecl
+    (λ name : String. λ t : Telescope. λ es : Entries.
+      mkTripleProduct ?String ?Telescope ?Entries name t
+        [PreParam| prodPair ?String ?Term
           (stringApp "mk" name)
           (applyMultiBinder piBinder es (appLTerm (sVarTerm name) (telescopeToApp t)))])
     d.
 
-let DatatypeDeclToStmt (d : DatatypeDecl) (m : init$string) : init$newStmt :=
+let DatatypeDeclToStmt (d : DatatypeDecl) (m : String) : init$newStmt :=
   catchError ?DatatypeData ?init$newStmt
-    (recursionTripleProduct ?init$string ?Telescope ?Entries ?(Error DatatypeData) mkDatatypeData d)
-    (λ e : init$string. echoStmt (stringApp m e))
+    (recursionTripleProduct ?String ?Telescope ?Entries ?(Error DatatypeData) mkDatatypeData d)
+    (λ e : String. echoStmt (stringApp m e))
     datatypeToLet.
 
 let init$entry$_string__space_=colon=_space__multiTerm_
-  (name : init$string) (_, _ : init$space) (type : Term) : PreParam := mkPreParam name type.
+  (name : String) (_, _ : init$space) (type : Term) : PreParam := mkPreParam name type.
 
 let init$entries$ : Entries := nil ?PreParam.
 let init$entries$=pipe=_space__entry__entries_ (_ : init$space) (e : PreParam) (es : Entries) := cons ?PreParam e es.
 
 let init$data$_string__space__telescope_where_space__entries_
-  (name : init$string) (_ : init$space) (t : Telescope) (_ : init$space) (es : Entries)
+  (name : String) (_ : init$space) (t : Telescope) (_ : init$space) (es : Entries)
   : DatatypeDecl :=
-    mkTripleProduct ?init$string ?Telescope ?Entries name t es.
+    mkTripleProduct ?String ?Telescope ?Entries name t es.
 
 let init$newStmt'$data_space__data_=dot= (_ : init$space) (d : DatatypeDecl) : init$newStmt :=
   DatatypeDeclToStmt d "Error: not a valid datatype! ".

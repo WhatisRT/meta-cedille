@@ -7,6 +7,6 @@ let joinMeta := Λ X : * λ x : [M [M X]] [[<<bindMeta [M X]> X> x] λ a : [M X]
 
 let init$err := init$metaResult.
 
-let shellCmd := λ s : init$string λ args : init$stringList Β s args : Π _ : init$string Π _ : init$stringList [M init$string].
+let shellCmd := λ s : String λ args : init$stringList Β s args : Π _ : String Π _ : init$stringList [M String].
 let catchErr := Λ X : * λ run : [M X] λ catch : Π _ : init$err [M X] Γ run catch : ∀ X : * Π _ : [M X] Π _ : Π _ : init$err [M X] [M X].
 let checkTerm := λ X : * λ t : init$term Δ X t : Π X : * Π _ : init$term [M X].

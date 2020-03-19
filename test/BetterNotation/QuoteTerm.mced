@@ -15,7 +15,7 @@ b-let quoteTemp : Term := quoteSq. -- this is for things that are not yet implem
 b-let quoteVar (v : init$var) : Term :=
   appSingle
     (sVarTerm "sVarTerm")
-    (v ?Term (λ n : init$string. quote$String n) (λ i : init$index. quoteTemp)). -- quotation of indices is not supported
+    (v ?Term (λ n : String. quote$String n) (λ i : init$index. quoteTemp)). -- quotation of indices is not supported
 
 b-let quoteBinder (b : Binder) : Term :=
   b ?Term (sVarTerm "lambdaBinder") (sVarTerm "LambdaBinder") (sVarTerm "piBinder") (sVarTerm "forallBinder").
@@ -29,7 +29,7 @@ b-let quoteTerm (t : Term) : Term :=
   recursionTerm ?Term
     (λ v : init$var. quoteVar v)
     (λ s : init$sort. s ?Term (sVarTerm "quoteAst") (sVarTerm "quoteSq"))
-    (λ b : Binder. λ n : init$string. λ T : Term. λ t : Term. λ recT : Term. λ rect : Term.
+    (λ b : Binder. λ n : String. λ T : Term. λ t : Term. λ recT : Term. λ rect : Term.
       appLTerm (sVarTerm "binderTerm") (toAppU [Term| quoteBinder b, quote$String n, recT, rect]))
     (λ t : Term. λ l : List App. λ rect : Term. λ recl : List App.
       appDouble (sVarTerm "appLTerm") rect (quoteTermList (sVarTerm "App") (map ?App ?Term quoteAppLeft recl)))

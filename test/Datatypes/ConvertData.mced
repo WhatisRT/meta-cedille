@@ -7,31 +7,31 @@
 -- records are currently not automatically generated.
 --------------------------------------------------------------------------------
 
-let DatatypeData := TripleProduct init$string Telescope (List (TripleProduct init$string ConstrData ConstrFunctorData)).
-let mkDatatypeData' := mkTripleProduct ?init$string ?Telescope ?(List (TripleProduct init$string ConstrData ConstrFunctorData)).
-let DatatypeName := pr31 ?init$string ?Telescope ?(List (TripleProduct init$string ConstrData ConstrFunctorData)).
-let DatatypeTelescope := pr32 ?init$string ?Telescope ?(List (TripleProduct init$string ConstrData ConstrFunctorData)).
-let DatatypeConstrs := pr33 ?init$string ?Telescope ?(List (TripleProduct init$string ConstrData ConstrFunctorData)).
+let DatatypeData := TripleProduct String Telescope (List (TripleProduct String ConstrData ConstrFunctorData)).
+let mkDatatypeData' := mkTripleProduct ?String ?Telescope ?(List (TripleProduct String ConstrData ConstrFunctorData)).
+let DatatypeName := pr31 ?String ?Telescope ?(List (TripleProduct String ConstrData ConstrFunctorData)).
+let DatatypeTelescope := pr32 ?String ?Telescope ?(List (TripleProduct String ConstrData ConstrFunctorData)).
+let DatatypeConstrs := pr33 ?String ?Telescope ?(List (TripleProduct String ConstrData ConstrFunctorData)).
 
 let DatatypeConstrs' (d : DatatypeData) : List ConstrFunctorData :=
-  map ?(TripleProduct init$string ConstrData ConstrFunctorData) ?ConstrFunctorData
-      (pr33 ?init$string ?ConstrData ?ConstrFunctorData)
+  map ?(TripleProduct String ConstrData ConstrFunctorData) ?ConstrFunctorData
+      (pr33 ?String ?ConstrData ?ConstrFunctorData)
       (DatatypeConstrs d).
 
-let mkDatatypeData (name : init$string) (t : Telescope) (cs : List (Product init$string Term)) : Error DatatypeData :=
-  mapError ?(List (TripleProduct init$string ConstrData ConstrFunctorData)) ?DatatypeData (mkDatatypeData' name t)
-           (traverseErrorList ?(Product init$string Term) ?(TripleProduct init$string ConstrData ConstrFunctorData)
-                              (λ c : Product init$string Term.
-                                mapError ?ConstrFunctorData ?(TripleProduct init$string ConstrData ConstrFunctorData)
-                                         (mkTripleProduct ?init$string ?ConstrData ?ConstrFunctorData
-                                                          (pr1 ?init$string ?Term c) (toConstrData (pr2 ?init$string ?Term c)))
-                                         (constrToFunctorData (toConstrData (pr2 ?init$string ?Term c)) (getMatch name t))) cs).
+let mkDatatypeData (name : String) (t : Telescope) (cs : List (Product String Term)) : Error DatatypeData :=
+  mapError ?(List (TripleProduct String ConstrData ConstrFunctorData)) ?DatatypeData (mkDatatypeData' name t)
+           (traverseErrorList ?(Product String Term) ?(TripleProduct String ConstrData ConstrFunctorData)
+                              (λ c : Product String Term.
+                                mapError ?ConstrFunctorData ?(TripleProduct String ConstrData ConstrFunctorData)
+                                         (mkTripleProduct ?String ?ConstrData ?ConstrFunctorData
+                                                          (pr1 ?String ?Term c) (toConstrData (pr2 ?String ?Term c)))
+                                         (constrToFunctorData (toConstrData (pr2 ?String ?Term c)) (getMatch name t))) cs).
 
 let DatatypeF (d : DatatypeData) : Term := ConstrsFunctorF' (DatatypeName d) (DatatypeConstrs' d).
 let DatatypeFunctor (d : DatatypeData) : Term := ConstrsFunctorFunctor' (DatatypeName d) (DatatypeConstrs' d).
 
 -- Helper functions
-let preCurryHelper (curry : Term) (name : init$string) (t : Term) (p : CFParam) (ps : List CFParam) : Term :=
+let preCurryHelper (curry : Term) (name : String) (t : Term) (p : CFParam) (ps : List CFParam) : Term :=
   θ{γ{curry} ?γ{ApplyConstrFunctor t (cfParamFunctor p)}
              ?γ{lambdaTerm (cfParamName p) (ApplyConstrFunctor t (cfParamFunctor p)) θ{γ{ConstrFunctorF name ps} γ{t}}}
              ?γ{t}}.
@@ -40,7 +40,7 @@ let curryHelper := preCurryHelper θ{Dcurry}.
 let uncurryHelper := preCurryHelper θ{Duncurry}.
 
 -- Generate algebras for constructors
-let datatypeToAlgTerms (name : init$string) (apply : List App) (constrs : List ConstrFunctorData) : List Term :=
+let datatypeToAlgTerms (name : String) (apply : List App) (constrs : List ConstrFunctorData) : List Term :=
   pr2 ?Term ?(List Term) (foldl ?(Product ConstrFunctorData (List ConstrFunctorData)) ?(Product Term (List Term))
     (λ acc : Product Term (List Term). λ arg : Product ConstrFunctorData (List ConstrFunctorData).
       (λ applyCompose : Π _ : Term. Term. prodPair ?Term ?(List Term)
@@ -54,10 +54,10 @@ let datatypeToAlgTerms (name : init$string) (apply : List App) (constrs : List C
     (prodPair ?Term ?(List Term) (appLTerm (sVarTerm (stringApp name "Constrs")) apply) [Term|])).
 
 -- Convert the algebra corresponding to a single constructor to a proper constructor
-let convertAlgToConstr (name : init$string) (type : Term) (d : ConstrFunctorData) (alg : Term) : Term :=
+let convertAlgToConstr (name : String) (type : Term) (d : ConstrFunctorData) (alg : Term) : Term :=
   foldWithLambdas (functorDataToTelescope d type) (foldr ?(Π _ : Term. Term) ?Term
     (λ acc : Term. λ f : Π _ : Term. Term. f acc)
-    (recursionList ?(Product init$string ConstrFunctor) ?(List (Π _ : Term. Term))
+    (recursionList ?(Product String ConstrFunctor) ?(List (Π _ : Term. Term))
       [Π _ : Term. Term | λ t : Term. θ{removeUnit ?γ{type} γ{t}}]
       (λ p : CFParam. λ ps : List CFParam. λ rec : List (Π _ : Term. Term).
         cons ?(Π _ : Term. Term) (λ t : Term. θ{γ{curryHelper name type p ps} γ{t} γ{natToVar (length ?CFParam ps)}}) rec)
@@ -65,24 +65,24 @@ let convertAlgToConstr (name : init$string) (type : Term) (d : ConstrFunctorData
     alg).
 
 let datatypeToConstrs (d : DatatypeData) : List LetInfo :=
-  zipWith ?(TripleProduct init$string ConstrData ConstrFunctorData) ?Term ?LetInfo
-    (recursionTripleProduct ?init$string ?ConstrData ?ConstrFunctorData ?(Π _ : Term. LetInfo)
-      (λ constrName : init$string. λ cD : ConstrData. λ funD : ConstrFunctorData. λ alg : Term.
+  zipWith ?(TripleProduct String ConstrData ConstrFunctorData) ?Term ?LetInfo
+    (recursionTripleProduct ?String ?ConstrData ?ConstrFunctorData ?(Π _ : Term. LetInfo)
+      (λ constrName : String. λ cD : ConstrData. λ funD : ConstrFunctorData. λ alg : Term.
         mkLetInfo constrName (convertAlgToConstr (DatatypeName d) (ConstrDataTerm cD) funD alg) (nothing ?Term)))
-    (reverse ?(TripleProduct init$string ConstrData ConstrFunctorData) (DatatypeConstrs d))
+    (reverse ?(TripleProduct String ConstrData ConstrFunctorData) (DatatypeConstrs d))
     (datatypeToAlgTerms (DatatypeName d) (telescopeToApp (DatatypeTelescope d))
-      (map ?(TripleProduct init$string ConstrData ConstrFunctorData) ?ConstrFunctorData
-           (pr33 ?init$string ?ConstrData ?ConstrFunctorData) (DatatypeConstrs d))).
+      (map ?(TripleProduct String ConstrData ConstrFunctorData) ?ConstrFunctorData
+           (pr33 ?String ?ConstrData ?ConstrFunctorData) (DatatypeConstrs d))).
 
 -- Transform inputs to Π _ : F X. X
-let uncurryFoldArg (name : init$string) (c : ConstrFunctorData) (arg : Term) :=
+let uncurryFoldArg (name : String) (c : ConstrFunctorData) (arg : Term) :=
   recursionList ?CFParam ?Term
     θ{addUnit ?X γ{appLTerm arg (map ?Nat ?App (λ n : Nat. mkAppU (natToVar n)) (countToZeroExc (length ?CFParam c)))}}
     (λ p : CFParam. λ ps : List CFParam. λ rec : Term.
       θ{γ{uncurryHelper name θ{X} p ps} γ{lambdaTerm (cfParamName p) (ApplyConstrFunctor θ{X} (cfParamFunctor p)) rec}})
     c.
 
-let datatypeToFold (name : init$string) (constrs : List ConstrFunctorData) (apply : List App) : Term :=
+let datatypeToFold (name : String) (constrs : List ConstrFunctorData) (apply : List App) : Term :=
   θ{λ X : *. γ{foldl ?ConstrFunctorData ?Term
     (λ t : Term. λ c : ConstrFunctorData. lambdaTerm "_" (ApplyConstrFunctorData c θ{X}) t)
     constrs
@@ -102,7 +102,7 @@ let datatypeToFold (name : init$string) (constrs : List ConstrFunctorData) (appl
         (initsNonEmpty ?ConstrFunctorData constrs)}}}}.
 
 let datatypeToLet (d : DatatypeData) : init$newStmt :=
-  (λ name : Π _ : init$string. init$string. λ appName : Π _ : init$string. Term.
+  (λ name : Π _ : String. String. λ appName : Π _ : String. Term.
     seqNewStmts (map ?LetInfo ?init$newStmt (λ i : LetInfo. letInfoToNewStmtMod (appendTelToLetInfo (DatatypeTelescope d) i))
       (app ?LetInfo [LetInfo|
         mkLetInfo (name "F") (DatatypeF d) (just ?Term θ{Π _ : *. *}),
@@ -113,4 +113,4 @@ let datatypeToLet (d : DatatypeData) : init$newStmt :=
                   (datatypeToFold (DatatypeName d) (DatatypeConstrs' d) (telescopeToApp (DatatypeTelescope d))) (nothing ?Term)]
         (datatypeToConstrs d))))
   (stringApp (DatatypeName d))
-  (λ x : init$string. appLTerm (sVarTerm (stringApp (DatatypeName d) x)) (telescopeToApp (DatatypeTelescope d))).
+  (λ x : String. appLTerm (sVarTerm (stringApp (DatatypeName d) x)) (telescopeToApp (DatatypeTelescope d))).

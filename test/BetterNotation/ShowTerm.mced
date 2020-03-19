@@ -4,20 +4,20 @@
 -- TODO: move somewhere else?
 --------------------------------------------------------------------------------
 
-b-let showVar (v : init$var) : init$string := v ?init$string (λ s : init$string. s) (λ i : init$index. "INDEX").
-b-let showSort (s : init$sort) : init$string := s ?init$string "*" "□".
-b-let showBinder (b : Binder) : init$string := b ?init$string "λ" "Λ" "Π" "∀".
+b-let showVar (v : init$var) : String := v ?String (λ s : String. s) (λ i : init$index. "INDEX").
+b-let showSort (s : init$sort) : String := s ?String "*" "□".
+b-let showBinder (b : Binder) : String := b ?String "λ" "Λ" "Π" "∀".
 
-b-let showTerm (t : Term) : init$string :=
-  t ?init$string
+b-let showTerm (t : Term) : String :=
+  t ?String
     (λ v : init$var. showVar v)
     (λ s : init$sort. showSort s)
-    (λ b : Binder. λ n : init$string. λ T, t : init$string.
-      stringConcat [init$string| showBinder b, " ", n, " : ", T, ". ", t])
-    (λ t : init$string. λ l : List (Product Bool init$string).
-      stringConcat (cons ?init$string t
-                          (map ?(Product Bool init$string) ?init$string
-                               (λ bs : Product Bool init$string.
-                                 stringConcat [init$string| ifthenelse ?init$string (pr1 ?Bool ?init$string bs) " ?" " ",
-                                                             "(", pr2 ?Bool ?init$string bs, ")"]) l)))
-    (λ t : init$string. stringConcat [init$string| "γ{", t, "}"]).
+    (λ b : Binder. λ n : String. λ T, t : String.
+      stringConcat [String| showBinder b, " ", n, " : ", T, ". ", t])
+    (λ t : String. λ l : List (Product Bool String).
+      stringConcat (cons ?String t
+                          (map ?(Product Bool String) ?String
+                               (λ bs : Product Bool String.
+                                 stringConcat [String| ifthenelse ?String (pr1 ?Bool ?String bs) " ?" " ",
+                                                             "(", pr2 ?Bool ?String bs, ")"]) l)))
+    (λ t : String. stringConcat [String| "γ{", t, "}"]).

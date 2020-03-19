@@ -14,36 +14,36 @@ let forallBinder := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X
 let Term := ∀ X : *
   Π _ : (Π _ : init$var X)
   Π _ : (Π _ : init$sort X)
-  Π _ : (Π _ : Binder Π _ : init$string Π _ : X Π _ : X X)
+  Π _ : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
   Π _ : (Π _ : X Π _ : [List [[Product Bool] X]] X)
   Π _ : (Π _ : X X) X.
 
 let varTerm := λ var : init$var Λ X : *
   λ v : (Π _ : init$var X)
   λ _ : (Π _ : init$sort X)
-  λ _ : (Π _ : Binder Π _ : init$string Π _ : X Π _ : X X)
+  λ _ : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
   λ _ : (Π _ : X Π _ : [List [[Product Bool] X]] X)
   λ _ : (Π _ : X X) [v var] : Π _ : init$var Term.
 
 let sortTerm := λ sort : init$sort Λ X : *
   λ _ : (Π _ : init$var X)
   λ s : (Π _ : init$sort X)
-  λ _ : (Π _ : Binder Π _ : init$string Π _ : X Π _ : X X)
+  λ _ : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
   λ _ : (Π _ : X Π _ : [List [[Product Bool] X]] X)
   λ _ : (Π _ : X X) [s sort] : Π _ : init$sort Term.
 
-let binderTerm := λ binder : Binder λ name : init$string λ T : Term λ t : Term Λ X : *
+let binderTerm := λ binder : Binder λ name : String λ T : Term λ t : Term Λ X : *
   λ v : (Π _ : init$var X)
   λ s : (Π _ : init$sort X)
-  λ b : (Π _ : Binder Π _ : init$string Π _ : X Π _ : X X)
+  λ b : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
   λ a : (Π _ : X Π _ : [List [[Product Bool] X]] X)
   λ u : (Π _ : X X) [[[[b binder] name] [[[[[<T X> v] s] b] a] u]] [[[[[<t X> v] s] b] a] u]]
-    : Π _ : Binder Π _ : init$string Π _ : Term Π _ : Term Term.
+    : Π _ : Binder Π _ : String Π _ : Term Π _ : Term Term.
 
 let appLTerm := λ t : Term λ l : [List [[Product Bool] Term]] Λ X : *
   λ v : (Π _ : init$var X)
   λ s : (Π _ : init$sort X)
-  λ b : (Π _ : Binder Π _ : init$string Π _ : X Π _ : X X)
+  λ b : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
   λ a : (Π _ : X Π _ : [List [[Product Bool] X]] X)
   λ u : (Π _ : X X)
     [[a [[[[[<t X> v] s] b] a] u]] [[<<map [[Product Bool] Term]> [[Product Bool] X]> λ bt : [[Product Bool] Term] [[<<prodPair Bool> X> [<<pr1 Bool> Term> bt]] [[[[[<[<<pr2 Bool> Term> bt] X> v] s] b] a] u]]] l]]
@@ -52,11 +52,11 @@ let appLTerm := λ t : Term λ l : [List [[Product Bool] Term]] Λ X : *
 let unquoteTerm := λ t : Term Λ X : *
   λ v : (Π _ : init$var X)
   λ s : (Π _ : init$sort X)
-  λ b : (Π _ : Binder Π _ : init$string Π _ : X Π _ : X X)
+  λ b : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
   λ a : (Π _ : X Π _ : [List [[Product Bool] X]] X)
   λ u : (Π _ : X X) [u [[[[[<t X> v] s] b] a] u]] : Π _ : Term Term.
 
-let sVarTerm := λ s : init$string [varTerm [init$var$_string_ s]].
+let sVarTerm := λ s : String [varTerm [init$var$_string_ s]].
 let lambdaTerm := [binderTerm lambdaBinder].
 let LambdaTerm := [binderTerm LambdaBinder].
 let piTerm := [binderTerm piBinder].
@@ -80,8 +80,8 @@ let TermToInitTerm := λ t : Term
   [[[[[<t init$term>
     λ v : init$var [init$term$_var_ v]]
     λ s : init$sort [init$term$_sort_ s]]
-    λ b : Binder λ n : init$string λ T : init$term λ t : init$term
-      [[[[[[[<b Π _ : init$string Π _ : init$term Π _ : init$term init$term>
+    λ b : Binder λ n : String λ T : init$term λ t : init$term
+      [[[[[[[<b Π _ : String Π _ : init$term Π _ : init$term init$term>
         quote$lambda]
         quote$Lambda]
         quote$Pi]
@@ -107,23 +107,23 @@ let toAppU := [<<map Term> App> mkAppU].
 --------------------------------------------------------------------------------
 
 -- A parameter without erasure information
-let PreParam := [[Product init$string] Term].
-let mkPreParam := <<prodPair init$string> Term>.
+let PreParam := [[Product String] Term].
+let mkPreParam := <<prodPair String> Term>.
 
-let preParamName := λ p : PreParam [<<pr1 init$string> Term> p] : Π _ : PreParam init$string.
-let preParamType := λ p : PreParam [<<pr2 init$string> Term> p] : Π _ : PreParam Term.
+let preParamName := λ p : PreParam [<<pr1 String> Term> p] : Π _ : PreParam String.
+let preParamType := λ p : PreParam [<<pr2 String> Term> p] : Π _ : PreParam Term.
 
 -- If the first entry in the product is `true` the argument is erased
 let Param := [[Product Bool] PreParam].
 let mkParam := <<prodPair Bool> PreParam>.
 
 let paramErased := <<pr1 Bool> PreParam> : Π _ : Param Bool.
-let paramName := λ p : Param [<<pr1 init$string> Term> [<<pr2 Bool> PreParam> p]] : Π _ : Param init$string.
-let paramType := λ p : Param [<<pr2 init$string> Term> [<<pr2 Bool> PreParam> p]] : Π _ : Param Term.
+let paramName := λ p : Param [<<pr1 String> Term> [<<pr2 Bool> PreParam> p]] : Π _ : Param String.
+let paramType := λ p : Param [<<pr2 String> Term> [<<pr2 Bool> PreParam> p]] : Π _ : Param Term.
 
 -- Constructs a `List PreParam` from some names and a type
 let namesToPreParams :=
-  λ ns : [List init$string] λ t : Term [[<<map init$string> PreParam> (λ n : init$string [[mkPreParam n] t])] ns].
+  λ ns : [List String] λ t : Term [[<<map String> PreParam> (λ n : String [[mkPreParam n] t])] ns].
 
 let Telescope := [List Param].
 let telApp := λ p : [List PreParam] [<app Param> [[<<map PreParam> Param> [mkParam false]] p]].
@@ -141,13 +141,13 @@ let telescopeToApp := λ tel : Telescope [[<<map Param> App> λ p : Param [[mkAp
 -- Parsing rules for telescopes
 --------------------------------------------------------------------------------
 
-let init$nameparams'$ := <nil init$string>.
-let init$nameparams'$=comma=_space'__string__nameparams'_ := λ _ : init$space' <cons init$string>.
+let init$nameparams'$ := <nil String>.
+let init$nameparams'$=comma=_space'__string__nameparams'_ := λ _ : init$space' <cons String>.
 
-let init$nameparams$_string__nameparams'_ := <cons init$string>.
+let init$nameparams$_string__nameparams'_ := <cons String>.
 
 let init$params$_nameparams__space_=colon=_space__multiTerm_ :=
-  λ ns : [List init$string] λ _ : init$space λ _ : init$space λ t : Term [[namesToPreParams ns] t].
+  λ ns : [List String] λ _ : init$space λ _ : init$space λ t : Term [[namesToPreParams ns] t].
 
 let init$telescope'$ := telNil.
 let init$telescope'$_space__telescope_ := λ _ : init$space λ t : Telescope t.
@@ -180,7 +180,7 @@ let init$multiTerm$_singleTerm__maybeApplist_ := appLTerm.
 let init$singleTerm$=ast= := [sortTerm init$sort$=ast=].
 let init$singleTerm$=sq= := [sortTerm init$sort$=sq=].
 
-let init$singleTerm$_string_ := λ n : init$string [varTerm [init$var$_string_ n]].
+let init$singleTerm$_string_ := λ n : String [varTerm [init$var$_string_ n]].
 let init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : Term t.
 
 let init$binder$=lambda= := lambdaBinder.

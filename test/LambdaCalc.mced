@@ -2,16 +2,16 @@ o-let Top := = λ x : * x λ x : * x.
 
 let lambdaTermToTerm : Π _ : init$term. init$term := quote$beta (TermToInitTerm θ{λ x : *. x}).
 
-let init$lambdaTerm$_string_ : Π _ : init$string. init$term := quote$var.
+let init$lambdaTerm$_string_ : Π _ : String. init$term := quote$var.
 let init$lambdaTerm$=lsquare=_space'__lambdaTerm__space__lambdaTerm__space'_=rsquare=
   (_ : init$space') (t : init$term) (_ : init$space) (t' : init$term) (_ : init$space') : init$term :=
   quote$square t t'.
 let init$lambdaTerm$=lambda=_space__string__space'_=dot=_space'__lambdaTerm_
-  (_ : init$space) (name : init$string) (_ : init$space') (_ : init$space') (t : init$term) : init$term :=
+  (_ : init$space) (name : String) (_ : init$space') (_ : init$space') (t : init$term) : init$term :=
   quote$lambda name quote$ast t.
 
 let init$lambdaStmt$let_space__string__space'_=colon==equal=_space'__lambdaTerm__space'_=dot=
-  (_ : init$space) (name : init$string) (_ : init$space') (_ : init$space') (t : init$term) (_ : init$space') :
+  (_ : init$space) (name : String) (_ : init$space') (_ : init$space') (t : init$term) (_ : init$space') :
     init$stmt' :=
   quote$annotatedLet' name (lambdaTermToTerm t) (TermToInitTerm θ{Top}).
 

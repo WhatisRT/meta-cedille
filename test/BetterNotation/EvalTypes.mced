@@ -116,9 +116,9 @@ b-let updateModuleState (s : ModuleState) : EvalState Unit :=
   bindEvalState ?EvaluatorState ?Unit getEvalState
     (λ s' : EvaluatorState. setEvalState (mkEvaluatorState (getEvalFlags s') s)).
 
-b-let echoStmt (s : init$string) : init$newStmt :=
+b-let echoStmt (s : String) : init$newStmt :=
   liftMtoEvalState ?metaResult
-    (mapMeta ?init$string ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [init$string | s]))).
+    (mapMeta ?String ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [String | s]))).
 
 b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
   bindEvalState ?EvalFlags ?metaResult getFlags (λ f : EvalFlags.

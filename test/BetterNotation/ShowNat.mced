@@ -14,11 +14,11 @@ b-let Dec7 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d7.
 b-let Dec8 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d8.
 b-let Dec9 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d9.
 
-b-let showDec (d : Dec) : init$string := d ?init$string "0" "1" "2" "3" "4" "5" "6" "7" "8" "9".
+b-let showDec (d : Dec) : String := d ?String "0" "1" "2" "3" "4" "5" "6" "7" "8" "9".
 
 -- Prints a list of digits in a certain base
-b-let showListOfDigitsBased [X : *] (showX : Π _ : X. init$string) (l : List X) : init$string :=
-  stringConcat (map ?X ?init$string showX (reverse ?X l)).
+b-let showListOfDigitsBased [X : *] (showX : Π _ : X. String) (l : List X) : String :=
+  stringConcat (map ?X ?String showX (reverse ?X l)).
 
 -- Create the lists of digits from the corresponding Nats
 
@@ -52,7 +52,7 @@ b-let natToDecList (n : Nat) : List Dec :=
 
 -- Actual show functions
 
-b-let showNatBinary (n : Nat) : init$string :=
-  showListOfDigitsBased ?Bool (λ b : Bool. ifthenelse ?init$string b "1" "0") (natToBinList n).
-b-let showNatDecimal (n : Nat) : init$string :=
+b-let showNatBinary (n : Nat) : String :=
+  showListOfDigitsBased ?Bool (λ b : Bool. ifthenelse ?String b "1" "0") (natToBinList n).
+b-let showNatDecimal (n : Nat) : String :=
   showListOfDigitsBased ?Dec showDec (natToDecList n).

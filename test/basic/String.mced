@@ -1,0 +1,2 @@
+let Char := init$char.
+let String := init$string.
