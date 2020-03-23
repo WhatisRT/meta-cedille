@@ -9,6 +9,7 @@ b-let prefixNamesInTerm (p : String) (t : Term) : Term :=
     sortTerm
     (λ b : Binder. λ n : String. λ T : Term. λ t : Term. binderTerm b (stringApp p n) T t)
     (λ t : Term. λ l : List App. appLTerm t l)
+    (λ c : Char. charTerm c)
     (λ u : Term. unquoteTerm u).
 
 b-let quoteNat (n : Nat) : Term :=

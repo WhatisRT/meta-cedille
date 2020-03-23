@@ -47,20 +47,37 @@ continueIfInit {A = A} init s = helper init s
     ... | yes p = helper init s f
     ... | no ¬p = nothing
 
-ruleId : List Char -> List Char -> Maybe ℕ
+ruleId : List Char -> List Char -> Maybe (ℕ ⊎ Char)
 ruleId nonterm rule = do
   rules <- lookup nonterm parseRuleMap
-  findIndexList (_≟ (nonterm + "$" + rule)) rules
+  i <- findIndexList (_≟ (nonterm + "$" + rule)) rules
+  return (inj₁ i)
 
-toSort : Tree ℕ -> Maybe Sort
-toSort (Node x x₁) = do
+toSort : Tree (ℕ ⊎ Char) -> Maybe Sort
+toSort (Node x x₁) =
   if x ≣ (from-just $ ruleId "sort" "*")
     then return ⋆
     else (if x ≣ (from-just $ ruleId "sort" "□")
       then return □
       else nothing)
 
-toName : Tree ℕ -> Maybe (List Char)
+toConst : Tree (ℕ ⊎ Char) -> Maybe Const
+toConst (Node x x₁) =
+  if x ≣ (from-just $ ruleId "const" "Char")
+    then return CharT
+    else nothing
+
+toChar : Tree (ℕ ⊎ Char) -> Maybe Char
+toChar (Node (inj₁ x) x₁) = nothing
+toChar (Node (inj₂ y) x₁) = just y
+
+toChar' : Tree (ℕ ⊎ Char) -> Maybe Char
+toChar' (Node x x₁) =
+  if x ≣ (from-just $ ruleId "char" "!!")
+    then (case x₁ of λ { (y ∷ []) -> toChar y ; _ -> nothing })
+    else nothing
+
+toName : Tree (ℕ ⊎ Char) -> Maybe (List Char)
 toName (Node x x₁) = case x₁ of λ
   { (y ∷ y' ∷ _) -> do
     c <- toChar y
@@ -68,42 +85,7 @@ toName (Node x x₁) = case x₁ of λ
     return (c ∷ n)
   ; _ -> nothing }
   where
-    treeToWord32 : Tree ℕ -> Maybe Word32
-    treeToWord32 (Node x (x0 ∷ x1 ∷ x2 ∷ x3 ∷ [])) = do
-      y0 <- treeToByte x0
-      y1 <- treeToByte x1
-      y2 <- treeToByte x2
-      y3 <- treeToByte x3
-      return (mkWord32 y0 y1 y2 y3)
-      where
-        treeToByte : Tree ℕ -> Maybe Byte
-        treeToByte (Node x (
-          (Node x0 _) ∷ (Node x1 _) ∷ (Node x2 _) ∷ (Node x3 _) ∷
-          (Node x4 _) ∷ (Node x5 _) ∷ (Node x6 _) ∷ (Node x7 _) ∷ []))
-          = do
-          y0 <- ℕtoBit x0
-          y1 <- ℕtoBit x1
-          y2 <- ℕtoBit x2
-          y3 <- ℕtoBit x3
-          y4 <- ℕtoBit x4
-          y5 <- ℕtoBit x5
-          y6 <- ℕtoBit x6
-          y7 <- ℕtoBit x7
-          return (mkByte y0 y1 y2 y3 y4 y5 y6 y7)
-          where
-            ℕtoBit : ℕ -> Maybe Bool
-            ℕtoBit zero = return false
-            ℕtoBit (suc zero) = return true
-            ℕtoBit (suc (suc x)) = nothing
-        {-# CATCHALL #-}
-        treeToByte _ = nothing
-    {-# CATCHALL #-}
-    treeToWord32 _ = nothing
-
-    toChar : Tree ℕ -> Maybe Char
-    toChar = mmap bytesToChar ∘ treeToWord32
-
-    toName' : Tree ℕ -> Maybe (List Char)
+    toName' : Tree (ℕ ⊎ Char) -> Maybe (List Char)
     toName' (Node x x₁) = case x₁ of λ
       { (y ∷ y' ∷ _) -> do
         c <- toChar y
@@ -114,7 +96,7 @@ toName (Node x x₁) = case x₁ of λ
           else nothing)
       ; _ -> nothing }
 
-toNameList : Tree ℕ -> Maybe (List String)
+toNameList : Tree (ℕ ⊎ Char) -> Maybe (List String)
 toNameList (Node x []) = just []
 toNameList (Node x (x₁ ∷ x₂ ∷ _)) = do
   n <- toName x₁
@@ -123,14 +105,14 @@ toNameList (Node x (x₁ ∷ x₂ ∷ _)) = do
 {-# CATCHALL #-}
 toNameList _ = nothing
 
-toIndex : Tree ℕ -> Maybe ℕ
+toIndex : Tree (ℕ ⊎ Char) -> Maybe ℕ
 toIndex t = do
   res <- helper t
   foldl {A = Maybe ℕ} (λ x c → do
     x' <- x
     return $ 10 * x' + c) (just 0) res
   where
-    helper' : Tree ℕ -> Maybe (List ℕ)
+    helper' : Tree (ℕ ⊎ Char) -> Maybe (List ℕ)
     helper' (Node x []) =
       if x ≣ (from-just $ ruleId "index'" "")
         then return []
@@ -150,7 +132,7 @@ toIndex t = do
         ((from-just $ ruleId "index'" "9_index'_") , return (9 ∷ rest)) ∷ []
         default nothing
 
-    helper : Tree ℕ -> Maybe (List ℕ)
+    helper : Tree (ℕ ⊎ Char) -> Maybe (List ℕ)
     helper (Node x []) = nothing
     helper (Node x (x₁ ∷ _)) = do
       rest <- helper' x₁
@@ -167,10 +149,10 @@ toIndex t = do
         ((from-just $ ruleId "index" "9_index'_") , return (9 ∷ rest)) ∷ []
         default nothing
 
-toTerm : Tree ℕ -> Maybe AnnTerm
+toTerm : Tree (ℕ ⊎ Char) -> Maybe AnnTerm
 toTerm = helper []
   where
-    helper : List (List Char) -> Tree ℕ -> Maybe AnnTerm
+    helper : List (List Char) -> Tree (ℕ ⊎ Char) -> Maybe AnnTerm
     helper accu (Node x x₁) =
       decCase x of
         ((from-just $ ruleId "term" "_var_") ,
@@ -362,6 +344,25 @@ toTerm = helper []
             return $ Ev-A CheckTerm (t , t')
           ; _ -> nothing })) ∷
 
+        ((from-just $ ruleId "term" "Κ_const_") , (case x₁ of λ
+          { (z ∷ []) -> do
+            c <- toConst z
+            return $ Const-A c
+          ; _ -> nothing })) ∷
+
+        ((from-just $ ruleId "term" "κ_char_") , (case x₁ of λ
+          { (z ∷ []) -> do
+            c <- addMaybe (toChar z) (toChar' z)
+            return (Char-A c)
+          ; _ -> nothing })) ∷
+
+        ((from-just $ ruleId "term" "γ_space__term__space__term_") , (case x₁ of λ
+          { (_ ∷ z ∷ _ ∷ z' ∷ []) -> do
+            t <- helper accu z
+            t' <- helper accu z'
+            return (CharEq-A t t')
+          ; _ -> nothing })) ∷
+
         []
         default nothing
 
@@ -394,7 +395,7 @@ instance
       helper (Shell x) = "shell \"" + show x + "\""
       helper Empty = "Empty"
 
-toStmt : Tree ℕ -> Maybe Stmt
+toStmt : Tree (ℕ ⊎ Char) -> Maybe Stmt
 toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
   if (x ≣ (from-just $ ruleId "stmt" "_space'__stmt'_"))
     then
@@ -475,7 +476,7 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
     else nothing
 
   where
-    toLetTail : Tree ℕ -> Maybe AnnTerm
+    toLetTail : Tree (ℕ ⊎ Char) -> Maybe AnnTerm
     toLetTail (Node x x₁) =
       decCase x of
         ((from-just $ ruleId "lettail" ":_space'__term__space'_.") ,
@@ -503,14 +504,9 @@ module CoreParser-Internal {M} {{_ : Monad M}} {{_ : MonadExcept M String}} wher
     G <- preCoreGrammar
     parse' G s
 
-  synTreeHasNoMultiChar : Tree (List Char ⊎ Char) -> M (Tree (List Char))
-  synTreeHasNoMultiChar t = sequence $ fmap {{Tree-Functor}} (λ
-    { (inj₁ x) → return x
-    ; (inj₂ y) → throwError "Tree had a multi char"}) t
-
   {-# TERMINATING #-} -- cannot just use sequence here because of the char special case
-  synTreeToℕTree : Tree (List Char) -> M (Tree ℕ)
-  synTreeToℕTree t@(Node x x₁) =
+  synTreeToℕTree : Tree (List Char ⊎ Char) -> M (Tree (ℕ ⊎ Char))
+  synTreeToℕTree t@(Node (inj₁ x) x₁) = do
     case convertIfChar t of λ
       { (just t') → return t'
       ; nothing → do
@@ -519,40 +515,27 @@ module CoreParser-Internal {M} {{_ : Monad M}} {{_ : MonadExcept M String}} wher
         return (Node id ids)
       }
     where
-      fullRuleId : List Char -> M ℕ
+      fullRuleId : List Char -> M (ℕ ⊎ Char)
       fullRuleId l with break (_≟ '$') l -- split at '$'
       ... | (x , []) = throwError "No '$' character found!"
       ... | (x , _ ∷ y) = maybeToError (ruleId x y) ("Rule " + (fromList l) + "doesn't exist!")
 
-      charToℕTree : Char -> Tree ℕ
-      charToℕTree c with charToWord32 c
-      ... | mkWord32 x1 x2 x3 x4 =
-        Node 0 ((byteToℕTree x1) ∷ (byteToℕTree x2) ∷ (byteToℕTree x3) ∷ (byteToℕTree x4) ∷ [])
-        where
-          bitToℕTree : Bool -> Tree ℕ
-          bitToℕTree false = Node 0 []
-          bitToℕTree true = Node 1 []
-
-          byteToℕTree : Byte -> Tree ℕ
-          byteToℕTree (mkByte x1 x2 x3 x4 x5 x6 x7 x8) =
-            Node 0 ((bitToℕTree x1) ∷ (bitToℕTree x2) ∷ (bitToℕTree x3) ∷ (bitToℕTree x4) ∷
-                    (bitToℕTree x5) ∷ (bitToℕTree x6) ∷ (bitToℕTree x7) ∷ (bitToℕTree x8) ∷ [])
-
-      convertIfChar : Tree (List Char) -> Maybe (Tree ℕ)
-      convertIfChar (Node x x₁) =
+      convertIfChar : Tree (List Char ⊎ Char) -> Maybe (Tree (ℕ ⊎ Char))
+      convertIfChar (Node (inj₁ x) x₁) =
         addMaybe
-          (join $ continueIfInit "nameInitChar$" x λ { [] → nothing ; (c ∷ x) → just $ charToℕTree (unescape c x) }) $
-          join $ continueIfInit "nameTailChar$" x λ { [] → nothing ; (c ∷ x) → just $ charToℕTree (unescape c x) }
+          (join $ continueIfInit "nameInitChar$" x λ { [] → nothing ; (c ∷ x) → just $ Node (inj₂ $ unescape c x) [] }) $
+          join $ continueIfInit "nameTailChar$" x λ { [] → nothing ; (c ∷ x) → just $ Node (inj₂ $ unescape c x) [] }
+      convertIfChar (Node (inj₂ x) x₁) = nothing
+
+  synTreeToℕTree (Node (inj₂ x) x₁) = return (Node (inj₂ x) [])
 
   parseStmt : String -> M (Stmt × String)
   parseStmt s = do
     (y' , rest) <- parse s
-    y'' <- synTreeHasNoMultiChar y'
-    y <- synTreeToℕTree y''
+    y <- synTreeToℕTree y'
     case toStmt y of λ
       { (just x) → return (x , rest)
       ; nothing →
-        throwError ("Error while converting syntax tree to statement: "
-          + show {{Tree-Show {{CharList-Show}}}} y'') }
+        throwError ("Error while converting syntax tree to statement!\nTree:\n" + show y + "\nRemaining: " + s) }
 
 open CoreParser-Internal public

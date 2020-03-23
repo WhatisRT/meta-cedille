@@ -13,6 +13,7 @@ b-let recursionTerm [X : *]
   (fsort : Π _ : init$sort. X)
   (fbind : Π _ : Binder. Π _ : String. Π _ : Term. Π _ : Term. Π _ : X. Π _ : X. X)
   (fapp : Π _ : Term. Π _ : List App. Π _ : X. Π _ : List (Product Bool X). X)
+  (fchar : Π _ : init$char. X)
   (funq : Π _ : Term. Π _ : X. X)
   (term : Term) : X :=
   pr1 ?X ?Term (term ?(Product X Term)
@@ -27,5 +28,6 @@ b-let recursionTerm [X : *]
         (fapp (pr2 ?X ?Term t) (mapAppList ?(Product X Term) ?Term (pr2 ?X ?Term) l)
               (pr1 ?X ?Term t) (mapAppList ?(Product X Term) ?X (pr1 ?X ?Term) l))
         (appLTerm (pr2 ?X ?Term t) (mapAppList ?(Product X Term) ?Term (pr2 ?X ?Term) l)))
+    (λ c : init$char. prodPair ?X ?Term (fchar c) (charTerm c))
     (λ u : Product X Term.
       prodPair ?X ?Term (funq (pr2 ?X ?Term u) (pr1 ?X ?Term u)) (unquoteTerm (pr2 ?X ?Term u)))).

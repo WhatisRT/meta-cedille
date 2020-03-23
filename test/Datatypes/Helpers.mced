@@ -6,7 +6,7 @@
 let reduceTerm (term : Term) : Term :=
   term ?Term varTerm sortTerm binderTerm
     (λ t : Term. λ l : List App. ifthenelse ?Term (isNil ?App l) t (appLTerm t l))
-    unquoteTerm.
+    charTerm unquoteTerm.
 
 let mapDSum [A, A' : *] [B : Π _ : A. *] [B' : Π _ : A'. *]
             (f : Π _ : A. A') (g : Π a : A. Π _ : B a. B' (f a)) (x : DSum A B) : DSum A' B' :=

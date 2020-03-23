@@ -57,6 +57,11 @@ let quote$Gamma := λ t : init$term λ t' : init$term [[[[init$term$=Gamma=_spac
 
 let quote$Delta := λ t : init$term λ t' : init$term [[[[init$term$=Delta=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
 
+let quote$constChar := init$const$Char.
+let quote$Kappa := λ c : init$const init$term$=Kappa=_const_.
+
+let quote$kappa := λ c : init$char [init$term$=kappa=_char_ c].
+
 let quote$stmt'ToStmt := [init$stmt$_space'__stmt'_ quote$noSpace].
 
 let quote$simpleLet' := λ n : String λ t : init$term [[[[[[[init$stmt'$let_space__string__space'_=colon==equal=_space'__term__space'__lettail_ quote$singleSpace] n] quote$noSpace] quote$noSpace] t] quote$noSpace] init$lettail$=dot=] : Π _ : String Π _ : init$term init$stmt'.

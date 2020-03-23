@@ -12,6 +12,7 @@ open import Data.List using (map; length)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
 open import Data.Tree
+open import Data.Tree.Instance
 open import Data.Word using (toℕ)
 open import Data.Word32
 
@@ -29,27 +30,28 @@ module ConversionInternals {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M 
     buildConstructorTree Γ t with findOutermostConstructor t
     ... | t' , ts = Node t' $ map (buildConstructorTree Γ) $ reverse ts
 
-    extractConstrId : PureTerm -> M ℕ
-    extractConstrId (Var-P (Bound x)) = return $ toℕ x
+    extractConstrId : PureTerm -> M (ℕ ⊎ Char)
+    extractConstrId (Var-P (Bound x)) = return $ inj₁ $ toℕ x
     extractConstrId (Var-P (Free x)) = throwError "Not a constructor"
+    extractConstrId (Char-P c) = return $ inj₂ c
     {-# CATCHALL #-}
     extractConstrId t = throwError ("Not a variable" + show t)
 
     {-# TERMINATING #-}
-    extractConstrIdTree : Tree PureTerm -> M (Tree ℕ)
+    extractConstrIdTree : Tree PureTerm -> M (Tree (ℕ ⊎ Char))
     extractConstrIdTree (Node x y) = do
       x' <- extractConstrId x
       y' <- sequence (map extractConstrIdTree y)
       return $ Node x' y'
 
     -- converts a normalized term to an appropriate agda term, if possible
-    constrsToAgda : {A : Set} -> List Char -> (Tree ℕ -> M A) -> Context -> PureTerm -> M A
+    constrsToAgda : {A : Set} -> List Char -> (Tree (ℕ ⊎ Char) -> M A) -> Context -> PureTerm -> M A
     constrsToAgda init toTerm Γ t = do
       t' <- extractConstrIdTree $ buildConstructorTree Γ t
       toTerm t'
 
   constrsToStmt : Context -> PureTerm -> M Stmt
-  constrsToStmt = constrsToAgda "stmt" (λ t -> maybeToError (toStmt t) "Error while converting to stmt")
+  constrsToStmt = constrsToAgda "stmt" (λ t -> maybeToError (toStmt t) ("Error while converting to stmt. Tree:\n" + show {{Tree-Show}} t))
 
   constrsToTerm : Context -> PureTerm -> M AnnTerm
   constrsToTerm = constrsToAgda "term" (λ t -> maybeToError (toTerm t) "Error while converting to term")
@@ -62,29 +64,10 @@ module ConversionInternals {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M 
 
 open ConversionInternals public
 
-private
-  bitToTerm : Bool -> AnnTerm
-  bitToTerm false = Var-A $ Free "init$bit$false"
-  bitToTerm true = Var-A $ Free "init$bit$true"
-
-  byteToTerm : Byte -> AnnTerm
-  byteToTerm (mkByte x0 x1 x2 x3 x4 x5 x6 x7) =
-    foldl App-A (Var-A $ Free "init$byte$bits")
-      ((bitToTerm x0) ∷ (bitToTerm x1) ∷ (bitToTerm x2) ∷ (bitToTerm x3) ∷
-      (bitToTerm x4) ∷ (bitToTerm x5) ∷ (bitToTerm x6) ∷ (bitToTerm x7) ∷ [])
-
-  word32ToTerm : Word32 -> AnnTerm
-  word32ToTerm (mkWord32 x0 x1 x2 x3) =
-    foldl App-A (Var-A $ Free "init$char$bytes")
-      ((byteToTerm x0) ∷ (byteToTerm x1) ∷ (byteToTerm x2) ∷ (byteToTerm x3) ∷ [])
-
-charToTerm : Char -> AnnTerm
-charToTerm c = word32ToTerm (charToWord32 c)
-
 charListToTerm : List Char -> AnnTerm
 charListToTerm [] = Var-A (Free "init$string$nil")
 charListToTerm (c ∷ cs) =
-  App-A (App-A (Var-A $ Free "init$string$cons") $ charToTerm c) (charListToTerm cs)
+  App-A (App-A (Var-A $ Free "init$string$cons") $ Char-A c) (charListToTerm cs)
 
 stringToTerm : String -> AnnTerm
 stringToTerm = charListToTerm ∘ toList

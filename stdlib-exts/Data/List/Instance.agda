@@ -53,3 +53,6 @@ instance
     where
       showList : ∀ {a} {A : Set a} -> (A -> String) -> List A -> String
       showList showA l = "[" + concat (intersperse "," (map showA l)) + "]"
+
+  List-Monad : ∀ {a} -> Monad {a} {a} List
+  List-Monad = record { _>>=_ = λ l f -> concat (map f l) ; return = λ a -> Data.List.[ a ] }

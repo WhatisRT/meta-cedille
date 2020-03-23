@@ -20,4 +20,5 @@ b-let showTerm (t : Term) : String :=
                                (λ bs : Product Bool String.
                                  stringConcat [String| ifthenelse ?String (pr1 ?Bool ?String bs) " ?" " ",
                                                              "(", pr2 ?Bool ?String bs, ")"]) l)))
+    (λ c : Char. stringConcat [String| "κ", stringCons c stringNil])
     (λ t : String. stringConcat [String| "γ{", t, "}"]).

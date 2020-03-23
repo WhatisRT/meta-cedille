@@ -104,13 +104,7 @@ instance
       ... | no ¬p = no λ { refl -> ¬p refl }
 
   Name-EqB : EqB Name
-  Name-EqB = record { _≣_ = helper }
-    where
-      helper : (n n' : Name) -> Bool
-      helper (Bound x) (Bound x₁) = x ≣ x₁
-      helper (Bound x) (Free x₁) = false
-      helper (Free x) (Bound x₁) = false
-      helper (Free x) (Free x₁) = x ≣ x₁
+  Name-EqB = Eq→EqB
 
   Name-Show : Show Name
   Name-Show = record { show = helper }
@@ -118,6 +112,25 @@ instance
       helper : Name -> String
       helper (Bound x) = show x
       helper (Free x) = show {{CharList-Show}} x
+
+data Const : Set where
+  CharT : Const
+
+instance
+  Const-Eq : Eq Const
+  Const-Eq = record { _≟_ = helper }
+    where
+      helper : (c c' : Const) -> Dec (c ≡ c')
+      helper CharT CharT = yes refl
+
+  Const-EqB : EqB Const
+  Const-EqB = Eq→EqB
+
+  Const-Show : Show Const
+  Const-Show = record { show = helper }
+    where
+      helper : Const -> String
+      helper CharT = "CharT"
 
 data PrimMeta : Set where
   EvalStmt : PrimMeta
@@ -174,6 +187,7 @@ primMetaArgs-Show showA CheckTerm = showHomPair showA
 data PureTerm : Set where
   Var-P : Name -> PureTerm
   Sort-P : Sort -> PureTerm
+  Const-P : Const -> PureTerm
   App-P : PureTerm -> PureTerm -> PureTerm
   Lam-P : PureTerm -> PureTerm
   Pi-P : PureTerm -> PureTerm -> PureTerm
@@ -184,6 +198,8 @@ data PureTerm : Set where
   Mu-P : PureTerm -> PureTerm -> PureTerm
   Epsilon-P : PureTerm -> PureTerm
   Ev-P : (m : PrimMeta) -> primMetaArgs PureTerm m -> PureTerm
+  Char-P : Char -> PureTerm
+  CharEq-P : PureTerm -> PureTerm -> PureTerm
 
 instance
   {-# TERMINATING #-}
@@ -193,6 +209,7 @@ instance
       helper : PureTerm -> String
       helper (Var-P x) = show x
       helper (Sort-P x) = show x
+      helper (Const-P x) = show x
       helper (App-P t t₁) = "[" + helper t + " " + helper t₁ + "]"
       helper (Lam-P t) = "λ " + helper t
       helper (Pi-P t t₁) = "Π " + helper t + " " + helper t₁
@@ -203,17 +220,22 @@ instance
       helper (Mu-P t t₁) = "μ " + helper t + " " + helper t₁
       helper (Epsilon-P t) = "ε " + helper t
       helper (Ev-P m args) = "ζ " + show m + " " + primMetaArgs-Show helper m args
+      helper (Char-P c) = "Char " + show c
+      helper (CharEq-P t t') = "CharEq " + show t + " " + show t'
+
+private
+  beqMonadHelper : {A : Set} {M : Set -> Set} {{_ : EqB A}} {{_ : Show A}}
+    {{_ : Monad M}} {{_ : MonadExcept M String}} -> A -> A -> String -> M ⊤
+  beqMonadHelper a a' s =
+    if a ≣ a'
+      then return tt
+      else throwError (s + " " + show a + " isn't equal to name " + show a')
 
 pureTermBeq : {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String}}
   -> PureTerm -> PureTerm -> M ⊤
-pureTermBeq (Var-P x) (Var-P x₁) =
-  if x ≣ x₁
-    then return tt
-    else throwError ("Name " + show x + " isn't equal to name " + show x₁)
-pureTermBeq (Sort-P x) (Sort-P x₁) =
-  if x ≣ x₁
-    then return tt
-    else throwError ("Sort " + show x + " isn't equal to sort " + show x₁)
+pureTermBeq (Var-P x) (Var-P x₁) = beqMonadHelper x x₁ "Name"
+pureTermBeq (Sort-P x) (Sort-P x₁) = beqMonadHelper x x₁ "Sort"
+pureTermBeq (Const-P x) (Const-P x₁) = beqMonadHelper x x₁ "Const"
 pureTermBeq (App-P t t₁) (App-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
 pureTermBeq (Lam-P t) (Lam-P t₁) = pureTermBeq t t₁
 pureTermBeq (Pi-P t t₁) (Pi-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
@@ -226,6 +248,8 @@ pureTermBeq (Epsilon-P t) (Epsilon-P x) = pureTermBeq t x
 pureTermBeq (Ev-P EvalStmt t) (Ev-P EvalStmt x) = pureTermBeq t x
 pureTermBeq (Ev-P ShellCmd (t , t₁)) (Ev-P ShellCmd (x , x₁)) = pureTermBeq t x >> pureTermBeq t₁ x₁
 pureTermBeq (Ev-P CatchErr (t , t₁)) (Ev-P CatchErr (x , x₁)) = pureTermBeq t x >> pureTermBeq t₁ x₁
+pureTermBeq (Char-P c) (Char-P c') = beqMonadHelper c c' "Char"
+pureTermBeq (CharEq-P t t₁) (CharEq-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
 {-# CATCHALL #-}
 pureTermBeq t t' =
   throwError $ "The terms " + show t + " and " + show t' + " aren't equal!"
@@ -233,6 +257,7 @@ pureTermBeq t t' =
 data AnnTerm : Set where
   Var-A : Name -> AnnTerm
   Sort-A : Sort -> AnnTerm
+  Const-A : Const -> AnnTerm
   _∙1 : AnnTerm -> AnnTerm
   _∙2 : AnnTerm -> AnnTerm
   β : AnnTerm -> AnnTerm -> AnnTerm -- proves first arg eq, erase to second arg
@@ -254,6 +279,8 @@ data AnnTerm : Set where
   μ : AnnTerm -> AnnTerm -> AnnTerm
   ε : AnnTerm -> AnnTerm
   Ev-A : (x : PrimMeta) -> primMetaArgs AnnTerm x -> AnnTerm
+  Char-A : Char -> AnnTerm
+  CharEq-A : AnnTerm -> AnnTerm -> AnnTerm
 
 instance
   {-# TERMINATING #-}
@@ -263,6 +290,7 @@ instance
       helper : AnnTerm -> String
       helper (Var-A x) = show x
       helper (Sort-A x) = show x
+      helper (Const-A x) = show x
       helper (t ∙1) = "π1 " + helper t
       helper (t ∙2) = "π2 " + helper t
       helper (β t t₁) = "β " + helper t + " " + helper t₁
@@ -283,6 +311,8 @@ instance
       helper (μ t t₁) = "μ " + helper t + " " + helper t₁
       helper (ε t) = "ε " + helper t
       helper (Ev-A m args) = "Ev " + show m + " " + primMetaArgs-Show helper m args
+      helper (Char-A c) = "Char " + show c
+      helper (CharEq-A t t') = "CharEq " + show t + " " + show t'
 
 annTermBeq : AnnTerm -> AnnTerm -> Bool
 annTermBeq (Var-A x) (Var-A x₁) = x ≣ x₁
@@ -309,6 +339,8 @@ annTermBeq (ε t) (ε u) = annTermBeq t u
 annTermBeq (Ev-A EvalStmt t) (Ev-A EvalStmt u) = annTermBeq t u
 annTermBeq (Ev-A ShellCmd (t , t₁)) (Ev-A ShellCmd (u , u₁)) = annTermBeq t u ∧ annTermBeq t₁ u₁
 annTermBeq (Ev-A CatchErr (t , t₁)) (Ev-A CatchErr (u , u₁)) = annTermBeq t u ∧ annTermBeq t₁ u₁
+annTermBeq (Char-A c) (Char-A c') = c ≣ c'
+annTermBeq (CharEq-A t t₁) (CharEq-A u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
 {-# CATCHALL #-}
 annTermBeq _ _ = false
 
@@ -348,6 +380,7 @@ modifyIndicesPure = helper (fromℕ 0)
     helper k n v@(Var-P (Bound x)) = if x <𝕀 k then v else Var-P (Bound $ pred𝕀 (x +𝕀 n))
     helper k n v@(Var-P (Free x)) = v
     helper k n v@(Sort-P x) = v
+    helper k n v@(Const-P x) = v
     helper k n (App-P t t₁) = App-P (helper k n t) (helper k n t₁)
     helper k n (Lam-P t) = Lam-P (helper (suc𝕀 k) n t)
     helper k n (Pi-P t t₁) = Pi-P (helper k n t) (helper (suc𝕀 k) n t₁)
@@ -358,6 +391,8 @@ modifyIndicesPure = helper (fromℕ 0)
     helper k n (Mu-P t t₁) = Mu-P (helper k n t) (helper k n t₁)
     helper k n (Epsilon-P t) = Epsilon-P (helper k n t)
     helper k n (Ev-P m args) = Ev-P m (mapPrimMetaArgs (helper k n) args)
+    helper k n (Char-P c) = Char-P c
+    helper k n (CharEq-P t t') = CharEq-P (helper k n t) (helper k n t')
 
 incrementIndicesPureBy : 𝕀 -> PureTerm -> PureTerm
 incrementIndicesPureBy i = modifyIndicesPure (suc𝕀 i)
@@ -373,6 +408,7 @@ modifyIndices = helper (fromℕ 0)
     helper k n v@(Var-A (Bound x)) = if x <𝕀 k then v else Var-A (Bound $ pred𝕀 (x +𝕀 n))
     helper k n v@(Var-A (Free x)) = v
     helper k n (Sort-A x) = Sort-A x
+    helper k n (Const-A x) = Const-A x
     helper k n (t ∙1) = helper k n t ∙1
     helper k n (t ∙2) = helper k n t ∙2
     helper k n (β t t₁) = β (helper k n t) (helper k n t₁)
@@ -393,6 +429,8 @@ modifyIndices = helper (fromℕ 0)
     helper k n (μ t t₁) = μ (helper k n t) (helper k n t₁)
     helper k n (ε t) = ε (helper k n t)
     helper k n (Ev-A m args) = Ev-A m (mapPrimMetaArgs (helper k n) args)
+    helper k n (Char-A c) = Char-A c
+    helper k n (CharEq-A t t₁) = CharEq-A (helper k n t) (helper k n t₁)
 
 incrementIndicesBy : 𝕀 -> AnnTerm -> AnnTerm
 incrementIndicesBy i = modifyIndices (suc𝕀 i)
@@ -411,6 +449,7 @@ checkFree = helper 0
       { (Bound x₁) → false
       ; (Free x₁) → x ≣ x₁ }
     helper k n (Sort-P x) = false
+    helper k n (Const-P x) = false
     helper k n (App-P t t₁) = helper k n t ∧ helper k n t₁
     helper k n (Lam-P t) = helper (suc k) n t
     helper k n (Pi-P t t₁) = helper k n t ∧ helper (suc k) n t₁
@@ -424,6 +463,8 @@ checkFree = helper 0
     helper k n (Ev-P ShellCmd (t , t₁)) = helper k n t ∧ helper k n t₁
     helper k n (Ev-P CatchErr (t , t₁)) = helper k n t ∧ helper k n t₁
     helper k n (Ev-P CheckTerm (t , t₁)) = helper k n t ∧ helper k n t₁
+    helper k n (Char-P c) = false
+    helper k n (CharEq-P t t₁) = helper k n t ∧ helper k n t₁
 
 GlobalContext : Set
 GlobalContext = NDTrie EfficientDef
@@ -471,6 +512,7 @@ validInContext = helper 0
     helper k (Var-P (Bound x)) Γ = x <𝕀 fromℕ (localContextLength Γ + k)
     helper k (Var-P n@(Free x)) Γ = maybe (λ _ → true) false $ lookupInContext n Γ
     helper k (Sort-P x) Γ = true
+    helper k (Const-P x) Γ = true
     helper k (App-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
     helper k (Lam-P t) Γ = helper (suc k) t Γ
     helper k (Pi-P t t₁) Γ = helper k t Γ ∧ helper (suc k) t₁ Γ
@@ -484,11 +526,14 @@ validInContext = helper 0
     helper k (Ev-P ShellCmd (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
     helper k (Ev-P CatchErr (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
     helper k (Ev-P CheckTerm (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
+    helper k (Char-P c) Γ = true
+    helper k (CharEq-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
 
 {-# TERMINATING #-}
 Erase : AnnTerm -> PureTerm
 Erase (Var-A x) = Var-P x
 Erase (Sort-A x) = Sort-P x
+Erase (Const-A x) = Const-P x
 Erase (t ∙1) = Erase t
 Erase (t ∙2) = Erase t
 Erase (β t t₁) = Erase t₁
@@ -509,6 +554,8 @@ Erase (M-A t) = M-P (Erase t)
 Erase (μ t t₁) = Mu-P (Erase t) (Erase t₁)
 Erase (ε t) = Epsilon-P (Erase t)
 Erase (Ev-A m args) = Ev-P m (mapPrimMetaArgs Erase args)
+Erase (Char-A c) = Char-P c
+Erase (CharEq-A x x₁) = CharEq-P (Erase x) (Erase x₁)
 
 -- substitute the first unbound variable in t with t'
 subst : AnnTerm -> AnnTerm -> AnnTerm
@@ -519,6 +566,7 @@ subst t t' = decrementIndices $ substIndex t (fromℕ 0) t'
     substIndex v@(Var-A (Bound x)) k t' = if k ≣ x then incrementIndicesBy (suc𝕀 k) t' else v
     substIndex v@(Var-A (Free x)) k t' = v
     substIndex v@(Sort-A x) k t' = v
+    substIndex v@(Const-A x) k t' = v
     substIndex (t ∙1) k t' = (substIndex t k t') ∙1
     substIndex (t ∙2) k t' = (substIndex t k t') ∙2
     substIndex (β t t₁) k t' = β (substIndex t k t') (substIndex t₁ k t')
@@ -542,6 +590,8 @@ subst t t' = decrementIndices $ substIndex t (fromℕ 0) t'
     substIndex (Ev-A ShellCmd (t , t₁)) k t' = Ev-A ShellCmd ((substIndex t k t' , substIndex t₁ k t'))
     substIndex (Ev-A CatchErr (t , t₁)) k t' = Ev-A CatchErr ((substIndex t k t' , substIndex t₁ k t'))
     substIndex (Ev-A CheckTerm (t , t₁)) k t' = Ev-A CheckTerm ((substIndex t k t' , substIndex t₁ k t'))
+    substIndex (Char-A c) k t' = Char-A c
+    substIndex (CharEq-A t t₁) k t' = CharEq-A (substIndex t k t') (substIndex t₁ k t')
 
 -- substitute the first unbound variable in t with t'
 substPure : PureTerm -> PureTerm -> PureTerm
@@ -552,6 +602,7 @@ substPure t t' = decrementIndicesPure $ substIndexPure t (fromℕ 0) t'
     substIndexPure v@(Var-P (Bound x)) k t' = if k ≣ x then incrementIndicesPureBy (suc𝕀 k) t' else v
     substIndexPure v@(Var-P (Free x)) k t' = v
     substIndexPure v@(Sort-P x) k t' = v
+    substIndexPure v@(Const-P x) k t' = v
     substIndexPure (App-P t t₁) k t' = App-P (substIndexPure t k t') (substIndexPure t₁ k t')
     substIndexPure (Lam-P t) k t' = Lam-P (substIndexPure t (suc𝕀 k) t')
     substIndexPure (Pi-P t t₁) k t' = Pi-P (substIndexPure t k t') (substIndexPure t₁ (suc𝕀 k) t')
@@ -565,6 +616,8 @@ substPure t t' = decrementIndicesPure $ substIndexPure t (fromℕ 0) t'
     substIndexPure (Ev-P ShellCmd (t , t₁)) k t' = Ev-P ShellCmd ((substIndexPure t k t' , substIndexPure t₁ k t'))
     substIndexPure (Ev-P CatchErr (t , t₁)) k t' = Ev-P CatchErr ((substIndexPure t k t' , substIndexPure t₁ k t'))
     substIndexPure (Ev-P CheckTerm (t , t₁)) k t' = Ev-P CheckTerm ((substIndexPure t k t' , substIndexPure t₁ k t'))
+    substIndexPure (Char-P c) k t' = Char-P c
+    substIndexPure (CharEq-P t t₁) k t' = CharEq-P (substIndexPure t k t') (substIndexPure t₁ k t')
 
 stripBinder : AnnTerm -> Maybe AnnTerm
 stripBinder (∀-A t' t'') = just t''
@@ -596,6 +649,8 @@ stripBinderPure (Iota-P t' t'') = just t''
 stripBinderPure _ = nothing
 
 hnfNormPure : Context -> PureTerm -> PureTerm
+normalizePure : Context -> PureTerm -> PureTerm
+
 {-# NON_TERMINATING #-}
 hnfNormPure Γ (Var-P x) with lookupInContext x Γ
 hnfNormPure Γ (Var-P x) | just (Let x₁ x₂) = hnfNormPure Γ $ Erase x₁
@@ -604,30 +659,17 @@ hnfNormPure Γ v@(Var-P x) | nothing = v -- in case the lookup fails, we cannot 
 hnfNormPure Γ (App-P t t₁) = case stripBinderPure (hnfNormPure Γ t) of λ
   { (just t') → hnfNormPure Γ $ substPure t' t₁
   ; nothing → App-P t t₁ }
+hnfNormPure Γ v@(CharEq-P t t₁) = normalizePure Γ v
 {-# CATCHALL #-}
 hnfNormPure Γ v = v
 
-{-# TERMINATING #-}
-findOutermostConstructor : PureTerm -> PureTerm × List PureTerm
-findOutermostConstructor t = outermostApp $ stripBinders t
-  where
-    stripBinders : PureTerm -> PureTerm
-    stripBinders t with stripBinderPure t
-    stripBinders t | just x = stripBinders x
-    stripBinders t | nothing = t
-
-    outermostApp : PureTerm -> PureTerm × List PureTerm
-    outermostApp (App-P t t₁) = Data.Product.map id (t₁ ∷_) $ outermostApp t
-    {-# CATCHALL #-}
-    outermostApp t = t , []
-
 {-# NON_TERMINATING #-}
-normalizePure : Context -> PureTerm -> PureTerm
 normalizePure Γ (Var-P x) with efficientLookupInContext x Γ
 normalizePure Γ (Var-P x) | just (EfficientLet x₁ x₂ x₃) = x₂
 normalizePure Γ v@(Var-P x) | just (EfficientAxiom x₁) = v -- we cannot reduce axioms
 normalizePure Γ v@(Var-P x) | nothing = v -- in case the lookup fails, we cannot reduce
 normalizePure Γ v@(Sort-P x) = v
+normalizePure Γ v@(Const-P x) = v
 normalizePure Γ (App-P t t₁) = case hnfNormPure Γ t of λ t' ->
   case stripBinderPure t' of λ
     { (just t'') → normalizePure Γ (substPure t'' t₁)
@@ -643,6 +685,25 @@ normalizePure Γ (M-P t) = M-P (normalizePure Γ t)
 normalizePure Γ (Mu-P t t₁) = Mu-P (normalizePure Γ t) (normalizePure Γ t₁)
 normalizePure Γ (Epsilon-P t) = Epsilon-P (normalizePure Γ t)
 normalizePure Γ (Ev-P m args) = Ev-P m (mapPrimMetaArgs (normalizePure Γ) args)
+normalizePure Γ (Char-P c) = (Char-P c)
+normalizePure Γ (CharEq-P t t₁) with normalizePure Γ t | normalizePure Γ t₁
+... | (Char-P c) | (Char-P c') = normalizePure Γ $ if c ≣ c' then Var-P $ Free' "true" else (Var-P $ Free' "false")
+{-# CATCHALL #-}
+... | x | x₁ = CharEq-P x x₁
+
+{-# TERMINATING #-}
+findOutermostConstructor : PureTerm -> PureTerm × List PureTerm
+findOutermostConstructor t = outermostApp $ stripBinders t
+  where
+    stripBinders : PureTerm -> PureTerm
+    stripBinders t with stripBinderPure t
+    stripBinders t | just x = stripBinders x
+    stripBinders t | nothing = t
+
+    outermostApp : PureTerm -> PureTerm × List PureTerm
+    outermostApp (App-P t t₁) = Data.Product.map id (t₁ ∷_) $ outermostApp t
+    {-# CATCHALL #-}
+    outermostApp t = t , []
 
 insertInGlobalContext : GlobalName -> Def -> GlobalContext -> String ⊎ GlobalContext
 insertInGlobalContext n d Γ =
@@ -677,14 +738,9 @@ module CheckEquality {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String
         throwError $ "The terms " + show t + " and " + show t' + " aren't equal!"
 
       compareHnfs : PureTerm -> PureTerm -> M ⊤
-      compareHnfs (Var-P x) (Var-P x₁) =
-        if x ≣ x₁
-          then return tt
-          else throwError ("Name " + show x + " isn't equal to name " + show x₁)
-      compareHnfs (Sort-P x) (Sort-P x₁) =
-        if x ≣ x₁
-          then return tt
-          else throwError ("Sort " + show x + " isn't equal to sort " + show x₁)
+      compareHnfs (Var-P x) (Var-P x₁) = beqMonadHelper x x₁ "Name"
+      compareHnfs (Sort-P x) (Sort-P x₁) = beqMonadHelper x x₁ "Sort"
+      compareHnfs (Const-P x) (Const-P x₁) = beqMonadHelper x x₁ "Const"
       compareHnfs (App-P t t₁) (App-P x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
       compareHnfs (Lam-P t) (Lam-P t₁) = checkβηPure t t₁
       compareHnfs (Pi-P t t₁) (Pi-P x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
@@ -697,6 +753,8 @@ module CheckEquality {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String
       compareHnfs (Ev-P EvalStmt t) (Ev-P EvalStmt x) = checkβηPure t x
       compareHnfs (Ev-P ShellCmd (t , t₁)) (Ev-P ShellCmd (x , x₁)) = checkβηPure t x >> checkβηPure t₁ x₁
       compareHnfs (Ev-P CatchErr (t , t₁)) (Ev-P CatchErr (x , x₁)) = checkβηPure t x >> checkβηPure t₁ x₁
+      compareHnfs (Char-P c) (Char-P c') = beqMonadHelper c c' "Char"
+      compareHnfs (CharEq-P t t₁) (CharEq-P x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
       compareHnfs (Lam-P t) t₁ = case normalizePure Γ t of λ
         { t''@(App-P t' (Var-P (Bound i))) ->
           if i ≣ (fromℕ 0) ∧ validInContext t' Γ then (compareHnfs (decrementIndicesPure t') t₁) else hnfError t'' t₁
@@ -734,6 +792,8 @@ synthType' Γ (Var-A x) =
     ("Lookup failed: " + show x + " in context " + show {{Context-Show}} Γ)
 synthType' Γ (Sort-A ⋆) = return $ Sort-A □
 synthType' Γ (Sort-A □) = throwError "Cannot synthesize type for the superkind"
+
+synthType' Γ (Const-A CharT) = return $ Sort-A ⋆
 
 synthType' Γ (t ∙1) = do
   T <- synthType Γ t
@@ -973,3 +1033,13 @@ synthType' Γ (Ev-A CatchErr (t , t₁)) = do
          ", while it should have type 'init$err -> M " + show u)
       return $ M-A u
     ; _ -> throwError "The first term in CatchErr needs to have type 'M t' for some 't'" }
+
+synthType' Γ (Char-A c) = return (Const-A CharT)
+synthType' Γ (CharEq-A t t') = do
+  T <- synthType Γ t
+  T' <- synthType Γ t'
+  case (hnfNorm Γ T) of λ
+    { (Const-A CharT) -> case (hnfNorm Γ T') of λ
+      { (Const-A CharT) -> return $ Var-A $ Free' "Bool"
+      ; _ -> throwError "The second term in CharEq needs to have type Char" }
+    ; _ -> throwError "The first term in CharEq needs to have type Char" }

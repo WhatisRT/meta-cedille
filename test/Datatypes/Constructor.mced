@@ -21,6 +21,7 @@ let toConstrData (term : Term) : ConstrData :=
         (consArgConstrData (mkParam false (mkPreParam n T)) rect)
         (consArgConstrData (mkParam true (mkPreParam n T)) rect))
     (λ t : Term. λ l : List App. λ _ : ConstrData. λ _ : List (Product Bool ConstrData). noArgConstrData (appLTerm t l))
+    (λ c : Char. noArgConstrData (charTerm c))
     (λ u : Term. λ recu : ConstrData. recu)
     (reduceTerm term).
 
@@ -37,6 +38,7 @@ let constrArgToFunctor (t : Term) (match : List String) : Error ConstrFunctor :=
           (error ?ConstrFunctor "Can only have pi binder in constructors"))
       (λ t : Term. λ l : List App. λ _ : Error ConstrFunctor. λ _ : List (Product Bool (Error ConstrFunctor)).
         pureError ?ConstrFunctor (constConstrFunctor (appLTerm t l)))
+      (λ c : Char. error ?ConstrFunctor "Cannot turn char into functor")
       (λ u : Term. λ _ : Error ConstrFunctor. error ?ConstrFunctor "Cannot turn unquote into functor")
       t).
 

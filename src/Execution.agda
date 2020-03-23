@@ -121,7 +121,7 @@ parseResultToConstrTree namespace (Node x x₁) =
     where
       ruleToTerm : List Char ⊎ Char -> AnnTerm
       ruleToTerm (inj₁ x) = Var-A (Free (namespace ++ "$" ++ ruleToConstr x))
-      ruleToTerm (inj₂ y) = charToTerm y
+      ruleToTerm (inj₂ y) = Char-A y
 
 module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
   {{_ : MonadExcept M String}} {{_ : MonadState M MetaContext}}

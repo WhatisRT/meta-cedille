@@ -21,18 +21,5 @@ b-let stringConcat (l : List String) : String :=
 
 -- Equality
 
-b-let bitEq (b, b' : init$bit) : Bool := b ?Bool (b' ?Bool true false) (b' ?Bool false true).
-
-b-let byteEq (b, b' : init$byte) : Bool :=
-  b ?Bool (λ x1, x2, x3, x4, x5, x6, x7, x8 : init$bit.
-             b' ?Bool (λ y1, y2, y3, y4, y5, y6, y7, y8 : init$bit.
-                         and (bitEq x1 y1) (and (bitEq x2 y2) (and (bitEq x3 y3) (and (bitEq x4 y4)
-                         (and (bitEq x5 y5) (and (bitEq x6 y6) (and (bitEq x7 y7) (bitEq x8 y8))))))))).
-
-b-let charEq (c, c' : init$char) : Bool :=
-  c ?Bool λ x1, x2, x3, x4 : init$byte.
-    c' ?Bool λ y1, y2, y3, y4 : init$byte.
-      and (byteEq x1 y1) (and (byteEq x2 y2) (and (byteEq x3 y3) (byteEq x4 y4))).
-
 b-let stringEq (s, s' : String) : Bool :=
   listEq ?init$char charEq (stringToList s) (stringToList s').

@@ -47,9 +47,11 @@ private
     "var$_string_" ∷ "var$_index_" ∷
 
     "sort$=ast=" ∷ "sort$=sq=" ∷
+    "const$Char" ∷
 
     "term$_var_" ∷
     "term$_sort_" ∷
+    "term$=Kappa=_const_" ∷
     "term$=pi=_space__term_" ∷
     "term$=psi=_space__term_" ∷
     "term$=beta=_space__term__space__term_" ∷
@@ -73,6 +75,8 @@ private
     "term$=Beta=_space__term__space__term_" ∷ -- this is zeta ShellCmd
     "term$=Gamma=_space__term__space__term_" ∷ -- this is zeta CatchErr
     "term$=Delta=_space__term__space__term_" ∷ -- this is zeta CheckTerm
+    "term$=kappa=_char_" ∷ -- this constructs a Char
+    "term$=gamma=_space__term__space__term_" ∷ -- charEq
 
     "lettail$=dot=" ∷ "lettail$=colon=_space'__term__space'_=dot=" ∷
 
@@ -104,26 +108,10 @@ private
       toConstrData' : String -> String -> ConstrData'
       toConstrData' self l = if self ≣ l then Self else Other (namespace + "$" + l)
 
-  bitData : InductiveData
-  bitData = "init$bit" , ("init$bit$true" , []) ∷ ("init$bit$false" , []) ∷ []
-
-  byteData : InductiveData
-  byteData =
-    ("init$byte"
-    , ("init$byte$bits"
-      , ((Other "init$bit") ∷ (Other "init$bit") ∷ (Other "init$bit") ∷ (Other "init$bit") ∷
-         (Other "init$bit") ∷ (Other "init$bit") ∷ (Other "init$bit") ∷ (Other "init$bit") ∷ [])) ∷ [])
-
-  charData : InductiveData
-  charData =
-    ("init$char"
-    , ("init$char$bytes"
-      , ((Other "init$byte") ∷ (Other "init$byte") ∷ (Other "init$byte") ∷ (Other "init$byte") ∷ [])) ∷ [])
-
   stringData : InductiveData
   stringData =
     ("init$string"
-    , ("init$string$cons" , (Other "init$char" ∷ Self ∷ [])) ∷ ("init$string$nil" , []) ∷ [])
+    , ("init$string$cons" , (Other "ΚChar" ∷ Self ∷ [])) ∷ ("init$string$nil" , []) ∷ []) -- capital kappa
 
   stringListData : InductiveData
   stringListData =
@@ -140,27 +128,9 @@ private
     ("init$metaResult"
     , ("init$metaResult$pair" , (Other "init$stringList" ∷ Other "init$termList" ∷ [])) ∷ [])
 
-  bitToData : Bool -> String
-  bitToData false = "init$bit$false"
-  bitToData true = "init$bit$true"
-
-  byteToData : Byte -> String
-  byteToData (mkByte x0 x1 x2 x3 x4 x5 x6 x7) =
-    "[[[[[[[[init$byte$bits " +
-    bitToData x0 + "] " + bitToData x1 + "] " + bitToData x2 + "] " + bitToData x3 + "] " +
-    bitToData x4 + "] " + bitToData x5 + "] " + bitToData x6 + "] " + bitToData x7 + "]"
-
-  word32ToData : Word32 -> String
-  word32ToData (mkWord32 x0 x1 x2 x3) =
-    "[[[[init$char$bytes " +
-    byteToData x0 + "] " + byteToData x1 + "] " + byteToData x2 + "] " + byteToData x3 + "]"
-
-  charToData : Char -> String
-  charToData c = word32ToData (charToWord32 c)
-
   charDataConstructor : Char -> String -> String
   charDataConstructor c prefix =
-    "let " + prefix + (fromList $ escapeChar c) + " := " + charToData c + "."
+    "let " + prefix + (fromList $ escapeChar c) + " := κ" + show c + "."
 
   nameInitConstrs : List String
   nameInitConstrs = map (λ c -> charDataConstructor c "init$nameInitChar$") nameInits
@@ -169,7 +139,7 @@ private
   nameTailConstrs = map (λ c -> charDataConstructor c "init$nameTailChar$") nameTails
 
   initEnvConstrs : List InductiveData
-  initEnvConstrs = bitData ∷ byteData ∷ charData ∷ stringData ∷
+  initEnvConstrs = stringData ∷
     (map
       (λ { (name , rule) -> toInductiveData "init" (fromList name) (map fromList rule) }) $
       sortGrammar grammar)
@@ -186,12 +156,15 @@ private
   grammarWithChars = grammar ++
     map (λ c -> "nameTailChar$" ++ c) (map escapeChar nameTails) ++
     map (λ c -> "nameInitChar$" ++ c) (map escapeChar nameInits) ++
-    "string'$_nameTailChar__string'_" ∷ "string'$" ∷ "string$_nameInitChar__string'_" ∷ "var$_string_" ∷ "var$_index_" ∷ []
+    "char$!!" ∷
+    "string'$_nameTailChar__string'_" ∷ "string'$" ∷
+    "string$_nameInitChar__string'_" ∷
+    "var$_string_" ∷ "var$_index_" ∷ []
 
 --------------------------------------------------------------------------------
 
 initEnv : String
-initEnv = Data.String.concat
+initEnv = "let init$char := ΚChar." + Data.String.concat
   (map simpleInductive initEnvConstrs ++ nameInitConstrs ++ nameTailConstrs ++ otherInit)
 
 -- a map from non-terminals to their possible expansions
