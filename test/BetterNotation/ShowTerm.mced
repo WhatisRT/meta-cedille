@@ -4,7 +4,26 @@
 -- TODO: move somewhere else?
 --------------------------------------------------------------------------------
 
-b-let showVar (v : init$var) : String := v ?String (λ s : String. s) (λ i : init$index. "INDEX").
+b-let showIndex' (i : init$index') : String :=
+  i ?String
+    ""
+    (stringApp "0") (stringApp "1") (stringApp "2") (stringApp "3") (stringApp "4")
+    (stringApp "5") (stringApp "6") (stringApp "7") (stringApp "8") (stringApp "9").
+
+b-let showIndex (i : init$index) : String :=
+  i ?String
+    (λ i' : init$index'. stringApp "0" (showIndex' i'))
+    (λ i' : init$index'. stringApp "1" (showIndex' i'))
+    (λ i' : init$index'. stringApp "2" (showIndex' i'))
+    (λ i' : init$index'. stringApp "3" (showIndex' i'))
+    (λ i' : init$index'. stringApp "4" (showIndex' i'))
+    (λ i' : init$index'. stringApp "5" (showIndex' i'))
+    (λ i' : init$index'. stringApp "6" (showIndex' i'))
+    (λ i' : init$index'. stringApp "7" (showIndex' i'))
+    (λ i' : init$index'. stringApp "8" (showIndex' i'))
+    (λ i' : init$index'. stringApp "9" (showIndex' i')).
+
+b-let showVar (v : init$var) : String := v ?String (λ s : String. s) showIndex.
 b-let showSort (s : init$sort) : String := s ?String "*" "□".
 b-let showBinder (b : Binder) : String := b ?String "λ" "Λ" "Π" "∀".
 
