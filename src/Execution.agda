@@ -282,7 +282,10 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
         (fst , snd) <- parseMeta m s
         let exec = App-A interpreter fst
         (G , _ , _) <- getMeta
-        T <- appendIfError (synthType Γ exec) ("\n\nError while interpreting input: " + show fst + "\nWhile parsing: " + s)
+        T <- appendIfError (synthType Γ exec)
+                           ("\n\nError while interpreting input: "
+                             + (shortenString 10000 (show fst))
+                             + "\nWhile parsing: " + (shortenString 10000 s))
         case (hnfNorm Γ T) of λ
           { (M-A _) -> do
             execHnf <- return $ hnfNormPure Γ $ Erase exec

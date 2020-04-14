@@ -784,7 +784,7 @@ synthType' :
 synthType Γ t =
   appendIfError
     (synthType' Γ t)
-    ("\n\nWhile synthesizing type for " + show t + " in context:\n" + show {{Context-Show}} Γ)
+    ("\n\nWhile synthesizing type for " + (shortenString 1000 (show t)) + " in context:\n" + show {{Context-Show}} Γ)
 
 synthType' Γ (Var-A x) =
   maybeToError
