@@ -9,4 +9,4 @@ addWord : Word64 → Word64 → Word64
 addWord a b = primWord64FromNat (primWord64ToNat a + primWord64ToNat b)
 
 subWord : Word64 → Word64 → Word64
-subWord a b = primWord64FromNat ((primWord64ToNat a + 18446744073709551616) - primWord64ToNat b)
+subWord a b = primWord64FromNat (primWord64ToNat a - primWord64ToNat b)
