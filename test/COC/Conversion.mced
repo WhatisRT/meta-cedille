@@ -1,0 +1,136 @@
+--------------------------------------------------------------------------------
+-- Convert between COC and Meta Cedille terms
+--------------------------------------------------------------------------------
+
+module Conversion.
+
+Given MCTerm.
+Given MCSVar.
+Given MCAst.
+Given MCSq.
+Given MCLambda.
+Given MCPi.
+Given MCApp.
+Given natToVar.
+Given indexToNat.
+Given init$index.
+Given init$var.
+Given init$sort.
+Given Binder.
+Given String.
+Given stringCons.
+Given stringNil.
+Given stringEq.
+Given Char.
+Given List.
+Given cons.
+Given nil.
+Given reverse.
+Given Product.
+Given Bool.
+Given true.
+Given false.
+Given ifthenelse.
+Given pr1.
+Given pr2.
+Given TripleProduct.
+Given mkTripleProduct.
+Given pr31.
+Given pr32.
+Given pr33.
+Given LetInfo.
+Given letInfoName.
+Given letInfoTerm.
+Given letInfoType.
+Given Maybe.
+Given just.
+Given nothing.
+Given maybe.
+Given bindMaybe.
+Given mapMaybe.
+
+Import Nat.
+Import NatConversions.
+Import Theory.
+
+let findMaybe [A : *] (pred : Π _ : A. Bool) (l : List A) : Maybe Nat :=
+  l ?(Maybe Nat)
+    (nothing ?Nat)
+    (λ a : A. λ rec : Maybe Nat. ifthenelse ?(Maybe Nat) (pred a) (just ?Nat zero) (mapMaybe ?Nat ?Nat succ rec)).
+
+let convertName (l : List String) (s : String) : Name :=
+  maybe ?Nat ?Name (Global s) Local (findMaybe ?String (stringEq s) l).
+
+let toCOCTerm (t : MCTerm) : Maybe Term :=
+  t ?(Π _ : List String. Maybe Term)
+    (λ v : init$var. λ l : List String. just ?Term (Var (v ?Name (convertName l) (λ i : init$index. Local (fromChurchNat (indexToNat i))))))
+    (λ s : init$sort. λ _ : List String. just ?Term (SortT (s ?Sort Ast Sq)))
+    (λ b : Binder. λ n : String. λ t, t' : Π _ : List String. Maybe Term. λ l : List String.
+      maybe ?Term ?(Maybe Term) (nothing ?Term)
+        (λ x : Term. maybe ?Term ?(Maybe Term) (nothing ?Term)
+          (λ x' : Term. b ?(Maybe Term)
+            (just ?Term (Lam x x'))
+            (nothing ?Term)
+            (just ?Term (Pi x x'))
+            (nothing ?Term)) (t' (cons ?String n l))) (t l))
+    (λ t : Π _ : List String. Maybe Term. λ app : List (Product Bool (Π _ : List String. Maybe Term)). λ l : List String.
+      (reverse ?(Product Bool (Π _ : List String. Maybe Term)) app) ?(Maybe Term)
+        (t l)
+        (λ a : Product Bool (Π _ : List String. Maybe Term). λ rec : Maybe Term.
+          maybe ?Term ?(Maybe Term) (nothing ?Term)
+            (λ x : Term. ifthenelse ?(Maybe Term) (pr1 ?Bool ?(Π _ : List String. Maybe Term) a)
+              (nothing ?Term)
+              (maybe ?Term ?(Maybe Term) (nothing ?Term)
+                (λ x' : Term. just ?Term (App x' x)) rec)) (pr2 ?Bool ?(Π _ : List String. Maybe Term) a l)))
+    (λ _ : Char. λ _ : List String. nothing ?Term)
+    (λ _ : Π _ : List String. Maybe Term. λ _ : List String. nothing ?Term) -- nothing on unquote
+    [String|].
+
+let toMCTerm (t : Term) : MCTerm :=
+  TermFold MCTerm
+    (SortFold MCTerm MCAst MCSq)
+    (NameFold MCTerm MCSVar (λ i : Nat. natToVar (toChurchNat i)))
+    MCApp
+    (MCLambda "_")
+    (MCPi "_")
+    t.
+
+let COCLetInfo := TripleProduct String Term (Maybe Term).
+let COCLetInfoName := pr31 ?String ?Term ?(Maybe Term).
+let COCLetInfoTerm := pr32 ?String ?Term ?(Maybe Term).
+let COCLetInfoType := pr33 ?String ?Term ?(Maybe Term).
+
+let toCOCLetInfo (i : LetInfo) : Maybe COCLetInfo :=
+  bindMaybe ?Term ?COCLetInfo (toCOCTerm (letInfoTerm i)) (λ t : Term.
+    just ?COCLetInfo
+      (mkTripleProduct ?String ?Term ?(Maybe Term) (letInfoName i) t (bindMaybe ?MCTerm ?Term (letInfoType i) toCOCTerm))).
+
+--------------------------------------------------------------------------------
+-- The following code should be in Theory.mced, but it isn't because of
+-- different and incompatible `Maybe` types
+--------------------------------------------------------------------------------
+
+let addToEnv (e : Env) (i : COCLetInfo) : Maybe Env :=
+  mapMaybe ?Term ?Env
+    (λ T : Term. addGlobal (COCLetInfoName i) (COCLetInfoTerm i) T e) (COCLetInfoType i).
+
+let convertAndAddToEnv (e : Env) (i : LetInfo) : Env :=
+  maybe ?Env ?Env e (λ e' : Env. e')
+    (bindMaybe ?COCLetInfo ?Env (toCOCLetInfo i) (addToEnv e)).
+
+let checkLetInfo (e : Env) (i : COCLetInfo) : Error Term :=
+  maybe ?Term ?(Error Term)
+    (synthType e (COCLetInfoTerm i))
+    (λ T : Term. ifthenelse ?(Error Term)
+      (checkType e (COCLetInfoTerm i) T)
+      (return Term T)
+      (throwError Term "Type mismatch in the annotation!"))
+    (COCLetInfoType i).
+
+let convertAndCheckLetInfo (e : Env) (i : LetInfo) : Error MCTerm :=
+  maybe ?COCLetInfo ?(Error MCTerm)
+    (throwError MCTerm "Error while converting term to COC")
+    (λ i' : COCLetInfo. mapError Term MCTerm toMCTerm (checkLetInfo e i'))
+    (toCOCLetInfo i).
+
+EndModule.

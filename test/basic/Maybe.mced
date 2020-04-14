@@ -5,6 +5,9 @@ let nothing := Λ A : * [<<inr A> Unit> tt].
 let maybe := Λ A : * Λ B : * λ default : B λ f : Π _ : A B λ x : [Maybe A]
   [[[<<<recursionSum A> Unit> B> (λ a : A [f a])] (λ _ : Unit default)] x].
 
+let bindMaybe := Λ A : * Λ B : * λ x : [Maybe A] λ f : Π _ : A [Maybe B]
+  [[[<<maybe A> [Maybe B]> <nothing B>] f] x].
+
 let mapMaybe :=
   Λ A : * Λ B : * λ f : Π _ : A B λ x : [Maybe A]
     [[[<<maybe A> [Maybe B]> [<<inr B> Unit> tt]] λ a : A [<just B> [f a]]] x].

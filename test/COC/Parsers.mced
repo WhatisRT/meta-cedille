@@ -1,0 +1,62 @@
+RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo
+  "convertAndCheckLetInfo"
+  (sVarTerm "modPrefix|Conversion0|convertAndCheckLetInfo")
+  (nothing ?Term))).
+
+RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo
+  "convertAndAddToEnv"
+  (sVarTerm "modPrefix|Conversion0|convertAndAddToEnv")
+  (nothing ?Term))).
+
+RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo
+  "isDefined"
+  (sVarTerm "modPrefix|Theory0|isDefined")
+  (nothing ?Term))).
+
+RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo
+  "ErrorFold"
+  (sVarTerm "modPrefix|Theory0|ErrorFold")
+  (nothing ?Term))).
+
+RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo
+  "Env"
+  (sVarTerm "modPrefix|Theory0|Env")
+  (nothing ?Term))).
+
+RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo "COCEnv|0" (sVarTerm "modPrefix|Theory0|emptyEnv") (nothing ?Term))).
+
+let envPrefix := "COCEnv|".
+let natToEnv (n : Nat) := stringApp envPrefix (showNatDecimal n).
+
+let getEnvVersion : EvalState Nat :=
+  bindEvalState ?EvaluatorState ?Nat getEvalState (λ s : EvaluatorState. pureEvalState ?Nat (getOtherState s)).
+
+let getEnv : EvalState Env :=
+  bindEvalState ?Nat ?Env getEnvVersion
+    (λ n : Nat. checkTerm' Env (sVarTerm (natToEnv n))).
+
+let updateLetInfoType (i : LetInfo) (T : Term) :=
+  mkLetInfo (letInfoName i) (letInfoTerm i) (just ?Term T).
+
+let init$COCStmt$let_space__betterLet_ (_ : init$space) (i : LetInfo) : init$newStmt :=
+  bindEvalState ?Env ?metaResult getEnv
+    (λ e : Env.
+      ifthenelse ?init$newStmt (isDefined e (letInfoName i))
+        (echoStmt "Name already defined!")
+        (ErrorFold Term init$newStmt
+          (λ T : Term.
+            bindEvalState ?Nat ?metaResult getEnvVersion
+              (λ n : Nat.
+                seqNewStmt
+                  (letInfoToNewStmt (mkLetInfo
+                    (natToEnv (suc n))
+                    θ{convertAndAddToEnv γ{sVarTerm (natToEnv n)} γ{quoteLetInfo (updateLetInfoType i T)}}
+                    (just ?Term θ{Env})))
+                  (seqNewStmt
+                    (evalStateUnitToNewStmt (modifyOtherState suc))
+                    (echoStmt (stringConcat [String |"Defined: ", letInfoName i, " : ", showTerm T])))))
+          (λ s : String. echoStmt s)
+          (convertAndCheckLetInfo e i))).
+
+let init$newStmt'$c=minus=_COCStmt_ (s : init$newStmt) := s.
+updateEval.

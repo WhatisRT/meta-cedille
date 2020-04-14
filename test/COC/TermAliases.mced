@@ -1,0 +1,8 @@
+let MCTerm := Term.
+let MCSVar := sVarTerm.
+let MCIVar := iVarTerm.
+let MCAst := sortTerm init$sort$=ast=.
+let MCSq := sortTerm init$sort$=sq=.
+let MCLambda := lambdaTerm.
+let MCPi := piTerm.
+let MCApp := appSingle.

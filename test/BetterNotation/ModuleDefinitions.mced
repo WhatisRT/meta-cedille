@@ -67,7 +67,7 @@ b-let insertModuleDict (m : Module) (dict : ModuleDict) : ModuleDict :=
     mkModuleDict
       (suc (ModuleDictVersion dict))
       (λ n : ModuleName.
-        ifthenelse ?(Maybe Module) (moduleNameEq n k) (just ?Module m) (ModuleDictDict dict k)))
+        ifthenelse ?(Maybe Module) (moduleNameEq n k) (just ?Module m) (ModuleDictDict dict n)))
     (ModuleModuleName m).
 b-let lookupModuleDict (k : ModuleName) (dict : ModuleDict) : Maybe Module := ModuleDictDict dict k.
 

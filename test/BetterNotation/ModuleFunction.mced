@@ -12,9 +12,6 @@ b-let prefixNamesInTerm (p : String) (t : Term) : Term :=
     (λ c : Char. charTerm c)
     (λ u : Term. unquoteTerm u).
 
-b-let quoteNat (n : Nat) : Term :=
-  recursionNat ?Term θ{zero} (λ _ : Nat. λ rec : Term. θ{suc γ{rec}}) n.
-
 b-let quoteParam (p : Param) : Term :=
   θ{mkParam γ{quoteBool (paramErased p)} (mkPreParam γ{quote$String (paramName p)} γ{quoteTerm (paramType p)})}.
 
@@ -50,14 +47,20 @@ b-let nameToMaybeModuleName (x : Maybe Module) (n : String) : String :=
 b-let importExternalLetInfo (name : String) (m : Module) : LetInfo :=
   mkLetInfo (nameToModuleName m name) (sVarTerm name) (nothing ?Term).
 
+b-let modifyTerm (t : Term) (m : Module) : Term :=
+  prefixNamesInTerm (mkModuleContentPrefix (ModuleModuleInfo m)) t.
+
+b-let modifyTermMod (t : Term) : EvalState Term :=
+  bindEvalState ?EvaluatorState ?Term getEvalState (λ s : EvaluatorState.
+    pureEvalState ?Term (maybe ?Module ?Term t (λ m : Module. modifyTerm t m) (ModuleStateModule (getModuleState s)))).
+
 b-let modifyLetInfo (i : LetInfo) (m : Module) : LetInfo :=
-  (λ prefix : String.
-    mkLetInfo
-      (nameToModuleName m (letInfoName i))
-      (prefixNamesInTerm prefix (foldWithLambdas (ModuleTelescope m) (letInfoTerm i)))
-      (maybe ?Term ?(Maybe Term)
-        (nothing ?Term) (λ t : Term. just ?Term (prefixNamesInTerm prefix t)) (letInfoType i)))
-  (mkModuleContentPrefix (ModuleModuleInfo m)).
+  mkLetInfo
+    (nameToModuleName m (letInfoName i))
+    (modifyTerm (foldWithLambdas (ModuleTelescope m) (letInfoTerm i)) m)
+    (maybe ?Term ?(Maybe Term)
+      (nothing ?Term) (λ t : Term. just ?Term (modifyTerm (foldWithPi (ModuleTelescope m) t) m))
+      (letInfoType i)).
 
 b-let letInModule (i : LetInfo) (m : Module) : init$newStmt :=
   seqNewStmt

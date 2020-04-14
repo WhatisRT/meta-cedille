@@ -1,5 +1,3 @@
-let quoteNat (n : Nat) : init$term :=
-  inductionNat ?(λ _ : Nat. init$term) θ{zero} (λ _ : Nat. λ rec : init$term. applyList θ{suc} [App| mkAppU rec]) n.
 let quoteBool (b : Bool) : init$term := ifthenelse ?init$term b θ{true} θ{false}.
 
 let quoteParam (p : Param) : init$term :=

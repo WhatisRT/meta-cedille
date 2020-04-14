@@ -3,15 +3,16 @@ module Maybe.
 -- Temporary workaround to make all the names that `data` needs available
 import test/Datatypes/ModuleCompatibility.
 
-Import List.
-
 data Maybe (A : *) where
 | nothing : Maybe A
 | just    : Π _ : A. Maybe A.
 
-let maybe [A : *] [B : *] (default : B) (f : Π _ : A. B) (x : Maybe A) : B := MaybeFold A B default f x.
+let maybe [A, B : *] (default : B) (f : Π _ : A. B) (x : Maybe A) : B := MaybeFold A B default f x.
 
-let maybeToList [A : *] (x : Maybe A) : List A :=
-  maybe ?A ?(List A) [A|] (λ a : A. [A|a]) x.
+let bindMaybe (A, B : *) (x : Maybe A) (f : Π _ : A. Maybe B) : Maybe B :=
+  maybe ?A ?(Maybe B) (nothing B) f x.
+
+let mapMaybe [A, B : *] (f : Π _ : A. B) (x : Maybe A) : Maybe B :=
+  maybe ?A ?(Maybe B) (nothing B) (λ a : A. just B (f a)) x.
 
 EndModule.

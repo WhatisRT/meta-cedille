@@ -2,6 +2,9 @@
 -- We define functions for the new evaluator here
 --------------------------------------------------------------------------------
 
+b-let quoteNat (n : Nat) : Term :=
+  recursionNat ?Term θ{zero} (λ _ : Nat. λ rec : Term. θ{suc γ{rec}}) n.
+
 -- Flags that can be used to control the evaluator (currently only one)
 b-let EvalFlags : * := Bool.
 b-let defaultFlags : EvalFlags := false.
@@ -30,24 +33,35 @@ b-let quoteDict (d : ModuleDict) : Term := sVarTerm (mkModuleDictName d).
 b-let quoteModuleState (s : ModuleState) : Term :=
   θ{mkModuleState γ{quoteMaybeModule (ModuleStateModule s)} γ{quoteDict (ModuleStateDict s)}}.
 
+b-let OtherState := Nat. -- used for counting
+b-let quoteOtherState (s : OtherState) := quoteNat s.
+b-let emptyOtherState := zero.
+
 -- The additional state in the evaluator contains the ModuleState as well as the flags
-b-let EvaluatorState : * := Product EvalFlags ModuleState.
-b-let mkEvaluatorState (f : EvalFlags) (s : ModuleState) : EvaluatorState := prodPair ?EvalFlags ?ModuleState f s.
-b-let getEvalFlags := pr1 ?EvalFlags ?ModuleState.
-b-let getModuleState := pr2 ?EvalFlags ?ModuleState.
+b-let EvaluatorState : * := TripleProduct EvalFlags ModuleState OtherState.
+b-let mkEvaluatorState (f : EvalFlags) (s : ModuleState) (o : OtherState) : EvaluatorState :=
+  mkTripleProduct ?EvalFlags ?ModuleState ?OtherState f s o.
+b-let getEvalFlags := pr31 ?EvalFlags ?ModuleState ?OtherState.
+b-let getModuleState := pr32 ?EvalFlags ?ModuleState ?OtherState.
+b-let getOtherState := pr33 ?EvalFlags ?ModuleState ?OtherState.
 
 b-let modifyModuleInState (f : Π _ : Maybe Module. Maybe Module) (s : EvaluatorState) : EvaluatorState :=
   mkEvaluatorState (getEvalFlags s)
-                   (mkModuleState (f (ModuleStateModule (getModuleState s))) (ModuleStateDict (getModuleState s))).
+                   (mkModuleState (f (ModuleStateModule (getModuleState s))) (ModuleStateDict (getModuleState s)))
+                   (getOtherState s).
 
 b-let modifyModuleDictInState (f : Π _ : ModuleDict. ModuleDict) (s : EvaluatorState) : EvaluatorState :=
   mkEvaluatorState (getEvalFlags s)
-                   (mkModuleState (ModuleStateModule (getModuleState s)) (f (ModuleStateDict (getModuleState s)))).
+                   (mkModuleState (ModuleStateModule (getModuleState s)) (f (ModuleStateDict (getModuleState s))))
+                   (getOtherState s).
+
+b-let incrementStateCounter (s : EvaluatorState) : EvaluatorState :=
+  mkEvaluatorState (getEvalFlags s) (getModuleState s) (suc (getOtherState s)).
 
 b-let quoteEvaluatorState (s : EvaluatorState) : Term :=
-  θ{mkEvaluatorState γ{quoteEvalFlags (getEvalFlags s)} γ{quoteModuleState (getModuleState s)}}.
+  θ{mkEvaluatorState γ{quoteEvalFlags (getEvalFlags s)} γ{quoteModuleState (getModuleState s)} γ{quoteOtherState (getOtherState s)}}.
 
-b-let emptyEvaluatorState : EvaluatorState := mkEvaluatorState defaultFlags emptyModState.
+b-let emptyEvaluatorState : EvaluatorState := mkEvaluatorState defaultFlags emptyModState emptyOtherState.
 
 -- EvalState monad. This is a combination of the state and meta monads to give us access to the mutable state
 
@@ -92,9 +106,11 @@ b-let voidEvalState [T : *] (x : EvalState T) : EvalState Unit :=
 b-let getFlags : EvalState EvalFlags :=
   mapEvalState ?EvaluatorState ?EvalFlags getEvalFlags getEvalState.
 b-let modifyEvalFlags (f : Π _ : EvalFlags. EvalFlags) : EvalState Unit :=
-  modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (f (getEvalFlags s)) (getModuleState s)).
+  modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (f (getEvalFlags s)) (getModuleState s) (getOtherState s)).
 b-let modifyModuleState (f : Π _ : ModuleState. ModuleState) : EvalState Unit :=
-  modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (getEvalFlags s) (f (getModuleState s))).
+  modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (getEvalFlags s) (f (getModuleState s)) (getOtherState s)).
+b-let modifyOtherState (f : Π _ : OtherState. OtherState) : EvalState Unit :=
+  modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (getEvalFlags s) (getModuleState s) (f (getOtherState s))).
 
 b-let stmtToMmetaRes (stmt : init$stmt') : M metaResult := eval' (quote$stmt'ToStmt stmt).
 
@@ -114,7 +130,7 @@ b-let modifyEvalStateStmt (f : Π _ : EvaluatorState. EvaluatorState) : init$new
 
 b-let updateModuleState (s : ModuleState) : EvalState Unit :=
   bindEvalState ?EvaluatorState ?Unit getEvalState
-    (λ s' : EvaluatorState. setEvalState (mkEvaluatorState (getEvalFlags s') s)).
+    (λ s' : EvaluatorState. setEvalState (mkEvaluatorState (getEvalFlags s') s (getOtherState s'))).
 
 b-let echoStmt (s : String) : init$newStmt :=
   liftMtoEvalState ?metaResult
@@ -125,3 +141,5 @@ b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
     ifthenelse ?init$newStmt (or (not (getAnnReq f)) (letInfoHasAnn i))
       (stmtToNewStmt (convertLetInfo i))
       (echoStmt "The provided command has no type annotation!")).
+
+b-let checkTerm' (T : *) (t : Term) : EvalState T := liftMtoEvalState ?T (checkTerm T (TermToInitTerm t)).

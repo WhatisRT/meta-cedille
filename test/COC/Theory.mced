@@ -1,0 +1,334 @@
+--------------------------------------------------------------------------------
+-- Calculus of constructions with de-Bruijn indices
+--------------------------------------------------------------------------------
+
+module Theory.
+
+-- Temporary workaround to make all the names that `data` needs available
+import test/Datatypes/ModuleCompatibility.
+
+Import List.
+Import Maybe.
+Import Nat.
+Import Map.
+Import NatConversions.
+
+-- Strings and string notation
+Given String.
+Given stringCons.
+Given stringNil.
+Given stringEq.
+Given stringApp.
+
+let stringConcat (l : List String) : String :=
+  ListFold String String
+    ""
+    (λ s : String. λ rec : String. stringApp s rec)
+    l.
+
+Given ten.
+
+let steps := fromChurchNat ten.
+
+Given Bool.
+Given true.
+Given false.
+Given and.
+Given ifthenelse.
+Given productMap1.
+Given productMap2.
+
+data Error (A : *) where
+| return : Π _ : A. Error A
+| throwError : Π _ : String. Error A.
+
+let bind (A, B : *) (x : Error A) (f : Π _ : A. Error B) : Error B :=
+  ErrorFold A (Error B) f (λ s : String. throwError B s) x.
+
+let bind' (A, B : *) (a : Error A) (b : Error B) : Error B :=
+  bind A B a (λ _ : A. b).
+
+let mapError (A, B : *) (f : Π _ : A. B) (x : Error A) : Error B :=
+  bind A B x (λ y : A. return B (f y)).
+
+let maybeToError (A : *) (x : Maybe A) (e : String) : Error A :=
+  maybe ?A ?(Error A) (throwError A e) (return A) x.
+
+let appendIfError (A : *) (e : String) (x : Error A) : Error A :=
+  ErrorFold A (Error A)
+    (λ a : A. return A a)
+    (λ e' : String. throwError A (stringApp e' e))
+    x.
+
+data Name where
+| Global : Π _ : String. Name
+| Local : Π _ : Nat. Name.
+
+let NameEq (n, n' : Name) : Bool :=
+  NameFold (Π _ : Name. Bool)
+    (λ s : String. NameFold Bool
+      (λ s' : String. stringEq s s')
+      (λ _ : Nat. false))
+    (λ k : Nat. NameFold Bool
+      (λ _ : String. false)
+      (λ k' : Nat. beq k k'))
+    n n'.
+
+let showName (n : Name) : String :=
+  NameFold String
+    (λ s : String. s)
+    (λ k : Nat. showNat k)
+    n.
+
+data Sort where
+| Ast : Sort
+| Sq : Sort.
+
+let SortEq (s, s' : Sort) : Bool :=
+  SortFold (Π _ : Sort. Bool)
+    (SortFold Bool true false)
+    (SortFold Bool false true)
+    s s'.
+
+let showSort (s : Sort) : String :=
+  SortFold String "*" "□" s.
+
+data Term where
+| SortT : Π _ : Sort. Term
+| Var : Π _ : Name. Term
+| App : Π _, _ : Term. Term
+| Lam : Π _, _ : Term. Term
+| Pi : Π _, _ : Term. Term.
+
+let TermRec (X : *)
+  (fsort : Π _ : Sort. X)
+  (fvar : Π _ : Name. X)
+  (fapp : Π _, _ : Term. Π _, _ : X. X)
+  (flam : Π _, _ : Term. Π _, _ : X. X)
+  (fpi : Π _, _ : Term. Π _, _ : X. X)
+  (term : Term)
+  : X :=
+  pr1 ?X ?Term (TermFold (Product X Term)
+    (λ s : Sort. prodPair ?X ?Term (fsort s) (SortT s))
+    (λ n : Name. prodPair ?X ?Term (fvar n) (Var n))
+    (λ t, t' : Product X Term.
+      prodPair ?X ?Term
+        (fapp (pr2 ?X ?Term t) (pr2 ?X ?Term t') (pr1 ?X ?Term t) (pr1 ?X ?Term t'))
+        (App (pr2 ?X ?Term t) (pr2 ?X ?Term t')))
+    (λ T, t : Product X Term.
+      prodPair ?X ?Term
+        (flam (pr2 ?X ?Term T) (pr2 ?X ?Term t) (pr1 ?X ?Term T) (pr1 ?X ?Term t))
+        (Lam (pr2 ?X ?Term T) (pr2 ?X ?Term t)))
+    (λ T, t : Product X Term.
+      prodPair ?X ?Term
+        (fpi (pr2 ?X ?Term T) (pr2 ?X ?Term t) (pr1 ?X ?Term T) (pr1 ?X ?Term t))
+        (Pi (pr2 ?X ?Term T) (pr2 ?X ?Term t)))
+    term).
+
+let TermEq (t, t' : Term) : Bool :=
+  TermFold (Π _ : Term. Bool)
+    (λ s : Sort. TermFold Bool
+      (λ s' : Sort. SortEq s s')
+      (λ _ : Name. false)
+      (λ _, _ : Bool. false)
+      (λ _, _ : Bool. false)
+      (λ _, _ : Bool. false))
+    (λ n : Name. TermFold Bool
+      (λ _ : Sort. false)
+      (λ n' : Name. NameEq n n')
+      (λ _, _ : Bool. false)
+      (λ _, _ : Bool. false)
+      (λ _, _ : Bool. false))
+    (λ rect, rect' : Π _ : Term. Bool. TermRec Bool
+      (λ _ : Sort. false)
+      (λ _ : Name. false)
+      (λ t, t' : Term. λ _, _ : Bool. and (rect t) (rect' t'))
+      (λ t, t' : Term. λ _, _ : Bool. false)
+      (λ t, t' : Term. λ _, _ : Bool. false))
+    (λ rect, rect' : Π _ : Term. Bool. TermRec Bool
+      (λ _ : Sort. false)
+      (λ _ : Name. false)
+      (λ t, t' : Term. λ _, _ : Bool. false)
+      (λ t, t' : Term. λ _, _ : Bool. and (rect t) (rect' t'))
+      (λ t, t' : Term. λ _, _ : Bool. false))
+    (λ rect, rect' : Π _ : Term. Bool. TermRec Bool
+      (λ _ : Sort. false)
+      (λ _ : Name. false)
+      (λ t, t' : Term. λ _, _ : Bool. false)
+      (λ t, t' : Term. λ _, _ : Bool. false)
+      (λ t, t' : Term. λ _, _ : Bool. and (rect t) (rect' t')))
+    t t'.
+
+let showTerm (t : Term) : String :=
+  TermFold String
+    (λ s : Sort. showSort s)
+    (λ n : Name. showName n)
+    (λ rect, rect' : String. stringConcat [String| rect, " ", rect'])
+    (λ rect, rect' : String. stringConcat [String| "λ ", rect, " ", rect'])
+    (λ rect, rect' : String. stringConcat [String| "Π ", rect, " ", rect'])
+    t.
+
+let showErrorTerm (e : Error Term) : String :=
+  ErrorFold Term String
+    (λ t : Term. showTerm t)
+    (λ s : String. s)
+    e.
+
+let showMaybeTerm (x : Maybe Term) := maybe ?Term ?String "nothing" showTerm x.
+let showBool (b : Bool) := ifthenelse ?String b "true" "false".
+
+let CompareErrorTerm (t : Term) (e : Error Term) : Bool :=
+  ErrorFold Term Bool
+    (λ t' : Term. TermEq t t')
+    (λ _ : String. false)
+    e.
+
+let stripLambda : Π _ : Term. Maybe Term :=
+  TermRec (Maybe Term)
+    (λ _ : Sort. nothing Term)
+    (λ _ : Name. nothing Term)
+    (λ _, _ : Term. λ _, _ : Maybe Term. nothing Term)
+    (λ _, t : Term. λ _, _ : Maybe Term. just Term t)
+    (λ _, _ : Term. λ _, _ : Maybe Term. nothing Term).
+
+-- add n-1 to all indices that are not smaller than k
+let modifyIndices (k', n : Nat) (t : Term) : Term :=
+  TermRec (Π _ : Nat. Term)
+    (λ s : Sort. λ k : Nat. SortT s)
+    (λ x : Name. λ k : Nat. NameFold Term
+      (λ s : String. Var x)
+      (λ i : Nat. ifthenelse ?Term (lt i k) (Var x) (Var (Local (pred (plus i n)))))
+      x)
+    (λ _, _ : Term. λ rect, rect' : Π _ : Nat. Term. λ k : Nat. App (rect k) (rect' k))
+    (λ _, _ : Term. λ recT, rect : Π _ : Nat. Term. λ k : Nat. Lam (recT k) (rect (succ k)))
+    (λ _, _ : Term. λ recT, rect : Π _ : Nat. Term. λ k : Nat. Pi (recT k) (rect (succ k)))
+    t k'.
+
+let incrementIndicesBy (n : Nat) (t : Term) : Term :=
+  modifyIndices zero (succ n) t.
+
+let decrementIndices (t : Term) : Term :=
+  modifyIndices zero zero t.
+
+let substIndex (t, t' : Term) : Π _ : Nat. Term :=
+  TermRec (Π _ : Nat. Term)
+    (λ s : Sort. λ _ : Nat. SortT s)
+    (λ n : Name. λ k : Nat. NameFold Term
+      (λ s : String. Var n)
+      (λ i : Nat. ifthenelse ?Term (beq k i) (incrementIndicesBy (succ k) t') (Var n))
+      n)
+    (λ _, _ : Term. λ rect, rect' : Π _ : Nat. Term. λ k : Nat. App (rect k) (rect' k))
+    (λ _, _ : Term. λ recT, rect : Π _ : Nat. Term. λ k : Nat. Lam (recT k) (rect (succ k)))
+    (λ _, _ : Term. λ recT, rect : Π _ : Nat. Term. λ k : Nat. Pi (recT k) (rect (succ k)))
+    t.
+
+-- substitute the second term into the first
+let subst (t, t' : Term) : Term :=
+  decrementIndices (substIndex t t' zero).
+
+let Env := Product (List Term) (Map (Product Term Term)).
+let emptyEnv := prodPair ?(List Term) ?(Map (Product Term Term)) [Term|] (λ _ : String. nothing (Product Term Term)).
+let pushVar (t : Term) (e : Env) : Env :=
+  productMap1 ?(List Term) ?(Map (Product Term Term)) ?(List Term) (cons ?Term t) e.
+let addGlobal (s : String) (t, T : Term) (e : Env) : Env :=
+  productMap2 ?(List Term) ?(Map (Product Term Term)) ?(Map (Product Term Term))
+    (λ m : Map (Product Term Term). insert (Product Term Term) m s (prodPair ?Term ?Term t T)) e.
+let lookupInEnv
+  (projection1 : Π _ : Product Term Term. Term) (projection2 : Π _ : Term. Maybe Term) (n : Name) (e : Env)
+  : Maybe Term :=
+  NameFold (Maybe Term)
+    (λ s : String. mapMaybe ?(Product Term Term) ?Term projection1
+      (lookup (Product Term Term) s (pr2 ?(List Term) ?(Map (Product Term Term)) e)))
+    (λ k : Nat. maybe ?Term ?(Maybe Term)
+      (nothing Term) (λ t : Term. projection2 (incrementIndicesBy (succ k) t)) (lookupMaybe ?Term (pr1 ?(List Term) ?(Map (Product Term Term)) e) k))
+    n.
+let lookupTermInEnv := lookupInEnv (pr1 ?Term ?Term) (λ _ : Term. nothing Term).
+let lookupTypeInEnv := lookupInEnv (pr2 ?Term ?Term) (just Term).
+
+let isDefined (e : Env) (s : String) : Bool :=
+  maybe ?Term ?Bool false (λ _ : Term. true) (lookupTypeInEnv (Global s) e).
+
+let hnfNorm (e : Env) (x : Term) : Term :=
+  NatFold (Π _ : Term. Term)
+    (λ t : Term. t)
+    (λ rec : Π _ : Term. Term.
+      TermFold Term
+        (λ s : Sort. SortT s)
+        (λ n : Name. maybe ?Term ?Term (Var n) (λ t' : Term. rec t') (lookupTermInEnv n e))
+        (λ t, t' : Term. maybe ?Term ?Term (App t t') (λ t'' : Term. rec (subst t'' t')) (stripLambda (rec t)))
+        (λ T, t : Term. Lam T t)
+        (λ T, t : Term. Pi T t))
+    steps x.
+
+let normalize (e : Env) (x : Term) : Term :=
+  NatFold (Π _ : Term. Term)
+    (λ t : Term. t)
+    (λ rec : Π _ : Term. Term.
+      TermFold Term
+        (λ s : Sort. SortT s)
+        (λ n : Name. maybe ?Term ?Term (Var n) (λ t' : Term. rec t') (lookupTermInEnv n e))
+        (λ t, t' : Term. maybe ?Term ?Term (App t t') (λ t'' : Term. rec (subst t'' t')) (stripLambda (rec t)))
+        (λ T, t : Term. Lam T (rec t))
+        (λ T, t : Term. Pi T (rec t)))
+    steps x.
+
+let matchSort (A : *) (t : Term) (f : Π _ : Sort. Error A) : Error A :=
+  (λ err : Error A. TermRec (Error A)
+    (λ s : Sort. f s)
+    (λ _ : Name. err)
+    (λ _, _ : Term. λ _, _ : Error A. err)
+    (λ _, _ : Term. λ _, _ : Error A. err)
+    (λ _, _ : Term. λ _, _ : Error A. err)
+    t) (throwError A (stringApp (showTerm t) " doesn't match sort")).
+
+let matchPi (A : *) (t : Term) (f : Π _, _ : Term. Error A) : Error A :=
+  (λ err : Error A. TermRec (Error A)
+    (λ _ : Sort. err)
+    (λ _ : Name. err)
+    (λ _, _ : Term. λ _, _ : Error A. err)
+    (λ _, _ : Term. λ _, _ : Error A. err)
+    (λ u, u' : Term. λ _, _ : Error A. f u u')
+    t) (throwError A (stringApp (showTerm t) " doesn't match pi")).
+
+let convertible (e : Env) (t, t' : Term) : Bool :=
+  TermEq (normalize e t) (normalize e t').
+
+let synthType (e : Env) (t : Term) : Error Term :=
+  TermRec (Π _ : Env. Error Term)
+    (λ s : Sort. λ _ : Env. SortFold (Error Term) (return Term (SortT Sq)) (throwError Term "Sq has no type!") s)
+    (λ n : Name. λ e : Env. maybeToError Term (lookupTypeInEnv n e) "Lookup failed")
+    (λ u, u' : Term. λ recu, recu' : Π _ : Env. Error Term. λ e : Env. -- App
+      bind Term Term
+        (recu e)
+        (λ T : Term. bind Term Term
+          (recu' e)
+          (λ T' : Term.
+            matchPi Term (hnfNorm e T)
+              (λ x, x' : Term.
+                ifthenelse ?(Error Term) (convertible e T' x)
+                  (return Term (subst x' u'))
+                  (throwError Term (stringConcat [String| showTerm T', " and ", showTerm x, " are not convertible!"]))))))
+    (λ u, u' : Term. λ recu, recu' : Π _ : Env. Error Term. λ e : Env. -- Lam
+      bind' Term Term
+        (recu e)
+        (bind Term Term
+          (recu' (pushVar u e))
+          (λ T : Term. return Term (Pi u T))))
+    (λ u, u' : Term. λ recu, recu' : Π _ : Env. Error Term. λ e : Env. -- Pi
+      bind Term Term
+        (recu e)
+        (λ x : Term.
+          matchSort Term (hnfNorm e x)
+            (λ s : Sort. bind Term Term
+              (recu' (pushVar u e))
+              (λ x' : Term. matchSort Term (hnfNorm e x')
+                (λ s' : Sort. return Term (SortT s'))))))
+    t e.
+
+let checkType (e : Env) (t, T : Term) : Bool :=
+  ErrorFold Term Bool
+    (λ T' : Term. convertible e T T')
+    (λ _ : String. false)
+    (synthType e t).
+
+EndModule.

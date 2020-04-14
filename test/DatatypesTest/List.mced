@@ -3,6 +3,12 @@ module List.
 -- Temporary workaround to make all the names that `data` needs available
 import test/Datatypes/ModuleCompatibility.
 
+Given Bool.
+Given ifthenelse.
+
+Import Maybe.
+Import Nat.
+
 data List (A : *) where
 | nil' : List A
 | cons' : Π _ : A. Π _ : List A. List A.
@@ -10,5 +16,47 @@ data List (A : *) where
 -- List notation needs these types for the constructors
 let nil [A : *] := nil' A.
 let cons [A : *] := cons' A.
+
+let ListRec (A, X : *)
+  (fnil : X)
+  (fcons : Π _ : A. Π _ : List A. Π _ : X. X)
+  (l : List A)
+  : X :=
+  pr1 ?X ?(List A) (ListFold A (Product X (List A))
+    (prodPair ?X ?(List A) fnil (nil ?A))
+    (λ a : A. λ as : Product X (List A).
+      prodPair ?X ?(List A)
+        (fcons a (pr2 ?X ?(List A) as) (pr1 ?X ?(List A) as))
+        (cons ?A a (pr2 ?X ?(List A) as)))
+    l).
+
+let maybeToList [A : *] (x : Maybe A) : List A :=
+  maybe ?A ?(List A) [A|] (λ a : A. [A|a]) x.
+
+let tail [A : *] (l : List A) : List A :=
+  ListRec A (List A)
+    (nil ?A)
+    (λ _ : A. λ as : List A. λ _ : List A. as)
+    l.
+
+let drop [A : *] (n : Nat) (l : List A) : List A :=
+  NatFold (Π _ : List A. List A)
+    (λ x : List A. x)
+    (λ rec : Π _ : List A. List A. λ x : List A. tail ?A (rec x))
+    n l.
+
+let headMaybe [A : *] : Π _ : List A. Maybe A :=
+  ListFold A (Maybe A)
+    (nothing A)
+    (λ a : A. λ _ : Maybe A. just A a).
+
+let lookupMaybe [A : *] (l : List A) (n : Nat) : Maybe A :=
+  headMaybe ?A (drop ?A n l).
+
+let findMaybe [A : *] (pred : Π _ : A. Bool) (l : List A) : Maybe Nat :=
+  ListFold A (Maybe Nat)
+    (nothing Nat)
+    (λ a : A. λ rec : Maybe Nat. ifthenelse ?(Maybe Nat) (pred a) (just Nat zero) (mapMaybe ?Nat ?Nat succ rec))
+    l.
 
 EndModule.

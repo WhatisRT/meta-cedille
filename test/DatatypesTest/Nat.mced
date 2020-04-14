@@ -6,6 +6,10 @@ import test/Datatypes/ModuleCompatibility.
 Given Eq.
 Given refl.
 
+Given Bool.
+Given false.
+Given true.
+
 data Nat where
 | zero : Nat
 | succ : Π _ : Nat. Nat.
@@ -16,8 +20,39 @@ let NatRec (X : *) (recZero : X) (recSucc : Π _ : X. Π _ : Nat. X) (n : Nat) :
     (λ x : Product X Nat. prodPair ?X ?Nat (recSucc (pr1 ?X ?Nat x) (pr2 ?X ?Nat x)) (succ (pr2 ?X ?Nat x)))
     n).
 
-let plus (n, m : Nat) : Nat := NatRec Nat m (λ _, rec : Nat. succ rec) n.
+let plus (n, m : Nat) : Nat := NatFold Nat m (λ rec : Nat. succ rec) n.
+let pred (n : Nat) : Nat := NatRec Nat zero (λ _, n' : Nat. n') n.
+let minus (n, m : Nat) : Nat := NatFold Nat n (λ rec : Nat. pred rec) m.
+
+let beq (n, m : Nat) : Bool :=
+  NatFold (Π _ : Nat. Bool)
+    (NatFold Bool true (λ _ : Bool. false))
+    (λ rec : Π _ : Nat. Bool. NatRec Bool false (λ _ : Bool. λ m' : Nat. rec m'))
+    n m.
+
+let leq (m, n : Nat) : Bool := beq (minus m n) zero.
+let lt (m, n : Nat) : Bool := leq (succ m) n.
 
 let zeroPlus (n : Nat) : Eq Nat (plus zero n) n := refl Nat n.
+
+-- Show, using the old implementation
+Given Dec.
+Given Dec0.
+Given incrementDecList.
+Given showDec.
+Given showListOfDigitsBased.
+Given List.
+Given nil.
+Given cons.
+Given String.
+
+let natToDecList (n : Nat) : List Dec :=
+  NatFold (List Dec)
+    [Dec | Dec0]
+    (λ rec : List Dec. incrementDecList rec)
+    n.
+
+let showNat (n : Nat) : String :=
+  showListOfDigitsBased ?Dec showDec (natToDecList n).
 
 EndModule.

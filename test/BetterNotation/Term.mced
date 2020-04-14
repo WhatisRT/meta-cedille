@@ -71,6 +71,7 @@ let unquoteTerm := λ t : Term Λ X : *
   λ u : (Π _ : X X) [u [[[[[[<t X> v] s] b] a] k] u]] : Π _ : Term Term.
 
 let sVarTerm := λ s : String [varTerm [init$var$_string_ s]].
+let iVarTerm := λ i : init$index [varTerm [init$var$_index_ i]].
 let lambdaTerm := [binderTerm lambdaBinder].
 let LambdaTerm := [binderTerm LambdaBinder].
 let piTerm := [binderTerm piBinder].

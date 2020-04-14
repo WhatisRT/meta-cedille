@@ -1,0 +1,17 @@
+import test/COC/Map.
+import test/COC/Theory.
+import test/COC/TermAliases.
+import test/COC/Conversion.
+import test/COC/Parsers.
+
+c-let Void : * := Π X : *. X.
+
+c-let identity (X : *) (x : X) : X := x.
+c-let Unit := Π X : *. Π _ : X. X.
+c-let tt : Unit := identity.
+
+c-let Bool : * := Π X : *. Π _, _ : X. X.
+c-let true : Bool := λ X : *. λ t, f : X. t.
+c-let false : Bool := λ X : *. λ t, f : X. f.
+
+c-let ifthenelse (A : *) (b : Bool) (ift : A) (iff : A) : A := b A ift iff.

@@ -6,16 +6,42 @@
 
 -- We want to define quoteTerm, the rest are helper functions
 
+b-let quoteIndex' (i : init$index') : Term :=
+  i ?Term
+    (sVarTerm "init$index'$")
+    (λ rec : Term. appSingle (sVarTerm "init$index'$0_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$1_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$2_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$3_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$4_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$5_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$6_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$7_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$8_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$9_index'_") rec).
+
+b-let quoteIndex (i : init$index) : Term :=
+  i ?Term
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$0_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$1_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$2_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$3_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$4_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$5_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$6_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$7_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$8_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$9_index'_") (quoteIndex' i')).
+
 b-let appDouble (t, t', t'' : Term) :=  appLTerm t [App| mkAppU t', mkAppU t''].
 
 b-let quoteAst : Term := sortTerm init$sort$=ast=.
 b-let quoteSq : Term := sortTerm init$sort$=sq=.
-b-let quoteTemp : Term := quoteSq. -- this is for things that are not yet implemented
 
 b-let quoteVar (v : init$var) : Term :=
-  appSingle
-    (sVarTerm "sVarTerm")
-    (v ?Term (λ n : String. quote$String n) (λ i : init$index. quoteTemp)). -- quotation of indices is not supported
+  v ?Term
+    (λ n : String. appSingle (sVarTerm "sVarTerm") (quote$String n))
+    (λ i : init$index. appSingle (sVarTerm "iVarTerm") (quoteIndex i)).
 
 b-let quoteChar (c : init$char) : Term :=
   appSingle
@@ -49,3 +75,9 @@ b-let init$singleTerm$=gamma==lbrace=_space'__multiTerm_=rbrace= (_ : init$space
 -- unquoteTerm is just a constructor of Term
 
 seteval eval init stmt.
+
+b-let quoteLetInfo (i : LetInfo) : Term :=
+  θ{mkLetInfo
+    γ{quote$String (letInfoName i)}
+    γ{quoteTerm (letInfoTerm i)}
+    γ{maybe ?Term ?Term θ{nothing ?Term} (λ T : Term. θ{just ?Term γ{quoteTerm T}}) (letInfoType i)}}.
