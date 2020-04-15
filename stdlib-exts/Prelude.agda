@@ -23,6 +23,7 @@ open import Data.Product using (_×_; _,_; proj₁; proj₂; ∃-syntax; -,_; Σ
 open import Data.Product.Instance public
 open import Data.String using (String; unlines) public
 open import Data.String.Instance public
+open import Data.String.Exts public
 open import Data.Sum using (_⊎_; inj₁; inj₂; from-inj₁; from-inj₂) public
 open import Data.Sum.Instance public
 open import Data.Unit using (⊤; tt) public
