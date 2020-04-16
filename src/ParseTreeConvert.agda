@@ -233,7 +233,7 @@ toTerm = helper []
             n <- toName n'
             t <- helper accu y
             t' <- helper (n ∷ accu) y'
-            return $ ∀-A t t'
+            return $ ∀-A (fromList n) t t'
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
@@ -242,7 +242,7 @@ toTerm = helper []
             n <- toName n'
             t <- helper accu y
             t' <- helper (n ∷ accu) y'
-            return $ Π t t'
+            return $ Π (fromList n) t t'
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
@@ -251,7 +251,7 @@ toTerm = helper []
             n <- toName n'
             t <- helper accu y
             t' <- helper (n ∷ accu) y'
-            return $ ι t t'
+            return $ ι (fromList n) t t'
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
@@ -260,7 +260,7 @@ toTerm = helper []
             n <- toName n'
             t <- helper accu y
             t' <- helper (n ∷ accu) y'
-            return $ λ-A t t'
+            return $ λ-A (fromList n) t t'
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
@@ -269,7 +269,7 @@ toTerm = helper []
             n <- toName n'
             t <- helper accu y
             t' <- helper (n ∷ accu) y'
-            return $ Λ t t'
+            return $ Λ (fromList n) t t'
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"

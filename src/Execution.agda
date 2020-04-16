@@ -201,7 +201,7 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
         y <- generateCFG (toList start) rules'
         T <- synthType Γ' t
         case (hnfNorm Γ' T) of λ
-          { (Π u u₁) -> do
+          { (Π _ u u₁) -> do
             appendIfError (checkβη Γ' u (Var-A (Free' (n + "$" + start))))
               "The evaluator needs to accept the parse result as input"
             case (hnfNorm Γ' u₁) of λ
