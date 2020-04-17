@@ -108,7 +108,7 @@ record Options : Set where
 defaultOptions : Options
 defaultOptions = record
   { startRepl = true
-  ; importFiles = [ "" ] }
+  ; importFiles = [] }
 
 {-# TERMINATING #-}
 readOptions : ExceptT IO String Options
