@@ -4,7 +4,7 @@
 
 module Map (V : *).
 
-Import Maybe.
+importModule Maybe.
 Given String.
 Given stringEq.
 Given ifthenelse.
@@ -15,4 +15,4 @@ let lookup (k : String) (m : Map V) : Maybe V := m k.
 let insert (m : Map V) (k : String) (v : V) : Map V :=
   λ s : String. ifthenelse ?(Maybe V) (stringEq s k) (just V v) (m s).
 
-EndModule.
+endModule.

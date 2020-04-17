@@ -49,9 +49,9 @@ Given maybe.
 Given bindMaybe.
 Given mapMaybe.
 
-Import Nat.
-Import NatConversions.
-Import Theory.
+importModule Nat.
+importModule NatConversions.
+importModule Theory.
 
 let findMaybe [A : *] (pred : Π _ : A. Bool) (l : List A) : Maybe Nat :=
   l ?(Maybe Nat)
@@ -133,4 +133,4 @@ let convertAndCheckLetInfo (e : Env) (i : LetInfo) : Error MCTerm :=
     (λ i' : COCLetInfo. mapError Term MCTerm toMCTerm (checkLetInfo e i'))
     (toCOCLetInfo i).
 
-EndModule.
+endModule.

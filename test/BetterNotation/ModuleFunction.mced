@@ -144,9 +144,9 @@ b-let init$moduleName$_string__moduleName'_ (s : String) (n : ModuleName) := con
 b-let init$newStmt'$module_space__string__telescope'_=dot=
   (_ : init$space) (n : String) (t : Telescope) : init$newStmt :=
   initModule [String|n] zero t.
-b-let init$newStmt'$EndModule=dot= : init$newStmt := endModule.
+b-let init$newStmt'$endModule=dot= : init$newStmt := endModule.
 b-let init$newStmt'$LoadModule_space__moduleName_=dot= (_ : init$space) (n : ModuleName) : init$newStmt := loadModule n "test/".
-b-let init$newStmt'$Import_space__moduleName__maybeApplist_=dot= (_ : init$space) (n : ModuleName) (l : List App) : init$newStmt :=
+b-let init$newStmt'$importModule_space__moduleName__maybeApplist_=dot= (_ : init$space) (n : ModuleName) (l : List App) : init$newStmt :=
   importModule' n l.
 b-let init$newStmt'$Given_space__string_=dot= (_ : init$space) (name : String) : init$newStmt :=
   importExternalStmt name.

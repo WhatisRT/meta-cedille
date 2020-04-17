@@ -15,4 +15,4 @@ let bindMaybe (A, B : *) (x : Maybe A) (f : Π _ : A. Maybe B) : Maybe B :=
 let mapMaybe [A, B : *] (f : Π _ : A. B) (x : Maybe A) : Maybe B :=
   maybe ?A ?(Maybe B) (nothing B) (λ a : A. just B (f a)) x.
 
-EndModule.
+endModule.

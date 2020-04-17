@@ -37,7 +37,7 @@ b-let init$newStmt'$set_space__setStmt_=dot= (_ : init$space) (s : init$newStmt)
 b-let init$newStmt'$let_space__betterLet_ (_ : init$space) (i : LetInfo) : init$newStmt := letInfoToNewStmtMod i.
 b-let init$newStmt'$qlet_space__betterLet_ (_ : init$space) (i : LetInfo) : init$newStmt :=
   seqNewStmt (letInfoToNewStmt i) (letInfoToNewStmt (letInfoTermToQuoted i)).
-b-let init$newStmt'$RunMeta_space__multiTerm_=dot= (_ : init$space) (t : Term) : init$newStmt := runMetaCommand t.
+b-let init$newStmt'$runMeta_space__multiTerm_=dot= (_ : init$space) (t : Term) : init$newStmt := runMetaCommand t.
 b-let init$newStmt'$echo_space__multiTerm_=dot= (_ : init$space) (t : Term) : init$newStmt :=
   bindEvalState ?Term ?metaResult (modifyTermMod t) runEcho.
 b-let init$newStmt'$import_space__string_=dot= (_ : init$space) (n : String) : init$newStmt := stmtToNewStmt (quote$import' n).
@@ -53,4 +53,4 @@ b-let evalNewStmt (s : EvaluatorState) (stmt : init$newStmt) : M (Product metaRe
 seteval [evalNewStmt emptyEvaluatorState] init newStmt.
 
 -- this defines the initial dictionary
-RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDict) θ{emptyModuleDict} (just ?Term θ{ModuleDict}))).
+runMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDict) θ{emptyModuleDict} (just ?Term θ{ModuleDict}))).

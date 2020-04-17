@@ -7,11 +7,11 @@ module Theory.
 -- Temporary workaround to make all the names that `data` needs available
 import test/Datatypes/ModuleCompatibility.
 
-Import List.
-Import Maybe.
-Import Nat.
-Import Map.
-Import NatConversions.
+importModule List.
+importModule Maybe.
+importModule Nat.
+importModule Map.
+importModule NatConversions.
 
 -- Strings and string notation
 Given String.
@@ -331,4 +331,4 @@ let checkType (e : Env) (t, T : Term) : Bool :=
     (λ _ : String. false)
     (synthType e t).
 
-EndModule.
+endModule.

@@ -1,29 +1,29 @@
-RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo
+runMeta stmtToNewStmt (convertLetInfo (mkLetInfo
   "convertAndCheckLetInfo"
   (sVarTerm "modPrefix|Conversion0|convertAndCheckLetInfo")
   (nothing ?Term))).
 
-RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo
+runMeta stmtToNewStmt (convertLetInfo (mkLetInfo
   "convertAndAddToEnv"
   (sVarTerm "modPrefix|Conversion0|convertAndAddToEnv")
   (nothing ?Term))).
 
-RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo
+runMeta stmtToNewStmt (convertLetInfo (mkLetInfo
   "isDefined"
   (sVarTerm "modPrefix|Theory0|isDefined")
   (nothing ?Term))).
 
-RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo
+runMeta stmtToNewStmt (convertLetInfo (mkLetInfo
   "ErrorFold"
   (sVarTerm "modPrefix|Theory0|ErrorFold")
   (nothing ?Term))).
 
-RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo
+runMeta stmtToNewStmt (convertLetInfo (mkLetInfo
   "Env"
   (sVarTerm "modPrefix|Theory0|Env")
   (nothing ?Term))).
 
-RunMeta stmtToNewStmt (convertLetInfo (mkLetInfo "COCEnv|0" (sVarTerm "modPrefix|Theory0|emptyEnv") (nothing ?Term))).
+runMeta stmtToNewStmt (convertLetInfo (mkLetInfo "COCEnv|0" (sVarTerm "modPrefix|Theory0|emptyEnv") (nothing ?Term))).
 
 let envPrefix := "COCEnv|".
 let natToEnv (n : Nat) := stringApp envPrefix (showNatDecimal n).

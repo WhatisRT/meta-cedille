@@ -4,7 +4,7 @@ let Csucc := suc.
 
 module NatConversions.
 
-Import Nat.
+importModule Nat.
 
 Given CNat.
 Given Czero.
@@ -16,4 +16,4 @@ let toChurchNat (n : Nat) : CNat :=
 let fromChurchNat (n : CNat) : Nat :=
   n ?Nat zero succ.
 
-EndModule.
+endModule.

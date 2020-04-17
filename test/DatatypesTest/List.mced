@@ -6,8 +6,8 @@ import test/Datatypes/ModuleCompatibility.
 Given Bool.
 Given ifthenelse.
 
-Import Maybe.
-Import Nat.
+importModule Maybe.
+importModule Nat.
 
 data List (A : *) where
 | nil' : List A
@@ -59,4 +59,4 @@ let findMaybe [A : *] (pred : Π _ : A. Bool) (l : List A) : Maybe Nat :=
     (λ a : A. λ rec : Maybe Nat. ifthenelse ?(Maybe Nat) (pred a) (just Nat zero) (mapMaybe ?Nat ?Nat succ rec))
     l.
 
-EndModule.
+endModule.

@@ -34,11 +34,13 @@ postulate
   primStrHead : String -> MaybeWrapper Char
   strNull : String -> Bool
   strTake : ℕ -> String -> String
+  strDrop : ℕ -> String -> String
   primUncons : String -> MaybeWrapper unconsRes
 
 {-# COMPILE GHC primStrHead = (fmap fst) . uncons #-}
 {-# COMPILE GHC strNull = Data.Text.null #-}
 {-# COMPILE GHC strTake = Data.Text.take . fromIntegral #-}
+{-# COMPILE GHC strDrop = Data.Text.drop . fromIntegral #-}
 {-# COMPILE GHC primUncons = unconsWrapped #-}
 
 strHead : String -> Maybe Char

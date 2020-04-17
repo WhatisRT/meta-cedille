@@ -234,16 +234,22 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       RuleTable T = DepFinMap (suc n) (λ v -> (FinMap (numOfRules v) T))
 
       RuleString : Set
-      RuleString = List (Fin (suc n) ⊎ MultiChar ⊎ Char)
+      RuleString = List (Fin (suc n) ⊎ MultiChar ⊎ String)
 
       sequenceRuleTable : ∀ {A} -> RuleTable (M A) -> M (RuleTable A)
       sequenceRuleTable f = sequenceDepFinMap λ v → sequenceDepFinMap (f v)
+
+      addCharToRuleString : Char -> RuleString -> RuleString
+      addCharToRuleString c [] = [ (inj₂ $ inj₂ $ Data.String.fromChar c) ]
+      addCharToRuleString c s@(inj₁ _ ∷ _) = (inj₂ $ inj₂ $ Data.String.fromChar c) ∷ s
+      addCharToRuleString c s@(inj₂ (inj₁ _) ∷ _) = (inj₂ $ inj₂ $ Data.String.fromChar c) ∷ s
+      addCharToRuleString c (inj₂ (inj₂ y) ∷ s) = (inj₂ $ inj₂ ((Data.String.fromChar c) + y)) ∷ s
 
       markedStringToRule : MarkedString -> M RuleString
       markedStringToRule [] = return []
       markedStringToRule (inj₁ x ∷ s) = do
         res <- markedStringToRule s
-        return (inj₂ (inj₂ x) ∷ res)
+        return (addCharToRuleString x res)
       -- this terminates because 'rest' is shorter than 's'
       markedStringToRule (inj₂ NonTerminalBracket ∷ s) = do
         (nonTerm' , rest) <- bracketHelper NonTerminalBracket s

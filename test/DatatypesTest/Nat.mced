@@ -55,4 +55,4 @@ let natToDecList (n : Nat) : List Dec :=
 let showNat (n : Nat) : String :=
   showListOfDigitsBased ?Dec showDec (natToDecList n).
 
-EndModule.
+endModule.

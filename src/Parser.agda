@@ -27,7 +27,7 @@ record CFG (V : Set) (MultiChar : Set) : Set₁ where
     S : V
     R : V -> Set
     AllRules : (v : V) -> List (R v)
-    Rstring : {v : V} -> R v -> List (V ⊎ MultiChar ⊎ Char)
+    Rstring : {v : V} -> R v -> List (V ⊎ MultiChar ⊎ String)
 
 Rules : ∀ {V M} -> CFG V M -> Set
 Rules record { R = R } = ∃[ v ] R v
@@ -41,23 +41,29 @@ module LL1Parser {V : Set} {{_ : Eq V}} (showV : V -> String) {a}
   R = CFG.R G
   Rstring = CFG.Rstring G
   AllRules = CFG.AllRules G
-  Char' = MultiChar ⊎ Char
+  Terminal = MultiChar ⊎ String
 
   Rule = Rules G
-  Rstring' : Rule -> List (V ⊎ Char')
+  Rstring' : Rule -> List (V ⊎ Terminal)
   Rstring' (fst , snd) = Rstring snd
   SynTree = Tree (Rule ⊎ Char)
 
-  match : Char -> Char' -> Bool
-  match c (inj₁ x) = matchMulti c x
-  match c (inj₂ y) = c ≣ y
+  match : String -> Terminal -> Bool
+  match s (inj₁ x) with strHead s
+  ... | nothing = false
+  ... | just c = matchMulti c x
+  match s (inj₂ y) = strTake (length (Data.String.toList y)) s ≣ y
+
+  terminalLength : Terminal -> ℕ
+  terminalLength (inj₁ x) = 1
+  terminalLength (inj₂ y) = length (Data.String.toList y)
 
   showChar : Char -> String
   showChar c = fromList [ c ]
 
-  showCharOrMulti : Char' -> String
+  showCharOrMulti : Terminal -> String
   showCharOrMulti (inj₁ x) = showMulti x
-  showCharOrMulti (inj₂ y) = showChar y
+  showCharOrMulti (inj₂ y) = y
 
   showStack : List (V ⊎ Char) -> String
   showStack [] = ""
@@ -65,18 +71,20 @@ module LL1Parser {V : Set} {{_ : Eq V}} (showV : V -> String) {a}
   showStack (inj₂ y ∷ s) = showChar y + showStack s
 
   {-# NON_TERMINATING #-}
-  parsingTable : V -> Maybe Char -> Maybe Rule
+  parsingTable : V -> String -> Maybe Rule
   parsingTable v x with R v
   ... | rules =
-    mmap (-,_) $ head $ boolDropWhile (not ∘ (maybe startWith produces-ε x)) (AllRules v)
+    mmap (-,_)
+      (head (boolDropWhile (not ∘ (startWith x)) (AllRules v)) <∣>
+      (head (boolDropWhile (not ∘ produces-ε) (AllRules v))))
     where
       produces-ε : {v : V} -> R v -> Bool
       produces-ε r = null $ Rstring r
 
-      startWith : {v : V} -> Char -> R v -> Bool
+      startWith : {v : V} -> String -> R v -> Bool
       startWith x r = helper x (Rstring r)
         where
-          helper : Char -> List (V ⊎ Char') -> Bool
+          helper : String -> List (V ⊎ Terminal) -> Bool
           helper x [] = false
           helper x (inj₁ x₁ ∷ y) = case boolFilter (startWith x) (AllRules x₁) of λ
             { [] → case boolFilter produces-ε (AllRules x₁) of λ
@@ -93,22 +101,22 @@ module LL1Parser {V : Set} {{_ : Eq V}} (showV : V -> String) {a}
       (λ z -> return (z , rest)) (throwError "BUG: Error while creating syntax tree.")
       (resToTree y)
     where
-      helper : List (V ⊎ Char') -> String -> M (List (Rule ⊎ Char) × String)
+      helper : List (V ⊎ Terminal) -> String -> M (List (Rule ⊎ Char) × String)
       helper [] s = return ([] , s)
-      helper (inj₁ x ∷ stack) s with (parsingTable x (strHead s)) <∣> (parsingTable x nothing)
+      helper (inj₁ x ∷ stack) s with (parsingTable x s)
       ... | just x₁ = do
         (res , rest) <- helper ((Rstring' x₁) ++ stack) s
         return ((inj₁ x₁ ∷ res) , rest)
       ... | nothing = throwError $
           "No applicable rule found for non-terminal " + showV x + "\nRemaining:\n" + s
       helper (inj₂ y ∷ stack) s with uncons s
-      ... | just (x , s') = if match x y
+      ... | just (x , s') = if match s y
         then (do
-          (res₁ , res₂) <- helper stack s'
+          (res₁ , res₂) <- helper stack (strDrop (terminalLength y) s)
           return ((case isInj₁ y of λ { (just _) → [ inj₂ x ] ; nothing → [] }) ++ res₁ , res₂))
         else (throwError $
           "Mismatch while parsing characters: tried to parse " + showCharOrMulti y +
-          " but got '" + showChar x + "'\nRemaining:\n" + showChar x + s')
+          " but got '" + s + "'")
       ... | nothing = throwError ("Unexpected end of input while trying to parse " + showCharOrMulti y)
 
       resToTree' : List (Rule ⊎ Char) -> Maybe (SynTree × List (Rule ⊎ Char))
@@ -125,7 +133,7 @@ module LL1Parser {V : Set} {{_ : Eq V}} (showV : V -> String) {a}
               case applyTimes f k snd of λ { (fst' , snd') → (fst ∷ fst') , snd' }
             ; nothing → [] , a }
 
-          terminal : V ⊎ Char' -> Bool
+          terminal : V ⊎ Terminal -> Bool
           terminal (inj₁ x) = true
           terminal (inj₂ (inj₁ x)) = true
           terminal (inj₂ (inj₂ y)) = false

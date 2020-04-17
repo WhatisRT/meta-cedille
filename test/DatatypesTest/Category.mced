@@ -39,4 +39,4 @@ record Iso (obj : *) (hom : Π _, _ : obj. *) (C : Category obj hom) (a, b : obj
 | lInv : Eq (hom a a) (composition obj hom C a b a inv f) (identity obj hom C a)
 | rInv : Eq (hom b b) (composition obj hom C b a b f inv) (identity obj hom C b).
 
-EndModule.
+endModule.
