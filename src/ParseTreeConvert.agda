@@ -34,8 +34,8 @@ open import Parser
 open import ParserGenerator
 
 -- accepts the head and tail of a string and returns the head of the full string without escape symbols
-unescape : Char -> List Char -> Char
-unescape c r = if ⌊ c ≟ '\\' ⌋ then (case r of λ { [] → c ; (x ∷ x₁) → x}) else c
+unescape : Char -> String -> Char
+unescape c r = if ⌊ c ≟ '\\' ⌋ then (case (strHead r) of λ { nothing → c ; (just x) → x}) else c
 
 continueIfInit : ∀ {a} {A : Set a} -> List Char -> List Char -> (List Char -> A) -> Maybe A
 continueIfInit {A = A} init s = helper init s
@@ -77,12 +77,12 @@ toChar' (Node x x₁) =
     then (case x₁ of λ { (y ∷ []) -> toChar y ; _ -> nothing })
     else nothing
 
-toName : Tree (ℕ ⊎ Char) -> Maybe (List Char)
+toName : Tree (ℕ ⊎ Char) -> Maybe String
 toName (Node x x₁) = case x₁ of λ
   { (y ∷ y' ∷ _) -> do
     c <- toChar y
     n <- toName' y'
-    return (c ∷ n)
+    return $ fromList (c ∷ n)
   ; _ -> nothing }
   where
     toName' : Tree (ℕ ⊎ Char) -> Maybe (List Char)
@@ -101,7 +101,7 @@ toNameList (Node x []) = just []
 toNameList (Node x (x₁ ∷ x₂ ∷ _)) = do
   n <- toName x₁
   rest <- toNameList x₂
-  return ((fromList n) ∷ rest)
+  return (n ∷ rest)
 {-# CATCHALL #-}
 toNameList _ = nothing
 
@@ -152,7 +152,7 @@ toIndex t = do
 toTerm : Tree (ℕ ⊎ Char) -> Maybe AnnTerm
 toTerm = helper []
   where
-    helper : List (List Char) -> Tree (ℕ ⊎ Char) -> Maybe AnnTerm
+    helper : List String -> Tree (ℕ ⊎ Char) -> Maybe AnnTerm
     helper accu (Node x x₁) =
       decCase x of
         ((from-just $ ruleId "term" "_var_") ,
@@ -233,7 +233,7 @@ toTerm = helper []
             n <- toName n'
             t <- helper accu y
             t' <- helper (n ∷ accu) y'
-            return $ ∀-A (fromList n) t t'
+            return $ ∀-A n t t'
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
@@ -242,7 +242,7 @@ toTerm = helper []
             n <- toName n'
             t <- helper accu y
             t' <- helper (n ∷ accu) y'
-            return $ Π (fromList n) t t'
+            return $ Π n t t'
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
@@ -251,7 +251,7 @@ toTerm = helper []
             n <- toName n'
             t <- helper accu y
             t' <- helper (n ∷ accu) y'
-            return $ ι (fromList n) t t'
+            return $ ι n t t'
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
@@ -260,7 +260,7 @@ toTerm = helper []
             n <- toName n'
             t <- helper accu y
             t' <- helper (n ∷ accu) y'
-            return $ λ-A (fromList n) t t'
+            return $ λ-A n t t'
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
@@ -269,7 +269,7 @@ toTerm = helper []
             n <- toName n'
             t <- helper accu y
             t' <- helper (n ∷ accu) y'
-            return $ Λ (fromList n) t t'
+            return $ Λ n t t'
           ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "term"
@@ -383,9 +383,9 @@ instance
   Stmt-Show = record { show = helper }
     where
       helper : Stmt -> String
-      helper (Let x x₁ (just x₂)) = "let " + show {{CharList-Show}} x + " := " + show x₁ + " : " + show x₂
-      helper (Let x x₁ nothing) = "let " + show {{CharList-Show}} x + " := " + show x₁
-      helper (Ass x x₁) = "ass " + show {{CharList-Show}} x + " : " + show x₁
+      helper (Let x x₁ (just x₂)) = "let " + x + " := " + show x₁ + " : " + show x₂
+      helper (Let x x₁ nothing) = "let " + x + " := " + show x₁
+      helper (Ass x x₁) = "ass " + x + " : " + show x₁
       helper (Normalize x) = "normalize " + show x
       helper (HeadNormalize x) = "normalize " + show x
       helper (EraseSt x) = "erase " + show x
@@ -451,21 +451,21 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
               t <- toTerm y
               n <- toName y'
               n' <- toName y''
-              return (SetEval t (fromList n) (fromList n'))
+              return (SetEval t n n')
             ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "stmt'" "import_space__string__space'_.") ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ []) -> do
               n <- toName y
-              return $ Import (fromList n)
+              return $ Import n
             ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "stmt'" "cmd_space__string__space'_.") ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ []) -> do
               n <- toName y
-              return (Shell $ fromList n)
+              return (Shell n)
             ; _ -> nothing })) ∷
 
         ((from-just $ ruleId "stmt'" "") ,
@@ -492,20 +492,20 @@ toStmt _ = nothing
 module CoreParser-Internal {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
   preCoreGrammar : M Grammar
-  preCoreGrammar = generateCFG "stmt" coreGrammarGenerator
+  preCoreGrammar = generateCFG "stmt" (map fromList coreGrammarGenerator)
 
-  parse' : Grammar -> String -> M (Tree (List Char ⊎ Char) × String)
+  parse' : Grammar -> String -> M (Tree (String ⊎ Char) × String)
   parse' (fst , fst₁ , snd) s = do
-    res <- LL1Parser.parse (fromList ∘ proj₂ snd) matchMulti show fst₁ M s
+    res <- LL1Parser.parse (proj₂ snd) matchMulti show fst₁ M s
     return (Data.Product.map₁ (fmap {{Tree-Functor}} (Data.Sum.map₁ (proj₁ snd))) res)
 
-  parse : String -> M (Tree (List Char ⊎ Char) × String)
+  parse : String -> M (Tree (String ⊎ Char) × String)
   parse s = do
     G <- preCoreGrammar
     parse' G s
 
   {-# TERMINATING #-} -- cannot just use sequence here because of the char special case
-  synTreeToℕTree : Tree (List Char ⊎ Char) -> M (Tree (ℕ ⊎ Char))
+  synTreeToℕTree : Tree (String ⊎ Char) -> M (Tree (ℕ ⊎ Char))
   synTreeToℕTree t@(Node (inj₁ x) x₁) = do
     case convertIfChar t of λ
       { (just t') → return t'
@@ -515,16 +515,16 @@ module CoreParser-Internal {M} {{_ : Monad M}} {{_ : MonadExcept M String}} wher
         return (Node id ids)
       }
     where
-      fullRuleId : List Char -> M (ℕ ⊎ Char)
-      fullRuleId l with break (_≟ '$') l -- split at '$'
+      fullRuleId : String -> M (ℕ ⊎ Char)
+      fullRuleId l with break (_≟ '$') (Data.String.toList l) -- split at '$'
       ... | (x , []) = throwError "No '$' character found!"
-      ... | (x , _ ∷ y) = maybeToError (ruleId x y) ("Rule " + (fromList l) + "doesn't exist!")
+      ... | (x , _ ∷ y) = maybeToError (ruleId x y) ("Rule " + l + "doesn't exist!")
 
-      convertIfChar : Tree (List Char ⊎ Char) -> Maybe (Tree (ℕ ⊎ Char))
-      convertIfChar (Node (inj₁ x) x₁) =
-        addMaybe
-          (join $ continueIfInit "nameInitChar$" x λ { [] → nothing ; (c ∷ x) → just $ Node (inj₂ $ unescape c x) [] }) $
-          join $ continueIfInit "nameTailChar$" x λ { [] → nothing ; (c ∷ x) → just $ Node (inj₂ $ unescape c x) [] }
+      convertIfChar : Tree (String ⊎ Char) -> Maybe (Tree (ℕ ⊎ Char))
+      convertIfChar (Node (inj₁ x) x₁) = do
+        rest <- addMaybe (stripPrefix "nameInitChar$" x) (stripPrefix "nameTailChar$" x)
+        (c , s) <- Prelude.uncons rest
+        just $ Node (inj₂ $ unescape c s) []
       convertIfChar (Node (inj₂ x) x₁) = nothing
 
   synTreeToℕTree (Node (inj₂ x) x₁) = return (Node (inj₂ x) [])

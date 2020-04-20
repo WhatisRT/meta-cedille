@@ -11,11 +11,11 @@ module Execution where
 open import Class.Map
 open import Class.Monad.Except
 open import Class.Monad.IO
-open import Class.Monad.Profiler
 open import Class.Monad.State
 open import Class.Traversable
 open import Data.List using (map; length)
-open import Data.NDTrie
+open import Data.Product.Exts
+open import Data.HSTrie
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
 open import Data.String.Exts
@@ -47,7 +47,7 @@ instance
 -- The full state of the interpreter: the context of defined values plus parsing
 -- and semantics for generating code
 MetaContext : Set
-MetaContext = GlobalContext × Grammar × List Char × AnnTerm
+MetaContext = GlobalContext × Grammar × String × AnnTerm
 
 -- Many statements just return a single string, in which case this function can
 -- be used
@@ -63,13 +63,13 @@ module StateHelpers {M : Set -> Set} {{_ : Monad M}}
   get' : M GlobalContext
   get' = gets (λ m -> proj₁ m)
 
-  getMeta : M (Grammar × List Char × AnnTerm)
+  getMeta : M (Grammar × String × AnnTerm)
   getMeta = gets proj₂
 
   modify' : (MetaContext -> MetaContext) -> M ⊤
   modify' f = modify f >> return tt
 
-  setMeta : Grammar -> List Char -> AnnTerm -> M ⊤
+  setMeta : Grammar -> String -> AnnTerm -> M ⊤
   setMeta G namespace interpreter =
     modify' λ { (fst , snd) -> (fst , G , namespace , interpreter) }
 
@@ -86,7 +86,7 @@ module StateHelpers {M : Set -> Set} {{_ : Monad M}}
     Γ <- getContext
     case insertInGlobalContext n d (contextToGlobal Γ) of λ
       { (inj₁ x) → throwError x
-      ; (inj₂ y) → setContext y >> return ("Defined " + show {{CharList-Show}} n + show d) }
+      ; (inj₂ y) → setContext y >> return ("Defined " + n + show d) }
 
 open StateHelpers
 
@@ -95,11 +95,11 @@ checkInit [] l' = true
 checkInit (x ∷ l) [] = false
 checkInit (x ∷ l) (x₁ ∷ l') = x ≣ x₁ ∧ checkInit l l'
 
-getParserNamespace : GlobalContext -> List Char -> List (List Char)
-getParserNamespace Γ n = map (drop 1) $ trieKeys $ lookupNDTrie n Γ
+getParserNamespace : GlobalContext -> String -> List String
+getParserNamespace Γ n = map (strDrop (strLength n + 1)) $ trieKeys $ lookupHSTrie n Γ
 
-ruleToConstr : List Char -> List Char
-ruleToConstr = concat ∘ helper ∘ groupEscaped
+ruleToConstr : String -> String
+ruleToConstr = fromList ∘ concat ∘ helper ∘ groupEscaped ∘ toList
   where
     helper : List (List Char) -> List (List Char)
     helper [] = []
@@ -115,17 +115,16 @@ ruleToConstr = concat ∘ helper ∘ groupEscaped
 -- Folds a tree of constructors back into a term by properly applying the
 -- constructors and prefixing the namespace
 {-# TERMINATING #-}
-parseResultToConstrTree : List Char -> Tree (List Char ⊎ Char) -> AnnTerm
+parseResultToConstrTree : String -> Tree (String ⊎ Char) -> AnnTerm
 parseResultToConstrTree namespace (Node x x₁) =
   foldl (λ t t' -> App-A t t') (ruleToTerm x) (map (parseResultToConstrTree namespace) x₁)
     where
-      ruleToTerm : List Char ⊎ Char -> AnnTerm
-      ruleToTerm (inj₁ x) = Var-A (Free (namespace ++ "$" ++ ruleToConstr x))
+      ruleToTerm : String ⊎ Char -> AnnTerm
+      ruleToTerm (inj₁ x) = Var-A (Free (namespace + "$" + ruleToConstr x))
       ruleToTerm (inj₂ y) = Char-A y
 
 module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
-  {{_ : MonadExcept M String}} {{_ : MonadState M MetaContext}}
-  {{_ : MonadIO M}} {{_ : MonadProfiler M (String × List String)}}
+  {{_ : MonadExcept M String}} {{_ : MonadState M MetaContext}} {{_ : MonadIO M}}
   where
 
   -- Typecheck a term and return its type
@@ -137,7 +136,7 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
   -- Parse the next top-level non-terminal symbol from a string, and return a
   -- term representing the result of the parse, as well as the unparsed rest of
   -- the string
-  parseMeta : Grammar × List Char × AnnTerm -> String -> M (AnnTerm × String)
+  parseMeta : Grammar × String × AnnTerm -> String -> M (AnnTerm × String)
   parseMeta (G , namespace , interpreter) s = do
     (t , rest) <- parse' G s
     return (parseResultToConstrTree namespace t , rest)
@@ -152,15 +151,15 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
   tryExecute : String -> M MetaResult
 
   executeStmt (Let n t nothing) = do
-    t' <- profileCall ("Typecheck" , [ show t ]) $ check t
+    t' <- check t
     res <- addDef n (Let t t')
     return $ strResult res
 
   executeStmt (Let n t (just t')) = do
-    u <- profileCall ("Typecheck" , [ show t ]) $ check t
-    profileCall ("Typecheck" , [ show t' ]) $ check t'
+    u <- check t
+    check t'
     Γ <- getContext
-    catchError (profileCall ("Equality" , show u ∷ show t' ∷ []) $ checkβη Γ u t')
+    catchError (checkβη Γ u t')
       (λ e -> throwError $
         "Type mismatch with the provided type!\n" + e + "\nProvided: " + show t' +
         "\nSynthesized: " + show u)
@@ -195,27 +194,27 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
   executeStmt (SetEval t n start) = do
     Γ <- get'
     let Γ' = globalToContext Γ
-    let rules = getParserNamespace Γ (toList n)
+    let rules = getParserNamespace Γ n
     maybe
       (λ rules' -> do
-        y <- generateCFG (toList start) rules'
+        y <- generateCFG start rules'
         T <- synthType Γ' t
         case (hnfNorm Γ' T) of λ
           { (Π _ u u₁) -> do
-            appendIfError (checkβη Γ' u (Var-A (Free' (n + "$" + start))))
+            appendIfError (checkβη Γ' u (Var-A (Free (n + "$" + start))))
               "The evaluator needs to accept the parse result as input"
             case (hnfNorm Γ' u₁) of λ
               { (M-A _) -> do
-                setMeta y (toList n) t
+                setMeta y n t
                 return (strResult "Successfully set the evaluator")
               ; _ -> throwError "The evaluator needs to return a M type" }
           ; _ -> throwError "The evaluator needs to have a pi type" }
       )
       (throwError "Error while un-escaping parsing rules!")
-      (sequence $ map translate rules)
+      (sequence $ map ((fmap fromList) ∘ translate ∘ toList) rules)
 
   executeStmt (Import x) = do
-    res <- profileCall ("IO" , [ x + ".mced" ]) $ liftIO $ readFiniteFileError (x + ".mced")
+    res <- liftIO $ readFiniteFileError (x + ".mced")
     case res of λ
       { (inj₁ x) → throwError x
       ; (inj₂ y) → tryExecute y }
@@ -236,8 +235,8 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
 
   executeTerm (Ev-P EvalStmt t) = do
     Γ <- getContext
-    normStmt <- profileCall ("NormalizeStmt" , []) $ return $ normalizePure Γ t
-    stmt <- profileCall ("GenerateStmt" , []) $ appendIfError (constrsToStmt Γ normStmt) ("Error with term: " + show t)
+    normStmt <- return $ normalizePure Γ t
+    stmt <- appendIfError (constrsToStmt Γ normStmt) ("Error with term: " + show t)
     res <- executeStmt stmt
     return (res , (Erase $ embedMetaResult res))
 
@@ -267,9 +266,8 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
     throwError ("Error: " + show t + " is not a term that can be evaluated!")
 
   tryExecute' s = do
-    (fst , snd) <- profileCall ("Parse" , [ s ]) (parseStmt s)
-    res <- appendIfError (profileCall ("Execute" , [ show fst ]) $ executeStmt fst)
-                         ("\n\nError while executing statement: " + show fst)
+    (fst , snd) <- parseStmt s
+    res <- appendIfError (executeStmt fst) ("\n\nError while executing statement: " + show fst)
     res' <- if strNull snd then return ([] , []) else tryExecute' snd
     return (res + res')
 
@@ -298,52 +296,33 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
 module ExecutionMonad where
   open import Monads.ExceptT
   open import Monads.StateT
-  open import Monads.WriterT
-  open import Class.Monad.Profiler
 
-  -- profiling in the second component
   ExecutionState : Set
-  ExecutionState = MetaContext × List (List (String × List String) × ℕ)
+  ExecutionState = MetaContext
 
   contextFromState : ExecutionState -> MetaContext
-  contextFromState = proj₁
-
-  profilingFromState : ExecutionState -> List (List (String × List String) × ℕ)
-  profilingFromState = proj₂
+  contextFromState s = s
 
   Execution : Set -> Set
-  Execution = ExceptT (StateT (WriterT IO Log) ExecutionState) String
+  Execution = ExceptT (StateT IO ExecutionState) String
 
-  execute : ∀ {A} -> Execution A -> MetaContext -> IO (Log × ExecutionState × (String ⊎ A))
+  execute : ∀ {A} -> Execution A -> MetaContext -> IO (ExecutionState × (String ⊎ A))
   execute x Γ = do
-    ((x' , s') , log) <- x (Γ , [])
-    return (log , s' , x')
+    (x' , s') <- x Γ
+    return (s' , x')
 
   instance
     Execution-Monad : Monad Execution
-    Execution-Monad = ExceptT-Monad {{StateT-Monad {{WriterT-Monad}}}}
+    Execution-Monad = ExceptT-Monad {{StateT-Monad}}
 
     Execution-MonadExcept : MonadExcept Execution {{Execution-Monad}} String
-    Execution-MonadExcept = ExceptT-MonadExcept {{StateT-Monad {{WriterT-Monad}}}}
+    Execution-MonadExcept = ExceptT-MonadExcept {{StateT-Monad}}
 
     Execution-MonadState : MonadState Execution {{Execution-Monad}} ExecutionState
-    Execution-MonadState =
-      ExceptT-MonadState {{StateT-Monad {{WriterT-Monad}}}} {{StateT-MonadState {{WriterT-Monad}}}}
-
-    Execution-MonadState-MetaContext : MonadState Execution {{Execution-Monad}} MetaContext
-    Execution-MonadState-MetaContext = MonadStateProj₁ {{Execution-Monad}} {{Execution-MonadState}}
-
-    Execution-MonadState-Profiling :
-      MonadState Execution {{Execution-Monad}} (List (List (String × List String) × ℕ))
-    Execution-MonadState-Profiling = MonadStateProj₂ {{Execution-Monad}} {{Execution-MonadState}}
+    Execution-MonadState = ExceptT-MonadState {{StateT-Monad}} {{StateT-MonadState}}
 
     Execution-IO : MonadIO Execution {{Execution-Monad}}
-    Execution-IO = ExceptT-MonadIO
-      {{StateT-Monad {{WriterT-Monad}}}}
-      {{StateT-MonadIO {{WriterT-Monad}} {{WriterT-MonadIO {{_}} {{_}} {{IO-MonadIO}}}}}}
-
-    Execution-Profiler : MonadProfiler Execution {{Execution-Monad}} (String × List String)
-    Execution-Profiler = IOState-MonadProfiler {{Execution-Monad}}
+    Execution-IO = ExceptT-MonadIO {{StateT-Monad}} {{StateT-MonadIO {{_}} {{IO-MonadIO}}}}
 
 open ExecutionMonad public
 open ExecutionDefs {Execution} public

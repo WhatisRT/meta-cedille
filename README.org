@@ -1,8 +1,8 @@
 * Meta Cedille
 This is the reference implementation for a version of cedille that supports metaprogramming. The [[https://github.com/WhatisRT/meta-cedille/wiki][wiki]] and [[https://whatisrt.github.io/][blog]] contain some information and documentation.
 * Building
-`Agda 2.6.1` and the agda standard library (version 1.3) are required. If those are setup correctly, just use the makefile.
+=Agda 2.6.1=, the Agda standard library (version 1.3) and =bytestring-trie= (the Haskell library) are required. If those are setup correctly, just use the makefile.
 * Testing
-The file `test/Test.mced` contains the current tests. Run `./meta-cedille --load test/Test` to execute all current tests. Alternatively, run `run_tests.sh` (which doesn't spawn a repl).
+The file =test/Test.mced= contains the current tests. Run =./meta-cedille --load test/Test= to execute all current tests. Alternatively, run =run_tests.sh= (which doesn't spawn a repl).
 
-To experiment with the internal COC, run `import test/COC.` after loading `test/Test`. See there for some examples.
+To experiment with the internal COC, run =import test/COC.= after loading =test/Test=. See there for some examples.

@@ -57,7 +57,7 @@ module ConversionInternals {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M 
   constrsToTerm = constrsToAgda "term" (λ t -> maybeToError (toTerm t) "Error while converting to term")
 
   constrsToString : Context -> PureTerm -> M String
-  constrsToString = constrsToAgda "name" (λ x -> maybeToError (mmap fromList $ toName x) "Error while converting to string")
+  constrsToString = constrsToAgda "name" (λ x -> maybeToError (toName x) "Error while converting to string")
 
   constrsToStringList : Context -> PureTerm -> M (List String)
   constrsToStringList = constrsToAgda "name" (λ x -> maybeToError (toNameList x) "Error while converting to string")
@@ -88,6 +88,9 @@ termListToTerm (x ∷ l) =
 -- The type of results of executing a statement in the interpreter. This can be
 -- returned back to the code via embedExecutionResult
 MetaResult = List String × List AnnTerm
+
+forceMetaResult : MetaResult -> MetaResult
+forceMetaResult (fst , snd) = (_,_ $! fst) $! snd
 
 -- Reflects the result into a term
 embedMetaResult : MetaResult -> AnnTerm

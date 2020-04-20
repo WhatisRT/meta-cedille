@@ -106,17 +106,15 @@ MultiChar = MultiChar' × Bool
 showMultiChar : MultiChar -> String
 showMultiChar = show
 
-multiCharFromString : List⁺ Char -> MultiChar'
-multiCharFromString (head Data.List.NonEmpty.∷ []) = [ inj₁ head ]
-multiCharFromString (head Data.List.NonEmpty.∷ x ∷ tail) = []
+multiCharFromString : Maybe (Char × String) -> MultiChar'
+multiCharFromString nothing = []
+multiCharFromString (just (c , s)) = if strNull s then [ inj₁ c ] else []
 
-multiChar'FromList : List (List Char) -> MultiChar'
+multiChar'FromList : List String -> MultiChar'
 multiChar'FromList [] = []
-multiChar'FromList (l ∷ l₁) =
-  (maybe (λ l' -> multiCharFromString l') [] $ Data.List.NonEmpty.fromList l) ++
-  multiChar'FromList l₁
+multiChar'FromList (l ∷ l₁) = multiCharFromString (Prelude.uncons l) + multiChar'FromList l₁
 
-multiCharFromList : List (List Char) -> MultiChar
+multiCharFromList : List String -> MultiChar
 multiCharFromList l = (multiChar'FromList l , true)
 
 negateMultiChar : MultiChar -> MultiChar
@@ -132,18 +130,18 @@ matchMulti c (fst , snd) with or $ map (helper c) fst
 
 -- Grammar with show functions for rules and non-terminals
 Grammar = ∃[ n ]
-  Σ (CFG (Fin (suc n)) MultiChar) (λ G -> (Rules G -> List Char) × (Fin (suc n) -> List Char))
+  Σ (CFG (Fin (suc n)) MultiChar) (λ G -> (Rules G -> String) × (Fin (suc n) -> String))
 
-showMarkedString : MarkedString -> List Char
-showMarkedString [] = []
+showMarkedString : MarkedString -> String
+showMarkedString [] = ""
 showMarkedString (inj₁ x ∷ s) =
-  decCase x of
+  fromListS (decCase x of
     map (λ x → (x , escapeMarker ∷ [ x ])) $
       -- if we find anything in this list, escape it
       escapeMarker ∷ map markerRepresentation enumerateMarkers
-    default [ x ]
-  ++ showMarkedString s
-showMarkedString (inj₂ x ∷ s) = markerRepresentation x ∷ showMarkedString s
+    default [ x ])
+    + showMarkedString s
+showMarkedString (inj₂ x ∷ s) = (Data.String.fromChar $ markerRepresentation x) + showMarkedString s
 
 convertToMarked : List Char -> MarkedString
 convertToMarked = helper false
@@ -157,35 +155,29 @@ convertToMarked = helper false
         default (inj₁ x ∷ helper false l)
     helper true (x ∷ l) = inj₁ x ∷ helper false l
 
-checkRuleName : List Char -> List Char × List MarkedString -> Set
+checkRuleName : String -> String × List MarkedString -> Set
 checkRuleName s r = s ≡ proj₁ r
 
 checkRuleNameDec : ∀ s -> Decidable (checkRuleName s)
-checkRuleNameDec [] ([] , snd) = yes refl
-checkRuleNameDec [] (x ∷ fst , snd) = no (λ ())
-checkRuleNameDec (x ∷ s) ([] , snd) = no (λ ())
-checkRuleNameDec (x ∷ s) (x₁ ∷ fst , snd) with x ≟ x₁ | checkRuleNameDec s (fst , snd)
-... | yes p | yes p₁ rewrite p | p₁ = yes refl
-... | yes p | no ¬p = no λ { refl -> ¬p refl }
-... | no ¬p | H' = no λ { refl -> ¬p refl }
+checkRuleNameDec s (s' , _) = s ≟ s'
 
 module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
-  bracketHelper : Marker -> MarkedString -> M (List⁺ (List Char) × MarkedString)
+  bracketHelper : Marker -> MarkedString -> M (List⁺ String × MarkedString)
   bracketHelper m [] = throwError "Unexpected end of string! Expected a marker!"
   bracketHelper m (inj₁ x ∷ s) = do
     (res , rest) <- bracketHelper m s
     case Data.List.NonEmpty.uncons res of λ
-      { (head , tail) → return ((x ∷ head) Data.List.NonEmpty.∷ tail , rest) }
+      { (head , tail) → return (((Data.String.fromChar x) + head) Data.List.NonEmpty.∷ tail , rest) }
   bracketHelper m (inj₂ x ∷ s) =
     if x ≣ m
-      then return (Data.List.NonEmpty.[ [] ] , s)
+      then return (Data.List.NonEmpty.[ "" ] , s)
       else
         if (m ≣ BlacklistWildcardBracket) ∨ (m ≣ WhitelistWildcardBracket)
           then if x ≣ WildcardSeparator
             then (do
               (res , rest) <- bracketHelper m s
-              return ([] Data.List.NonEmpty.∷ Data.List.NonEmpty.toList res , rest))
+              return ("" Data.List.NonEmpty.∷ Data.List.NonEmpty.toList res , rest))
             else throwError "Unexpected marker in a wildcard"
           else throwError "This function must be applied with a wildcard bracket"
 
@@ -196,11 +188,11 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
     return (x ∷ rest)
   removeMarks (inj₂ y ∷ l) = throwError "BUG: Error removing marks: Unexpected name divider!"
 
-  preParseCFG : List MarkedString -> M (∃[ n ] Vec (List Char × List MarkedString) n)
+  preParseCFG : List MarkedString -> M (∃[ n ] Vec (String × List MarkedString) n)
   preParseCFG [] = return $ zero , []
   preParseCFG (x ∷ l) with break (_≟ inj₂ NameDivider) x
   ... | name , rule' = if null name
-    then throwError $ "Parsing rule has no/empty name! Rule: " + (fromListS $ showMarkedString x)
+    then throwError $ "Parsing rule has no/empty name! Rule: " + showMarkedString x
     else let rule = dropHeadIfAny rule' in do
       _ , rules <- preParseCFG l
       return $ case findIndex (checkRuleNameDec $ showMarkedString name) rules of λ
@@ -208,7 +200,7 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
         ; nothing → -, (showMarkedString name , [ rule ]) ∷ rules}
 
   {-# TERMINATING #-}
-  generateCFG' : ∀ {n : ℕ} -> List Char -> (rules : Vec (List Char × List MarkedString) (suc n))
+  generateCFG' : ∀ {n : ℕ} -> String -> (rules : Vec (String × List MarkedString) (suc n))
     -> M Grammar
   generateCFG' {n} start rules = do
     ruleTable <- parseRuleTable
@@ -222,10 +214,9 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
             ; AllRules = λ v → tabulate id
             ; Rstring = λ {v} -> ruleTable v }
           , (λ { (fst , snd) →
-               proj₁ (lookup rules fst) ++ "$" ++
-               (showMarkedString $ lookup (Data.Vec.fromList $ proj₂ $ lookup rules fst) snd)})
+               proj₁ (lookup rules fst) + "$" + (showMarkedString $ lookup (Data.Vec.fromList $ proj₂ $ lookup rules fst) snd)})
           , λ n -> proj₁ $ lookup rules n)
-      ; nothing -> throwError $ "No non-terminal named " + fromListS start + " found!" }
+      ; nothing -> throwError $ "No non-terminal named " + start + " found!" }
     where
       numOfRules : Fin (suc n) -> ℕ
       numOfRules = length ∘ proj₂ ∘ lookup rules
@@ -258,7 +249,7 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
             res <- markedStringToRule rest
             nonTerm' <- maybeToError
               (findIndex (checkRuleNameDec nonTerm) rules)
-              ("Couldn't find a non-terminal named '" + fromListS nonTerm + "'")
+              ("Couldn't find a non-terminal named '" + nonTerm + "'")
             return (inj₁ nonTerm' ∷ res) }
       markedStringToRule (inj₂ NameDivider ∷ s) =
         throwError "The rule cannot contain a name divider!"
@@ -281,9 +272,9 @@ module GenCFG {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
           appendIfError (markedStringToRule y) (" In: " + show y)
 
   -- The first parameter describes the non-terminal the grammar should start with
-  generateCFG : List Char -> List (List Char) -> M Grammar
+  generateCFG : String -> List String -> M Grammar
   generateCFG start l = do
-    x <- preParseCFG (map convertToMarked l)
+    x <- preParseCFG (map convertToMarked (map toList l))
     case x of λ
       { (zero , y) → throwError "The grammar is empty!"
       ; (suc k , y) → generateCFG' start y }

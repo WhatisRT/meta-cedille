@@ -11,7 +11,6 @@ import Agda.Builtin.Nat using (_+_; _-_; _==_)
 import Data.Product
 open import Class.Map
 open import Class.Monad.Except
-open import Class.Monad.Profiler
 open import Data.Integer using (ℤ; +_; -[1+_])
 open import Data.List using (length)
 open import Data.Maybe using () renaming (map to mapMaybe)
@@ -20,7 +19,7 @@ open import Data.Word using (Word64; toℕ; fromℕ)
 open import Data.Word64.Exts
 open import Monads.Except
 open import Relation.Nullary
-open import Data.NDTrie
+open import Data.HSTrie
 
 open import Prelude
 
@@ -48,11 +47,7 @@ instance
   Sort-EqB = Eq→EqB {{Sort-Eq}}
 
 GlobalName : Set
-GlobalName = List Char
-
-instance
-  GlobalName-Show : Show GlobalName
-  GlobalName-Show = CharList-Show
+GlobalName = String
 
 𝕀 : Set
 𝕀 = Word64
@@ -86,9 +81,6 @@ data Name : Set where
   Bound : 𝕀 -> Name
   Free : GlobalName -> Name
 
-Free' : String -> Name
-Free' x = Free $ Data.String.toList x
-
 instance
   Name-Eq : Eq Name
   Name-Eq = record { _≟_ = helper }
@@ -111,13 +103,13 @@ instance
     where
       helper : Name -> String
       helper (Bound x) = show x
-      helper (Free x) = show {{CharList-Show}} x
+      helper (Free x) = x
 
 showVar : List String -> Name -> String
 showVar l (Bound x) with lookupMaybe (toℕ x) l
 ... | nothing = show x
 ... | just x₁ = x₁
-showVar l (Free x) = show {{CharList-Show}} x
+showVar l (Free x) = x
 
 data Const : Set where
   CharT : Const
@@ -473,7 +465,7 @@ checkFree = helper 0
     helper k n (CharEq-P t t₁) = helper k n t ∧ helper k n t₁
 
 GlobalContext : Set
-GlobalContext = NDTrie EfficientDef
+GlobalContext = HSTrie EfficientDef
 
 emptyGlobalContext : GlobalContext
 emptyGlobalContext = emptyMap
@@ -693,7 +685,7 @@ normalizePure Γ (Epsilon-P t) = Epsilon-P (normalizePure Γ t)
 normalizePure Γ (Ev-P m args) = Ev-P m (mapPrimMetaArgs (normalizePure Γ) args)
 normalizePure Γ (Char-P c) = (Char-P c)
 normalizePure Γ (CharEq-P t t₁) with normalizePure Γ t | normalizePure Γ t₁
-... | (Char-P c) | (Char-P c') = normalizePure Γ $ if c ≣ c' then Var-P $ Free' "true" else (Var-P $ Free' "false")
+... | (Char-P c) | (Char-P c') = normalizePure Γ $ if c ≣ c' then Var-P $ Free "true" else (Var-P $ Free "false")
 {-# CATCHALL #-}
 ... | x | x₁ = CharEq-P x x₁
 
@@ -714,12 +706,12 @@ findOutermostConstructor t = outermostApp $ stripBinders t
 insertInGlobalContext : GlobalName -> Def -> GlobalContext -> String ⊎ GlobalContext
 insertInGlobalContext n d Γ =
   if is-just $ lookup n Γ
-    then inj₁ ("The name " + show {{CharList-Show}} n + " is already defined!")
+    then inj₁ ("The name " + n + " is already defined!")
     else (inj₂ $ insert n (toEfficientDef d Γ) Γ)
   where
     toEfficientDef : Def -> GlobalContext -> EfficientDef
-    toEfficientDef (Let x x₁) Γ = EfficientLet x (normalizePure (globalToContext Γ) $ Erase x) x₁
-    toEfficientDef (Axiom x) Γ = EfficientAxiom x
+    toEfficientDef (Let x x₁) Γ = ((EfficientLet $ x) $ normalizePure (globalToContext Γ) $ Erase x) $ x₁
+    toEfficientDef (Axiom x) Γ = EfficientAxiom $ x
 
 module CheckEquality {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String}} (Γ : Context) where
 
@@ -779,13 +771,9 @@ open CheckEquality public
 
 {-# TERMINATING #-}
 synthType :
-  {M : Set -> Set} {{_ : Monad M}}
-  {{_ : MonadExcept M String}} {{_ : MonadProfiler M (String × (List String))}}
-  -> Context -> AnnTerm -> M AnnTerm
+  {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String}} -> Context -> AnnTerm -> M AnnTerm
 synthType' :
-  {M : Set -> Set} {{_ : Monad M}}
-  {{_ : MonadExcept M String}} {{_ : MonadProfiler M (String × (List String))}}
-  -> Context -> AnnTerm -> M AnnTerm
+  {M : Set -> Set} {{_ : Monad M}} {{_ : MonadExcept M String}} -> Context -> AnnTerm -> M AnnTerm
 
 synthType Γ t =
   appendIfError
@@ -913,9 +901,9 @@ synthType' Γ (ι _ t t₁) = do
         ; _ -> throwError "The type family in iota should have type star"}
     ; _ -> throwError "The type of the parameter type in iota should be star" }
 
-synthType' Γ (λ-A n t t₁) = profileCall ("Lambda" , []) $ do
-  profileCall ("CheckType" , [ show t ]) $ synthType Γ t
-  u <- profileCall ("CheckExpr" , [ show t₁ ]) $ synthType (pushVar t Γ) t₁
+synthType' Γ (λ-A n t t₁) = do
+  synthType Γ t
+  u <- synthType (pushVar t Γ) t₁
   return (Π n t u)
 
 synthType' Γ (Λ n t t₁) =
@@ -1003,20 +991,20 @@ synthType' Γ (ε t) = do
 synthType' Γ (Ev-A EvalStmt t) = do
   T <- synthType Γ t
   appendIfError
-    (checkβη Γ T (Var-A $ Free' "init$stmt"))
+    (checkβη Γ T (Var-A $ Free "init$stmt"))
     "The term supplied to EvalStmt needs to be of type 'init$stmt'"
-  return $ M-A (Var-A $ Free' "init$metaResult")
+  return $ M-A (Var-A $ Free "init$metaResult")
 
 synthType' Γ (Ev-A ShellCmd (t , t₁)) = do
   T <- synthType Γ t
   T₁ <- synthType Γ t₁
   appendIfError
-    (checkβη Γ T (Var-A $ Free' "init$string"))
+    (checkβη Γ T (Var-A $ Free "init$string"))
     "The first term supplied to ShellCmd needs to be of type 'init$string'"
   appendIfError
-    (checkβη Γ T₁ (Var-A $ Free' "init$stringList"))
+    (checkβη Γ T₁ (Var-A $ Free "init$stringList"))
     "The second term supplied to ShellCmd needs to be of type 'init$stringList'"
-  return $ M-A (Var-A $ Free' "init$string")
+  return $ M-A (Var-A $ Free "init$string")
 
 synthType' Γ (Ev-A CheckTerm (t , t₁)) = do
   T <- synthType Γ t
@@ -1025,7 +1013,7 @@ synthType' Γ (Ev-A CheckTerm (t , t₁)) = do
     (checkβη Γ T (Sort-A ⋆))
     "The first term supplied to CheckTerm needs to be of type *"
   appendIfError
-    (checkβη Γ T₁ (Var-A $ Free' "init$term"))
+    (checkβη Γ T₁ (Var-A $ Free "init$term"))
     "The second term supplied to CheckTerm needs to be of type 'init$term"
   return $ M-A t
 
@@ -1034,7 +1022,7 @@ synthType' Γ (Ev-A CatchErr (t , t₁)) = do
   T₁ <- synthType Γ t₁
   case (hnfNorm Γ T) of λ
     { (M-A u) -> do
-      appendIfError (checkβη Γ T₁ (Π "" (Var-A $ Free' "init$err") (incrementIndicesBy (fromℕ 1) $ M-A u)))
+      appendIfError (checkβη Γ T₁ (Π "" (Var-A $ Free "init$err") (incrementIndicesBy (fromℕ 1) $ M-A u)))
         ("The second term supplied to CatchErr has type " + show T₁ +
          ", while it should have type 'init$err -> M " + show u)
       return $ M-A u
@@ -1046,6 +1034,6 @@ synthType' Γ (CharEq-A t t') = do
   T' <- synthType Γ t'
   case (hnfNorm Γ T) of λ
     { (Const-A CharT) -> case (hnfNorm Γ T') of λ
-      { (Const-A CharT) -> return $ Var-A $ Free' "Bool"
+      { (Const-A CharT) -> return $ Var-A $ Free "Bool"
       ; _ -> throwError "The second term in CharEq needs to have type Char" }
     ; _ -> throwError "The first term in CharEq needs to have type Char" }
