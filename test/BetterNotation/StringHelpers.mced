@@ -11,7 +11,7 @@ b-let stringFromList (s : List init$char) : String :=
     s.
 
 b-let stringApp (s, s' : String) : String :=
-  stringFromList (app ?init$char (stringToList s) (stringToList s')).
+  s ?String init$string$cons s'.
 
 b-let stringConcat (l : List String) : String :=
   recursionList ?String ?String
