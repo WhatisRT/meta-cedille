@@ -13,3 +13,5 @@ import test/Eq.
 
 import test/Datatypes.
 import test/DatatypesTest.
+
+import test/COC.
