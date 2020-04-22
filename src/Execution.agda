@@ -14,7 +14,6 @@ open import Class.Monad.IO
 open import Class.Monad.State
 open import Class.Traversable
 open import Data.List using (map; length)
-open import Data.Product.Exts
 open import Data.HSTrie
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
