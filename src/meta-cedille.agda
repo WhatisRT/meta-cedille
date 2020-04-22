@@ -4,7 +4,7 @@ module meta-cedille where
 
 import IO.Primitive as Prim
 open import Data.List using (null; intersperse; span; map)
-open import Data.String using (toList)
+open import Data.String using (toList; padRight)
 open import IO using (IO; putStr; run; appendFile; writeFile)
 open import IO.Exts
 open import IO.Instance
@@ -76,11 +76,13 @@ record Options : Set where
   field
     startRepl : Bool
     importFiles : List String
+    showHelp : Bool
 
 defaultOptions : Options
 defaultOptions = record
   { startRepl = true
-  ; importFiles = [] }
+  ; importFiles = []
+  ; showHelp = false }
 
 {-# TERMINATING #-}
 readOptions : ExceptT IO String Options
@@ -99,8 +101,26 @@ readOptions = do
           ("--no-repl" , (readArgs input $ record current { startRepl = false })) ∷
           ("--load" , (case span argumentDec input of λ
             { (files , rest) -> (readArgs rest (record current { importFiles = files })) }) ) ∷
+          ("--help" , (readArgs input $ record current { showHelp = true })) ∷
           []
         default inj₁ ("Unknown option: " + x)
+
+maximum : List ℕ -> ℕ
+maximum [] = 0
+maximum (x ∷ l) = x ⊔ maximum l
+
+helpString : String
+helpString = "Usage: meta-cedille [OPTIONS...]\n" +
+  concat (map (λ { (fst , snd) -> "    --" + (padRight ' ' padLength fst) + snd + "\n" }) helpTable)
+  where
+    helpTable : List (String × String)
+    helpTable =
+      ("help" , "Show this help") ∷
+      ("load [FILES]" , "Loads a list of files before starting the REPL") ∷
+      ("no-repl" , "Exits the program when the REPL would start") ∷ []
+
+    padLength : ℕ
+    padLength = 4 + (maximum (map (Data.String.length ∘ proj₁) helpTable))
 
 open import Monads.Identity
 open import ParserGenerator
@@ -124,11 +144,12 @@ main = run $ do
   options <- readOptions
   case options of λ
     { (inj₁ x) → putStr x
-    ; (inj₂ record { startRepl = startRepl ; importFiles = importFiles }) → do
-      (postLoad , successLoad) <- loadFiles init importFiles
-      if startRepl
-        then repl postLoad
-        else if successInit ∧ successLoad
-          then exitSuccess
-          else exitFailure
+    ; (inj₂ record { startRepl = startRepl ; importFiles = importFiles ; showHelp = showHelp }) →
+      if showHelp then putStr helpString else do
+        (postLoad , successLoad) <- loadFiles init importFiles
+        if startRepl
+          then repl postLoad
+          else if successInit ∧ successLoad
+            then exitSuccess
+            else exitFailure
       }
