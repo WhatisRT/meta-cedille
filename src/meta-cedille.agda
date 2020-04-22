@@ -76,12 +76,14 @@ record Options : Set where
   field
     startRepl : Bool
     importFiles : List String
+    verbose : Bool
     showHelp : Bool
 
 defaultOptions : Options
 defaultOptions = record
   { startRepl = true
   ; importFiles = []
+  ; verbose = false
   ; showHelp = false }
 
 {-# TERMINATING #-}
@@ -101,6 +103,7 @@ readOptions = do
           ("--no-repl" , (readArgs input $ record current { startRepl = false })) ∷
           ("--load" , (case span argumentDec input of λ
             { (files , rest) -> (readArgs rest (record current { importFiles = files })) }) ) ∷
+          ("--verbose" , (readArgs input $ record current { verbose = true })) ∷
           ("--help" , (readArgs input $ record current { showHelp = true })) ∷
           []
         default inj₁ ("Unknown option: " + x)
@@ -117,6 +120,7 @@ helpString = "Usage: meta-cedille [OPTIONS...]\n" +
     helpTable =
       ("help" , "Show this help") ∷
       ("load [FILES]" , "Loads a list of files before starting the REPL") ∷
+      ("verbose" , "Print supressed output before starting the REPL") ∷
       ("no-repl" , "Exits the program when the REPL would start") ∷ []
 
     padLength : ℕ
@@ -132,21 +136,22 @@ initGrammar = from-inj₂ (preCoreGrammar {ExceptT Id String}
 emptyMetaContext : MetaContext
 emptyMetaContext = emptyGlobalContext , (initGrammar , "" , (Sort-A □))
 
-loadFiles : MetaContext -> List String -> IO (MetaContext × Bool)
-loadFiles context files =
+loadFiles : MetaContext -> EvalFlags -> List String -> IO (MetaContext × Bool)
+loadFiles context flags files =
   if null files
     then return (context , true)
-    else eval context (concat $ map (λ file -> "import " + file + ".") files) runtimeFlagsDefault
+    else eval context (concat $ map (λ file -> "import " + file + ".") files) flags
 
 main : Prim.IO ⊤
 main = run $ do
-  (init , successInit) <- eval emptyMetaContext initEnv initFlagsDefault
   options <- readOptions
   case options of λ
     { (inj₁ x) → putStr x
-    ; (inj₂ record { startRepl = startRepl ; importFiles = importFiles ; showHelp = showHelp }) →
+    ; (inj₂ record { startRepl = startRepl ; importFiles = importFiles ; verbose = verbose ; showHelp = showHelp }) →
       if showHelp then putStr helpString else do
-        (postLoad , successLoad) <- loadFiles init importFiles
+        (init , successInit) <- eval emptyMetaContext initEnv initFlagsDefault
+        let initFlags = if verbose then runtimeFlagsDefault else initFlagsDefault
+        (postLoad , successLoad) <- loadFiles init initFlags importFiles
         if startRepl
           then repl postLoad
           else if successInit ∧ successLoad
