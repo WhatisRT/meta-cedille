@@ -2,6 +2,9 @@ all:
 	+$(MAKE) -C src
 	cp src/meta-cedille .
 
-.PHONY: all clean
+stack:
+	+$(MAKE) stack -C src
+
+.PHONY: all clean stack
 clean:
 	+$(MAKE) clean -C src
