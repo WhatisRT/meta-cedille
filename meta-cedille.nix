@@ -32,7 +32,7 @@ unstable.agda.mkDerivation(self: {
   everythingFile = "meta-cedille.agda";
   buildDepends = [ AgdaStdlib-1_3 ghc ];
   buildPhase = ''
-             echo /nix/store/72fanb2a98zsxynlv7bli8gn716n3kgg-agda-stdlib-1.3/share/agda/standard-library.agda-lib > libraries
+             echo ${AgdaStdlib-1_3.out}/share/agda/standard-library.agda-lib > libraries
              cd src
              agda --ghc --library-file=../libraries meta-cedille.agda
              '';
