@@ -81,20 +81,12 @@ toName : Tree (ℕ ⊎ Char) -> Maybe String
 toName (Node x x₁) = case x₁ of λ
   { (y ∷ y' ∷ _) -> do
     c <- toChar y
-    n <- toName' y'
-    return $ fromList (c ∷ n)
+    n <- toName y'
+    return (Data.String.fromChar c + n)
+  ; [] -> (if x ≣ (from-just $ ruleId "string'" "")
+      then return ""
+      else nothing)
   ; _ -> nothing }
-  where
-    toName' : Tree (ℕ ⊎ Char) -> Maybe (List Char)
-    toName' (Node x x₁) = case x₁ of λ
-      { (y ∷ y' ∷ _) -> do
-        c <- toChar y
-        n <- toName' y'
-        return (c ∷ n)
-      ; [] -> (if x ≣ (from-just $ ruleId "string'" "")
-          then return []
-          else nothing)
-      ; _ -> nothing }
 
 toNameList : Tree (ℕ ⊎ Char) -> Maybe (List String)
 toNameList (Node x []) = just []
