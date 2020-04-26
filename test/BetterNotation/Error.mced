@@ -6,18 +6,18 @@ b-let Error (A : *) : * := Sum String A.
 
 b-let pureError [A : *] (a : A) : Error A := inr ?String ?A a.
 b-let error [A : *] (s : String) : Error A := inl ?String ?A s.
-b-let catchError [A, B : *] (a : Error A) (f : Π _ : String. B) (g : Π _ : A. B) : B :=
+b-let catchError [A, B : *] (a : Error A) (f : String -> B) (g : A -> B) : B :=
   recursionSum ?String ?A ?B f g a.
 
-b-let bindError [A, B : *] (f : Π _ : A. Error B) (x : Error A) : Error B :=
+b-let bindError [A, B : *] (f : A -> Error B) (x : Error A) : Error B :=
   recursionSum ?String ?A ?(Error B) (λ s : String. error ?B s) (λ a : A. f a) x.
 
-b-let mapError [A, B : *] (f : Π _ : A. B) (x : Error A) : Error B :=
+b-let mapError [A, B : *] (f : A -> B) (x : Error A) : Error B :=
   bindError ?A ?B (λ a : A. pureError ?B (f a)) x.
-b-let liftError2 [A, B, C : *] (f : Π _ : A. Π _ : B. C) (a : Error A) (b : Error B) : Error C :=
+b-let liftError2 [A, B, C : *] (f : A -> B -> C) (a : Error A) (b : Error B) : Error C :=
   bindError ?A ?C (λ a' : A. mapError ?B ?C (f a') b) a.
 
-b-let traverseErrorList [X, Y : *] (f : Π _ : X. Error Y) : Π _ : List X. Error (List Y) :=
+b-let traverseErrorList [X, Y : *] (f : X -> Error Y) : List X -> Error (List Y) :=
   recursionList ?X ?(Error (List Y))
     (pureError ?(List Y) (nil ?Y))
     (λ x : X. λ xs : List X. λ rec : Error (List Y). liftError2 ?Y ?(List Y) ?(List Y) (cons ?Y) (f x) rec).

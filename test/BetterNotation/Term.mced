@@ -191,7 +191,12 @@ let init$maybeApplist$_space__applist_ := λ _ : init$space λ l : [List App] l.
 -- multiTerm is a potential application of multiple terms
 -- singleTerm is for anything except application
 
-let init$multiTerm$_singleTerm__maybeApplist_ := appLTerm.
+let init$maybeInfix$ := λ t : Term t.
+let init$maybeInfix$=minus==rangle=_space__multiTerm_ :=
+  λ _ : init$space λ m : Term λ t : Term [[[piTerm init$string$nil] t] m].
+
+let init$multiTerm$_singleTerm__maybeApplist__space'__maybeInfix_ :=
+  λ t : Term λ l : [List App] λ _ : init$space' λ trans : Π _ : Term Term [trans [[appLTerm t] l]].
 
 let init$singleTerm$=ast= := [sortTerm init$sort$=ast=].
 let init$singleTerm$=sq= := [sortTerm init$sort$=sq=].

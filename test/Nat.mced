@@ -1,6 +1,6 @@
 -- the definition of Nat is in Induction.mced
 
-let recNat [X : *] (x : X) (step : Π _ : Nat. Π _ : X. X) : Π _ : Nat. X :=
+let recNat [X : *] (x : X) (step : Nat -> X -> X) : Nat -> X :=
   recursionNat ?X x step.
 
 let one := suc zero.
@@ -19,9 +19,9 @@ let mul (n, m : Nat) : Nat := recNat ?Nat zero (λ _, rec : Nat. add rec n) m.
 let pred (n : Nat) : Nat := recNat ?Nat zero (λ n', _ : Nat. n') n.
 let sub (n, m : Nat) : Nat := recNat ?Nat n (λ _, rec : Nat. pred rec) m.
 
-let isZero : Π _ : Nat. Bool := recNat ?Bool true (λ _ : Nat. λ _ : Bool. false).
+let isZero : Nat -> Bool := recNat ?Bool true (λ _ : Nat. λ _ : Bool. false).
 
-let natEq : Π _, _ : Nat. Bool :=
-  recNat ?(Π _ : Nat. Bool)
+let natEq : Nat -> Nat -> Bool :=
+  recNat ?(Nat -> Bool)
     isZero
-    (λ _ : Nat. λ rec : Π _ : Nat. Bool. recNat ?Bool false (λ n : Nat. λ _ : Bool. rec n)).
+    (λ _ : Nat. λ rec : Nat -> Bool. recNat ?Bool false (λ n : Nat. λ _ : Bool. rec n)).

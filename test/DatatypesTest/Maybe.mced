@@ -5,14 +5,14 @@ import test/Datatypes/ModuleCompatibility.
 
 data Maybe (A : *) where
 | nothing : Maybe A
-| just    : Π _ : A. Maybe A.
+| just    : A -> Maybe A.
 
-let maybe [A, B : *] (default : B) (f : Π _ : A. B) (x : Maybe A) : B := MaybeFold A B default f x.
+let maybe [A, B : *] (default : B) (f : A -> B) (x : Maybe A) : B := MaybeFold A B default f x.
 
-let bindMaybe (A, B : *) (x : Maybe A) (f : Π _ : A. Maybe B) : Maybe B :=
+let bindMaybe (A, B : *) (x : Maybe A) (f : A -> Maybe B) : Maybe B :=
   maybe ?A ?(Maybe B) (nothing B) f x.
 
-let mapMaybe [A, B : *] (f : Π _ : A. B) (x : Maybe A) : Maybe B :=
+let mapMaybe [A, B : *] (f : A -> B) (x : Maybe A) : Maybe B :=
   maybe ?A ?(Maybe B) (nothing B) (λ a : A. just B (f a)) x.
 
 endModule.

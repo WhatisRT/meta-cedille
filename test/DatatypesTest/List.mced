@@ -11,7 +11,7 @@ importModule Nat.
 
 data List (A : *) where
 | nil' : List A
-| cons' : Π _ : A. Π _ : List A. List A.
+| cons' : A -> List A -> List A.
 
 -- List notation needs these types for the constructors
 let nil [A : *] := nil' A.
@@ -19,7 +19,7 @@ let cons [A : *] := cons' A.
 
 let ListRec (A, X : *)
   (fnil : X)
-  (fcons : Π _ : A. Π _ : List A. Π _ : X. X)
+  (fcons : A -> List A -> X -> X)
   (l : List A)
   : X :=
   pr1 ?X ?(List A) (ListFold A (Product X (List A))
@@ -40,12 +40,12 @@ let tail [A : *] (l : List A) : List A :=
     l.
 
 let drop [A : *] (n : Nat) (l : List A) : List A :=
-  NatFold (Π _ : List A. List A)
+  NatFold (List A -> List A)
     (λ x : List A. x)
-    (λ rec : Π _ : List A. List A. λ x : List A. tail ?A (rec x))
+    (λ rec : List A -> List A. λ x : List A. tail ?A (rec x))
     n l.
 
-let headMaybe [A : *] : Π _ : List A. Maybe A :=
+let headMaybe [A : *] : List A -> Maybe A :=
   ListFold A (Maybe A)
     (nothing A)
     (λ a : A. λ _ : Maybe A. just A a).
@@ -53,7 +53,7 @@ let headMaybe [A : *] : Π _ : List A. Maybe A :=
 let lookupMaybe [A : *] (l : List A) (n : Nat) : Maybe A :=
   headMaybe ?A (drop ?A n l).
 
-let findMaybe [A : *] (pred : Π _ : A. Bool) (l : List A) : Maybe Nat :=
+let findMaybe [A : *] (pred : A -> Bool) (l : List A) : Maybe Nat :=
   ListFold A (Maybe Nat)
     (nothing Nat)
     (λ a : A. λ rec : Maybe Nat. ifthenelse ?(Maybe Nat) (pred a) (just Nat zero) (mapMaybe ?Nat ?Nat succ rec))

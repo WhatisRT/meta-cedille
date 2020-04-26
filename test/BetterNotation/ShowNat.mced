@@ -17,7 +17,7 @@ b-let Dec9 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d9.
 b-let showDec (d : Dec) : String := d ?String "0" "1" "2" "3" "4" "5" "6" "7" "8" "9".
 
 -- Prints a list of digits in a certain base
-b-let showListOfDigitsBased [X : *] (showX : Π _ : X. String) (l : List X) : String :=
+b-let showListOfDigitsBased [X : *] (showX : X -> String) (l : List X) : String :=
   stringConcat (map ?X ?String showX (reverse ?X l)).
 
 -- Create the lists of digits from the corresponding Nats

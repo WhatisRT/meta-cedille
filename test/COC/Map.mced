@@ -9,7 +9,7 @@ Given String.
 Given stringEq.
 Given ifthenelse.
 
-let Map := Π _ : String. Maybe V.
+let Map := String -> Maybe V.
 
 let lookup (k : String) (m : Map V) : Maybe V := m k.
 let insert (m : Map V) (k : String) (v : V) : Map V :=

@@ -7,7 +7,7 @@ import test/Eq.
 
 record Category (obj : *) (hom : Π _, _ : obj. *) where
 | identity      : Π a : obj. hom a a
-| composition   : Π a, b, c : obj. Π _ : hom b c. Π _ : hom a b. hom a c
+| composition   : Π a, b, c : obj. hom b c -> hom a b -> hom a c
 | leftIdentity  : Π a, b : obj. Π f : hom a b. Eq (hom a b) (composition a b b (identity b) f) f
 | rightIdentity : Π a, b : obj. Π f : hom a b. Eq (hom a b) (composition a a b f (identity a)) f
 | associativity : Π a, b, c, d : obj. Π f : hom a b. Π g : hom b c. Π h : hom c d.
@@ -16,17 +16,17 @@ record Category (obj : *) (hom : Π _, _ : obj. *) where
 let identity (obj : *) (hom : Π _, _ : obj. *) (C : Category obj hom) : Π a : obj. hom a a :=
   CategoryFold obj hom (Π a : obj. hom a a)
     (λ identity      : Π a : obj. hom a a.
-    λ composition   : Π a, b, c : obj. Π _ : hom b c. Π _ : hom a b. hom a c.
+    λ composition   : Π a, b, c : obj. hom b c -> hom a b -> hom a c.
     λ leftIdentity  : Π a, b : obj. Π f : hom a b. Eq (hom a b) (composition a b b (identity b) f) f.
     λ rightIdentity : Π a, b : obj. Π f : hom a b. Eq (hom a b) (composition a a b f (identity a)) f.
     λ associativity : Π a, b, c, d : obj. Π f : hom a b. Π g : hom b c. Π h : hom c d.
                      Eq (hom a d) (composition a b d (composition b c d h g) f) (composition a c d h (composition a b c g f)).
       identity) C.
 
-let composition (obj : *) (hom : Π _, _ : obj. *) (C : Category obj hom) : Π a, b, c : obj. Π _ : hom b c. Π _ : hom a b. hom a c :=
-  CategoryFold obj hom (Π a, b, c : obj. Π _ : hom b c. Π _ : hom a b. hom a c)
+let composition (obj : *) (hom : Π _, _ : obj. *) (C : Category obj hom) : Π a, b, c : obj. hom b c -> hom a b -> hom a c :=
+  CategoryFold obj hom (Π a, b, c : obj. hom b c -> hom a b -> hom a c)
     (λ identity      : Π a : obj. hom a a.
-    λ composition   : Π a, b, c : obj. Π _ : hom b c. Π _ : hom a b. hom a c.
+    λ composition   : Π a, b, c : obj. hom b c -> hom a b -> hom a c.
     λ leftIdentity  : Π a, b : obj. Π f : hom a b. Eq (hom a b) (composition a b b (identity b) f) f.
     λ rightIdentity : Π a, b : obj. Π f : hom a b. Eq (hom a b) (composition a a b f (identity a)) f.
     λ associativity : Π a, b, c, d : obj. Π f : hom a b. Π g : hom b c. Π h : hom c d.

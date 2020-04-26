@@ -7,10 +7,10 @@ import test/COC/Parsers.
 c-let Void : * := Π X : *. X.
 
 c-let identity (X : *) (x : X) : X := x.
-c-let Unit := Π X : *. Π _ : X. X.
+c-let Unit := Π X : *. X -> X.
 c-let tt : Unit := identity.
 
-c-let Bool : * := Π X : *. Π _, _ : X. X.
+c-let Bool : * := Π X : *. X -> X -> X.
 c-let true : Bool := λ X : *. λ t, f : X. t.
 c-let false : Bool := λ X : *. λ t, f : X. f.
 

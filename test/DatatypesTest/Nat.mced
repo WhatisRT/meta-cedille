@@ -12,9 +12,9 @@ Given true.
 
 data Nat where
 | zero : Nat
-| succ : Π _ : Nat. Nat.
+| succ : Nat -> Nat.
 
-let NatRec (X : *) (recZero : X) (recSucc : Π _ : X. Π _ : Nat. X) (n : Nat) : X :=
+let NatRec (X : *) (recZero : X) (recSucc : X -> Nat -> X) (n : Nat) : X :=
   pr1 ?X ?Nat (NatFold (Product X Nat)
     (prodPair ?X ?Nat recZero zero)
     (λ x : Product X Nat. prodPair ?X ?Nat (recSucc (pr1 ?X ?Nat x) (pr2 ?X ?Nat x)) (succ (pr2 ?X ?Nat x)))
@@ -25,9 +25,9 @@ let pred (n : Nat) : Nat := NatRec Nat zero (λ _, n' : Nat. n') n.
 let minus (n, m : Nat) : Nat := NatFold Nat n (λ rec : Nat. pred rec) m.
 
 let beq (n, m : Nat) : Bool :=
-  NatFold (Π _ : Nat. Bool)
+  NatFold (Nat -> Bool)
     (NatFold Bool true (λ _ : Bool. false))
-    (λ rec : Π _ : Nat. Bool. NatRec Bool false (λ _ : Bool. λ m' : Nat. rec m'))
+    (λ rec : Nat -> Bool. NatRec Bool false (λ _ : Bool. λ m' : Nat. rec m'))
     n m.
 
 let leq (m, n : Nat) : Bool := beq (minus m n) zero.

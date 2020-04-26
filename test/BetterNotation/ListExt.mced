@@ -2,7 +2,7 @@
 -- List functions that are more pleasantly written now
 --------------------------------------------------------------------------------
 
-b-let showList [X : *] (showX : Π _ : X. String) (l : List X) : String :=
+b-let showList [X : *] (showX : X -> String) (l : List X) : String :=
   stringApp "[" (stringApp (stringConcat (intersperse ?String ", " (map ?X ?String showX l))) "]").
 
 b-let initsNonEmpty [A : *] (l : List A) : List (Product A (List A)) :=
@@ -26,22 +26,22 @@ b-let countToZeroExc (n : Nat) :=
     (λ m : Nat. λ rec : List Nat. cons ?Nat m rec)
     n.
 
-b-let zipWith [A, B, C : *] (f : Π _ : A. Π _ : B. C) (l : List A) (l' : List B) : List C :=
-  recursionList ?A ?(Π _ : List B. List C)
+b-let zipWith [A, B, C : *] (f : A -> B -> C) (l : List A) (l' : List B) : List C :=
+  recursionList ?A ?(List B -> List C)
     (λ _ : List B. [C|])
-    (λ a : A. λ as : List A. λ rec : Π _ : List B. List C.
+    (λ a : A. λ as : List A. λ rec : List B -> List C.
       recursionList ?B ?(List C) [C|] (λ b : B. λ bs : List B. λ _ : List C. cons ?C (f a b) (rec bs)))
     l l'.
 
 b-let zip [A, B : *] (l : List A) (l' : List B) : List (Product A B) := zipWith ?A ?B ?(Product A B) (prodPair ?A ?B) l l'.
 
-b-let zipWith3 [A, B, C, D : *] (f : Π _ : A. Π _ : B. Π _ : C. D) (l : List A) (l' : List B) (l'' : List C) : List D :=
+b-let zipWith3 [A, B, C, D : *] (f : A -> B -> C -> D) (l : List A) (l' : List B) (l'' : List C) : List D :=
   zipWith ?A ?(Product B C) ?D (λ a : A. λ bc : Product B C. f a (pr1 ?B ?C bc) (pr2 ?B ?C bc)) l (zip ?B ?C l' l'').
 
 b-let zip3 [A, B, C : *] (l : List A) (l' : List B) (l'' : List C) : List (TripleProduct A B C) :=
   zipWith3 ?A ?B ?C ?(TripleProduct A B C) (mkTripleProduct ?A ?B ?C) l l' l''.
 
-b-let zipWith4 [A, B, C, D, E : *] (f : Π _ : A. Π _ : B. Π _ : C. Π _ : D. E)
+b-let zipWith4 [A, B, C, D, E : *] (f : A -> B -> C -> D -> E)
   (l : List A) (l' : List B) (l'' : List C) (l''' : List D) : List E :=
   zipWith ?A ?(TripleProduct B C D) ?E
     (λ a : A. λ bcd : TripleProduct B C D.

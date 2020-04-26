@@ -57,10 +57,10 @@ b-let mkModuleName (m : Module) : String :=
 -- used to let us update the dictionary. There are probably better ways of doing
 -- this.
 
-b-let ModuleDict := Product Nat (Π _ : ModuleName. Maybe Module).
-b-let mkModuleDict := prodPair ?Nat ?(Π _ : ModuleName. Maybe Module).
-b-let ModuleDictVersion := pr1 ?Nat ?(Π _ : ModuleName. Maybe Module).
-b-let ModuleDictDict := pr2 ?Nat ?(Π _ : ModuleName. Maybe Module).
+b-let ModuleDict := Product Nat (ModuleName -> Maybe Module).
+b-let mkModuleDict := prodPair ?Nat ?(ModuleName -> Maybe Module).
+b-let ModuleDictVersion := pr1 ?Nat ?(ModuleName -> Maybe Module).
+b-let ModuleDictDict := pr2 ?Nat ?(ModuleName -> Maybe Module).
 b-let emptyModuleDict : ModuleDict := mkModuleDict zero (λ _ : ModuleName. nothing ?Module).
 b-let insertModuleDict (m : Module) (dict : ModuleDict) : ModuleDict :=
   (λ k : ModuleName.

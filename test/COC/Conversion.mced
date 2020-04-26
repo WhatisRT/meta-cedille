@@ -53,7 +53,7 @@ importModule Nat.
 importModule NatConversions.
 importModule Theory.
 
-let findMaybe [A : *] (pred : Π _ : A. Bool) (l : List A) : Maybe Nat :=
+let findMaybe [A : *] (pred : A -> Bool) (l : List A) : Maybe Nat :=
   l ?(Maybe Nat)
     (nothing ?Nat)
     (λ a : A. λ rec : Maybe Nat. ifthenelse ?(Maybe Nat) (pred a) (just ?Nat zero) (mapMaybe ?Nat ?Nat succ rec)).
@@ -62,10 +62,10 @@ let convertName (l : List String) (s : String) : Name :=
   maybe ?Nat ?Name (Global s) Local (findMaybe ?String (stringEq s) l).
 
 let toCOCTerm (t : MCTerm) : Maybe Term :=
-  t ?(Π _ : List String. Maybe Term)
+  t ?(List String -> Maybe Term)
     (λ v : init$var. λ l : List String. just ?Term (Var (v ?Name (convertName l) (λ i : init$index. Local (fromChurchNat (indexToNat i))))))
     (λ s : init$sort. λ _ : List String. just ?Term (SortT (s ?Sort Ast Sq)))
-    (λ b : Binder. λ n : String. λ t, t' : Π _ : List String. Maybe Term. λ l : List String.
+    (λ b : Binder. λ n : String. λ t, t' : List String -> Maybe Term. λ l : List String.
       maybe ?Term ?(Maybe Term) (nothing ?Term)
         (λ x : Term. maybe ?Term ?(Maybe Term) (nothing ?Term)
           (λ x' : Term. b ?(Maybe Term)
@@ -73,17 +73,17 @@ let toCOCTerm (t : MCTerm) : Maybe Term :=
             (nothing ?Term)
             (just ?Term (Pi x x'))
             (nothing ?Term)) (t' (cons ?String n l))) (t l))
-    (λ t : Π _ : List String. Maybe Term. λ app : List (Product Bool (Π _ : List String. Maybe Term)). λ l : List String.
-      (reverse ?(Product Bool (Π _ : List String. Maybe Term)) app) ?(Maybe Term)
+    (λ t : List String -> Maybe Term. λ app : List (Product Bool (List String -> Maybe Term)). λ l : List String.
+      (reverse ?(Product Bool (List String -> Maybe Term)) app) ?(Maybe Term)
         (t l)
-        (λ a : Product Bool (Π _ : List String. Maybe Term). λ rec : Maybe Term.
+        (λ a : Product Bool (List String -> Maybe Term). λ rec : Maybe Term.
           maybe ?Term ?(Maybe Term) (nothing ?Term)
-            (λ x : Term. ifthenelse ?(Maybe Term) (pr1 ?Bool ?(Π _ : List String. Maybe Term) a)
+            (λ x : Term. ifthenelse ?(Maybe Term) (pr1 ?Bool ?(List String -> Maybe Term) a)
               (nothing ?Term)
               (maybe ?Term ?(Maybe Term) (nothing ?Term)
-                (λ x' : Term. just ?Term (App x' x)) rec)) (pr2 ?Bool ?(Π _ : List String. Maybe Term) a l)))
+                (λ x' : Term. just ?Term (App x' x)) rec)) (pr2 ?Bool ?(List String -> Maybe Term) a l)))
     (λ _ : Char. λ _ : List String. nothing ?Term)
-    (λ _ : Π _ : List String. Maybe Term. λ _ : List String. nothing ?Term) -- nothing on unquote
+    (λ _ : List String -> Maybe Term. λ _ : List String. nothing ?Term) -- nothing on unquote
     [String|].
 
 let toMCTerm (t : Term) : MCTerm :=

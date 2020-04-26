@@ -12,7 +12,7 @@ b-let stringListToList (l : init$stringList) : List String :=
   l ?(List String) (nil ?String)
     (λ s : String. λ rec : List String. cons ?String s rec).
 
-b-let listToStringList : Π _ : List String. init$stringList :=
+b-let listToStringList : List String -> init$stringList :=
   recursionList ?String ?init$stringList
                 init$stringList$nil
                 (λ s : String. λ _ : List String. λ rec : init$stringList. init$stringList$cons s rec).

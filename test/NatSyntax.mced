@@ -35,14 +35,14 @@ let decToNat (d : Dec) : Nat := d ?Nat zero one two three four five six seven ei
 
 --
 
-let quoteList [X : *] (quotedX : Term) (quoteX : Π _ : X. Term) : Π _ : List X. Term :=
+let quoteList [X : *] (quotedX : Term) (quoteX : X -> Term) : List X -> Term :=
   recursionList ?X ?Term θ{nil ?γ{quotedX}}
     (λ x : X. λ _ : List X. λ rec : Term. θ{cons ?γ{quotedX} γ{quoteX x} γ{rec}}).
 
 let quoteListBool := quoteList ?Bool θ{Bool} quoteBool.
 let quoteListDec := quoteList ?Dec θ{Dec} quoteDec.
 
-let baseListToNat [B : *] (digitToNat : Π _ : B. Nat) (ds : List B) (base : Nat) : Nat :=
+let baseListToNat [B : *] (digitToNat : B -> Nat) (ds : List B) (base : Nat) : Nat :=
   recursionList ?B ?Nat zero
     (λ d : B. λ _ : List B. λ rec : Nat. add (mul rec ten) (digitToNat d))
     (reverse ?B ds).

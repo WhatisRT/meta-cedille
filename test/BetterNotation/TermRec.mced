@@ -4,17 +4,17 @@
 -- Term recursion is defined after having b-let for more convenient syntax
 --------------------------------------------------------------------------------
 
-b-let mapAppList [X, Y : *] (f : Π _ : X. Y) (l : List (Product Bool X)) : List (Product Bool Y) :=
+b-let mapAppList [X, Y : *] (f : X -> Y) (l : List (Product Bool X)) : List (Product Bool Y) :=
   map ?(Product Bool X) ?(Product Bool Y)
     (λ bx : Product Bool X. prodPair ?Bool ?Y (pr1 ?Bool ?X bx) (f (pr2 ?Bool ?X bx))) l.
 
 b-let recursionTerm [X : *]
-  (fvar : Π _ : init$var. X)
-  (fsort : Π _ : init$sort. X)
-  (fbind : Π _ : Binder. Π _ : String. Π _ : Term. Π _ : Term. Π _ : X. Π _ : X. X)
-  (fapp : Π _ : Term. Π _ : List App. Π _ : X. Π _ : List (Product Bool X). X)
-  (fchar : Π _ : init$char. X)
-  (funq : Π _ : Term. Π _ : X. X)
+  (fvar : init$var -> X)
+  (fsort : init$sort -> X)
+  (fbind : Binder -> String -> Term -> Term -> X -> X -> X)
+  (fapp : Term -> List App -> X -> List (Product Bool X) -> X)
+  (fchar : init$char -> X)
+  (funq : Term -> X -> X)
   (term : Term) : X :=
   pr1 ?X ?Term (term ?(Product X Term)
     (λ v : init$var. prodPair ?X ?Term (fvar v) (varTerm v))

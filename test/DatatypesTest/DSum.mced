@@ -1,2 +1,2 @@
-data TestDSum (A : *) (B : Π _ : A. *) where
-| pairTest : Π a : A. Π _ : B a. TestDSum A B.
+data TestDSum (A : *) (B : A -> *) where
+| pairTest : Π a : A. B a -> TestDSum A B.

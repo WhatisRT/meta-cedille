@@ -11,45 +11,45 @@
 
 -- Don't use this datatype directly, use ConstrFunctorData instead
 let ConstrFunctor := ∀ X : *.
-  Π _ : X. -- id
-  Π _ : (Π _ : Term. X). -- const
-  Π _ : (Π _ : String. Π _ : Term. Π _ : X. X). -- covHom with inner functor
-  Π _ : (Π _ : String. Π _ : X. Π _ : X. X). -- dependent pair
+  X -> -- id
+  (Term -> X) -> -- const
+  (String -> Term -> X -> X) -> -- covHom with inner functor
+  (String -> X -> X -> X) -> -- dependent pair
   X.
 
 let idConstrFunctor := Λ X : *.
   λ i : X.
-  λ _ : (Π _ : Term. X).
-  λ _ : (Π _ : String. Π _ : Term. Π _ : X. X).
-  λ _ : (Π _ : String. Π _ : X. Π _ : X. X).
+  λ _ : Term -> X.
+  λ _ : String -> Term -> X -> X.
+  λ _ : String -> X -> X -> X.
   i.
 
 let constConstrFunctor := λ t : Term. Λ X : *.
   λ _ : X.
-  λ c : (Π _ : Term. X).
-  λ _ : (Π _ : String. Π _ : Term. Π _ : X. X).
-  λ _ : (Π _ : String. Π _ : X. Π _ : X. X).
+  λ c : Term -> X.
+  λ _ : String -> Term -> X -> X.
+  λ _ : String -> X -> X -> X.
   c t.
 
 let covDHomConstrFunctor := λ n : String. λ t : Term. λ f : ConstrFunctor. Λ X : *.
   λ i : X.
-  λ c : (Π _ : Term. X).
-  λ h : (Π _ : String. Π _ : Term. Π _ : X. X).
-  λ p : (Π _ : String. Π _ : X. Π _ : X. X).
+  λ c : Term -> X.
+  λ h : String -> Term -> X -> X.
+  λ p : String -> X -> X -> X.
   h n t (f ?X i c h p).
 
 let pairConstrFunctor := λ s : String. λ f : ConstrFunctor. λ f' : ConstrFunctor. Λ X : *.
   λ i : X.
-  λ c : (Π _ : Term. X).
-  λ h : (Π _ : String. Π _ : Term. Π _ : X. X).
-  λ p : (Π _ : String. Π _ : X. Π _ : X. X).
+  λ c : Term -> X.
+  λ h : String -> Term -> X -> X.
+  λ p : String -> X -> X -> X.
   p s (f ?X i c h p) (f' ?X i c h p).
 
 let recursionConstrFunctor [X : *]
   (idf : X)
-  (constf : (Π _ : Term. X))
-  (covHomf : (Π _ : String. Π _ : Term. Π _ : ConstrFunctor. Π _ : X. X))
-  (pairf : (Π _ : String. Π _, _ : ConstrFunctor. Π _, _ : X. X))
+  (constf : Term -> X)
+  (covHomf : String -> Term -> ConstrFunctor -> X -> X)
+  (pairf : String -> Π _, _ : ConstrFunctor. Π _, _ : X. X)
   (f : ConstrFunctor) : X :=
   pr1 ?X ?ConstrFunctor (f ?(Product X ConstrFunctor)
     (prodPair ?X ?ConstrFunctor idf idConstrFunctor)
@@ -93,7 +93,7 @@ let ApplyConstrFunctorData (f : ConstrFunctorData) (t : Term) : Term :=
     f.
 
 let ConstrFunctorFunctor' (name : String) (f : ConstrFunctor) : Term :=
-  θ{Λ DataX, DataY : *. λ DataF : (Π _ : DataX. DataY). γ{recursionConstrFunctor ?Term
+  θ{Λ DataX, DataY : *. λ DataF : DataX -> DataY. γ{recursionConstrFunctor ?Term
     θ{idFunctor ?DataX ?DataY DataF}
     (λ t : Term. θ{constFunctor γ{t} ?DataX ?DataY DataF})
     (λ n : String. λ t : Term. λ fun : ConstrFunctor. λ intFmap : Term.

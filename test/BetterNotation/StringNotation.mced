@@ -27,5 +27,3 @@ let init$singleTerm$=doublequote=_newstring_=doublequote= := quote$String : Π _
 let init$term$=doublequote=_newstring_=doublequote= := quote$String : Π _ : String Term.
 
 seteval eval init stmt.
-
-b-let myTest := "h".

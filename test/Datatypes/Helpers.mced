@@ -8,14 +8,14 @@ let reduceTerm (term : Term) : Term :=
     (λ t : Term. λ l : List App. ifthenelse ?Term (isNil ?App l) t (appLTerm t l))
     charTerm unquoteTerm.
 
-let mapDSum [A, A' : *] [B : Π _ : A. *] [B' : Π _ : A'. *]
-            (f : Π _ : A. A') (g : Π a : A. Π _ : B a. B' (f a)) (x : DSum A B) : DSum A' B' :=
+let mapDSum [A, A' : *] [B : A -> *] [B' : A' -> *]
+            (f : A -> A') (g : Π a : A. B a -> B' (f a)) (x : DSum A B) : DSum A' B' :=
   recursionDSum ?A ?B ?(DSum A' B') (λ a : A. λ b : B a. pair ?A' ?B' (f a) (g a b)) x.
-let mapDHom [A : *] [B, C : Π _ : A. *] (f : Π a : A. Π _ : B a. C a) (x : Π a : A. B a) : Π a : A. C a := λ a : A. f a (x a).
+let mapDHom [A : *] [B, C : A -> *] (f : Π a : A. B a -> C a) (x : Π a : A. B a) : Π a : A. C a := λ a : A. f a (x a).
 
-let Dcurry [A : *] [B : Π _ : A. *] [C : *] (f : Π _ : DSum A B. C) (a : A) (b : B a) : C := f (pair ?A ?B a b).
-let Duncurry [A : *] [B : Π _ : A. *] [C : *] (f : Π a : A. Π _ : B a. C) : Π _ : DSum A B. C :=
+let Dcurry [A : *] [B : A -> *] [C : *] (f : DSum A B -> C) (a : A) (b : B a) : C := f (pair ?A ?B a b).
+let Duncurry [A : *] [B : A -> *] [C : *] (f : Π a : A. B a -> C) : DSum A B -> C :=
   recursionDSum ?A ?B ?C (λ a : A. λ b : B a. f a b).
 
-let removeUnit [A : *] (f : Π _ : Unit. A) : A := f tt.
-let addUnit [A : *] (a : A) : Π _ : Unit. A := λ _ : Unit. a.
+let removeUnit [A : *] (f : Unit -> A) : A := f tt.
+let addUnit [A : *] (a : A) : Unit -> A := λ _ : Unit. a.

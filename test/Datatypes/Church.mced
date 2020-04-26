@@ -2,17 +2,17 @@
 -- Algebras and functions for church encodings
 --------------------------------------------------------------------------------
 
-let AlgC (F : Π _ : *. *) (X : *) := Π _ : F X. X.
-let FixC (F : Π _ : *. *) := ∀ X : *. Π _ : AlgC F X. X.
+let AlgC (F : * -> *) (X : *) := F X -> X.
+let FixC (F : * -> *) := ∀ X : *. AlgC F X -> X.
 
-let foldC (F : Π _ : *. *) [X : *] (alg : AlgC F X) (fix : FixC F) : X := fix ?X alg.
-let inC (F : Π _ : *. *) (fmap : Functor F) : AlgC F (FixC F) :=
+let foldC (F : * -> *) [X : *] (alg : AlgC F X) (fix : FixC F) : X := fix ?X alg.
+let inC (F : * -> *) (fmap : Functor F) : AlgC F (FixC F) :=
   λ fix : F (FixC F). Λ X : *. λ alg : AlgC F X. alg (fmap ?(FixC F) ?X (foldC F ?X alg) fix).
 
-let composeLeft [X : *] [F1, F2 : Π _ : *. *] (alg : AlgC (FunctorSumF F1 F2) X) : AlgC F1 X :=
+let composeLeft [X : *] [F1, F2 : * -> *] (alg : AlgC (FunctorSumF F1 F2) X) : AlgC F1 X :=
   λ x : F1 X. alg (inl ?(F1 X) ?(F2 X) x).
-let composeRight [X : *] [F1, F2 : Π _ : *. *] (alg : AlgC (FunctorSumF F1 F2) X) : AlgC F2 X :=
+let composeRight [X : *] [F1, F2 : * -> *] (alg : AlgC (FunctorSumF F1 F2) X) : AlgC F2 X :=
   λ x : F2 X. alg (inr ?(F1 X) ?(F2 X) x).
 
-let sumAlg [X : *] [F1, F2 : Π _ : *. *] (alg1 : AlgC F1 X) (alg2 : AlgC F2 X) : AlgC (FunctorSumF F1 F2) X :=
+let sumAlg [X : *] [F1, F2 : * -> *] (alg1 : AlgC F1 X) (alg2 : AlgC F2 X) : AlgC (FunctorSumF F1 F2) X :=
   recursionSum ?(F1 X) ?(F2 X) ?X alg1 alg2.
