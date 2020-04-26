@@ -17,15 +17,33 @@ b-let quoteParam (p : Param) : Term :=
 
 b-let quoteTelescope (t : Telescope) : Term := quoteTermList θ{Param} (map ?Param ?Term quoteParam t).
 
-b-let initModule (n : ModuleName) (v : Nat) (t : Telescope) : init$newStmt :=
-  (λ m : Module.
-    seqNewStmt
-      (letInfoToNewStmt
-        (mkLetInfo (mkTempModuleName m)
-          θ{mkInitModule γ{quoteModuleName n} γ{quoteNat v} γ{quoteTelescope t}}
-          (just ?Term θ{Module})))
-      (modifyEvalStateStmt (modifyModuleInState (λ _ : Maybe Module. just ?Module m))))
-  (mkInitModule n v t).
+b-let findModule (n : ModuleName) : EvalState (Maybe (Product Bool Module)) :=
+  mapEvalState ?ModuleState ?(Maybe (Product Bool Module))
+    (λ s : ModuleState. lookupModuleDict n (ModuleStateDict s)) getModuleState'.
+
+b-let getNewModuleVersion (n : ModuleName) : EvalState (Maybe Nat) :=
+  bindEvalState ?(Maybe (Product Bool Module)) ?(Maybe Nat) (findModule n)
+    (λ x : Maybe (Product Bool Module). pureEvalState ?(Maybe Nat)
+      (maybe ?(Product Bool Module) ?(Maybe Nat)
+        (just ?Nat zero)
+        (λ p : Product Bool Module.
+          ifthenelse ?(Maybe Nat) (pr1 ?Bool ?Module p)
+            (nothing ?Nat)
+            (just ?Nat (suc (ModuleVersion (pr2 ?Bool ?Module p))))) x)).
+
+b-let initModule (n : ModuleName) (t : Telescope) : init$newStmt :=
+  bindEvalState ?(Maybe Nat) ?metaResult (getNewModuleVersion n)
+    (maybe ?Nat ?init$newStmt
+      (echoStmt (stringConcat [String| "The module ", ModuleNameToName n , " is already loaded!"]))
+      (λ v : Nat.
+        (λ m : Module.
+          seqNewStmt
+            (letInfoToNewStmt
+              (mkLetInfo (mkTempModuleName m)
+                θ{mkInitModule γ{quoteModuleName n} γ{quoteNat v} γ{quoteTelescope t}}
+                (just ?Term θ{Module})))
+            (modifyEvalStateStmt (modifyModuleInState (λ _ : Maybe Module. just ?Module m))))
+        (mkInitModule n v t))).
 
 b-let consModule (n : String) (m : Module) : Module :=
   mkModule (ModuleModuleName m) (ModuleVersion m) (ModuleTelescope m) (cons ?String n (ModuleContents m)).
@@ -92,6 +110,15 @@ b-let updateModuleDict (m : Module) (d : ModuleDict) : init$newStmt :=
     θ{insertModuleDict γ{sVarTerm (mkModuleName m)} γ{sVarTerm (mkModuleDictName d)}}
     (just ?Term θ{ModuleDict})).
 
+b-let unloadModuleDictStmt (n : ModuleName) (d : ModuleDict) : init$newStmt :=
+  seqNewStmt
+    (letInfoToNewStmt (mkLetInfo
+      (mkModuleDictNameSuc d)
+      θ{unloadModuleFromDict γ{quoteModuleName n} γ{sVarTerm (mkModuleDictName d)}}
+      (just ?Term θ{ModuleDict})))
+    (evalStateUnitToNewStmt (modifyModuleState (λ s : ModuleState.
+      (mkModuleState (ModuleStateModule s) (unloadModuleFromDict n d))))).
+
 b-let finishModuleDef (m : Module) (d : ModuleDict) : init$newStmt :=
   seqNewStmts [init$newStmt|
     letInfoToNewStmt (mkLetInfo
@@ -109,9 +136,6 @@ b-let endModule : init$newStmt :=
         (λ m : Module. finishModuleDef m (ModuleStateDict s))
         (ModuleStateModule s)).
 
-b-let findModule (n : ModuleName) : EvalState (Maybe Module) :=
-  mapEvalState ?ModuleState ?(Maybe Module) (λ s : ModuleState. lookupModuleDict n (ModuleStateDict s)) getModuleState'.
-
 b-let importModule (m : Module) (l : List App) : init$newStmt :=
   bindEvalState ?ModuleState ?metaResult getModuleState' (λ s : ModuleState.
     seqNewStmts (map ?String ?init$newStmt
@@ -125,8 +149,12 @@ b-let importFile (file : String) : init$newStmt := stmtToNewStmt (quote$import' 
 b-let moduleNameToPath (n : ModuleName) : String := stringConcat (intersperse ?String "/" n).
 
 b-let importModuleOrStmt (n : ModuleName) (l : List App) (stmt : init$newStmt) : init$newStmt :=
-  bindEvalState ?(Maybe Module) ?metaResult (findModule n)
-    (maybe ?Module ?init$newStmt stmt (λ m : Module. importModule m l)).
+  bindEvalState ?(Maybe (Product Bool Module)) ?metaResult (findModule n)
+    (maybe ?(Product Bool Module) ?init$newStmt stmt
+      (λ m : Product Bool Module.
+        ifthenelse ?init$newStmt (pr1 ?Bool ?Module m)
+          (importModule (pr2 ?Bool ?Module m) l)
+          (echoStmt "Module currently not loaded!"))).
 
 b-let loadModule (n : ModuleName) (prefix : String) : init$newStmt :=
   importFile (stringApp prefix (moduleNameToPath n)).
@@ -143,10 +171,13 @@ b-let init$moduleName$_string__moduleName'_ (s : String) (n : ModuleName) := con
 
 b-let init$newStmt'$module_space__string__telescope'_=dot=
   (_ : init$space) (n : String) (t : Telescope) : init$newStmt :=
-  initModule [String|n] zero t.
+  initModule [String|n] t.
 b-let init$newStmt'$endModule=dot= : init$newStmt := endModule.
 b-let init$newStmt'$LoadModule_space__moduleName_=dot= (_ : init$space) (n : ModuleName) : init$newStmt := loadModule n "test/".
 b-let init$newStmt'$importModule_space__moduleName__maybeApplist_=dot= (_ : init$space) (n : ModuleName) (l : List App) : init$newStmt :=
   importModule' n l.
 b-let init$newStmt'$Given_space__string_=dot= (_ : init$space) (name : String) : init$newStmt :=
   importExternalStmt name.
+b-let init$newStmt'$Unload_space__moduleName_=dot= (_ : init$space) (n : ModuleName) : init$newStmt :=
+  bindEvalState ?ModuleState ?metaResult getModuleState'
+    (λ s : ModuleState. unloadModuleDictStmt n (ModuleStateDict s)).
