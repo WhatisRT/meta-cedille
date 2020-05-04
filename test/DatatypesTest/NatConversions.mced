@@ -6,9 +6,7 @@ module NatConversions.
 
 importModule Nat.
 
-Given CNat.
-Given Czero.
-Given Csucc.
+Given CNat Czero Csucc.
 
 let toChurchNat (n : Nat) : CNat :=
   NatFold CNat Czero Csucc n.

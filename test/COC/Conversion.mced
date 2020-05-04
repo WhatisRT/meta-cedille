@@ -4,50 +4,12 @@
 
 module Conversion.
 
-Given MCTerm.
-Given MCSVar.
-Given MCAst.
-Given MCSq.
-Given MCLambda.
-Given MCPi.
-Given MCApp.
-Given natToVar.
-Given indexToNat.
-Given init$index.
-Given init$var.
-Given init$sort.
-Given Binder.
-Given String.
-Given stringCons.
-Given stringNil.
-Given stringEq.
-Given Char.
-Given List.
-Given cons.
-Given nil.
-Given reverse.
-Given Product.
-Given Bool.
-Given true.
-Given false.
-Given ifthenelse.
-Given pr1.
-Given pr2.
-Given TripleProduct.
-Given mkTripleProduct.
-Given pr31.
-Given pr32.
-Given pr33.
-Given LetInfo.
-Given letInfoName.
-Given letInfoTerm.
-Given letInfoType.
-Given Maybe.
-Given just.
-Given nothing.
-Given maybe.
-Given bindMaybe.
-Given mapMaybe.
+Given MCTerm MCSVar MCAst MCSq MCLambda MCPi MCApp natToVar indexToNat init$index.
+Given init$var init$sort Binder String stringCons stringNil stringEq Char.
+Given List cons nil reverse Product Bool true false ifthenelse pr1 pr2.
+Given TripleProduct mkTripleProduct pr31 pr32 pr33.
+Given LetInfo letInfoName letInfoTerm letInfoType.
+Given Maybe just nothing maybe bindMaybe mapMaybe.
 
 importModule Nat.
 importModule NatConversions.

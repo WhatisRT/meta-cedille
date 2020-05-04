@@ -3,12 +3,7 @@ module Nat.
 -- Temporary workaround to make all the names that `data` needs available
 import test/Datatypes/ModuleCompatibility.
 
-Given Eq.
-Given refl.
-
-Given Bool.
-Given false.
-Given true.
+Given Eq refl Bool false true.
 
 data Nat where
 | zero : Nat
@@ -36,15 +31,7 @@ let lt (m, n : Nat) : Bool := leq (succ m) n.
 let zeroPlus (n : Nat) : Eq Nat (plus zero n) n := refl Nat n.
 
 -- Show, using the old implementation
-Given Dec.
-Given Dec0.
-Given incrementDecList.
-Given showDec.
-Given showListOfDigitsBased.
-Given List.
-Given nil.
-Given cons.
-Given String.
+Given Dec Dec0 incrementDecList showDec showListOfDigitsBased List nil cons String.
 
 let natToDecList (n : Nat) : List Dec :=
   NatFold (List Dec)

@@ -14,11 +14,7 @@ importModule Map.
 importModule NatConversions.
 
 -- Strings and string notation
-Given String.
-Given stringCons.
-Given stringNil.
-Given stringEq.
-Given stringApp.
+Given String stringCons stringNil stringEq stringApp.
 
 let stringConcat (l : List String) : String :=
   ListFold String String
@@ -30,13 +26,7 @@ Given ten.
 
 let steps := fromChurchNat ten.
 
-Given Bool.
-Given true.
-Given false.
-Given and.
-Given ifthenelse.
-Given productMap1.
-Given productMap2.
+Given Bool true false and ifthenelse productMap1 productMap2.
 
 data Error (A : *) where
 | return : A -> Error A
