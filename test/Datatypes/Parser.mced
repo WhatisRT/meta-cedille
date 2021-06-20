@@ -38,4 +38,4 @@ let init$newStmt'$data_space__data_=dot= (_ : init$space) (d : DatatypeDecl) : i
 let init$newStmt'$record_space__data_=dot= (_ : init$space) (d : DatatypeDecl) : init$newStmt :=
   DatatypeDeclToStmt (toRecordDecl d) "Error: not a valid record! ".
 
-o-seteval [evalNewStmt emptyEvaluatorState] init newStmt.
+updateEval.

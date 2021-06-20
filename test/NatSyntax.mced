@@ -44,7 +44,7 @@ let quoteListDec := quoteList ?Dec θ{Dec} quoteDec.
 
 let baseListToNat [B : *] (digitToNat : B -> Nat) (ds : List B) (base : Nat) : Nat :=
   recursionList ?B ?Nat zero
-    (λ d : B. λ _ : List B. λ rec : Nat. add (mul rec ten) (digitToNat d))
+    (λ d : B. λ _ : List B. λ rec : Nat. (mul rec ten) + (digitToNat d))
     (reverse ?B ds).
 
 let boolListToNat (bs : List Bool) : Nat := baseListToNat ?Bool boolToNat bs two.
@@ -80,4 +80,4 @@ let indexToNat (i : init$index) : Nat := decListToNat (indexToDigits i).
 --let init$singleTerm$_binnat_ (bs : List Bool) : init$term := quote$square θ{boolListToNat} (quoteListBool bs).
 let init$singleTerm$_decnat_ (ds : List Dec) : Term := θ{decListToNat γ{quoteListDec ds}}.
 
-o-seteval [evalNewStmt emptyEvaluatorState] init newStmt.
+updateEval.

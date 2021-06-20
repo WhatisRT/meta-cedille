@@ -16,6 +16,8 @@ b-let runMetaCommand (t : Term) : init$newStmt :=
 
 b-let runEcho (t : Term) : init$newStmt := runMetaCommand θ{echoStmt γ{t}}.
 
+b-let reloadMEnv : init$newStmt := evalStateUnitToNewStmt (modifyEvalState (λ e : EvaluatorState. e)).
+
 -- Syntax
 
 -- statements from the old syntax
@@ -41,8 +43,7 @@ b-let init$newStmt'$runMeta_space__multiTerm_=dot= (_ : init$space) (t : Term) :
 b-let init$newStmt'$echo_space__multiTerm_=dot= (_ : init$space) (t : Term) : init$newStmt :=
   bindEvalState ?Term ?metaResult (modifyTermMod t) runEcho.
 b-let init$newStmt'$import_space__string_=dot= (_ : init$space) (n : String) : init$newStmt := stmtToNewStmt (quote$import' n).
-b-let init$newStmt'$updateEval=dot= : init$newStmt :=
-  evalStateUnitToNewStmt (modifyEvalState (λ e : EvaluatorState. e)).
+b-let init$newStmt'$updateEval=dot= : init$newStmt := reloadMEnv.
 b-let init$newStmt'$ : init$newStmt := emptyStmt.
 
 b-let init$newStmt$_space'__newStmt'_ (_ : init$space') (stmt : init$newStmt) : init$newStmt := stmt.

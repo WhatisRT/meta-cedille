@@ -15,7 +15,9 @@ let nine := suc eight.
 let ten := suc nine.
 
 let add (n, m : Nat) : Nat := recNat ?Nat n (λ _, rec : Nat. suc rec) m.
-let mul (n, m : Nat) : Nat := recNat ?Nat zero (λ _, rec : Nat. add rec n) m.
+infix "+" := add.
+
+let mul (n, m : Nat) : Nat := recNat ?Nat zero (λ _, rec : Nat. rec + n) m.
 let pred (n : Nat) : Nat := recNat ?Nat zero (λ n', _ : Nat. n') n.
 let sub (n, m : Nat) : Nat := recNat ?Nat n (λ _, rec : Nat. pred rec) m.
 

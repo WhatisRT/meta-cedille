@@ -1,0 +1,21 @@
+--------------------------------------------------------------------------------
+-- Defines a convenient syntax to register binary infix symbols
+--------------------------------------------------------------------------------
+
+let mkInfixData' (s, s' : String) := mkInfixData s (λ t, t' : Term. θ{γ{sVarTerm s'} γ{t} γ{t'}}).
+
+let defineInfix (symbol, funName : String) : init$newStmt :=
+  seqNewStmt
+    (letInfoToNewStmt (mkLetInfo
+      (stringApp "init$infix$" symbol)
+      θ{mkInfixData' γ{quote$String symbol} γ{quote$String funName}}
+      (just ?Term θ{InfixData})))
+    reloadMEnv.
+
+let init$newStmt'$infix_space_=doublequote=_newstring_=doublequote=_space_=colon==equal=_space__string_=dot=
+  (_ : init$space) (s : String) (_, _ : init$space) (s' : String) : init$newStmt :=
+  defineInfix s s'.
+
+updateEval.
+
+infix "×" := Product.

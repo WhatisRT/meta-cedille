@@ -173,6 +173,62 @@ let init$telescope$=lsquare=_params_=rsquare=_telescope'_ := λ p : [List PrePar
 let init$telescope$ := telNil.
 
 --------------------------------------------------------------------------------
+-- Multi-terms (Terms with infix notations)
+--------------------------------------------------------------------------------
+
+let InfixData := [[Product String] Π _ : Term Π _ : Term Term]. -- add assoc and binding later
+let mkInfixData := <<prodPair String> Π _ : Term Π _ : Term Term>
+  : Π _ : String Π _ : Π _ : Term Π _ : Term Term InfixData.
+
+let appInfixData := <<pr2 String> Π _ : Term Π _ : Term Term>
+  : Π _ : InfixData Π _ : Term Π _ : Term Term.
+
+let appToTerm := λ i : [[Product Term] InfixData] λ t : Term
+  [[[appInfixData [<<pr2 Term> InfixData> i]] t] [<<pr1 Term> InfixData> i]].
+
+-- The single term is the leftmost, and every cons adds a term at the right
+let MultiTerm := [[Product Term] [List [[Product Term] InfixData]]].
+
+let singleMultiTerm := λ t : Term
+  [[<<prodPair Term> [List [[Product Term] InfixData]]> t] <nil [[Product Term] InfixData]>]
+    : Π _ : Term MultiTerm.
+
+let consMultiTerm := λ t : Term λ i : InfixData
+  [<<<productMap2 Term> [List [[Product Term] InfixData]]> [List [[Product Term] InfixData]]>
+    [<cons [[Product Term] InfixData]> [[<<prodPair Term> InfixData> t] i]]]
+    : Π _ : Term Π _ : InfixData Π _ : MultiTerm MultiTerm.
+
+let multiTermSingle := <<pr1 Term> [List [[Product Term] InfixData]]>
+  : Π _ : MultiTerm Term.
+
+let multiTermRest := <<pr2 Term> [List [[Product Term] InfixData]]>
+  : Π _ : MultiTerm [List [[Product Term] InfixData]].
+
+-- let multiTermToTermLeft := λ m : MultiTerm
+--   [<m Term> λ t : Term λ l : List [[Product Term] InfixData]
+--     [[[<<foldl [[Product Term] InfixData]> Term> λ t' : Term λ p : [[Product Term] InfixData]
+--       ]
+--       t] l]]
+--   [[<m Term> λ t : Term t] λ t : Term λ i : InfixData λ t' : Term [[i t'] t]]
+--     : Π _ : MultiTerm Term.
+
+let multiTermToTermRight := λ m : MultiTerm
+  [[[<<recursionList [[Product Term] InfixData]> Term>
+    [multiTermSingle m]]
+    λ h : [[Product Term] InfixData] λ t : [List [[Product Term] InfixData]] λ _ : Term
+      [[appToTerm
+        [[[<<foldr [[Product Term] InfixData]> [[Product Term] InfixData]>
+          λ acc : [[Product Term] InfixData] λ x : [[Product Term] InfixData]
+            [[<<prodPair Term> InfixData>
+              [[appToTerm acc] [<<pr1 Term> InfixData> x]]]
+              [<<pr2 Term> InfixData> x]]] t] h]]
+        [multiTermSingle m]]]
+    [multiTermRest m]].
+
+-- Currently, all infix symbols associate to the right
+let multiTermToTerm := multiTermToTermRight.
+
+--------------------------------------------------------------------------------
 -- Syntax for new terms
 --------------------------------------------------------------------------------
 
@@ -187,16 +243,24 @@ let init$applist$_app__maybeApplist_ := λ a : App λ as : [List App] [[<cons Ap
 let init$maybeApplist$ := <nil App>.
 let init$maybeApplist$_space__applist_ := λ _ : init$space λ l : [List App] l.
 
+-- A term applied to some arguments
+let init$appTerm$_singleTerm__maybeApplist_ := appLTerm.
+
 -- Syntax for terms in general
--- multiTerm is a potential application of multiple terms
--- singleTerm is for anything except application
+-- multiTerm is a potential application of multiple terms and infix notations
+-- singleTerm is for anything else
 
-let init$maybeInfix$ := λ t : Term t.
-let init$maybeInfix$=minus==rangle=_space__multiTerm_ :=
-  λ _ : init$space λ m : Term λ t : Term [[[piTerm init$string$nil] t] m].
+-- We need one infix definition to please the parser generation
+let init$infix$=minus==rangle= := [[mkInfixData init$string$nil] [piTerm init$string$nil]].
 
-let init$multiTerm$_singleTerm__maybeApplist__space'__maybeInfix_ :=
-  λ t : Term λ l : [List App] λ _ : init$space' λ trans : Π _ : Term Term [trans [[appLTerm t] l]].
+let init$multiTerm'$ := λ m : MultiTerm m : Π _ : MultiTerm MultiTerm.
+let init$multiTerm'$_infix__space__appTerm__space'__multiTerm'_ :=
+  λ inf : InfixData λ _ : init$space λ t : Term λ _ : init$space' λ trans : Π _ : MultiTerm MultiTerm
+    λ m : MultiTerm [trans [[[consMultiTerm t] inf] m]].
+
+let init$multiTerm$_appTerm__space'__multiTerm'_ :=
+  λ t : Term λ _ : init$space' λ trans : Π _ : MultiTerm MultiTerm
+    [multiTermToTerm [trans [singleMultiTerm t]]].
 
 let init$singleTerm$=ast= := [sortTerm init$sort$=ast=].
 let init$singleTerm$=sq= := [sortTerm init$sort$=sq=].

@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 
 -- The telescope of arguments and the rest
-let ConstrData := Product Telescope Term.
+let ConstrData := Telescope × Term.
 let mkConstrData := prodPair ?Telescope ?Term.
 let noArgConstrData : Π _ : Term. ConstrData := mkConstrData telNil.
 let consArgConstrData (p : Param) (d : ConstrData) : ConstrData :=
@@ -20,7 +20,7 @@ let toConstrData (term : Term) : ConstrData :=
         (noArgConstrData (binderTerm b n T t)) (noArgConstrData (binderTerm b n T t))
         (consArgConstrData (mkParam false (mkPreParam n T)) rect)
         (consArgConstrData (mkParam true (mkPreParam n T)) rect))
-    (λ t : Term. λ l : List App. λ _ : ConstrData. λ _ : List (Product Bool ConstrData). noArgConstrData (appLTerm t l))
+    (λ t : Term. λ l : List App. λ _ : ConstrData. λ _ : List (Bool × ConstrData). noArgConstrData (appLTerm t l))
     (λ c : Char. noArgConstrData (charTerm c))
     (λ u : Term. λ recu : ConstrData. recu)
     (reduceTerm term).
@@ -36,7 +36,7 @@ let constrArgToFunctor (t : Term) (match : List String) : Error ConstrFunctor :=
           (error ?ConstrFunctor "Can only have pi binder in constructors")
           (mapError ?ConstrFunctor ?ConstrFunctor (covDHomConstrFunctor n T) rect)
           (error ?ConstrFunctor "Can only have pi binder in constructors"))
-      (λ t : Term. λ l : List App. λ _ : Error ConstrFunctor. λ _ : List (Product Bool (Error ConstrFunctor)).
+      (λ t : Term. λ l : List App. λ _ : Error ConstrFunctor. λ _ : List (Bool × (Error ConstrFunctor)).
         pureError ?ConstrFunctor (constConstrFunctor (appLTerm t l)))
       (λ c : Char. error ?ConstrFunctor "Cannot turn char into functor")
       (λ u : Term. λ _ : Error ConstrFunctor. error ?ConstrFunctor "Cannot turn unquote into functor")
@@ -44,8 +44,8 @@ let constrArgToFunctor (t : Term) (match : List String) : Error ConstrFunctor :=
 
 let constrToFunctorData (d : ConstrData) (match : List String) : Error ConstrFunctorData :=
   ifthenelse ?(Error ConstrFunctorData) (matchTerm (reduceTerm (ConstrDataTerm d)) match)
-    (traverseErrorList ?Param ?(Product String ConstrFunctor)
-      (λ p : Param. mapError ?ConstrFunctor ?(Product String ConstrFunctor)
+    (traverseErrorList ?Param ?(String × ConstrFunctor)
+      (λ p : Param. mapError ?ConstrFunctor ?(String × ConstrFunctor)
         (prodPair ?String ?ConstrFunctor (paramName p)) (constrArgToFunctor (paramType p) match))
       (ConstrDataTelescope d))
     (error ?ConstrFunctorData
@@ -56,8 +56,8 @@ let constrToFunctorData (d : ConstrData) (match : List String) : Error ConstrFun
              showList ?String (λ s : String. s) match])).
 
 let functorDataToTelescope (d : ConstrFunctorData) (t : Term) : Telescope :=
-  map ?(Product String ConstrFunctor) ?Param
-    (λ x : Product String ConstrFunctor.
+  map ?(String × ConstrFunctor) ?Param
+    (λ x : String × ConstrFunctor.
       mkParam false (mkPreParam (pr1 ?String ?ConstrFunctor x) (ApplyConstrFunctor t (pr2 ?String ?ConstrFunctor x))))
     d.
 

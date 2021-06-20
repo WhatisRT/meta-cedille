@@ -18,10 +18,10 @@ let DatatypeConstrs' (d : DatatypeData) : List ConstrFunctorData :=
       (pr33 ?String ?ConstrData ?ConstrFunctorData)
       (DatatypeConstrs d).
 
-let mkDatatypeData (name : String) (t : Telescope) (cs : List (Product String Term)) : Error DatatypeData :=
+let mkDatatypeData (name : String) (t : Telescope) (cs : List (String × Term)) : Error DatatypeData :=
   mapError ?(List (TripleProduct String ConstrData ConstrFunctorData)) ?DatatypeData (mkDatatypeData' name t)
-           (traverseErrorList ?(Product String Term) ?(TripleProduct String ConstrData ConstrFunctorData)
-                              (λ c : Product String Term.
+           (traverseErrorList ?(String × Term) ?(TripleProduct String ConstrData ConstrFunctorData)
+                              (λ c : String × Term.
                                 mapError ?ConstrFunctorData ?(TripleProduct String ConstrData ConstrFunctorData)
                                          (mkTripleProduct ?String ?ConstrData ?ConstrFunctorData
                                                           (pr1 ?String ?Term c) (toConstrData (pr2 ?String ?Term c)))
@@ -41,8 +41,8 @@ let uncurryHelper := preCurryHelper θ{Duncurry}.
 
 -- Generate algebras for constructors
 let datatypeToAlgTerms (name : String) (apply : List App) (constrs : List ConstrFunctorData) : List Term :=
-  pr2 ?Term ?(List Term) (foldl ?(Product ConstrFunctorData (List ConstrFunctorData)) ?(Product Term (List Term))
-    (λ acc : Product Term (List Term). λ arg : Product ConstrFunctorData (List ConstrFunctorData).
+  pr2 ?Term ?(List Term) (foldl ?(ConstrFunctorData × (List ConstrFunctorData)) ?(Term × (List Term))
+    (λ acc : Term × (List Term). λ arg : ConstrFunctorData × (List ConstrFunctorData).
       (λ applyCompose : Term -> Term. prodPair ?Term ?(List Term)
           (applyCompose θ{composeRight})
           (cons ?Term (applyCompose θ{composeLeft}) (pr2 ?Term ?(List Term) acc)))
@@ -50,14 +50,14 @@ let datatypeToAlgTerms (name : String) (apply : List App) (constrs : List Constr
                             ?γ{ConstrFunctorF name (pr1 ?ConstrFunctorData ?(List ConstrFunctorData) arg)}
                             ?γ{ConstrsFunctorF' name (pr2 ?ConstrFunctorData ?(List ConstrFunctorData) arg)}
                             γ{pr1 ?Term ?(List Term) acc}}))
-    (reverse ?(Product ConstrFunctorData (List ConstrFunctorData)) (initsNonEmpty ?ConstrFunctorData constrs))
+    (reverse ?(ConstrFunctorData × (List ConstrFunctorData)) (initsNonEmpty ?ConstrFunctorData constrs))
     (prodPair ?Term ?(List Term) (appLTerm (sVarTerm (stringApp name "Constrs")) apply) [Term|])).
 
 -- Convert the algebra corresponding to a single constructor to a proper constructor
 let convertAlgToConstr (name : String) (type : Term) (d : ConstrFunctorData) (alg : Term) : Term :=
   foldWithLambdas (functorDataToTelescope d type) (foldr ?(Term -> Term) ?Term
     (λ acc : Term. λ f : Term -> Term. f acc)
-    (recursionList ?(Product String ConstrFunctor) ?(List (Term -> Term))
+    (recursionList ?(String × ConstrFunctor) ?(List (Term -> Term))
       [Term -> Term | λ t : Term. θ{removeUnit ?γ{type} γ{t}}]
       (λ p : CFParam. λ ps : List CFParam. λ rec : List (Term -> Term).
         cons ?(Term -> Term) (λ t : Term. θ{γ{curryHelper name type p ps} γ{t} γ{natToVar (length ?CFParam ps)}}) rec)
@@ -87,16 +87,16 @@ let datatypeToFold (name : String) (constrs : List ConstrFunctorData) (apply : L
     (λ t : Term. λ c : ConstrFunctorData. lambdaTerm "_" (ApplyConstrFunctorData c θ{X}) t)
     constrs
     θ{foldC γ{appLTerm (sVarTerm (stringApp name "F")) apply} ?X
-      γ{recursionList ?(Product ConstrFunctorData (List ConstrFunctorData)) ?Term
+      γ{recursionList ?(ConstrFunctorData × (List ConstrFunctorData)) ?Term
         θ{voidElim ?X}
-        (λ c : Product ConstrFunctorData (List ConstrFunctorData).
-        λ cs : List (Product ConstrFunctorData (List ConstrFunctorData)).
+        (λ c : ConstrFunctorData × (List ConstrFunctorData).
+        λ cs : List (ConstrFunctorData × (List ConstrFunctorData)).
         λ t : Term.
           θ{sumAlg ?X ?γ{ConstrFunctorF name (pr1 ?ConstrFunctorData ?(List ConstrFunctorData) c)}
                    ?γ{ConstrsFunctorF' name (pr2 ?ConstrFunctorData ?(List ConstrFunctorData) c)}
                    γ{uncurryFoldArg name (pr1 ?ConstrFunctorData ?(List ConstrFunctorData) c)
                                          (natToVar (add
-                                           (length ?(Product ConstrFunctorData (List ConstrFunctorData)) cs)
+                                           (length ?(ConstrFunctorData × (List ConstrFunctorData)) cs)
                                            (length ?CFParam (pr1 ?ConstrFunctorData ?(List ConstrFunctorData) c))))}
                    γ{t}})
         (initsNonEmpty ?ConstrFunctorData constrs)}}}}.

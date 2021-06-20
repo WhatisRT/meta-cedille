@@ -21,9 +21,9 @@ let ListRec (A, X : *)
   (fcons : A -> List A -> X -> X)
   (l : List A)
   : X :=
-  pr1 ?X ?(List A) (ListFold A (Product X (List A))
+  pr1 ?X ?(List A) (ListFold A (X × (List A))
     (prodPair ?X ?(List A) fnil (nil ?A))
-    (λ a : A. λ as : Product X (List A).
+    (λ a : A. λ as : X × (List A).
       prodPair ?X ?(List A)
         (fcons a (pr2 ?X ?(List A) as) (pr1 ?X ?(List A) as))
         (cons ?A a (pr2 ?X ?(List A) as)))

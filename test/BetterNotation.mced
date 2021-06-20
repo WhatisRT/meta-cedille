@@ -1,8 +1,8 @@
 import test/BetterNotation/Term.
 import test/BetterNotation/MLLet.
 
-import test/BetterNotation/TermRec.
 import test/BetterNotation/StringHelpers.
+import test/BetterNotation/TermRec.
 import test/BetterNotation/Error.
 
 import test/BetterNotation/StringNotation.
@@ -18,3 +18,4 @@ import test/BetterNotation/ModuleDefinitions.
 import test/BetterNotation/EvalTypes.
 import test/BetterNotation/ModuleFunction.
 import test/BetterNotation/BetterSyntax.
+import test/BetterNotation/InfixNotations.

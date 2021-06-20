@@ -5,7 +5,7 @@
 let Functor (F : * -> *) := ∀ X : *. ∀ Y : *. (X -> Y) -> F X -> F Y.
 
 -- A pair of terms representing a functor. First F, then fmap
-let functorTerm := Product Term Term.
+let functorTerm := Term × Term.
 let mkFunctorTerm := prodPair ?Term ?Term.
 let getF := pr1 ?Term ?Term.
 let getFunctor := pr2 ?Term ?Term.
