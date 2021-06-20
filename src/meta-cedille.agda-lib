@@ -1,2 +1,3 @@
+name: meta-cedille
 depend: standard-library
 include: . ../stdlib-exts

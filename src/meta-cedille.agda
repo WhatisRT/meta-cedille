@@ -11,8 +11,9 @@ open import IO.Instance
 open import Monads.Except
 open import Monads.ExceptT
 open import Relation.Unary
+open import Data.Unit.Polymorphic using (⊤; tt)
 
-open import Prelude
+open import Prelude hiding (⊤; tt)
 open import Prelude.Strings
 
 open import CoreTheory

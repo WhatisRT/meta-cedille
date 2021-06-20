@@ -66,7 +66,7 @@ _<𝕀_ : 𝕀 -> 𝕀 -> Bool
 x <𝕀 y = (toℕ x) <ᵇ (toℕ y)
 
 _+𝕀_ : 𝕀 -> 𝕀 -> 𝕀
-x +𝕀 y = fromℕ ((toℕ x) Agda.Builtin.Nat.+ (toℕ y))
+x +𝕀 y = fromℕ ((toℕ x) + (toℕ y))
 
 _-𝕀_ : 𝕀 -> 𝕀 -> 𝕀
 _-𝕀_ = subWord
@@ -311,36 +311,6 @@ instance
       helper l (Ev-A m args) = "Ev " + show m + " " + primMetaArgs-Show (helper l) m args
       helper l (Char-A c) = "Char " + show c
       helper l (CharEq-A t t') = "CharEq " + show t + " " + show t'
-
-annTermBeq : AnnTerm -> AnnTerm -> Bool
-annTermBeq (Var-A x) (Var-A x₁) = x ≣ x₁
-annTermBeq (Sort-A x) (Sort-A x₁) = x ≣ x₁
-annTermBeq (t ∙1) (t₁ ∙1) = annTermBeq t t₁
-annTermBeq (t ∙2) (t₁ ∙2) = annTermBeq t t₁
-annTermBeq (β t t₁) (β u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (δ t t₁) (δ u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (ς t) (ς t₁) = annTermBeq t t₁
-annTermBeq (App-A t t₁) (App-A u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (AppE-A t t₁) (AppE-A u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (ρ t ∶ t₁ - t₂) (ρ u ∶ u₁ - u₂) = annTermBeq t u ∧ annTermBeq t₁ u₁ ∧ annTermBeq t₂ u₂
-annTermBeq (∀-A _ t t₁) (∀-A _ u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (Π _ t t₁) (Π _ u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (ι _ t t₁) (ι _ u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (λ-A _ t t₁) (λ-A _ u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (Λ _ t t₁) (Λ _ u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq [ t , t₁ ∙ t₂ ] [ u , u₁ ∙ u₂ ] = annTermBeq t u ∧ annTermBeq t₁ u₁ ∧ annTermBeq t₂ u₂
-annTermBeq (φ t t₁ t₂) (φ u u₁ u₂) = annTermBeq t u ∧ annTermBeq t₁ u₁ ∧ annTermBeq t₂ u₂
-annTermBeq (t ≃ t₁) (u ≃ u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (M-A t) (M-A u) = annTermBeq t u
-annTermBeq (μ t t₁) (μ u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (ε t) (ε u) = annTermBeq t u
-annTermBeq (Ev-A EvalStmt t) (Ev-A EvalStmt u) = annTermBeq t u
-annTermBeq (Ev-A ShellCmd (t , t₁)) (Ev-A ShellCmd (u , u₁)) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (Ev-A CatchErr (t , t₁)) (Ev-A CatchErr (u , u₁)) = annTermBeq t u ∧ annTermBeq t₁ u₁
-annTermBeq (Char-A c) (Char-A c') = c ≣ c'
-annTermBeq (CharEq-A t t₁) (CharEq-A u u₁) = annTermBeq t u ∧ annTermBeq t₁ u₁
-{-# CATCHALL #-}
-annTermBeq _ _ = false
 
 data Def : Set where
   Let : AnnTerm -> AnnTerm -> Def

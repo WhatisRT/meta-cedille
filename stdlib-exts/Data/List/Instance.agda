@@ -7,6 +7,7 @@ open import Class.Show
 open import Class.Traversable
 open import Data.Bool using (Bool; _∧_; true; false)
 open import Data.List hiding (concat)
+open import Data.List.Properties
 open import Data.String using (String)
 open import Data.String.Instance
 open import Relation.Binary.PropositionalEquality
@@ -14,17 +15,7 @@ open import Relation.Nullary
 
 instance
   List-Eq : ∀ {A} {{_ : Eq A}} -> Eq (List A)
-  List-Eq {A} = record { _≟_ = helper }
-    where
-      helper : (l l' : List A) -> Dec (l ≡ l')
-      helper [] [] = yes refl
-      helper [] (x ∷ l') = no (λ ())
-      helper (x ∷ l) [] = no (λ ())
-      helper (x ∷ l) (x₁ ∷ l') with x ≟ x₁
-      helper (x ∷ l) (x₁ ∷ l') | yes p with helper l l'
-      ... | yes p₁ rewrite p | p₁ = yes refl
-      ... | no ¬p = no λ { refl -> ¬p refl }
-      helper (x ∷ l) (x₁ ∷ l') | no ¬p = no λ { refl -> ¬p refl }
+  List-Eq {A} = record { _≟_ = ≡-dec _≟_ }
 
   List-EqB : ∀ {A} {{_ : EqB A}} -> EqB (List A)
   List-EqB {A} = record { _≣_ = helper }
