@@ -50,136 +50,136 @@ MetaContext = GlobalContext × Grammar × String × AnnTerm
 
 -- Many statements just return a single string, in which case this function can
 -- be used
-strResult : String -> MetaResult
+strResult : String → MetaResult
 strResult s = [ s ] , []
 
-module StateHelpers {M : Set -> Set} {{_ : Monad M}}
+module StateHelpers {M : Set → Set} {{_ : Monad M}}
   {{_ : MonadExcept M String}} {{_ : MonadState M MetaContext}} where
 
   getContext : M Context
-  getContext = gets (λ m -> (proj₁ m , []))
+  getContext = gets (λ m → (proj₁ m , []))
 
   get' : M GlobalContext
-  get' = gets (λ m -> proj₁ m)
+  get' = gets (λ m → proj₁ m)
 
   getMeta : M (Grammar × String × AnnTerm)
   getMeta = gets proj₂
 
-  modify' : (MetaContext -> MetaContext) -> M ⊤
+  modify' : (MetaContext → MetaContext) → M ⊤
   modify' f = modify f >> return tt
 
-  setMeta : Grammar -> String -> AnnTerm -> M ⊤
+  setMeta : Grammar → String → AnnTerm → M ⊤
   setMeta G namespace interpreter =
-    modify' λ { (fst , snd) -> (fst , G , namespace , interpreter) }
+    modify' λ { (fst , snd) → (fst , G , namespace , interpreter) }
 
-  setContext : GlobalContext -> M ⊤
+  setContext : GlobalContext → M ⊤
   setContext Γ = modify' λ { (fst , snd) → (Γ , snd) }
 
-  modifyContext : (GlobalContext -> GlobalContext) -> M ⊤
+  modifyContext : (GlobalContext → GlobalContext) → M ⊤
   modifyContext f = do
-    Γ <- getContext
+    Γ ← getContext
     setContext (f (contextToGlobal Γ))
 
-  addDef : GlobalName -> Def -> M String
+  addDef : GlobalName → Def → M String
   addDef n d = do
-    Γ <- getContext
+    Γ ← getContext
     case insertInGlobalContext n d (contextToGlobal Γ) of λ
       { (inj₁ x) → throwError x
       ; (inj₂ y) → setContext y >> return ("Defined " + n + show d) }
 
 open StateHelpers
 
-checkInit : List Char -> List Char -> Bool
+checkInit : List Char → List Char → Bool
 checkInit [] l' = true
 checkInit (x ∷ l) [] = false
 checkInit (x ∷ l) (x₁ ∷ l') = x ≣ x₁ ∧ checkInit l l'
 
-getParserNamespace : GlobalContext -> String -> List String
+getParserNamespace : GlobalContext → String → List String
 getParserNamespace Γ n = map (strDrop (strLength n + 1)) $ trieKeys $ lookupHSTrie n Γ
 
-ruleToConstr : String -> String
+ruleToConstr : String → String
 ruleToConstr = fromList ∘ concat ∘ helper ∘ groupEscaped ∘ toList
   where
-    helper : List (List Char) -> List (List Char)
+    helper : List (List Char) → List (List Char)
     helper [] = []
     helper (l ∷ l₁) = (case l of λ
-      { (c ∷ []) -> if c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&'
+      { (c ∷ []) → if c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&'
         then [ c ]
         else escapeChar c
-      ; (_ ∷ c ∷ []) -> if l ≣ "\\$" ∨ l ≣ "\\_" ∨ l ≣ "\\!" ∨ l ≣ "\\@" ∨ l ≣ "\\&"
+      ; (_ ∷ c ∷ []) → if l ≣ "\\$" ∨ l ≣ "\\_" ∨ l ≣ "\\!" ∨ l ≣ "\\@" ∨ l ≣ "\\&"
         then escapeChar c
         else l
-      ; _ -> l }) ∷ (helper l₁)
+      ; _ → l }) ∷ (helper l₁)
 
 -- Folds a tree of constructors back into a term by properly applying the
 -- constructors and prefixing the namespace
 {-# TERMINATING #-}
-parseResultToConstrTree : String -> Tree (String ⊎ Char) -> AnnTerm
+parseResultToConstrTree : String → Tree (String ⊎ Char) → AnnTerm
 parseResultToConstrTree namespace (Node x x₁) =
-  foldl (λ t t' -> App-A t t') (ruleToTerm x) (map (parseResultToConstrTree namespace) x₁)
+  foldl (λ t t' → t ⟪$⟫ t') (ruleToTerm x) (map (parseResultToConstrTree namespace) x₁)
     where
-      ruleToTerm : String ⊎ Char -> AnnTerm
-      ruleToTerm (inj₁ x) = Var-A (Free (namespace + "$" + ruleToConstr x))
+      ruleToTerm : String ⊎ Char → AnnTerm
+      ruleToTerm (inj₁ x) = FreeVar (namespace + "$" + ruleToConstr x)
       ruleToTerm (inj₂ y) = Char-A y
 
-module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
+module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   {{_ : MonadExcept M String}} {{_ : MonadState M MetaContext}} {{_ : MonadIO M}}
   where
 
   -- Typecheck a term and return its type
-  check : AnnTerm -> M AnnTerm
+  check : AnnTerm → M AnnTerm
   check t = do
-    Γ <- getContext
+    Γ ← getContext
     synthType Γ t
 
   -- Parse the next top-level non-terminal symbol from a string, and return a
   -- term representing the result of the parse, as well as the unparsed rest of
   -- the string
-  parseMeta : Grammar × String × AnnTerm -> String -> M (AnnTerm × String)
+  parseMeta : Grammar × String × AnnTerm → String → M (AnnTerm × String)
   parseMeta (G , namespace , interpreter) s = do
-    (t , rest) <- parse' G s
+    (t , rest) ← parse' G s
     return (parseResultToConstrTree namespace t , rest)
 
   {-# NON_TERMINATING #-}
   -- Execute a term of type M t for some t
-  executeTerm : PureTerm -> M (MetaResult × PureTerm)
-  executeStmt : Stmt -> M MetaResult
+  executeTerm : PureTerm → M (MetaResult × PureTerm)
+  executeStmt : Stmt → M MetaResult
   -- Parse and execute a string in the pre-meta language
-  tryExecute' : String -> M MetaResult
+  tryExecute' : String → M MetaResult
   -- Parse and execute a string
-  tryExecute : String -> M MetaResult
+  tryExecute : String → M MetaResult
 
   executeStmt (Let n t nothing) = do
-    t' <- check t
-    res <- addDef n (Let t t')
+    t' ← check t
+    res ← addDef n (Let t t')
     return $ strResult res
 
   executeStmt (Let n t (just t')) = do
-    u <- check t
+    u ← check t
     check t'
-    Γ <- getContext
+    Γ ← getContext
     catchError (checkβη Γ u t')
-      (λ e -> throwError $
+      (λ e → throwError $
         "Type mismatch with the provided type!\n" + e + "\nProvided: " + show t' +
         "\nSynthesized: " + show u)
-    res <- addDef n (Let t t')
+    res ← addDef n (Let t t')
     return $ strResult res
 
   executeStmt (Ass n t) = do
-    t' <- check t
-    res <- addDef n (Axiom t)
+    t' ← check t
+    res ← addDef n (Axiom t)
     return $ strResult res
 
   executeStmt (Normalize t) = do
-    Γ <- getContext
-    T <- synthType Γ t
+    Γ ← getContext
+    T ← synthType Γ t
     return $ strResult
       (show t + " : " + show T + " normalizes to: " +
       (show $ normalizePure Γ $ Erase t))
 
   executeStmt (HeadNormalize t) = do
-    Γ <- getContext
-    T <- synthType Γ t
+    Γ ← getContext
+    T ← synthType Γ t
     return $ strResult
       (show t + " : " + show T + " head-normalizes to: " +
       (show $ hnfNorm Γ t))
@@ -187,75 +187,75 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
   executeStmt (EraseSt t) = return $ strResult $ show $ Erase t
 
   executeStmt (Test t) = do
-    Γ <- getContext
+    Γ ← getContext
     return $ strResult $ show $ normalizePure Γ $ Erase t
 
   executeStmt (SetEval t n start) = do
-    Γ <- get'
+    Γ ← get'
     let Γ' = globalToContext Γ
     let rules = getParserNamespace Γ n
     maybe
-      (λ rules' -> do
-        y <- generateCFG start rules'
-        T <- synthType Γ' t
+      (λ rules' → do
+        y ← generateCFG start rules'
+        T ← synthType Γ' t
         case (hnfNorm Γ' T) of λ
-          { (Π _ u u₁) -> do
-            appendIfError (checkβη Γ' u (Var-A (Free (n + "$" + start))))
+          { (Pi-A _ u u₁) → do
+            appendIfError (checkβη Γ' u $ FreeVar (n + "$" + start))
               "The evaluator needs to accept the parse result as input"
             case (hnfNorm Γ' u₁) of λ
-              { (M-A _) -> do
+              { (M-A _) → do
                 setMeta y n t
                 return (strResult "Successfully set the evaluator")
-              ; _ -> throwError "The evaluator needs to return a M type" }
-          ; _ -> throwError "The evaluator needs to have a pi type" }
+              ; _ → throwError "The evaluator needs to return a M type" }
+          ; _ → throwError "The evaluator needs to have a pi type" }
       )
       (throwError "Error while un-escaping parsing rules!")
       (sequence $ map ((fmap fromList) ∘ translate ∘ toList) rules)
 
   executeStmt (Import x) = do
-    res <- liftIO $ readFiniteFileError (x + ".mced")
+    res ← liftIO $ readFiniteFileError (x + ".mced")
     case res of λ
       { (inj₁ x) → throwError x
       ; (inj₂ y) → tryExecute y }
 
   executeStmt (Shell s) = do
-    res <- liftIO $ runShellCmd s [""]
+    res ← liftIO $ runShellCmd s [""]
     return $ strResult res
 
   executeStmt Empty = return (strResult "")
 
   executeTerm (Mu-P t t₁) = do
-    Γ <- getContext
-    (res , t') <- executeTerm (hnfNormPure Γ t)
-    (res' , resTerm) <- executeTerm (hnfNormPure Γ $ App-P t₁ t')
+    Γ ← getContext
+    (res , t') ← executeTerm (hnfNormPure Γ t)
+    (res' , resTerm) ← executeTerm (hnfNormPure Γ (t₁ ⟪$⟫ t'))
     return (res + res' , resTerm)
 
   executeTerm (Epsilon-P t) = return (([] , []) , t)
 
   executeTerm (Ev-P EvalStmt t) = do
-    Γ <- getContext
-    normStmt <- return $ normalizePure Γ t
-    stmt <- appendIfError (constrsToStmt Γ normStmt) ("Error with term: " + show t)
-    res <- executeStmt stmt
-    return (res , (Erase $ embedMetaResult res))
+    Γ ← getContext
+    normStmt ← return $ normalizePure Γ t
+    stmt ← appendIfError (constrsToStmt Γ normStmt) ("Error with term: " + show t)
+    res ← executeStmt stmt
+    return (res , Erase (embedMetaResult res))
 
   executeTerm (Ev-P ShellCmd (t , t')) = do
-    Γ <- getContext
-    cmd <- constrsToString Γ $ normalizePure Γ t
-    args <- constrsToStringList Γ $ normalizePure Γ t'
-    res <- liftIO $ runShellCmd cmd args
-    return (strResult res , (Erase $ stringToTerm res))
+    Γ ← getContext
+    cmd ← constrsToString Γ $ normalizePure Γ t
+    args ← constrsToStringList Γ $ normalizePure Γ t'
+    res ← liftIO $ runShellCmd cmd args
+    return (strResult res , Erase (stringToTerm res))
 
   executeTerm (Ev-P CatchErr (t , t')) =
-    catchError (executeTerm t) (λ s -> executeTerm $ App-P t' $ Erase $ stringToTerm s)
+    catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ Erase (stringToTerm s)))
 
   executeTerm (Ev-P CheckTerm (t , t')) = do
-    Γ <- getContext
-    u <- catchError (constrsToTerm Γ $ normalizePure Γ t')
-                    (λ e -> throwError $ "Error while converting " + show t' + " to a term")
-    T' <- check u
+    Γ ← getContext
+    u ← catchError (constrsToTerm Γ $ normalizePure Γ t')
+                    (λ e → throwError $ "Error while converting " + show t' + " to a term")
+    T' ← check u
     catchError (checkβηPure Γ t $ Erase T')
-      (λ e -> throwError $
+      (λ e → throwError $
         "Type mismatch with the provided type!\nProvided: " + show t +
         "\nSynthesized: " + show T')
     return (strResult "" , Erase u)
@@ -265,31 +265,31 @@ module ExecutionDefs {M : Set -> Set} {{_ : Monad M}}
     throwError ("Error: " + show t + " is not a term that can be evaluated!")
 
   tryExecute' s = do
-    (fst , snd) <- parseStmt s
-    res <- appendIfError (executeStmt fst) ("\n\nError while executing statement: " + show fst)
-    res' <- if strNull snd then return ([] , []) else tryExecute' snd
+    (fst , snd) ← parseStmt s
+    res ← appendIfError (executeStmt fst) ("\n\nError while executing statement: " + show fst)
+    res' ← if strNull snd then return ([] , []) else tryExecute' snd
     return (res + res')
 
   tryExecute s = do
-    Γ <- getContext
-    m@(_ , _ , interpreter) <- getMeta
+    Γ ← getContext
+    m@(_ , _ , interpreter) ← getMeta
     case interpreter of λ
-      { (Sort-A □') -> tryExecute' s -- this is the default interpreter that gets used to start the language
-      ; _ -> do
-        (fst , snd) <- parseMeta m s
-        let exec = App-A interpreter fst
-        (G , _ , _) <- getMeta
-        T <- appendIfError (synthType Γ exec)
+      { (Sort-A □') → tryExecute' s -- this is the default interpreter that gets used to start the language
+      ; _ → do
+        (fst , snd) ← parseMeta m s
+        let exec = interpreter ⟪$⟫ fst
+        (G , _ , _) ← getMeta
+        T ← appendIfError (synthType Γ exec)
                            ("\n\nError while interpreting input: "
                              + (shortenString 10000 (show fst))
                              + "\nWhile parsing: " + (shortenString 10000 s))
         case (hnfNorm Γ T) of λ
-          { (M-A _) -> do
-            execHnf <- return $ hnfNormPure Γ $ Erase exec
-            (res , _) <- appendIfError (executeTerm execHnf) ("\n\nError while executing input: " + s)
-            res' <- if strNull snd then return mzero else tryExecute snd
+          { (M-A _) → do
+            execHnf ← return $ hnfNormPure Γ $ Erase exec
+            (res , _) ← appendIfError (executeTerm execHnf) ("\n\nError while executing input: " + s)
+            res' ← if strNull snd then return mzero else tryExecute snd
             return (res + res')
-          ; _ -> throwError "Trying to execute something that isn't of type M t. This should never happen!" }
+          ; _ → throwError "Trying to execute something that isn't of type M t. This should never happen!" }
       }
 
 module ExecutionMonad where
@@ -299,15 +299,15 @@ module ExecutionMonad where
   ExecutionState : Set
   ExecutionState = MetaContext
 
-  contextFromState : ExecutionState -> MetaContext
+  contextFromState : ExecutionState → MetaContext
   contextFromState s = s
 
-  Execution : Set -> Set
+  Execution : Set → Set
   Execution = ExceptT (StateT IO ExecutionState) String
 
-  execute : ∀ {A} -> Execution A -> MetaContext -> IO (ExecutionState × (String ⊎ A))
+  execute : ∀ {A} → Execution A → MetaContext → IO (ExecutionState × (String ⊎ A))
   execute x Γ = do
-    (x' , s') <- x Γ
+    (x' , s') ← x Γ
     return (s' , x')
 
   instance

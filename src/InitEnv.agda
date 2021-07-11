@@ -30,10 +30,10 @@ private
   nameTails : List Char
   nameTails = nameInits ++ nameSymbols ++ digits
 
-  parseConstrToNonTerminals : String -> List String
+  parseConstrToNonTerminals : String → List String
   parseConstrToNonTerminals = (map fromList) ∘ parseConstrToNonTerminals' ∘ toList
     where
-      parseConstrToNonTerminals' : List Char -> List (List Char)
+      parseConstrToNonTerminals' : List Char → List (List Char)
       parseConstrToNonTerminals' =
         takeEven ∘ (map concat) ∘ (splitMulti "_") ∘ groupEscaped -- don't split on escaped underscores!
 
@@ -42,8 +42,8 @@ private
     "space'$" ∷ "space'$=newline=_space'_" ∷ "space'$=space=_space'_" ∷
     "space$=newline=_space'_" ∷ "space$=space=_space'_" ∷
 
-    "index'$" ∷ map (λ c -> "index'$" ++ [ c ] ++ "_index'_") digits ++
-    map (λ c -> "index$" ++ [ c ] ++ "_index'_") digits ++
+    "index'$" ∷ map (λ c → "index'$" ++ [ c ] ++ "_index'_") digits ++
+    map (λ c → "index$" ++ [ c ] ++ "_index'_") digits ++
     "var$_string_" ∷ "var$_index_" ∷
 
     "sort$=ast=" ∷ "sort$=sq=" ∷
@@ -93,19 +93,17 @@ private
     "stmt$_space'__stmt'_" ∷
     []
 
-  sortGrammar : List (List Char) -> SimpleMap (List Char) (List (List Char))
-  sortGrammar G = mapSnd (map (dropHeadIfAny ∘ dropWhile (λ x -> ¬? (x ≟ '$')))) $
-    mapFromList (takeWhile λ x -> ¬? (x ≟ '$')) G
+  sortGrammar : List (List Char) → SimpleMap (List Char) (List (List Char))
+  sortGrammar G = mapSnd (map (dropHeadIfAny ∘ dropWhile (¬? ∘ _≟ '$'))) $
+    mapFromList (takeWhile (¬? ∘ _≟ '$')) G
 
-  toInductiveData : String -> String -> List String -> InductiveData
+  toInductiveData : String → String → List String → InductiveData
   toInductiveData namespace name constrs =
     (namespace + "$" + name
-    , map (λ c ->
-             (namespace + "$" + name + "$" + c
-             , (map (toConstrData' name) $ parseConstrToNonTerminals c)))
+    , map (λ c → (namespace + "$" + name + "$" + c , map (toConstrData' name) (parseConstrToNonTerminals c)))
           constrs)
     where
-      toConstrData' : String -> String -> ConstrData'
+      toConstrData' : String → String → ConstrData'
       toConstrData' self l = if self ≣ l then Self else Other (namespace + "$" + l)
 
   stringData : InductiveData
@@ -128,20 +126,20 @@ private
     ("init$metaResult"
     , ("init$metaResult$pair" , (Other "init$stringList" ∷ Other "init$termList" ∷ [])) ∷ [])
 
-  charDataConstructor : Char -> String -> String
+  charDataConstructor : Char → String → String
   charDataConstructor c prefix =
-    "let " + prefix + (fromList $ escapeChar c) + " := κ" + show c + "."
+    "let " + prefix + fromList (escapeChar c) + " := κ" + show c + "."
 
   nameInitConstrs : List String
-  nameInitConstrs = map (λ c -> charDataConstructor c "init$nameInitChar$") nameInits
+  nameInitConstrs = map (flip charDataConstructor "init$nameInitChar$") nameInits
 
   nameTailConstrs : List String
-  nameTailConstrs = map (λ c -> charDataConstructor c "init$nameTailChar$") nameTails
+  nameTailConstrs = map (flip charDataConstructor "init$nameTailChar$") nameTails
 
   initEnvConstrs : List InductiveData
   initEnvConstrs = stringData ∷
     (map
-      (λ { (name , rule) -> toInductiveData "init" (fromList name) (map fromList rule) }) $
+      (λ { (name , rule) → toInductiveData "init" (fromList name) (map fromList rule) }) $
       sortGrammar grammar)
 
   otherInit : List String
@@ -154,8 +152,8 @@ private
 
   grammarWithChars : List (List Char)
   grammarWithChars = grammar ++
-    map (λ c -> "nameTailChar$" ++ c) (map escapeChar nameTails) ++
-    map (λ c -> "nameInitChar$" ++ c) (map escapeChar nameInits) ++
+    map ("nameTailChar$" ++_) (map escapeChar nameTails) ++
+    map ("nameInitChar$" ++_) (map escapeChar nameInits) ++
     "char$!!" ∷
     "string'$_nameTailChar__string'_" ∷ "string'$" ∷
     "string$_nameInitChar__string'_" ∷
@@ -169,8 +167,8 @@ initEnv = "let init$char := ΚChar." + Data.String.concat
 
 -- a map from non-terminals to their possible expansions
 parseRuleMap : SimpleMap (List Char) (List (List Char))
-parseRuleMap = from-just $ sequence $ map (λ { (fst , snd) -> do
-  snd' <- sequence (map (λ x -> translate $ fst ++ "$" ++ x) snd)
+parseRuleMap = from-just $ sequence $ map (λ { (fst , snd) → do
+  snd' ← sequence (map (λ x → translate $ fst ++ "$" ++ x) snd)
   return (fst , reverse snd') }) $ sortGrammar grammarWithChars
 
 coreGrammarGenerator : List (List Char)

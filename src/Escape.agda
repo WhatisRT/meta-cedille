@@ -37,27 +37,27 @@ private
   escapeTable : SimpleMap Char String
   escapeTable = map swap translationTable
 
-groupEscaped : List Char -> List (List Char)
+groupEscaped : List Char → List (List Char)
 groupEscaped = helper false
   where
-    helper : Bool -> List Char -> List (List Char)
+    helper : Bool → List Char → List (List Char)
     helper b [] = []
     helper false (x ∷ l) = if ⌊ x ≟ '\\' ⌋ then helper true l else [ x ] ∷ helper false l
     helper true (x ∷ l) = ('\\' ∷ [ x ]) ∷ helper false l
 
-translate : List Char -> Maybe (List Char)
+translate : List Char → Maybe (List Char)
 translate = (Data.Maybe.map concat) ∘ helper ∘ splitMulti '='
   where
-    helper : List (List Char) -> Maybe (List (List Char))
+    helper : List (List Char) → Maybe (List (List Char))
     helper [] = just []
     helper (l ∷ []) = just (l ∷ [])
     helper (l ∷ l₁ ∷ l₂) = do
-      l' <- (lookup (fromList l₁) translationTable)
-      l'' <- helper l₂
+      l' ← (lookup (fromList l₁) translationTable)
+      l'' ← helper l₂
       return $ l ∷
         (decCase l' of
           ('_' , "\\_") ∷ ('$' , "\\$") ∷ ('!' , "\\!") ∷ ('@' , "\\@") ∷ ('&' , "\\&") ∷ []
           default [ l' ]) ∷ l''
 
-escapeChar : Char -> List Char
-escapeChar c = maybe (λ s -> "=" ++ toList s ++ "=") [ c ] $ lookup c escapeTable
+escapeChar : Char → List Char
+escapeChar c = maybe (λ s → "=" ++ toList s ++ "=") [ c ] $ lookup c escapeTable
