@@ -53,17 +53,23 @@ ruleId nonterm rule = do
   i ← findIndexList (_≟ (nonterm + "$" + rule)) rules
   return $ inj₁ i
 
+instance
+   _ = Eq→EqB
+
+_≡ᴹ_ : ℕ ⊎ Char → Maybe (ℕ ⊎ Char) → Bool
+x ≡ᴹ y = just x ≣ y
+
 toSort : Tree (ℕ ⊎ Char) → Maybe Sort
 toSort (Node x x₁) =
-  if x ≣ from-just (ruleId "sort" "*")
+  if x ≡ᴹ ruleId "sort" "*"
     then return ⋆
-    else if x ≣ from-just (ruleId "sort" "□")
+    else if x ≡ᴹ ruleId "sort" "□"
       then return □
       else nothing
 
 toConst : Tree (ℕ ⊎ Char) → Maybe Const
 toConst (Node x x₁) =
-  if x ≣ from-just (ruleId "const" "Char")
+  if x ≡ᴹ ruleId "const" "Char"
     then return CharT
     else nothing
 
@@ -73,7 +79,7 @@ toChar (Node (inj₂ y) x₁) = just y
 
 toChar' : Tree (ℕ ⊎ Char) → Maybe Char
 toChar' (Node x x₁) =
-  if x ≣ from-just (ruleId "char" "!!")
+  if x ≡ᴹ ruleId "char" "!!"
     then (case x₁ of λ { (y ∷ []) → toChar y ; _ → nothing })
     else nothing
 
@@ -83,7 +89,7 @@ toName (Node x x₁) = case x₁ of λ
     c ← toChar y
     n ← toName y'
     return (fromChar c + n)
-  ; [] → if x ≣ from-just (ruleId "string'" "")
+  ; [] → if x ≡ᴹ ruleId "string'" ""
       then return ""
       else nothing
   ; _ → nothing }
@@ -100,43 +106,43 @@ toNameList _ = nothing
 toIndex : Tree (ℕ ⊎ Char) → Maybe ℕ
 toIndex t = do
   res ← helper t
-  foldl {A = Maybe ℕ} (λ x c → fmap (λ x' → 10 * x' + c) x) (just 0) res
+  foldl {A = Maybe ℕ} (λ x c → (λ x' → 10 * x' + c) <$> x) (just 0) res
   where
     helper' : Tree (ℕ ⊎ Char) → Maybe (List ℕ)
     helper' (Node x []) =
-      if x ≣ from-just (ruleId "index'" "")
+      if x ≡ᴹ ruleId "index'" ""
         then return []
         else nothing
     helper' (Node x (x₁ ∷ _)) = do
       rest ← helper' x₁
-      decCase x of
-        (from-just (ruleId "index'" "0_index'_") , return (0 ∷ rest)) ∷
-        (from-just (ruleId "index'" "1_index'_") , return (1 ∷ rest)) ∷
-        (from-just (ruleId "index'" "2_index'_") , return (2 ∷ rest)) ∷
-        (from-just (ruleId "index'" "3_index'_") , return (3 ∷ rest)) ∷
-        (from-just (ruleId "index'" "4_index'_") , return (4 ∷ rest)) ∷
-        (from-just (ruleId "index'" "5_index'_") , return (5 ∷ rest)) ∷
-        (from-just (ruleId "index'" "6_index'_") , return (6 ∷ rest)) ∷
-        (from-just (ruleId "index'" "7_index'_") , return (7 ∷ rest)) ∷
-        (from-just (ruleId "index'" "8_index'_") , return (8 ∷ rest)) ∷
-        (from-just (ruleId "index'" "9_index'_") , return (9 ∷ rest)) ∷ []
+      decCase (just x) of
+        (ruleId "index'" "0_index'_" , return (0 ∷ rest)) ∷
+        (ruleId "index'" "1_index'_" , return (1 ∷ rest)) ∷
+        (ruleId "index'" "2_index'_" , return (2 ∷ rest)) ∷
+        (ruleId "index'" "3_index'_" , return (3 ∷ rest)) ∷
+        (ruleId "index'" "4_index'_" , return (4 ∷ rest)) ∷
+        (ruleId "index'" "5_index'_" , return (5 ∷ rest)) ∷
+        (ruleId "index'" "6_index'_" , return (6 ∷ rest)) ∷
+        (ruleId "index'" "7_index'_" , return (7 ∷ rest)) ∷
+        (ruleId "index'" "8_index'_" , return (8 ∷ rest)) ∷
+        (ruleId "index'" "9_index'_" , return (9 ∷ rest)) ∷ []
         default nothing
 
     helper : Tree (ℕ ⊎ Char) → Maybe (List ℕ)
     helper (Node x []) = nothing
     helper (Node x (x₁ ∷ _)) = do
       rest ← helper' x₁
-      decCase x of
-        (from-just (ruleId "index" "0_index'_") , return (0 ∷ rest)) ∷
-        (from-just (ruleId "index" "1_index'_") , return (1 ∷ rest)) ∷
-        (from-just (ruleId "index" "2_index'_") , return (2 ∷ rest)) ∷
-        (from-just (ruleId "index" "3_index'_") , return (3 ∷ rest)) ∷
-        (from-just (ruleId "index" "4_index'_") , return (4 ∷ rest)) ∷
-        (from-just (ruleId "index" "5_index'_") , return (5 ∷ rest)) ∷
-        (from-just (ruleId "index" "6_index'_") , return (6 ∷ rest)) ∷
-        (from-just (ruleId "index" "7_index'_") , return (7 ∷ rest)) ∷
-        (from-just (ruleId "index" "8_index'_") , return (8 ∷ rest)) ∷
-        (from-just (ruleId "index" "9_index'_") , return (9 ∷ rest)) ∷ []
+      decCase just x of
+        (ruleId "index" "0_index'_" , return (0 ∷ rest)) ∷
+        (ruleId "index" "1_index'_" , return (1 ∷ rest)) ∷
+        (ruleId "index" "2_index'_" , return (2 ∷ rest)) ∷
+        (ruleId "index" "3_index'_" , return (3 ∷ rest)) ∷
+        (ruleId "index" "4_index'_" , return (4 ∷ rest)) ∷
+        (ruleId "index" "5_index'_" , return (5 ∷ rest)) ∷
+        (ruleId "index" "6_index'_" , return (6 ∷ rest)) ∷
+        (ruleId "index" "7_index'_" , return (7 ∷ rest)) ∷
+        (ruleId "index" "8_index'_" , return (8 ∷ rest)) ∷
+        (ruleId "index" "9_index'_" , return (9 ∷ rest)) ∷ []
         default nothing
 
 toTerm : Tree (ℕ ⊎ Char) → Maybe AnnTerm
@@ -144,71 +150,71 @@ toTerm = helper []
   where
     helper : List String → Tree (ℕ ⊎ Char) → Maybe AnnTerm
     helper accu (Node x x₁) =
-      decCase x of
-        (from-just (ruleId "term" "_var_") ,
-          head x₁ >>=
-            λ { (Node y (n ∷ [])) →
-                decCase y of
-                  (from-just (ruleId "var" "_string_") , do
-                    n' ← toName n
-                    case findIndexList (n' ≟_) accu of (λ
-                      { (just x) → return $ BoundVar $ fromℕ x
-                      ; nothing → return $ FreeVar n' })) ∷
-                  (from-just (ruleId "var" "_index_") , do
-                    n' ← toIndex n
-                    return $ BoundVar $ fromℕ n') ∷ []
-                default nothing
-              ; _ → nothing }) ∷
+      decCase just x of
+      
+        (ruleId "term" "_var_" , (case x₁ of λ
+          { ((Node y (n ∷ [])) ∷ []) →
+            decCase just y of
+              (ruleId "var" "_string_" , do
+                n' ← toName n
+                return $ case findIndexList (n' ≟_) accu of λ
+                  { (just x) → BoundVar $ fromℕ x
+                  ; nothing → FreeVar n' }) ∷
+              (ruleId "var" "_index_" , do
+                n' ← toIndex n
+                return $ BoundVar $ fromℕ n') ∷ []
+            default nothing
+          ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "_sort_") , do
+        (ruleId "term" "_sort_" , do
           s ← head x₁ >>= toSort
-          return (Sort-A s)) ∷
+          return $ Sort-A s) ∷
 
-        (from-just (ruleId "term" "π_space__term_") , (case x₁ of λ
+        (ruleId "term" "π_space__term_" , (case x₁ of λ
           { (_ ∷ y ∷ []) → do
             y' ← helper accu y
-            return (Pr1-A y')
+            return $ Pr1-A y'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "ψ_space__term_") , (case x₁ of λ
+        (ruleId "term" "ψ_space__term_" , (case x₁ of λ
           { (_ ∷ y ∷ []) → do
             y' ← helper accu y
-            return (Pr2-A y')
+            return $ Pr2-A y'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "β_space__term__space__term_") , (case x₁ of λ
+        (ruleId "term" "β_space__term__space__term_" , (case x₁ of λ
           { (_ ∷ y ∷ _ ∷ y' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ Beta-A t t'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "δ_space__term__space__term_") , (case x₁ of λ
+        (ruleId "term" "δ_space__term__space__term_" , (case x₁ of λ
           { (_ ∷ y ∷ _ ∷ y' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ Delta-A t t'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "σ_space__term_") , (case x₁ of λ
+        (ruleId "term" "σ_space__term_" , (case x₁ of λ
           { (_ ∷ y ∷ []) → helper accu y >>= λ y' → return (Sigma-A y') ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "[_space'__term__space__term__space'_]") , (case x₁ of λ
+        (ruleId "term" "[_space'__term__space__term__space'_]" , (case x₁ of λ
           { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ App-A t t'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "<_space'__term__space__term__space'_>") , (case x₁ of λ
+        (ruleId "term" "<_space'__term__space__term__space'_>" , (case x₁ of λ
           { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ AppE-A t t'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term"
-          "ρ_space__term__space__string__space'_._space'__term__space__term_") , (case x₁ of λ
+        (ruleId "term"
+          "ρ_space__term__space__string__space'_._space'__term__space__term_" , (case x₁ of λ
           { (_ ∷ y ∷ _ ∷ n' ∷ _ ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) → do
             t ← helper accu y
             n ← toName n'
@@ -217,8 +223,8 @@ toTerm = helper []
             return $ Rho-A t t' t''
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term"
-          "∀_space__string__space'_:_space'__term__space__term_") , (case x₁ of λ
+        (ruleId "term"
+          "∀_space__string__space'_:_space'__term__space__term_" , (case x₁ of λ
           { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) → do
             n ← toName n'
             t ← helper accu y
@@ -226,8 +232,8 @@ toTerm = helper []
             return $ All-A n t t'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term"
-          "Π_space__string__space'_:_space'__term__space__term_") , (case x₁ of λ
+        (ruleId "term"
+          "Π_space__string__space'_:_space'__term__space__term_" , (case x₁ of λ
           { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) → do
             n ← toName n'
             t ← helper accu y
@@ -235,8 +241,8 @@ toTerm = helper []
             return $ Pi-A n t t'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term"
-          "ι_space__string__space'_:_space'__term__space__term_") , (case x₁ of λ
+        (ruleId "term"
+          "ι_space__string__space'_:_space'__term__space__term_" , (case x₁ of λ
           { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) → do
             n ← toName n'
             t ← helper accu y
@@ -244,8 +250,8 @@ toTerm = helper []
             return $ Iota-A n t t'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term"
-          "λ_space__string__space'_:_space'__term__space__term_") , (case x₁ of λ
+        (ruleId "term"
+          "λ_space__string__space'_:_space'__term__space__term_" , (case x₁ of λ
           { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) → do
             n ← toName n'
             t ← helper accu y
@@ -253,8 +259,8 @@ toTerm = helper []
             return $ Lam-A n t t'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term"
-          "Λ_space__string__space'_:_space'__term__space__term_") , (case x₁ of λ
+        (ruleId "term"
+          "Λ_space__string__space'_:_space'__term__space__term_" , (case x₁ of λ
           { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) → do
             n ← toName n'
             t ← helper accu y
@@ -262,8 +268,8 @@ toTerm = helper []
             return $ LamE-A n t t'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term"
-          "{_space'__term__space'_,_space'__term__space__string__space'_._space'__term__space'_}") ,
+        (ruleId "term"
+          "{_space'__term__space'_,_space'__term__space__string__space'_._space'__term__space'_}" ,
           (case x₁ of λ
           { (_ ∷ y ∷ _ ∷ _ ∷ y' ∷ _ ∷ n' ∷ _ ∷ _ ∷ y'' ∷ _ ∷ []) → do
             t ← helper accu y
@@ -273,7 +279,7 @@ toTerm = helper []
             return $ Pair-A t t' t''
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "φ_space__term__space__term__space__term_") , (case x₁ of λ
+        (ruleId "term" "φ_space__term__space__term__space__term_" , (case x₁ of λ
           { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
@@ -281,72 +287,72 @@ toTerm = helper []
             return $ Phi-A t t' t''
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "=_space__term__space__term_") , (case x₁ of λ
+        (ruleId "term" "=_space__term__space__term_" , (case x₁ of λ
           { (_ ∷ y ∷ _ ∷ y' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ Eq-A t t'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "ω_space__term_") , (case x₁ of λ
+        (ruleId "term" "ω_space__term_" , (case x₁ of λ
           { (_ ∷ y ∷ []) → do
             t ← helper accu y
             return $ M-A t
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "μ_space__term__space__term_") , (case x₁ of λ
+        (ruleId "term" "μ_space__term__space__term_" , (case x₁ of λ
           { (_ ∷ y ∷ _ ∷ y' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ Mu-A t t'
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "ε_space__term_") , (case x₁ of λ
+        (ruleId "term" "ε_space__term_" , (case x₁ of λ
           { (_ ∷ y ∷ []) → do
             t ← helper accu y
             return $ Epsilon-A t
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "Α_space__term_") , (case x₁ of λ -- alpha
+        (ruleId "term" "Α_space__term_" , (case x₁ of λ -- alpha
           { (_ ∷ z ∷ []) → do
             t ← helper accu z
             return $ Ev-A EvalStmt t
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "Β_space__term__space__term_") , (case x₁ of λ -- beta
+        (ruleId "term" "Β_space__term__space__term_" , (case x₁ of λ -- beta
           { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
             t ← helper accu z
             t' ← helper accu z'
             return $ Ev-A ShellCmd (t , t')
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "Γ_space__term__space__term_") , (case x₁ of λ
+        (ruleId "term" "Γ_space__term__space__term_" , (case x₁ of λ
           { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
             t ← helper accu z
             t' ← helper accu z'
             return $ Ev-A CatchErr (t , t')
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "Δ_space__term__space__term_") , (case x₁ of λ
+        (ruleId "term" "Δ_space__term__space__term_" , (case x₁ of λ
           { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
             t ← helper accu z
             t' ← helper accu z'
             return $ Ev-A CheckTerm (t , t')
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "Κ_const_") , (case x₁ of λ
+        (ruleId "term" "Κ_const_" , (case x₁ of λ
           { (z ∷ []) → do
             c ← toConst z
             return $ Const-A c
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "κ_char_") , (case x₁ of λ
+        (ruleId "term" "κ_char_" , (case x₁ of λ
           { (z ∷ []) → do
             c ← addMaybe (toChar z) (toChar' z)
             return $ Char-A c
           ; _ → nothing })) ∷
 
-        (from-just (ruleId "term" "γ_space__term__space__term_") , (case x₁ of λ
+        (ruleId "term" "γ_space__term__space__term_" , (case x₁ of λ
           { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
             t ← helper accu z
             t' ← helper accu z'
@@ -387,10 +393,10 @@ instance
 
 toStmt : Tree (ℕ ⊎ Char) → Maybe Stmt
 toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
-  if x ≣ from-just (ruleId "stmt" "_space'__stmt'_")
+  if x ≡ᴹ ruleId "stmt" "_space'__stmt'_"
     then
-      decCase x' of
-        (from-just (ruleId "stmt'" "let_space__string__space'_:=_space'__term__space'__lettail_") ,
+      decCase just x' of
+        (ruleId "stmt'" "let_space__string__space'_:=_space'__term__space'__lettail_" ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) → do
               n ← toName y
@@ -398,8 +404,8 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
               return $ Let n t $ toLetTail y''
             ; _ → nothing })) ∷
 
-        (from-just (ruleId "stmt'"
-          "ass_space__string__space'_:_space'__term__space'_.") ,
+        (ruleId "stmt'"
+          "ass_space__string__space'_:_space'__term__space'_." ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ _ ∷ y₁ ∷ _ ∷ []) → do
               n ← toName y
@@ -407,35 +413,35 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
               return $ Ass n t
             ; _ → nothing })) ∷
 
-        (from-just (ruleId "stmt'" "normalize_space__term__space'_.") ,
+        (ruleId "stmt'" "normalize_space__term__space'_." ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ []) → do
               t ← toTerm y
               return $ Normalize t
             ; _ → nothing })) ∷
 
-        (from-just (ruleId "stmt'" "hnf_space__term__space'_.") ,
+        (ruleId "stmt'" "hnf_space__term__space'_." ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ []) → do
               t ← toTerm y
               return $ HeadNormalize t
             ; _ → nothing })) ∷
 
-        (from-just (ruleId "stmt'" "erase_space__term__space'_.") ,
+        (ruleId "stmt'" "erase_space__term__space'_." ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ []) → do
               t ← toTerm y
               return $ EraseSt t
             ; _ → nothing })) ∷
 
-        (from-just (ruleId "stmt'" "test_space__term__space'_.") ,
+        (ruleId "stmt'" "test_space__term__space'_." ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ []) → do
               t ← toTerm y
               return $ Test t
             ; _ → nothing })) ∷
 
-        (from-just (ruleId "stmt'" "seteval_space__term__space__string__space__string__space'_.") ,
+        (ruleId "stmt'" "seteval_space__term__space__string__space__string__space'_." ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ y'' ∷ _ ∷ []) → do
               t ← toTerm y
@@ -444,21 +450,21 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
               return $ SetEval t n n'
             ; _ → nothing })) ∷
 
-        (from-just (ruleId "stmt'" "import_space__string__space'_.") ,
+        (ruleId "stmt'" "import_space__string__space'_." ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ []) → do
               n ← toName y
               return $ Import n
             ; _ → nothing })) ∷
 
-        (from-just (ruleId "stmt'" "cmd_space__string__space'_.") ,
+        (ruleId "stmt'" "cmd_space__string__space'_." ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ []) → do
               n ← toName y
               return $ Shell n
             ; _ → nothing })) ∷
 
-        (from-just (ruleId "stmt'" "") ,
+        (ruleId "stmt'" "" ,
           return Empty) ∷
 
         []
@@ -468,8 +474,8 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
   where
     toLetTail : Tree (ℕ ⊎ Char) → Maybe AnnTerm
     toLetTail (Node x x₁) =
-      decCase x of
-        (from-just (ruleId "lettail" ":_space'__term__space'_.") ,
+      decCase just x of
+        (ruleId "lettail" ":_space'__term__space'_." ,
           (case x₁ of λ
             { (_ ∷ y ∷ _ ∷ []) → toTerm y
             ; _ → nothing })) ∷
@@ -479,7 +485,7 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
 {-# CATCHALL #-}
 toStmt _ = nothing
 
-module CoreParser-Internal {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
+module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
   preCoreGrammar : M Grammar
   preCoreGrammar = generateCFG "stmt" (map fromList coreGrammarGenerator)
@@ -487,7 +493,7 @@ module CoreParser-Internal {M} {{_ : Monad M}} {{_ : MonadExcept M String}} wher
   parse' : Grammar → String → M (Tree (String ⊎ Char) × String)
   parse' (fst , fst₁ , snd) s = do
     res ← LL1Parser.parse (proj₂ snd) matchMulti show fst₁ M s
-    return (Data.Product.map₁ (fmap {{Tree-Functor}} (Data.Sum.map₁ (proj₁ snd))) res)
+    return (Data.Product.map₁ (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ (proj₁ snd))) res)
 
   parse : String → M (Tree (String ⊎ Char) × String)
   parse s = do
@@ -527,5 +533,3 @@ module CoreParser-Internal {M} {{_ : Monad M}} {{_ : MonadExcept M String}} wher
       { (just x) → return (x , rest)
       ; nothing →
         throwError ("Error while converting syntax tree to statement!\nTree:\n" + show y + "\nRemaining: " + s) }
-
-open CoreParser-Internal public

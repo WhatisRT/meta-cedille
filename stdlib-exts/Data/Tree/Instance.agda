@@ -14,7 +14,7 @@ open import Data.Tree.Base
 instance
   {-# TERMINATING #-}
   Tree-Functor : Functor Tree
-  Tree-Functor = record { fmap = helper }
+  Tree-Functor = record { _<$>_ = helper }
     where
       helper : ∀ {A B} -> (A -> B) -> Tree A -> Tree B
       helper f (Node x x₁) = Node (f x) (map (helper f) x₁)

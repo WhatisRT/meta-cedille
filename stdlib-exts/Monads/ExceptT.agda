@@ -6,14 +6,19 @@ open import Class.Monad.State
 open import Class.MonadTrans
 open import Data.Sum
 open import Function
+open import Level
 
-ExceptT : ∀ {a b} (M : Set a -> Set b) -> Set a -> Set a -> Set b
+private
+  variable
+    a : Level
+
+ExceptT : (M : Set a -> Set a) -> Set a -> Set a -> Set a
 ExceptT M E A = M (E ⊎ A)
 
-ExceptT-MonadTrans : ∀ {a b} {E : Set a} -> MonadTrans {a} (λ (M : Set a -> Set b) -> ExceptT M E)
-ExceptT-MonadTrans = record { embed = λ x -> x >>= (return ∘ inj₂) ; transform = λ τ x -> τ _ x }
+ExceptT-MonadTrans : {E : Set a} -> MonadTrans (λ (M : Set a -> Set a) -> ExceptT M E)
+ExceptT-MonadTrans = record { embed = λ x -> x >>= (return ∘ inj₂) }
 
-module ExceptT-Internal {a b} {M : Set a -> Set b} {{mon : Monad M}} {E : Set a} where
+module _ {M : Set a -> Set a} {{_ : Monad M}} {E : Set a} where
 
   ExceptT-Monad : Monad (ExceptT M E)
   ExceptT-Monad = record { _>>=_ = helper ; return = λ x → (return $ inj₂ x) }
@@ -25,7 +30,7 @@ module ExceptT-Internal {a b} {M : Set a -> Set b} {{mon : Monad M}} {E : Set a}
     throwError' : ∀ {A : Set a} -> E -> ExceptT M E A
     throwError' = return ∘ inj₁
 
-    catchError' : ∀ {A : Set a} -> ExceptT M E A -> (E -> ExceptT M E A) -> ExceptT M E A
+    catchError' : ∀ {A} -> ExceptT M E A -> (E -> ExceptT M E A) -> ExceptT M E A
     catchError' x f = x >>= λ { (inj₁ x) → f x ; (inj₂ y) → return {{ExceptT-Monad}} y }
 
   ExceptT-MonadExcept : MonadExcept (ExceptT M E) {{ExceptT-Monad}} E
@@ -34,7 +39,4 @@ module ExceptT-Internal {a b} {M : Set a -> Set b} {{mon : Monad M}} {E : Set a}
   ExceptT-MonadState : ∀ {S} {{_ : MonadState M S}} -> MonadState (ExceptT M E) {{ExceptT-Monad}} S
   ExceptT-MonadState = record
     { get = embed {{ExceptT-MonadTrans}} get
-    ; put = embed {{ExceptT-MonadTrans}} ∘ put
-    ; state = embed {{ExceptT-MonadTrans}} ∘ state }
-
-open ExceptT-Internal public
+    ; put = embed {{ExceptT-MonadTrans}} ∘ put }

@@ -72,11 +72,10 @@ module LL1Parser {V : Set} {{_ : Eq V}} (showV : V → String) {a}
 
   {-# NON_TERMINATING #-}
   parsingTable : V → String → Maybe Rule
-  parsingTable v x with R v
-  ... | rules =
-    mmap (-,_)
-      (head (boolDropWhile (not ∘ (startWith x)) (AllRules v)) <∣>
-      (head (boolDropWhile (not ∘ produces-ε) (AllRules v))))
+  parsingTable v x with (λ P → head $ boolDropWhile (not ∘ P) $ AllRules v)
+  ... | firstRule = -,_ <$>
+      (firstRule (startWith x) <∣> firstRule produces-ε)
+      -- select the first rule starting with x, or the first that is empty
     where
       produces-ε : {v : V} → R v → Bool
       produces-ε r = null $ Rstring r
@@ -140,7 +139,7 @@ module LL1Parser {V : Set} {{_ : Eq V}} (showV : V → String) {a}
       resToTree' (inj₂ l ∷ l₁) = just (Node (inj₂ l) [] , l₁)
 
       resToTree : List (Rule ⊎ Char) → Maybe SynTree
-      resToTree x = fmap proj₁ $ resToTree' x
+      resToTree x = proj₁ <$> resToTree' x
 
   parse : String → M (SynTree × String)
   parse = parseInit S

@@ -2,6 +2,7 @@ module Data.List.Exts where
 
 open import Class.Equality
 open import Class.Monad
+open import Class.Functor
 open import Data.List
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Maybe.Instance
@@ -19,7 +20,7 @@ findIndexList : {A : Set} {P : A -> Set} -> Decidable P -> List A -> Maybe ℕ
 findIndexList P? [] = nothing
 findIndexList P? (x ∷ v) with P? x
 ... | yes p = just 0
-... | no ¬p = mmap suc (findIndexList P? v)
+... | no ¬p = suc <$> findIndexList P? v
 
 dropHeadIfAny : ∀ {a} {A : Set a} -> List A -> List A
 dropHeadIfAny [] = []

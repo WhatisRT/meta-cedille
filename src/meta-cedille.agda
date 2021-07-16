@@ -61,7 +61,7 @@ rep Γ = do
   putStr "\nλ> "
   flushStdout
   input ← getLine
-  mmap proj₁ $ eval Γ input runtimeFlagsDefault
+  proj₁ <$> eval Γ input runtimeFlagsDefault
 
 {-# NON_TERMINATING #-}
 loop : ∀ {a} {A : Set a} → A → (A → IO A) → IO ⊤
@@ -114,7 +114,7 @@ maximum (x ∷ l) = x ⊔ maximum l
 
 helpString : String
 helpString = "Usage: meta-cedille [OPTIONS...]\n" +
-  concat (map (λ { (fst , snd) → "    --" + padRight ' ' padLength fst + snd + "\n" }) helpTable)
+  concat ((λ { (fst , snd) → "    --" + padRight ' ' padLength fst + snd + "\n" }) <$> helpTable)
   where
     helpTable : List (String × String)
     helpTable =
@@ -124,7 +124,7 @@ helpString = "Usage: meta-cedille [OPTIONS...]\n" +
       ("no-repl" , "Exits the program when the REPL would start") ∷ []
 
     padLength : ℕ
-    padLength = 4 + maximum (map (Data.String.length ∘ proj₁) helpTable)
+    padLength = 4 + maximum (Data.String.length ∘ proj₁ <$> helpTable)
 
 open import Monads.Identity
 open import ParserGenerator

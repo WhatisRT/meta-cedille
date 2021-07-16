@@ -1,3 +1,5 @@
+{-# OPTIONS --type-in-type #-}
+
 module IO.Exts where
 
 import IO.Primitive as Prim
@@ -76,7 +78,7 @@ catchIOError a f = lift $ catchIOErrorPrim (run a) (run ∘ f)
 
 readFiniteFileError : String -> IO (String ⊎ String)
 readFiniteFileError name =
-  catchIOError
-    (do
+  catchIOError (do
       res <- readFiniteFile name
-      return (inj₂ res)) (return ∘ inj₁)
+      return (inj₂ res))
+    (return ∘ inj₁)

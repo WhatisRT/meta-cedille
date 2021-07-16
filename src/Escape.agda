@@ -46,7 +46,7 @@ groupEscaped = helper false
     helper true (x ∷ l) = ('\\' ∷ [ x ]) ∷ helper false l
 
 translate : List Char → Maybe (List Char)
-translate = (Data.Maybe.map concat) ∘ helper ∘ splitMulti '='
+translate = (concat <$>_) ∘ helper ∘ splitMulti '='
   where
     helper : List (List Char) → Maybe (List (List Char))
     helper [] = just []

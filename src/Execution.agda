@@ -95,7 +95,7 @@ checkInit (x ∷ l) [] = false
 checkInit (x ∷ l) (x₁ ∷ l') = x ≣ x₁ ∧ checkInit l l'
 
 getParserNamespace : GlobalContext → String → List String
-getParserNamespace Γ n = map (strDrop (strLength n + 1)) $ trieKeys $ lookupHSTrie n Γ
+getParserNamespace Γ n = strDrop (strLength n + 1) <$> (trieKeys $ lookupHSTrie n Γ)
 
 ruleToConstr : String → String
 ruleToConstr = fromList ∘ concat ∘ helper ∘ groupEscaped ∘ toList
@@ -116,7 +116,7 @@ ruleToConstr = fromList ∘ concat ∘ helper ∘ groupEscaped ∘ toList
 {-# TERMINATING #-}
 parseResultToConstrTree : String → Tree (String ⊎ Char) → AnnTerm
 parseResultToConstrTree namespace (Node x x₁) =
-  foldl (λ t t' → t ⟪$⟫ t') (ruleToTerm x) (map (parseResultToConstrTree namespace) x₁)
+  foldl (λ t t' → t ⟪$⟫ t') (ruleToTerm x) (parseResultToConstrTree namespace <$> x₁)
     where
       ruleToTerm : String ⊎ Char → AnnTerm
       ruleToTerm (inj₁ x) = FreeVar (namespace + "$" + ruleToConstr x)
@@ -210,7 +210,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
           ; _ → throwError "The evaluator needs to have a pi type" }
       )
       (throwError "Error while un-escaping parsing rules!")
-      (sequence $ map ((fmap fromList) ∘ translate ∘ toList) rules)
+      (sequence $ map ((_<$>_ fromList) ∘ translate ∘ toList) rules)
 
   executeStmt (Import x) = do
     res ← liftIO $ readFiniteFileError (x + ".mced")

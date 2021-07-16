@@ -5,23 +5,24 @@ open import Class.Monoid
 open import Data.Maybe
 open import Level
 
-record MonadExcept {a b} (M : Set a -> Set b) {{_ : Monad M}} (E : Set a) : Set (suc a ⊔ b) where
+private
+  variable
+    a : Level
+    A : Set a
+
+record MonadExcept (M : Set a → Set a) {{_ : Monad M}} (E : Set a) : Set (suc a) where
   field
-    throwError : ∀ {A} -> E -> M A
-    catchError : ∀ {A} -> M A -> (E -> M A) -> M A
+    throwError : E → M A
+    catchError : M A → (E → M A) → M A
 
-open MonadExcept {{...}} public
+  appendIfError : {{_ : Monoid E}} → M A → E → M A
+  appendIfError x s = catchError x λ e → throwError (e + s)
 
-module Except-Internal {a b} {A E : Set a} {M : Set a -> Set b} {{_ : Monad M}} {{_ : MonadExcept M E}} where
-
-  appendIfError : {{_ : Monoid E}} -> M A -> E -> M A
-  appendIfError x s = catchError x λ e -> throwError (e + s)
-
-  maybeToError : Maybe A -> E -> M A
+  maybeToError : Maybe A → E → M A
   maybeToError (just x) e = return x
   maybeToError nothing e = throwError e
 
-  tryElse : M A -> M A -> M A
-  tryElse x y = catchError x λ _ -> y
+  tryElse : M A → M A → M A
+  tryElse x y = catchError x λ _ → y
 
-open Except-Internal public
+open MonadExcept {{...}} public

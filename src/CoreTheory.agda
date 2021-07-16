@@ -169,7 +169,7 @@ mapPrimMetaArgs : (A → B) → primMetaArgs A m → primMetaArgs B m
 mapPrimMetaArgs f = Data.Vec.Recursive.map f _
 
 traversePrimMetaArgs : {{Monad M}} → (A → M B) → primMetaArgs A m → M (primMetaArgs B m)
-traversePrimMetaArgs {{mon}} = Data.Vec.Recursive.Categorical.mapM (toRawMonad mon)
+traversePrimMetaArgs {{mon}} = Data.Vec.Recursive.Categorical.mapM mon
 
 primMetaArgs-Show : (A → String) → primMetaArgs A m → String
 primMetaArgs-Show showA = Data.Vec.Recursive.foldr "" showA (λ _ a s → showA a + s) _
@@ -473,11 +473,11 @@ localContextLength (fst , snd) = length snd
 
 efficientLookupInContext : Name → Context → Maybe EfficientDef
 efficientLookupInContext (Bound x) (fst , snd) =
-  fmap (λ y → EfficientAxiom (incrementIndicesBy (suc𝕀 x) y)) (lookupMaybe (toℕ x) snd)
+  EfficientAxiom ∘ incrementIndicesBy (suc𝕀 x) <$> lookupMaybe (toℕ x) snd
 efficientLookupInContext (Free x) (fst , snd) = lookup x fst
 
 lookupInContext : Name → Context → Maybe Def
-lookupInContext n Γ = mmap toDef $ efficientLookupInContext n Γ
+lookupInContext n Γ = toDef <$> efficientLookupInContext n Γ
 
 validInContext : PureTerm → Context → Bool
 validInContext = helper 0
@@ -588,9 +588,9 @@ substPure t t' = decrementIndicesPure $ substIndexPure t (fromℕ 0) t'
     substIndexPure (Mu-P t t₁) k t' = Mu-P (substIndexPure t k t') (substIndexPure t₁ k t')
     substIndexPure (Epsilon-P t) k t' = Epsilon-P (substIndexPure t k t')
     substIndexPure (Ev-P EvalStmt t) k t' = Ev-P EvalStmt (substIndexPure t k t')
-    substIndexPure (Ev-P ShellCmd (t , t₁)) k t' = Ev-P ShellCmd ((substIndexPure t k t' , substIndexPure t₁ k t'))
-    substIndexPure (Ev-P CatchErr (t , t₁)) k t' = Ev-P CatchErr ((substIndexPure t k t' , substIndexPure t₁ k t'))
-    substIndexPure (Ev-P CheckTerm (t , t₁)) k t' = Ev-P CheckTerm ((substIndexPure t k t' , substIndexPure t₁ k t'))
+    substIndexPure (Ev-P ShellCmd (t , t₁)) k t' = Ev-P ShellCmd (substIndexPure t k t' , substIndexPure t₁ k t')
+    substIndexPure (Ev-P CatchErr (t , t₁)) k t' = Ev-P CatchErr (substIndexPure t k t' , substIndexPure t₁ k t')
+    substIndexPure (Ev-P CheckTerm (t , t₁)) k t' = Ev-P CheckTerm (substIndexPure t k t' , substIndexPure t₁ k t')
     substIndexPure (Char-P c) k t' = Char-P c
     substIndexPure (CharEq-P t t₁) k t' = CharEq-P (substIndexPure t k t') (substIndexPure t₁ k t')
 
@@ -756,7 +756,7 @@ synthType Γ t =
 
 synthType' Γ (Var-A x) =
   maybeToError
-    (fmap typeOfDef $ lookupInContext x Γ)
+    (typeOfDef <$> lookupInContext x Γ)
     ("Lookup failed: " + show x + " in context " + show {{Context-Show}} Γ)
 synthType' Γ (Sort-A ⋆) = return $ Sort-A □
 synthType' Γ (Sort-A □) = throwError "Cannot synthesize type for the superkind"

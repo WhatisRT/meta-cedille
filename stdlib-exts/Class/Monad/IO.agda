@@ -1,11 +1,11 @@
 module Class.Monad.IO where
 
-  open import Class.Monad
-  open import IO
-  open import Level
+open import Class.Monad
+open import IO
+open import Level
 
-  record MonadIO {a b} (M : Set a -> Set b) {{_ : Monad M}} : Set (suc a ⊔ b) where
-    field
-      liftIO : ∀ {A : Set a} -> IO A -> M A
+record MonadIO {a} (M : Set a → Set a) {{_ : Monad M}} : Set (suc a) where
+  field
+    liftIO : ∀ {A} → IO A → M A
 
-  open MonadIO {{...}} public
+open MonadIO {{...}} public
