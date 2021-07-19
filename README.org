@@ -3,7 +3,7 @@
 This is the reference implementation for a version of cedille that supports metaprogramming. The [[https://github.com/WhatisRT/meta-cedille/wiki][wiki]] and [[https://whatisrt.github.io/][blog]] contain some information and documentation.
 * Building
 - Manually
-=Agda 2.6.1=, the Agda standard library (version 1.4) and =bytestring-trie= (the Haskell library) are required. If those are setup correctly, just use the makefile. If you are using =stack=, you can also try =make stack= (this will not install Agda and the Agda standard library for you though).
+=Agda 2.6.1=, the Agda standard library (version 1.6) and =bytestring-trie= (the Haskell library) are required. If those are setup correctly, just use the makefile. If you are using =stack=, you can also try =make stack= (this will not install Agda and the Agda standard library for you though).
 - Using Nix
 If you use =nix=, simply use =nix-build=.
 * Running the current tests/examples
