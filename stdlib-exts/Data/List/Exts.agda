@@ -6,7 +6,7 @@ open import Class.Functor
 open import Data.List
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Maybe.Instance
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc; _⊔_)
 open import Data.Product
 open import Relation.Nullary
 open import Relation.Unary
@@ -36,3 +36,7 @@ takeEven : ∀ {a} {A : Set a} -> List A -> List A
 takeEven [] = []
 takeEven (x ∷ []) = []
 takeEven (x ∷ x₁ ∷ l) = x₁ ∷ takeEven l
+
+maximum : List ℕ → ℕ
+maximum [] = 0
+maximum (x ∷ l) = x ⊔ maximum l

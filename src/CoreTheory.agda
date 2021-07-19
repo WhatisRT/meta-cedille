@@ -8,19 +8,19 @@
 module CoreTheory where
 
 import Agda.Builtin.Nat using (_+_; _-_; _==_)
+
 import Data.Product
+import Data.Vec.Recursive
+import Data.Vec.Recursive.Categorical
+
 open import Class.Map
 open import Class.Monad.Except
+open import Data.HSTrie
 open import Data.Integer using (ℤ; +_; -[1+_])
-open import Data.List using (length)
 open import Data.String using (toList; fromList)
 open import Data.Word using (Word64; toℕ; fromℕ)
 open import Data.Word64.Exts
 open import Monads.Except
-open import Relation.Nullary
-open import Data.HSTrie
-import Data.Vec.Recursive
-import Data.Vec.Recursive.Categorical
 
 open import Prelude
 

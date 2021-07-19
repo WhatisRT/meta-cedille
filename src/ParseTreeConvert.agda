@@ -9,21 +9,15 @@ module ParseTreeConvert where
 
 import Data.Product
 import Data.Sum
-open import Agda.Builtin.Nat using (_-_)
 open import Class.Map
 open import Class.Monad.Except
-open import Class.Traversable
-open import Data.Char using (toNat)
 open import Data.Fin.Instance
 open import Data.List using (break)
-open import Data.Maybe using () renaming (_<∣>_ to addMaybe)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList; fromChar)
 open import Data.Tree
 open import Data.Tree.Instance
 open import Data.Word using (fromℕ)
-open import Data.Word32
-open import Relation.Nullary
 
 open import Prelude
 open import Prelude.Strings
@@ -35,7 +29,7 @@ open import ParserGenerator
 
 -- accepts the head and tail of a string and returns the head of the full string without escape symbols
 unescape : Char → String → Char
-unescape c r = if ⌊ c ≟ '\\' ⌋ then (case strHead r of λ { nothing → c ; (just x) → x}) else c
+unescape c r = if ⌊ c ≟ '\\' ⌋ then (case strHead r of λ { nothing → c ; (just x) → x }) else c
 
 continueIfInit : ∀ {a} {A : Set a} → List Char → List Char → (List Char → A) → Maybe A
 continueIfInit {A = A} init s = helper init s
@@ -348,7 +342,7 @@ toTerm = helper []
 
         (ruleId "term" "κ_char_" , (case x₁ of λ
           { (z ∷ []) → do
-            c ← addMaybe (toChar z) (toChar' z)
+            c ← toChar z <∣> toChar' z
             return $ Char-A c
           ; _ → nothing })) ∷
 
@@ -518,7 +512,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
       convertIfChar : Tree (String ⊎ Char) → Maybe (Tree (ℕ ⊎ Char))
       convertIfChar (Node (inj₁ x) x₁) = do
-        rest ← addMaybe (stripPrefix "nameInitChar$" x) (stripPrefix "nameTailChar$" x)
+        rest ← stripPrefix "nameInitChar$" x <∣> stripPrefix "nameTailChar$" x
         (c , s) ← uncons rest
         just $ Node (inj₂ $ unescape c s) []
       convertIfChar (Node (inj₂ x) x₁) = nothing

@@ -5,25 +5,19 @@
 
 module Conversion where
 
-open import Class.Map
 open import Class.Monad.Except
-open import Class.Traversable
-open import Data.List using (map; length)
-open import Data.SimpleMap
 open import Data.String using (fromList; toList)
 open import Data.Tree
 open import Data.Tree.Instance
 open import Data.Word using (toℕ)
-open import Data.Word32
 
 open import CoreTheory
-open import InitEnv
 open import ParseTreeConvert
 
 open import Prelude
 open import Prelude.Strings
 
-module ConversionInternals {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
+module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
   private
     {-# TERMINATING #-} -- findOutermostConstructor returns a list of smaller terms
     buildConstructorTree : Context → PureTerm → Tree PureTerm
@@ -62,8 +56,6 @@ module ConversionInternals {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M
   constrsToStringList : Context → PureTerm → M (List String)
   constrsToStringList = constrsToAgda "name" (λ x → maybeToError (toNameList x) "Error while converting to string")
 
-open ConversionInternals public
-
 charListToTerm : List Char → AnnTerm
 charListToTerm [] = FreeVar "init$string$nil"
 charListToTerm (c ∷ cs) = FreeVar "init$string$cons" ⟪$⟫ Char-A c ⟪$⟫ charListToTerm cs
@@ -81,8 +73,7 @@ termToTerm t = Sort-A □ -- TODO
 
 termListToTerm : List AnnTerm → AnnTerm
 termListToTerm [] = FreeVar "init$termList$nil"
-termListToTerm (x ∷ l) =
-  FreeVar "init$termList$cons" ⟪$⟫ termToTerm x ⟪$⟫ termListToTerm l
+termListToTerm (x ∷ l) = FreeVar "init$termList$cons" ⟪$⟫ termToTerm x ⟪$⟫ termListToTerm l
 
 -- The type of results of executing a statement in the interpreter. This can be
 -- returned back to the code via embedExecutionResult

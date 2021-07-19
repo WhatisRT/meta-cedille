@@ -13,13 +13,9 @@ module Parser where
 open import Data.Sum using (isInj₁)
 open import Class.Monad.Except
 open import Data.String using (fromList; toList)
-open import Data.List hiding (lookup; uncons)
-open import Data.Maybe using (_<∣>_)
-open import Data.String.Exts
+open import Data.List using (boolDropWhile)
 open import Data.Tree
 
-open import Monads.Except
-open import Monads.Identity
 open import Prelude
 
 record CFG (V : Set) (MultiChar : Set) : Set₁ where

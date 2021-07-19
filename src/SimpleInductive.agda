@@ -1,7 +1,7 @@
 module SimpleInductive where
 
-open import Data.String using (fromList)
 open import Data.List
+open import Data.String using (fromList)
 
 open import Prelude
 

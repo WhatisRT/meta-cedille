@@ -4,7 +4,6 @@
 
 module Escape where
 
-import Data.Maybe
 open import Class.Map
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)

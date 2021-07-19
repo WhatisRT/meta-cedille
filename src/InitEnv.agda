@@ -6,7 +6,6 @@
 module InitEnv where
 
 open import Class.Map
-open import Class.Traversable
 open import Data.Char.Ranges
 open import Data.List using (dropWhile; takeWhile)
 open import Data.SimpleMap

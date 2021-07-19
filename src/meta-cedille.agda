@@ -3,19 +3,15 @@
 module meta-cedille where
 
 import IO.Primitive as Prim
-open import Data.List using (null; intersperse; span; map)
-open import Data.String using (toList; padRight)
-open import IO using (IO; putStr; run; appendFile; writeFile)
-open import IO.Exts
-open import IO.Instance
+open import Data.String using (toList)
+open import IO using (IO; putStr; run)
 open import Monads.Except
 open import Monads.ExceptT
-open import Relation.Unary
-open import Data.Unit.Polymorphic using (⊤; tt)
 
-open import Prelude hiding (⊤; tt)
+open import Prelude
 open import Prelude.Strings
 
+open import ParserGenerator
 open import CoreTheory
 open import Execution
 open import InitEnv
@@ -100,17 +96,13 @@ readOptions = do
     readArgs (x ∷ input) current =
       decCase x
         of
-          ("--no-repl" , readArgs input (record current { startRepl = false })) ∷
-          ("--load" , (case span argumentDec input of λ
-            { (files , rest) → readArgs rest (record current { importFiles = files }) }) ) ∷
-          ("--verbose" , readArgs input (record current { verbose = true })) ∷
-          ("--help" , readArgs input (record current { showHelp = true })) ∷
+          ("--no-repl" , readArgs input record current { startRepl = false }) ∷
+          ("--load"    , (case span argumentDec input of λ
+            { (files , rest) → readArgs rest record current { importFiles = files } })) ∷
+          ("--verbose" , readArgs input record current { verbose = true }) ∷
+          ("--help"    , readArgs input record current { showHelp = true }) ∷
           []
         default inj₁ ("Unknown option: " + x)
-
-maximum : List ℕ → ℕ
-maximum [] = 0
-maximum (x ∷ l) = x ⊔ maximum l
 
 helpString : String
 helpString = "Usage: meta-cedille [OPTIONS...]\n" +
@@ -118,16 +110,15 @@ helpString = "Usage: meta-cedille [OPTIONS...]\n" +
   where
     helpTable : List (String × String)
     helpTable =
-      ("help" , "Show this help") ∷
+      ("help"         , "Show this help") ∷
       ("load [FILES]" , "Loads a list of files before starting the REPL") ∷
-      ("verbose" , "Print supressed output before starting the REPL") ∷
-      ("no-repl" , "Exits the program when the REPL would start") ∷ []
+      ("verbose"      , "Print supressed output before starting the REPL") ∷
+      ("no-repl"      , "Exits the program when the REPL would start") ∷ []
 
     padLength : ℕ
     padLength = 4 + maximum (Data.String.length ∘ proj₁ <$> helpTable)
 
 open import Monads.Identity
-open import ParserGenerator
 
 initGrammar : Grammar
 initGrammar = from-inj₂ (preCoreGrammar {ExceptT Id String}

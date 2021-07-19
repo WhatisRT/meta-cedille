@@ -8,29 +8,18 @@
 
 module Execution where
 
-open import Class.Map
 open import Class.Monad.Except
 open import Class.Monad.IO
 open import Class.Monad.State
-open import Class.Traversable
-open import Data.List using (map; length)
 open import Data.HSTrie
-open import Data.SimpleMap
 open import Data.String using (fromList; toList)
-open import Data.String.Exts
 open import Data.Tree
-open import Data.Word32
 open import IO using (IO; readFiniteFile)
-open import IO.Exts
-open import IO.Instance
-open import Monads.Except
 
 open import Conversion
 open import CoreTheory
 open import Escape
-open import InitEnv
 open import ParseTreeConvert
-open import Parser
 open import ParserGenerator
 
 open import Prelude
