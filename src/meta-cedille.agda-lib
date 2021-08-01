@@ -1,3 +1,4 @@
 name: meta-cedille
 depend: standard-library
 include: . ../stdlib-exts
+flags: --guardedness

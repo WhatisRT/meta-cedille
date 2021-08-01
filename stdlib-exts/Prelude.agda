@@ -1,3 +1,5 @@
+{-# OPTIONS --guardedness #-}
+
 module Prelude where
 
 open import Class.Equality public

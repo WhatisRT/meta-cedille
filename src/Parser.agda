@@ -12,7 +12,7 @@ module Parser where
 
 open import Data.Sum using (isInj₁)
 open import Class.Monad.Except
-open import Data.String using (fromList; toList)
+open import Data.String using (fromList; toList; uncons)
 open import Data.List using (boolDropWhile)
 open import Data.Tree
 

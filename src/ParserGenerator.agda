@@ -14,7 +14,7 @@ open import Data.Fin.Map
 open import Data.List hiding (lookup; _[_]%=_; uncons)
 import Data.List.NonEmpty as NE
 open NE using (List⁺; _∷_)
-open import Data.String using (toList; fromChar) renaming (fromList to fromListS)
+open import Data.String using (toList; fromChar; uncons) renaming (fromList to fromListS)
 open import Data.Vec using (Vec; lookup; fromList; []; _∷_; _[_]%=_)
 open import Data.Vec.Exts
 

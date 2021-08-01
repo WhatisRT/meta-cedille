@@ -1,3 +1,5 @@
+{-# OPTIONS --guardedness #-}
+
 module Class.Monad.IO where
 
 open import Class.Monad

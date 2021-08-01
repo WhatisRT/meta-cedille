@@ -8,8 +8,8 @@ let ghcpkgs = import ((import <nixpkgs> {}).fetchFromGitHub {
     oldpkgs = import ((import <nixpkgs> {}).fetchFromGitHub {
       owner = "NixOS";
       repo = "nixpkgs";
-      rev = "a165aeceda9f9741d15bc2488425daeb06c0707e";
-      sha256 = "0bshzligqwbjlvx4jygv6k4c54mjdvj1d7xmfzgjl6hhybh3wjpd";
+      rev = "dd98b100651cfbb8804f32d852f75ef7c97a6b74";
+      sha256 = "08ck4y9yhw75qdqh3m6mfk7k0pqcwylffrw30h6dphmgsxq188ip";
     }) {}; # pinned to 21.05
 in with oldpkgs;
 stdenv.mkDerivation {

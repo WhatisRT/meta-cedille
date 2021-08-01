@@ -54,11 +54,6 @@ postulate
 strHead : String -> Maybe Char
 strHead s = MaybeWrapperToMaybe (primStrHead s)
 
-uncons : String -> Maybe (Char × String)
-uncons s with primUncons s
-uncons s | justWrapper (resWrapper x x₁) = just (x , x₁)
-uncons s | nothingWrapper = nothing
-
 shortenString : ℕ -> String -> String
 shortenString l s = if ⌊ length s <? l ⌋ then s else strTake l s ++ "..."
 

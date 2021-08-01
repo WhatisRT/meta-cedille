@@ -14,7 +14,7 @@ open import Class.Monad.Except
 open import Data.Fin.Instance
 open import Data.List using (break)
 open import Data.SimpleMap
-open import Data.String using (fromList; toList; fromChar)
+open import Data.String using (fromList; toList; fromChar; uncons)
 open import Data.Tree
 open import Data.Tree.Instance
 open import Data.Word using (fromℕ)
