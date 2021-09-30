@@ -2,9 +2,8 @@
 
 module meta-cedille where
 
-import IO.Primitive as Prim
 open import Data.String using (toList)
-open import IO using (IO; putStr; run)
+open import IO using (Main; run)
 open import Monads.Except
 open import Monads.ExceptT
 
@@ -133,7 +132,7 @@ loadFiles context flags files =
     then return (context , true)
     else eval context (concat $ map (λ file → "import " + file + ".") files) flags
 
-main : Prim.IO ⊤
+main : Main
 main = run $ do
   options ← readOptions
   case options of λ

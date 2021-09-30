@@ -1,15 +1,14 @@
 module Data.HSTrie where
 
 open import Class.Map
-open import Data.Char
-open import Data.Char.Instance
 open import Data.List
-open import Data.List.Instance
-open import Data.Product
 open import Data.String
 open import Data.String.Instance
 open import Data.Maybe
-open import Function
+
+private
+  variable
+    A B : Set
 
 {-#
   FOREIGN GHC
@@ -17,25 +16,16 @@ open import Function
   import Data.Text.Encoding
 #-}
 
-data Maybe' (A : Set) : Set where
-  nothing' : Maybe' A
-  just' : A -> Maybe' A
-
 postulate
   HSTrie : Set -> Set
-  emptyTrie : (A : Set) -> HSTrie A
-  insertTrie : (A : Set) -> String -> A -> HSTrie A -> HSTrie A
-  deleteTrie : (A : Set) -> String -> HSTrie A -> HSTrie A
-  lookupTrie : (A : Set) -> String -> HSTrie A -> Maybe' A
-  fmapTrie : (A B : Set) -> (A -> B) -> HSTrie A -> HSTrie B
-  trieKeysPrim : (A : Set) -> HSTrie A -> List String
-  submapTrie : (A : Set) -> String -> HSTrie A -> HSTrie A
+  emptyTrie : HSTrie A
+  insertTrie : String -> A -> HSTrie A -> HSTrie A
+  deleteTrie : String -> HSTrie A -> HSTrie A
+  lookupTrie : String -> HSTrie A -> Maybe A
+  fmapTrie : (A -> B) -> HSTrie A -> HSTrie B
+  trieKeysPrim : HSTrie A -> List String
+  submapTrie : String -> HSTrie A -> HSTrie A
 
-maybe'ToMaybe : {A : Set} -> Maybe' A -> Maybe A
-maybe'ToMaybe nothing' = nothing
-maybe'ToMaybe (just' a) = just a
-
-{-# COMPILE GHC Maybe' = data Maybe (Nothing | Just) #-}
 {-# COMPILE GHC HSTrie = type Trie #-}
 {-# COMPILE GHC emptyTrie = \ _ -> empty #-}
 {-# COMPILE GHC insertTrie = \ _ s -> insert (encodeUtf8 s) #-}
@@ -48,15 +38,15 @@ maybe'ToMaybe (just' a) = just a
 instance
   NDTrie-Map : MapClass String HSTrie
   NDTrie-Map = record
-           { insert = insertTrie _
-           ; remove = deleteTrie _
-           ; lookup = λ s t -> maybe'ToMaybe (lookupTrie _ s t)
-           ; mapSnd = fmapTrie _ _
-           ; emptyMap = emptyTrie _
+           { insert = insertTrie
+           ; remove = deleteTrie
+           ; lookup = lookupTrie
+           ; mapSnd = fmapTrie
+           ; emptyMap = emptyTrie
            }
 
-trieKeys : ∀ {A} -> HSTrie A -> List String
-trieKeys = trieKeysPrim _
+trieKeys : HSTrie A -> List String
+trieKeys = trieKeysPrim
 
-lookupHSTrie : ∀ {A} -> String -> HSTrie A -> HSTrie A
-lookupHSTrie = submapTrie _
+lookupHSTrie : String -> HSTrie A -> HSTrie A
+lookupHSTrie = submapTrie
