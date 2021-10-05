@@ -87,7 +87,7 @@ readOptions = do
   args ← getArgs
   return $ readArgs args defaultOptions
   where
-    argumentDec : Decidable (λ s → false ≡ checkInit "--" (toList s))
+    argumentDec : Decidable _
     argumentDec s = false ≟ checkInit "--" (toList s)
 
     readArgs : List String → Options → Except String Options

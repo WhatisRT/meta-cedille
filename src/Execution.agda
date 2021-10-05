@@ -221,6 +221,9 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executeTerm (Epsilon-P t) = return (([] , []) , t)
 
+  executeTerm (Gamma-P t t') =
+    catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ Erase (stringToTerm s)))
+
   executeTerm (Ev-P EvalStmt t) = do
     Γ ← getContext
     normStmt ← return $ normalizePure Γ t
@@ -234,9 +237,6 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     args ← constrsToStringList Γ $ normalizePure Γ t'
     res ← liftIO $ runShellCmd cmd args
     return (strResult res , Erase (stringToTerm res))
-
-  executeTerm (Ev-P CatchErr (t , t')) =
-    catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ Erase (stringToTerm s)))
 
   executeTerm (Ev-P CheckTerm (t , t')) = do
     Γ ← getContext

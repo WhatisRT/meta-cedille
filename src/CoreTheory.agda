@@ -26,7 +26,7 @@ open import Prelude
 
 private
   variable
-    A B : Set
+    A B C : Set
     M : Set → Set
 
 data Sort : Set where
@@ -139,7 +139,6 @@ instance
 data PrimMeta : Set where
   EvalStmt  : PrimMeta
   ShellCmd  : PrimMeta
-  CatchErr  : PrimMeta
   CheckTerm : PrimMeta
 
 private
@@ -147,19 +146,34 @@ private
     m : PrimMeta
 
 instance
+  PrimMeta-Eq : Eq PrimMeta
+  PrimMeta-Eq = record { _≟_ = helper }
+    where
+      helper : (m m' : PrimMeta) → Dec (m ≡ m')
+      helper EvalStmt EvalStmt = yes refl
+      helper EvalStmt ShellCmd = no (λ ())
+      helper EvalStmt CheckTerm = no (λ ())
+      helper ShellCmd EvalStmt = no (λ ())
+      helper ShellCmd ShellCmd = yes refl
+      helper ShellCmd CheckTerm = no (λ ())
+      helper CheckTerm EvalStmt = no (λ ())
+      helper CheckTerm ShellCmd = no (λ ())
+      helper CheckTerm CheckTerm = yes refl
+
+  PrimMeta-EqB : EqB PrimMeta
+  PrimMeta-EqB = Eq→EqB
+
   PrimMeta-Show : Show PrimMeta
   PrimMeta-Show = record { show = helper }
     where
       helper : PrimMeta → String
       helper EvalStmt  = "EvalStmt"
       helper ShellCmd  = "ShellCmd"
-      helper CatchErr  = "CatchErr"
       helper CheckTerm = "CheckTerm"
 
 primMetaArity : PrimMeta → ℕ
 primMetaArity EvalStmt  = 1
 primMetaArity ShellCmd  = 2
-primMetaArity CatchErr  = 2
 primMetaArity CheckTerm = 2
 
 primMetaArgs : Set → PrimMeta → Set
@@ -173,6 +187,15 @@ traversePrimMetaArgs {{mon}} = Data.Vec.Recursive.Categorical.mapM mon
 
 primMetaArgs-Show : (A → String) → primMetaArgs A m → String
 primMetaArgs-Show showA = Data.Vec.Recursive.foldr "" showA (λ _ a s → showA a + s) _
+
+primMetaArgsZipWith : (A → B → C) → primMetaArgs A m → primMetaArgs B m → primMetaArgs C m
+primMetaArgsZipWith f x y = Data.Vec.Recursive.zipWith f _ x y
+
+primMetaArgsSequence : {{Monad M}} → primMetaArgs (M A) m → M (primMetaArgs A m)
+primMetaArgsSequence {{mon}} = Data.Vec.Recursive.Categorical.sequenceM mon
+
+primMetaArgsAnd : primMetaArgs Bool m → Bool
+primMetaArgsAnd = Data.Vec.Recursive.foldr {P = const Bool} true id (const _∧_) _
 
 record TermLike (T : Set) : Set where
   infixr -1 _⟪$⟫_ -- same as $
@@ -196,6 +219,7 @@ data PureTerm : Set where
   M-P : PureTerm → PureTerm
   Mu-P : PureTerm → PureTerm → PureTerm
   Epsilon-P : PureTerm → PureTerm
+  Gamma-P : PureTerm → PureTerm → PureTerm
   Ev-P : (m : PrimMeta) → primMetaArgs PureTerm m → PureTerm
   Char-P : Char → PureTerm
   CharEq-P : PureTerm → PureTerm → PureTerm
@@ -221,6 +245,7 @@ instance
       helper l (M-P t) = "M " + helper l t
       helper l (Mu-P t t₁) = "μ " + helper l t + " " + helper l t₁
       helper l (Epsilon-P t) = "ε " + helper l t
+      helper l (Gamma-P t t₁) = "Γ " + helper l t + " " + helper l t₁
       helper l (Ev-P m args) = "ζ " + show m + " " + primMetaArgs-Show (helper l) args
       helper l (Char-P c) = "Char " + show c
       helper l (CharEq-P t t') = "CharEq " + show t + " " + show t'
@@ -233,6 +258,7 @@ private
       then return tt
       else throwError (s + " " + show a + " isn't equal to name " + show a')
 
+{-# TERMINATING #-}
 pureTermBeq : {{_ : Monad M}} {{_ : MonadExcept M String}}
   → PureTerm → PureTerm → M ⊤
 pureTermBeq (Var-P x) (Var-P x₁) = beqMonadHelper x x₁ "Name"
@@ -247,9 +273,10 @@ pureTermBeq (Eq-P t t₁) (Eq-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x�
 pureTermBeq (M-P t) (M-P x) = pureTermBeq x t
 pureTermBeq (Mu-P t t₁) (Mu-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
 pureTermBeq (Epsilon-P t) (Epsilon-P x) = pureTermBeq t x
-pureTermBeq (Ev-P EvalStmt t) (Ev-P EvalStmt x) = pureTermBeq t x
-pureTermBeq (Ev-P ShellCmd (t , t₁)) (Ev-P ShellCmd (x , x₁)) = pureTermBeq t x >> pureTermBeq t₁ x₁
-pureTermBeq (Ev-P CatchErr (t , t₁)) (Ev-P CatchErr (x , x₁)) = pureTermBeq t x >> pureTermBeq t₁ x₁
+pureTermBeq (Gamma-P t t₁) (Gamma-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
+pureTermBeq (Ev-P m t) (Ev-P m' x) with m ≟ m'
+... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith pureTermBeq t x
+... | no  _    = throwError $ show m + " and " + show m' + " aren't equal!"
 pureTermBeq (Char-P c) (Char-P c') = beqMonadHelper c c' "Char"
 pureTermBeq (CharEq-P t t₁) (CharEq-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
 {-# CATCHALL #-}
@@ -280,6 +307,7 @@ data AnnTerm : Set where
   M-A : AnnTerm → AnnTerm
   Mu-A : AnnTerm → AnnTerm → AnnTerm
   Epsilon-A : AnnTerm → AnnTerm
+  Gamma-A : AnnTerm → AnnTerm → AnnTerm
   Ev-A : (x : PrimMeta) → primMetaArgs AnnTerm x → AnnTerm
   Char-A : Char → AnnTerm
   CharEq-A : AnnTerm → AnnTerm → AnnTerm
@@ -315,9 +343,20 @@ instance
       helper l (M-A t) = "M " + helper l t
       helper l (Mu-A t t₁) = "μ " + helper l t + " " + helper l t₁
       helper l (Epsilon-A t) = "ε " + helper l t
+      helper l (Gamma-A t t₁) = "Γ " + helper l t + " " + helper l t₁
       helper l (Ev-A m args) = "Ev " + show m + " " + primMetaArgs-Show (helper l) args
       helper l (Char-A c) = "Char " + show c
       helper l (CharEq-A t t') = "CharEq " + show t + " " + show t'
+
+primMetaS : (m : PrimMeta) → primMetaArgs AnnTerm m
+primMetaS EvalStmt = FreeVar "init$stmt"
+primMetaS ShellCmd = (FreeVar "init$string" , FreeVar "init$stringList")
+primMetaS CheckTerm = (Sort-A ⋆ , FreeVar "init$term")
+
+primMetaT : (m : PrimMeta) → primMetaArgs AnnTerm m → AnnTerm
+primMetaT EvalStmt _ = FreeVar "init$metaResult"
+primMetaT ShellCmd _ = FreeVar "init$string"
+primMetaT CheckTerm (t , _) = t
 
 data Def : Set where
   Let : AnnTerm → AnnTerm → Def
@@ -365,6 +404,7 @@ modifyIndicesPure = helper $ fromℕ 0
     helper k n (M-P t) = M-P (helper k n t)
     helper k n (Mu-P t t₁) = Mu-P (helper k n t) (helper k n t₁)
     helper k n (Epsilon-P t) = Epsilon-P (helper k n t)
+    helper k n (Gamma-P t t₁) = Gamma-P (helper k n t) (helper k n t₁)
     helper k n (Ev-P m args) = Ev-P m (mapPrimMetaArgs (helper k n) args)
     helper k n (Char-P c) = Char-P c
     helper k n (CharEq-P t t') = CharEq-P (helper k n t) (helper k n t')
@@ -403,6 +443,7 @@ modifyIndices = helper (fromℕ 0)
     helper k n (M-A t) = M-A (helper k n t)
     helper k n (Mu-A t t₁) = Mu-A (helper k n t) (helper k n t₁)
     helper k n (Epsilon-A t) = Epsilon-A (helper k n t)
+    helper k n (Gamma-A t t₁) = Gamma-A (helper k n t) (helper k n t₁)
     helper k n (Ev-A m args) = Ev-A m (mapPrimMetaArgs (helper k n) args)
     helper k n (Char-A c) = Char-A c
     helper k n (CharEq-A t t₁) = CharEq-A (helper k n t) (helper k n t₁)
@@ -413,6 +454,7 @@ incrementIndicesBy i = modifyIndices (suc𝕀 i)
 decrementIndices : AnnTerm → AnnTerm
 decrementIndices = modifyIndices (fromℕ 0)
 
+{-# TERMINATING #-}
 checkFree : Name → PureTerm → Bool
 checkFree = helper 0
   where
@@ -434,10 +476,8 @@ checkFree = helper 0
     helper k n (M-P t) = helper k n t
     helper k n (Mu-P t t₁) = helper k n t ∧ helper k n t₁
     helper k n (Epsilon-P t) = helper k n t
-    helper k n (Ev-P EvalStmt t) = helper k n t
-    helper k n (Ev-P ShellCmd (t , t₁)) = helper k n t ∧ helper k n t₁
-    helper k n (Ev-P CatchErr (t , t₁)) = helper k n t ∧ helper k n t₁
-    helper k n (Ev-P CheckTerm (t , t₁)) = helper k n t ∧ helper k n t₁
+    helper k n (Gamma-P t t₁) = helper k n t ∧ helper k n t₁
+    helper k n (Ev-P m t) = primMetaArgsAnd $ mapPrimMetaArgs (helper k n) t
     helper k n (Char-P c) = false
     helper k n (CharEq-P t t₁) = helper k n t ∧ helper k n t₁
 
@@ -479,6 +519,7 @@ efficientLookupInContext (Free x) (fst , snd) = lookup x fst
 lookupInContext : Name → Context → Maybe Def
 lookupInContext n Γ = toDef <$> efficientLookupInContext n Γ
 
+{-# TERMINATING #-}
 validInContext : PureTerm → Context → Bool
 validInContext = helper 0
   where
@@ -497,10 +538,8 @@ validInContext = helper 0
     helper k (M-P t) Γ = helper k t Γ
     helper k (Mu-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
     helper k (Epsilon-P t) Γ = helper k t Γ
-    helper k (Ev-P EvalStmt t) Γ = helper k t Γ
-    helper k (Ev-P ShellCmd (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
-    helper k (Ev-P CatchErr (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
-    helper k (Ev-P CheckTerm (t , t₁)) Γ = helper k t Γ ∧ helper k t₁ Γ
+    helper k (Gamma-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
+    helper k (Ev-P m t) Γ = primMetaArgsAnd $ mapPrimMetaArgs (λ x → helper k x Γ) t
     helper k (Char-P c) Γ = true
     helper k (CharEq-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
 
@@ -528,11 +567,13 @@ Erase (Eq-A x x₁) = Eq-P (Erase x) (Erase x₁)
 Erase (M-A t) = M-P (Erase t)
 Erase (Mu-A t t₁) = Mu-P (Erase t) (Erase t₁)
 Erase (Epsilon-A t) = Epsilon-P (Erase t)
+Erase (Gamma-A t t₁) = Gamma-P (Erase t) (Erase t₁)
 Erase (Ev-A m args) = Ev-P m (mapPrimMetaArgs Erase args)
 Erase (Char-A c) = Char-P c
 Erase (CharEq-A x x₁) = CharEq-P (Erase x) (Erase x₁)
 
 -- substitute the first unbound variable in t with t'
+{-# TERMINATING #-}
 subst : AnnTerm → AnnTerm → AnnTerm
 subst t t' = decrementIndices $ substIndex t (fromℕ 0) t'
   where
@@ -561,14 +602,13 @@ subst t t' = decrementIndices $ substIndex t (fromℕ 0) t'
     substIndex (M-A t) k t' = M-A (substIndex t k t')
     substIndex (Mu-A t t₁) k t' = Mu-A (substIndex t k t') (substIndex t₁ k t')
     substIndex (Epsilon-A t) k t' = Epsilon-A (substIndex t k t')
-    substIndex (Ev-A EvalStmt t) k t' = Ev-A EvalStmt (substIndex t k t')
-    substIndex (Ev-A ShellCmd (t , t₁)) k t' = Ev-A ShellCmd ((substIndex t k t' , substIndex t₁ k t'))
-    substIndex (Ev-A CatchErr (t , t₁)) k t' = Ev-A CatchErr ((substIndex t k t' , substIndex t₁ k t'))
-    substIndex (Ev-A CheckTerm (t , t₁)) k t' = Ev-A CheckTerm ((substIndex t k t' , substIndex t₁ k t'))
+    substIndex (Gamma-A t t₁) k t' = Gamma-A (substIndex t k t') (substIndex t₁ k t')
+    substIndex (Ev-A m t) k t' = Ev-A m $ mapPrimMetaArgs (λ x → substIndex x k t') t
     substIndex (Char-A c) k t' = Char-A c
     substIndex (CharEq-A t t₁) k t' = CharEq-A (substIndex t k t') (substIndex t₁ k t')
 
 -- substitute the first unbound variable in t with t'
+{-# TERMINATING #-}
 substPure : PureTerm → PureTerm → PureTerm
 substPure t t' = decrementIndicesPure $ substIndexPure t (fromℕ 0) t'
   where
@@ -587,10 +627,8 @@ substPure t t' = decrementIndicesPure $ substIndexPure t (fromℕ 0) t'
     substIndexPure (M-P t) k t' = M-P (substIndexPure t k t')
     substIndexPure (Mu-P t t₁) k t' = Mu-P (substIndexPure t k t') (substIndexPure t₁ k t')
     substIndexPure (Epsilon-P t) k t' = Epsilon-P (substIndexPure t k t')
-    substIndexPure (Ev-P EvalStmt t) k t' = Ev-P EvalStmt (substIndexPure t k t')
-    substIndexPure (Ev-P ShellCmd (t , t₁)) k t' = Ev-P ShellCmd (substIndexPure t k t' , substIndexPure t₁ k t')
-    substIndexPure (Ev-P CatchErr (t , t₁)) k t' = Ev-P CatchErr (substIndexPure t k t' , substIndexPure t₁ k t')
-    substIndexPure (Ev-P CheckTerm (t , t₁)) k t' = Ev-P CheckTerm (substIndexPure t k t' , substIndexPure t₁ k t')
+    substIndexPure (Gamma-P t t₁) k t' = Gamma-P (substIndexPure t k t') (substIndexPure t₁ k t')
+    substIndexPure (Ev-P m t) k t' = Ev-P m $ mapPrimMetaArgs (λ x → substIndexPure x k t') t
     substIndexPure (Char-P c) k t' = Char-P c
     substIndexPure (CharEq-P t t₁) k t' = CharEq-P (substIndexPure t k t') (substIndexPure t₁ k t')
 
@@ -659,6 +697,7 @@ normalizePure Γ (Eq-P t t₁) = Eq-P (normalizePure Γ t) (normalizePure Γ t�
 normalizePure Γ (M-P t) = M-P (normalizePure Γ t)
 normalizePure Γ (Mu-P t t₁) = Mu-P (normalizePure Γ t) (normalizePure Γ t₁)
 normalizePure Γ (Epsilon-P t) = Epsilon-P (normalizePure Γ t)
+normalizePure Γ (Gamma-P t t₁) = Gamma-P (normalizePure Γ t) (normalizePure Γ t₁)
 normalizePure Γ (Ev-P m args) = Ev-P m (mapPrimMetaArgs (normalizePure Γ) args)
 normalizePure Γ (Char-P c) = (Char-P c)
 normalizePure Γ (CharEq-P t t₁) with normalizePure Γ t | normalizePure Γ t₁
@@ -725,9 +764,10 @@ module CheckEquality {{_ : Monad M}} {{_ : MonadExcept M String}} (Γ : Context)
       compareHnfs (M-P t) (M-P x) = checkβηPure x t
       compareHnfs (Mu-P t t₁) (Mu-P x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
       compareHnfs (Epsilon-P t) (Epsilon-P x) = checkβηPure t x
-      compareHnfs (Ev-P EvalStmt t) (Ev-P EvalStmt x) = checkβηPure t x
-      compareHnfs (Ev-P ShellCmd (t , t₁)) (Ev-P ShellCmd (x , x₁)) = checkβηPure t x >> checkβηPure t₁ x₁
-      compareHnfs (Ev-P CatchErr (t , t₁)) (Ev-P CatchErr (x , x₁)) = checkβηPure t x >> checkβηPure t₁ x₁
+      compareHnfs (Gamma-P t t₁) (Gamma-P x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
+      compareHnfs t@(Ev-P m x) t'@(Ev-P m' x') with m ≟ m'
+      ... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith checkβηPure x x'
+      ... | no  _    = hnfError t t'
       compareHnfs (Char-P c) (Char-P c') = beqMonadHelper c c' "Char"
       compareHnfs (CharEq-P t t₁) (CharEq-P x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
       compareHnfs (Lam-P _ t) t₁ = case normalizePure Γ t of λ
@@ -962,36 +1002,14 @@ synthType' Γ (Epsilon-A t) = do
   T ← synthType Γ t
   return $ M-A T
 
-synthType' Γ (Ev-A EvalStmt t) = do
-  T ← synthType Γ t
+synthType' Γ (Ev-A m t) = do
+  T ← traversePrimMetaArgs (synthType Γ) t
   appendIfError
-    (checkβη Γ T $ FreeVar "init$stmt")
-    "The term supplied to EvalStmt needs to be of type 'init$stmt'"
-  return $ M-A $ FreeVar "init$metaResult"
+    (primMetaArgsSequence $ primMetaArgsZipWith (checkβη Γ) T $ primMetaS m)
+    ("The arguments for primitive " + show m + " have incorrect types!")
+  return $ M-A $ primMetaT m t
 
-synthType' Γ (Ev-A ShellCmd (t , t₁)) = do
-  T ← synthType Γ t
-  T₁ ← synthType Γ t₁
-  appendIfError
-    (checkβη Γ T $ FreeVar "init$string")
-    "The first term supplied to ShellCmd needs to be of type 'init$string'"
-  appendIfError
-    (checkβη Γ T₁ $ FreeVar "init$stringList")
-    "The second term supplied to ShellCmd needs to be of type 'init$stringList'"
-  return $ M-A (FreeVar "init$string")
-
-synthType' Γ (Ev-A CheckTerm (t , t₁)) = do
-  T ← synthType Γ t
-  T₁ ← synthType Γ t₁
-  appendIfError
-    (checkβη Γ T $ Sort-A ⋆)
-    "The first term supplied to CheckTerm needs to be of type *"
-  appendIfError
-    (checkβη Γ T₁ $ FreeVar "init$term")
-    "The second term supplied to CheckTerm needs to be of type 'init$term"
-  return $ M-A t
-
-synthType' Γ (Ev-A CatchErr (t , t₁)) = do
+synthType' Γ (Gamma-A t t₁) = do
   T ← synthType Γ t
   T₁ ← synthType Γ t₁
   case (hnfNorm Γ T) of λ
