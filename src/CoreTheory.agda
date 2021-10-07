@@ -10,8 +10,6 @@ module CoreTheory where
 import Agda.Builtin.Nat using (_+_; _-_; _==_)
 
 import Data.Product
-import Data.Vec.Recursive
-import Data.Vec.Recursive.Categorical
 
 open import Class.Map
 open import Class.Monad.Except
@@ -23,6 +21,8 @@ open import Data.Word64.Exts
 open import Monads.Except
 
 open import Prelude
+
+open import Theory.PrimMeta public
 
 private
   variable
@@ -111,6 +111,20 @@ instance
       helper (Bound x) = show x
       helper (Free x) = x
 
+record TermLike (T : Set) : Set where
+  infixr -1 _⟪$⟫_ -- same as $
+  field
+    Var : Name → T
+    _⟪$⟫_ : T → T → T
+
+  BoundVar : 𝕀 → T
+  BoundVar = Var ∘ Bound
+
+  FreeVar : GlobalName → T
+  FreeVar = Var ∘ Free
+
+open TermLike {{...}} public
+
 showVar : List String → Name → String
 showVar l (Bound x) with lookupMaybe (toℕ x) l
 ... | nothing = show x
@@ -136,76 +150,6 @@ instance
       helper : Const → String
       helper CharT = "CharT"
 
-data PrimMeta : Set where
-  EvalStmt  : PrimMeta
-  ShellCmd  : PrimMeta
-  CheckTerm : PrimMeta
-
-private
-  variable
-    m : PrimMeta
-
-instance
-  PrimMeta-Eq : Eq PrimMeta
-  PrimMeta-Eq = record { _≟_ = helper }
-    where
-      helper : (m m' : PrimMeta) → Dec (m ≡ m')
-      helper EvalStmt EvalStmt = yes refl
-      helper EvalStmt ShellCmd = no (λ ())
-      helper EvalStmt CheckTerm = no (λ ())
-      helper ShellCmd EvalStmt = no (λ ())
-      helper ShellCmd ShellCmd = yes refl
-      helper ShellCmd CheckTerm = no (λ ())
-      helper CheckTerm EvalStmt = no (λ ())
-      helper CheckTerm ShellCmd = no (λ ())
-      helper CheckTerm CheckTerm = yes refl
-
-  PrimMeta-EqB : EqB PrimMeta
-  PrimMeta-EqB = Eq→EqB
-
-  PrimMeta-Show : Show PrimMeta
-  PrimMeta-Show = record { show = helper }
-    where
-      helper : PrimMeta → String
-      helper EvalStmt  = "EvalStmt"
-      helper ShellCmd  = "ShellCmd"
-      helper CheckTerm = "CheckTerm"
-
-primMetaArity : PrimMeta → ℕ
-primMetaArity EvalStmt  = 1
-primMetaArity ShellCmd  = 2
-primMetaArity CheckTerm = 2
-
-primMetaArgs : Set → PrimMeta → Set
-primMetaArgs A m  = A Data.Vec.Recursive.^ (primMetaArity m)
-
-mapPrimMetaArgs : (A → B) → primMetaArgs A m → primMetaArgs B m
-mapPrimMetaArgs f = Data.Vec.Recursive.map f _
-
-traversePrimMetaArgs : {{Monad M}} → (A → M B) → primMetaArgs A m → M (primMetaArgs B m)
-traversePrimMetaArgs {{mon}} = Data.Vec.Recursive.Categorical.mapM mon
-
-primMetaArgs-Show : (A → String) → primMetaArgs A m → String
-primMetaArgs-Show showA = Data.Vec.Recursive.foldr "" showA (λ _ a s → showA a + s) _
-
-primMetaArgsZipWith : (A → B → C) → primMetaArgs A m → primMetaArgs B m → primMetaArgs C m
-primMetaArgsZipWith f x y = Data.Vec.Recursive.zipWith f _ x y
-
-primMetaArgsSequence : {{Monad M}} → primMetaArgs (M A) m → M (primMetaArgs A m)
-primMetaArgsSequence {{mon}} = Data.Vec.Recursive.Categorical.sequenceM mon
-
-primMetaArgsAnd : primMetaArgs Bool m → Bool
-primMetaArgsAnd = Data.Vec.Recursive.foldr {P = const Bool} true id (const _∧_) _
-
-record TermLike (T : Set) : Set where
-  infixr -1 _⟪$⟫_ -- same as $
-  field
-    BoundVar : 𝕀 → T
-    FreeVar : GlobalName → T
-    _⟪$⟫_ : T → T → T
-
-open TermLike {{...}} public
-
 data PureTerm : Set where
   Var-P : Name → PureTerm
   Sort-P : Sort → PureTerm
@@ -226,7 +170,7 @@ data PureTerm : Set where
 
 instance
   PureTerm-TermLike : TermLike PureTerm
-  PureTerm-TermLike = record { BoundVar = Var-P ∘ Bound ; FreeVar = Var-P ∘ Free ; _⟪$⟫_ = App-P }
+  PureTerm-TermLike = record { Var = Var-P ; _⟪$⟫_ = App-P }
 
   {-# TERMINATING #-}
   PureTerm-Show : Show PureTerm
@@ -314,7 +258,7 @@ data AnnTerm : Set where
 
 instance
   AnnTerm-TermLike : TermLike AnnTerm
-  AnnTerm-TermLike = record { BoundVar = Var-A ∘ Bound ; FreeVar = Var-A ∘ Free ; _⟪$⟫_ = App-A }
+  AnnTerm-TermLike = record { Var = Var-A ; _⟪$⟫_ = App-A }
 
   {-# TERMINATING #-}
   AnnTerm-Show : Show AnnTerm
