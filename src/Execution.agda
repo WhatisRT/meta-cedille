@@ -72,9 +72,9 @@ module StateHelpers {M : Set → Set} {{_ : Monad M}}
   addDef : GlobalName → Def → M String
   addDef n d = do
     Γ ← getContext
-    case insertInGlobalContext n d (contextToGlobal Γ) of λ
-      { (inj₁ x) → throwError x
-      ; (inj₂ y) → setContext y >> return ("Defined " + n + show d) }
+    case insertInGlobalContext n d (contextToGlobal Γ) of λ where
+      (inj₁ x) → throwError x
+      (inj₂ y) → setContext y >> return ("Defined " + n + show d)
 
 open StateHelpers
 
@@ -91,14 +91,14 @@ ruleToConstr = fromList ∘ concat ∘ helper ∘ groupEscaped ∘ toList
   where
     helper : List (List Char) → List (List Char)
     helper [] = []
-    helper (l ∷ l₁) = (case l of λ
-      { (c ∷ []) → if c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&'
+    helper (l ∷ l₁) = (case l of λ where
+      (c ∷ []) → if c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&'
         then [ c ]
         else escapeChar c
-      ; (_ ∷ c ∷ []) → if l ≣ "\\$" ∨ l ≣ "\\_" ∨ l ≣ "\\!" ∨ l ≣ "\\@" ∨ l ≣ "\\&"
+      (_ ∷ c ∷ []) → if l ≣ "\\$" ∨ l ≣ "\\_" ∨ l ≣ "\\!" ∨ l ≣ "\\@" ∨ l ≣ "\\&"
         then escapeChar c
         else l
-      ; _ → l }) ∷ (helper l₁)
+      _ → l) ∷ (helper l₁)
 
 -- Folds a tree of constructors back into a term by properly applying the
 -- constructors and prefixing the namespace
@@ -159,26 +159,6 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     res ← addDef n (Axiom t)
     return $ strResult res
 
-  executeStmt (Normalize t) = do
-    Γ ← getContext
-    T ← synthType Γ t
-    return $ strResult
-      (show t + " : " + show T + " normalizes to: " +
-      (show $ normalizePure Γ $ Erase t))
-
-  executeStmt (HeadNormalize t) = do
-    Γ ← getContext
-    T ← synthType Γ t
-    return $ strResult
-      (show t + " : " + show T + " head-normalizes to: " +
-      (show $ hnfNorm Γ t))
-
-  executeStmt (EraseSt t) = return $ strResult $ show $ Erase t
-
-  executeStmt (Test t) = do
-    Γ ← getContext
-    return $ strResult $ show $ normalizePure Γ $ Erase t
-
   executeStmt (SetEval t n start) = do
     Γ ← get'
     let Γ' = globalToContext Γ
@@ -187,29 +167,24 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
       (λ rules' → do
         y ← generateCFG start rules'
         T ← synthType Γ' t
-        case (hnfNorm Γ' T) of λ
-          { (Pi-A _ u u₁) → do
+        case (hnfNorm Γ' T) of λ where
+          (Pi-A _ u u₁) → do
             appendIfError (checkβη Γ' u $ FreeVar (n + "$" + start))
               "The evaluator needs to accept the parse result as input"
-            case (hnfNorm Γ' u₁) of λ
-              { (M-A _) → do
+            case (hnfNorm Γ' u₁) of λ where
+              (M-A _) → do
                 setMeta y n t
                 return (strResult "Successfully set the evaluator")
-              ; _ → throwError "The evaluator needs to return a M type" }
-          ; _ → throwError "The evaluator needs to have a pi type" }
-      )
+              _ → throwError "The evaluator needs to return a M type"
+          _ → throwError "The evaluator needs to have a pi type")
       (throwError "Error while un-escaping parsing rules!")
       (sequence $ map ((_<$>_ fromList) ∘ translate ∘ toList) rules)
 
   executeStmt (Import x) = do
     res ← liftIO $ readFiniteFileError (x + ".mced")
-    case res of λ
-      { (inj₁ x) → throwError x
-      ; (inj₂ y) → tryExecute y }
-
-  executeStmt (Shell s) = do
-    res ← liftIO $ runShellCmd s [""]
-    return $ strResult res
+    case res of λ where
+      (inj₁ x) → throwError x
+      (inj₂ y) → tryExecute y
 
   executeStmt Empty = return (strResult "")
 
@@ -248,6 +223,26 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
         "Type mismatch with the provided type!\nProvided: " + show t +
         "\nSynthesized: " + show T')
     return (strResult "" , Erase u)
+
+  executeTerm (Ev-P Normalize t) = do
+    Γ ← getContext
+    u ← catchError (constrsToTerm Γ $ normalizePure Γ t)
+                    (λ e → throwError $ "Error while converting " + show t + " to a term")
+    T ← synthType Γ u
+    return (strResult
+      (show u + " : " + show T + " normalizes to: " +
+      (show $ normalizePure Γ $ Erase u)) , (Erase $ pureTermToTerm $ normalizePure Γ $ Erase u))
+
+  executeTerm (Ev-P HeadNormalize t) = do
+    Γ ← getContext
+    u ← catchError (constrsToTerm Γ $ normalizePure Γ t)
+                    (λ e → throwError $ "Error while converting " + show t + " to a term")
+    T ← synthType Γ u
+    return (strResult
+      (show t + " : " + show T + " head-normalizes to: " +
+      (show $ hnfNorm Γ u)) , (Erase $ termToTerm $ hnfNorm Γ u))
+
+  -- executeStmt (EraseSt t) = return $ strResult $ show $ Erase t
 
   {-# CATCHALL #-}
   executeTerm t =

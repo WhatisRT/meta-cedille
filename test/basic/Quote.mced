@@ -49,13 +49,17 @@ let quote$mu := λ t : init$term λ t' : init$term [[[[init$term$=mu=_space__ter
 
 let quote$epsilon := λ t : init$term [[init$term$=epsilon=_space__term_ quote$singleSpace] t].
 
-let quote$Alpha := λ t : init$term [[init$term$=Alpha=_space__term_ quote$singleSpace] t].
+let quote$ZetaEvalStmt := λ t : init$term [[init$term$=zeta=EvalStmt_space__term_ quote$singleSpace] t].
 
-let quote$Beta := λ t : init$term λ t' : init$term [[[[init$term$=Beta=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
+let quote$ZetaShellCmd := λ t : init$term λ t' : init$term [[[[init$term$=zeta=ShellCmd_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
 
-let quote$Gamma := λ t : init$term λ t' : init$term [[[[init$term$=Gamma=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
+let quote$ZetaCheckTerm := λ t : init$term λ t' : init$term [[[[init$term$=zeta=CheckTerm_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
 
-let quote$Delta := λ t : init$term λ t' : init$term [[[[init$term$=Delta=_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
+let quote$ZetaNormalize := λ t : init$term [[init$term$=zeta=Normalize_space__term_ quote$singleSpace] t].
+
+let quote$ZetaHeadNormalize := λ t : init$term [[init$term$=zeta=HeadNormalize_space__term_ quote$singleSpace] t].
+
+let quote$ZetaCatchErr := λ t : init$term λ t' : init$term [[[[init$term$=zeta=CatchErr_space__term__space__term_ quote$singleSpace] t] quote$singleSpace] t'].
 
 let quote$constChar := init$const$Char.
 let quote$Kappa := λ c : init$const init$term$=Kappa=_const_.
@@ -72,16 +76,10 @@ let quote$annotatedLet' := λ n : String λ t : init$term λ t' : init$term [[[[
 
 let quote$annotatedLet := λ n : String λ t : init$term λ t' : init$term [quote$stmt'ToStmt [[[quote$annotatedLet' n] t] t']] : Π _ : String Π _ : init$term Π _ : init$term init$stmt.
 
-let quote$normalize' := λ t : init$term [[[init$stmt'$normalize_space__term__space'_=dot= quote$singleSpace] t] quote$noSpace] : Π _ : init$term init$stmt'.
-
 let quote$seteval' := λ t : init$term λ n : String λ n' : String
   [[[[[[[init$stmt'$seteval_space__term__space__string__space__string__space'_=dot= quote$singleSpace] t] quote$singleSpace] n] quote$singleSpace] n'] quote$noSpace].
 
-let quote$normalize := λ t : init$term [quote$stmt'ToStmt [quote$normalize' t]] : Π _ : init$term init$stmt.
-
 let quote$import' := λ n : String [[[init$stmt'$import_space__string__space'_=dot= quote$singleSpace] n] quote$noSpace].
-
-let quote$cmd := λ n : String [[[init$stmt'$cmd_space__string__space'_=dot= quote$singleSpace] n] quote$noSpace].
 
 let quote$A := init$nameInitChar$A.
 let quote$B := init$nameInitChar$B.

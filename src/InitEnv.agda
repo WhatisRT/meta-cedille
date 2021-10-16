@@ -70,10 +70,12 @@ private
     "term$=omega=_space__term_" ∷ -- this is M
     "term$=mu=_space__term__space__term_" ∷
     "term$=epsilon=_space__term_" ∷
-    "term$=Alpha=_space__term_" ∷ -- this is zeta EvalStmt
-    "term$=Beta=_space__term__space__term_" ∷ -- this is zeta ShellCmd
-    "term$=Gamma=_space__term__space__term_" ∷ -- this is zeta CatchErr
-    "term$=Delta=_space__term__space__term_" ∷ -- this is zeta CheckTerm
+    "term$=zeta=EvalStmt_space__term_" ∷
+    "term$=zeta=ShellCmd_space__term__space__term_" ∷
+    "term$=zeta=CheckTerm_space__term__space__term_" ∷
+    "term$=zeta=Normalize_space__term_" ∷
+    "term$=zeta=HeadNormalize_space__term_" ∷
+    "term$=zeta=CatchErr_space__term__space__term_" ∷ -- this is not actually in PrimMeta
     "term$=kappa=_char_" ∷ -- this constructs a Char
     "term$=gamma=_space__term__space__term_" ∷ -- charEq
 
@@ -81,13 +83,8 @@ private
 
     "stmt'$let_space__string__space'_=colon==equal=_space'__term__space'__lettail_" ∷
     "stmt'$ass_space__string__space'_=colon=_space'__term__space'_=dot=" ∷
-    "stmt'$normalize_space__term__space'_=dot=" ∷
-    "stmt'$hnf_space__term__space'_=dot=" ∷
-    "stmt'$erase_space__term__space'_=dot=" ∷
-    "stmt'$test_space__term__space'_=dot=" ∷
     "stmt'$seteval_space__term__space__string__space__string__space'_=dot=" ∷
     "stmt'$import_space__string__space'_=dot=" ∷
-    "stmt'$cmd_space__string__space'_=dot=" ∷
     "stmt'$" ∷
     "stmt$_space'__stmt'_" ∷
     []
@@ -147,7 +144,7 @@ private
     ++ "let init$string$_nameInitChar__string'_ := init$string$cons."
     ∷ "let init$string'$_nameTailChar__string'_ := init$string$cons."
     ∷ "let init$string'$ := init$string$nil."
-    ∷ "let eval := λ s : init$stmt Α s." ∷ "seteval eval init stmt." ∷ []
+    ∷ "let eval := λ s : init$stmt ζEvalStmt s." ∷ "seteval eval init stmt." ∷ []
 
   grammarWithChars : List (List Char)
   grammarWithChars = grammar ++

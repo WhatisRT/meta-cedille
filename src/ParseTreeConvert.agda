@@ -307,31 +307,43 @@ toTerm = helper []
             return $ Epsilon-A t
           ; _ → nothing })) ∷
 
-        (ruleId "term" "Α_space__term_" , (case x₁ of λ -- alpha
+        (ruleId "term" "ζEvalStmt_space__term_" , (case x₁ of λ
           { (_ ∷ z ∷ []) → do
             t ← helper accu z
             return $ Ev-A EvalStmt t
           ; _ → nothing })) ∷
 
-        (ruleId "term" "Β_space__term__space__term_" , (case x₁ of λ -- beta
+        (ruleId "term" "ζShellCmd_space__term__space__term_" , (case x₁ of λ
           { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
             t ← helper accu z
             t' ← helper accu z'
             return $ Ev-A ShellCmd (t , t')
           ; _ → nothing })) ∷
 
-        (ruleId "term" "Γ_space__term__space__term_" , (case x₁ of λ
+        (ruleId "term" "ζCheckTerm_space__term__space__term_" , (case x₁ of λ
+          { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
+            t ← helper accu z
+            t' ← helper accu z'
+            return $ Ev-A CheckTerm (t , t')
+          ; _ → nothing })) ∷
+
+        (ruleId "term" "ζCatchErr_space__term__space__term_" , (case x₁ of λ
           { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
             t ← helper accu z
             t' ← helper accu z'
             return $ Gamma-A t t'
           ; _ → nothing })) ∷
 
-        (ruleId "term" "Δ_space__term__space__term_" , (case x₁ of λ
-          { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
+        (ruleId "term" "ζNormalize_space__term_" , (case x₁ of λ
+          { (_ ∷ z ∷ []) → do
             t ← helper accu z
-            t' ← helper accu z'
-            return $ Ev-A CheckTerm (t , t')
+            return $ Ev-A Normalize t
+          ; _ → nothing })) ∷
+
+        (ruleId "term" "ζHeadNormalize_space__term_" , (case x₁ of λ
+          { (_ ∷ z ∷ []) → do
+            t ← helper accu z
+            return $ Ev-A HeadNormalize t
           ; _ → nothing })) ∷
 
         (ruleId "term" "Κ_const_" , (case x₁ of λ
@@ -357,16 +369,11 @@ toTerm = helper []
         default nothing
 
 data Stmt : Set where
-  Let : GlobalName → AnnTerm → Maybe AnnTerm → Stmt
-  Ass : GlobalName → AnnTerm → Stmt
-  Normalize : AnnTerm → Stmt
-  HeadNormalize : AnnTerm → Stmt
-  EraseSt : AnnTerm → Stmt
-  Test : AnnTerm → Stmt
-  SetEval : AnnTerm → String → String → Stmt
-  Import : String → Stmt
-  Shell : String → Stmt
-  Empty : Stmt
+  Let           : GlobalName → AnnTerm → Maybe AnnTerm → Stmt
+  Ass           : GlobalName → AnnTerm → Stmt
+  SetEval       : AnnTerm → String → String → Stmt
+  Import        : String → Stmt
+  Empty         : Stmt
 
 instance
   Stmt-Show : Show Stmt
@@ -374,16 +381,11 @@ instance
     where
       helper : Stmt → String
       helper (Let x x₁ (just x₂)) = "let " + x + " := " + show x₁ + " : " + show x₂
-      helper (Let x x₁ nothing) = "let " + x + " := " + show x₁
-      helper (Ass x x₁) = "ass " + x + " : " + show x₁
-      helper (Normalize x) = "normalize " + show x
-      helper (HeadNormalize x) = "normalize " + show x
-      helper (EraseSt x) = "erase " + show x
-      helper (Test x) = "test " + show x
-      helper (SetEval x n n') = "seteval " + show x + " " + n + " " + n'
-      helper (Import s) = "import " + s
-      helper (Shell x) = "shell \"" + show x + "\""
-      helper Empty = "Empty"
+      helper (Let x x₁ nothing)   = "let " + x + " := " + show x₁
+      helper (Ass x x₁)           = "ass " + x + " : " + show x₁
+      helper (SetEval x n n')     = "seteval " + show x + " " + n + " " + n'
+      helper (Import s)           = "import " + s
+      helper Empty                = "Empty"
 
 toStmt : Tree (ℕ ⊎ Char) → Maybe Stmt
 toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
@@ -407,34 +409,6 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
               return $ Ass n t
             ; _ → nothing })) ∷
 
-        (ruleId "stmt'" "normalize_space__term__space'_." ,
-          (case x₂ of λ
-            { (_ ∷ y ∷ _ ∷ []) → do
-              t ← toTerm y
-              return $ Normalize t
-            ; _ → nothing })) ∷
-
-        (ruleId "stmt'" "hnf_space__term__space'_." ,
-          (case x₂ of λ
-            { (_ ∷ y ∷ _ ∷ []) → do
-              t ← toTerm y
-              return $ HeadNormalize t
-            ; _ → nothing })) ∷
-
-        (ruleId "stmt'" "erase_space__term__space'_." ,
-          (case x₂ of λ
-            { (_ ∷ y ∷ _ ∷ []) → do
-              t ← toTerm y
-              return $ EraseSt t
-            ; _ → nothing })) ∷
-
-        (ruleId "stmt'" "test_space__term__space'_." ,
-          (case x₂ of λ
-            { (_ ∷ y ∷ _ ∷ []) → do
-              t ← toTerm y
-              return $ Test t
-            ; _ → nothing })) ∷
-
         (ruleId "stmt'" "seteval_space__term__space__string__space__string__space'_." ,
           (case x₂ of λ
             { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ y'' ∷ _ ∷ []) → do
@@ -449,13 +423,6 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
             { (_ ∷ y ∷ _ ∷ []) → do
               n ← toName y
               return $ Import n
-            ; _ → nothing })) ∷
-
-        (ruleId "stmt'" "cmd_space__string__space'_." ,
-          (case x₂ of λ
-            { (_ ∷ y ∷ _ ∷ []) → do
-              n ← toName y
-              return $ Shell n
             ; _ → nothing })) ∷
 
         (ruleId "stmt'" "" ,

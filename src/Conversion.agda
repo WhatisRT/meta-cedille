@@ -68,8 +68,13 @@ stringListToTerm [] = FreeVar "init$stringList$nil"
 stringListToTerm (x ∷ l) =
   FreeVar "init$stringList$cons" ⟪$⟫ charListToTerm (toList x) ⟪$⟫ stringListToTerm l
 
+-- Quote an AnnTerm
 termToTerm : AnnTerm → AnnTerm
 termToTerm t = Sort-A □ -- TODO
+
+-- Quote a PureTerm
+pureTermToTerm : PureTerm → AnnTerm
+pureTermToTerm t = Sort-A □ -- TODO
 
 termListToTerm : List AnnTerm → AnnTerm
 termListToTerm [] = FreeVar "init$termList$nil"

@@ -11,9 +11,11 @@ private
     M : Set → Set
 
 data PrimMeta : Set where
-  EvalStmt  : PrimMeta
-  ShellCmd  : PrimMeta
-  CheckTerm : PrimMeta
+  EvalStmt      : PrimMeta
+  ShellCmd      : PrimMeta
+  CheckTerm     : PrimMeta
+  Normalize     : PrimMeta
+  HeadNormalize : PrimMeta
 
 private
   variable
@@ -27,12 +29,28 @@ instance
       helper EvalStmt EvalStmt = yes refl
       helper EvalStmt ShellCmd = no (λ ())
       helper EvalStmt CheckTerm = no (λ ())
+      helper EvalStmt Normalize = no (λ ())
+      helper EvalStmt HeadNormalize = no (λ ())
       helper ShellCmd EvalStmt = no (λ ())
       helper ShellCmd ShellCmd = yes refl
       helper ShellCmd CheckTerm = no (λ ())
+      helper ShellCmd Normalize = no (λ ())
+      helper ShellCmd HeadNormalize = no (λ ())
       helper CheckTerm EvalStmt = no (λ ())
       helper CheckTerm ShellCmd = no (λ ())
       helper CheckTerm CheckTerm = yes refl
+      helper CheckTerm Normalize = no (λ ())
+      helper CheckTerm HeadNormalize = no (λ ())
+      helper Normalize EvalStmt = no (λ ())
+      helper Normalize ShellCmd = no (λ ())
+      helper Normalize CheckTerm = no (λ ())
+      helper Normalize Normalize = yes refl
+      helper Normalize HeadNormalize = no (λ ())
+      helper HeadNormalize EvalStmt = no (λ ())
+      helper HeadNormalize ShellCmd = no (λ ())
+      helper HeadNormalize CheckTerm = no (λ ())
+      helper HeadNormalize Normalize = no (λ ())
+      helper HeadNormalize HeadNormalize = yes refl
 
   PrimMeta-EqB : EqB PrimMeta
   PrimMeta-EqB = Eq→EqB
@@ -41,14 +59,18 @@ instance
   PrimMeta-Show = record { show = helper }
     where
       helper : PrimMeta → String
-      helper EvalStmt  = "EvalStmt"
-      helper ShellCmd  = "ShellCmd"
-      helper CheckTerm = "CheckTerm"
+      helper EvalStmt      = "EvalStmt"
+      helper ShellCmd      = "ShellCmd"
+      helper CheckTerm     = "CheckTerm"
+      helper Normalize     = "Normalize"
+      helper HeadNormalize = "HeadNormalize"
 
 primMetaArity : PrimMeta → ℕ
-primMetaArity EvalStmt  = 1
-primMetaArity ShellCmd  = 2
-primMetaArity CheckTerm = 2
+primMetaArity EvalStmt      = 1
+primMetaArity ShellCmd      = 2
+primMetaArity CheckTerm     = 2
+primMetaArity Normalize     = 1
+primMetaArity HeadNormalize = 1
 
 primMetaArgs : Set → PrimMeta → Set
 primMetaArgs A m  = A Data.Vec.Recursive.^ (primMetaArity m)

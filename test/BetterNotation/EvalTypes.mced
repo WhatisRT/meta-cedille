@@ -63,8 +63,10 @@ b-let quoteEvaluatorState (s : EvaluatorState) : Term :=
 
 b-let emptyEvaluatorState : EvaluatorState := mkEvaluatorState defaultFlags emptyModState emptyOtherState.
 
--- EvalState monad. This is a combination of the state and meta monads to give us access to the mutable state
-
+--------------------------------------------------------------------------------
+-- EvalState monad. This is a combination of the state and meta monads
+-- to give us access to the mutable state
+--------------------------------------------------------------------------------
 b-let EvalState : * -> * := λ T : *. EvaluatorState -> M (Product T EvaluatorState).
 b-let pureEvalState [T : *] (t : T) : EvalState T :=
   λ s : EvaluatorState. returnMeta ?(Product T EvaluatorState) (prodPair ?T ?EvaluatorState t s).
@@ -78,6 +80,23 @@ b-let liftMtoEvalState [T : *] (t : M T) : EvalState T :=
     bindMeta ?T ?(Product T EvaluatorState) t
       (λ x : T. returnMeta ?(Product T EvaluatorState) (prodPair ?T ?EvaluatorState x s)).
 
+--------------------------------------------------------------------------------
+-- Lift the primitives into EvalState
+--------------------------------------------------------------------------------
+b-let shellCmd' (cmd : String) (args : List String) : EvalState String :=
+  liftMtoEvalState ?String (shellCmd cmd args).
+b-let checkTerm' (T : *) (t : Term) : EvalState T :=
+  liftMtoEvalState ?T (checkTerm T (TermToInitTerm t)).
+
+-- these are currently broken
+b-let normalize' (t : Term) : EvalState init$term :=
+  liftMtoEvalState ?init$term (normalize (TermToInitTerm t)).
+b-let headNormalize' (t : Term) : EvalState init$term :=
+  liftMtoEvalState ?init$term (headNormalize (TermToInitTerm t)).
+
+--------------------------------------------------------------------------------
+-- Define the new statement type & useful functions
+--------------------------------------------------------------------------------
 b-let init$newStmt : * := EvalState metaResult.
 
 b-let stmtToNewStmt (stmt : init$stmt') : init$newStmt :=
@@ -133,13 +152,10 @@ b-let updateModuleState (s : ModuleState) : EvalState Unit :=
     (λ s' : EvaluatorState. setEvalState (mkEvaluatorState (getEvalFlags s') s (getOtherState s'))).
 
 b-let echoStmt (s : String) : init$newStmt :=
-  liftMtoEvalState ?metaResult
-    (mapMeta ?String ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [String | s]))).
+  mapEvalState ?String ?metaResult strToMetaResult (shellCmd' "echo" (listToStringList [String | s])).
 
 b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
   bindEvalState ?EvalFlags ?metaResult getFlags (λ f : EvalFlags.
     ifthenelse ?init$newStmt (or (not (getAnnReq f)) (letInfoHasAnn i))
       (stmtToNewStmt (convertLetInfo i))
       (echoStmt "The provided command has no type annotation!")).
-
-b-let checkTerm' (T : *) (t : Term) : EvalState T := liftMtoEvalState ?T (checkTerm T (TermToInitTerm t)).

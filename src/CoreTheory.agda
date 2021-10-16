@@ -265,42 +265,46 @@ instance
   AnnTerm-Show = record { show = helper [] }
     where
       helper : List String → AnnTerm → String
-      helper l (Var-A x) = showVar l x
-      helper l (Sort-A x) = show x
-      helper l (Const-A x) = show x
-      helper l (Pr1-A t) = "π1 " + helper l t
-      helper l (Pr2-A t) = "π2 " + helper l t
-      helper l (Beta-A t t₁) = "β " + helper l t + " " + helper l t₁
-      helper l (Delta-A t t₁) = "Delta-A" + helper l t + " " + helper l t₁
-      helper l (Sigma-A t) = "ς" + helper l t
-      helper l (App-A t t₁) = "[" + helper l t + " " + helper l t₁ + "]"
-      helper l (AppE-A t t₁) = "<" + helper l t + " " + helper l t₁ + ">"
-      helper l (Rho-A t t₁ t₂) = "ρ " + helper l t + " : " + helper l t₁ + " " + helper l t₂
-      helper l (All-A n t t₁) = "∀ " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
-      helper l (Pi-A n t t₁) = "Π " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
-      helper l (Iota-A n t t₁) = "ι " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
-      helper l (Lam-A n t t₁) = "λ " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
-      helper l (LamE-A n t t₁) = "Λ " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
+      helper l (Var-A x)        = showVar l x
+      helper l (Sort-A x)       = show x
+      helper l (Const-A x)      = show x
+      helper l (Pr1-A t)        = "π1 " + helper l t
+      helper l (Pr2-A t)        = "π2 " + helper l t
+      helper l (Beta-A t t₁)    = "β " + helper l t + " " + helper l t₁
+      helper l (Delta-A t t₁)   = "Delta-A" + helper l t + " " + helper l t₁
+      helper l (Sigma-A t)      = "ς" + helper l t
+      helper l (App-A t t₁)     = "[" + helper l t + " " + helper l t₁ + "]"
+      helper l (AppE-A t t₁)    = "<" + helper l t + " " + helper l t₁ + ">"
+      helper l (Rho-A t t₁ t₂)  = "ρ " + helper l t + " : " + helper l t₁ + " " + helper l t₂
+      helper l (All-A n t t₁)   = "∀ " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
+      helper l (Pi-A n t t₁)    = "Π " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
+      helper l (Iota-A n t t₁)  = "ι " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
+      helper l (Lam-A n t t₁)   = "λ " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
+      helper l (LamE-A n t t₁)  = "Λ " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
       helper l (Pair-A t t₁ t₂) = "{" + helper l t + "," + helper l t₁ + " . " + helper l t₂ + "}"
-      helper l (Phi-A t t₁ t₂) = "φ " + helper l t + " " + helper l t₁ + " " + helper l t₂
-      helper l (Eq-A t t₁) = "(= " + helper l t + " " + helper l t₁ + ")"
-      helper l (M-A t) = "M " + helper l t
-      helper l (Mu-A t t₁) = "μ " + helper l t + " " + helper l t₁
-      helper l (Epsilon-A t) = "ε " + helper l t
-      helper l (Gamma-A t t₁) = "Γ " + helper l t + " " + helper l t₁
-      helper l (Ev-A m args) = "Ev " + show m + " " + primMetaArgs-Show (helper l) args
-      helper l (Char-A c) = "Char " + show c
-      helper l (CharEq-A t t') = "CharEq " + show t + " " + show t'
+      helper l (Phi-A t t₁ t₂)  = "φ " + helper l t + " " + helper l t₁ + " " + helper l t₂
+      helper l (Eq-A t t₁)      = "(= " + helper l t + " " + helper l t₁ + ")"
+      helper l (M-A t)          = "M " + helper l t
+      helper l (Mu-A t t₁)      = "μ " + helper l t + " " + helper l t₁
+      helper l (Epsilon-A t)    = "ε " + helper l t
+      helper l (Gamma-A t t₁)   = "Γ " + helper l t + " " + helper l t₁
+      helper l (Ev-A m args)    = "Ev " + show m + " " + primMetaArgs-Show (helper l) args
+      helper l (Char-A c)       = "Char " + show c
+      helper l (CharEq-A t t')  = "CharEq " + show t + " " + show t'
 
 primMetaS : (m : PrimMeta) → primMetaArgs AnnTerm m
-primMetaS EvalStmt = FreeVar "init$stmt"
-primMetaS ShellCmd = (FreeVar "init$string" , FreeVar "init$stringList")
-primMetaS CheckTerm = (Sort-A ⋆ , FreeVar "init$term")
+primMetaS EvalStmt      = FreeVar "init$stmt"
+primMetaS ShellCmd      = (FreeVar "init$string" , FreeVar "init$stringList")
+primMetaS CheckTerm     = (Sort-A ⋆ , FreeVar "init$term")
+primMetaS Normalize     = FreeVar "init$term"
+primMetaS HeadNormalize = FreeVar "init$term"
 
 primMetaT : (m : PrimMeta) → primMetaArgs AnnTerm m → AnnTerm
-primMetaT EvalStmt _ = FreeVar "init$metaResult"
-primMetaT ShellCmd _ = FreeVar "init$string"
+primMetaT EvalStmt _        = FreeVar "init$metaResult"
+primMetaT ShellCmd _        = FreeVar "init$string"
 primMetaT CheckTerm (t , _) = t
+primMetaT Normalize _       = FreeVar "init$term"
+primMetaT HeadNormalize _   = FreeVar "init$term"
 
 data Def : Set where
   Let : AnnTerm → AnnTerm → Def
@@ -311,12 +315,12 @@ data EfficientDef : Set where
   EfficientAxiom : AnnTerm → EfficientDef
 
 toDef : EfficientDef → Def
-toDef (EfficientLet x x₁ x₂) = Let x x₂
-toDef (EfficientAxiom x) = Axiom x
+toDef (EfficientLet x x₁ x₂)   = Let x x₂
+toDef (EfficientAxiom x)       = Axiom x
 
 getNorm : EfficientDef → Maybe PureTerm
 getNorm (EfficientLet x x₁ x₂) = return x₁
-getNorm (EfficientAxiom x) = nothing
+getNorm (EfficientAxiom x)     = nothing
 
 instance
   Def-Show : Show Def
@@ -327,7 +331,7 @@ instance
       helper (Axiom x) = " : " + show x
 
 typeOfDef : Def → AnnTerm
-typeOfDef (Let x x₁) = x₁
+typeOfDef (Let _ x) = x
 typeOfDef (Axiom x) = x
 
 {-# TERMINATING #-}
@@ -336,22 +340,22 @@ modifyIndicesPure = helper $ fromℕ 0
   where
     helper : 𝕀 → 𝕀 → PureTerm → PureTerm
     helper k n v@(Var-P (Bound x)) = if x <𝕀 k then v else BoundVar (pred𝕀 (x +𝕀 n))
-    helper k n v@(Var-P (Free x)) = v
-    helper k n v@(Sort-P x) = v
-    helper k n v@(Const-P x) = v
-    helper k n (App-P t t₁) = App-P (helper k n t) (helper k n t₁)
-    helper k n (Lam-P x t) = Lam-P x (helper (suc𝕀 k) n t)
-    helper k n (Pi-P x t t₁) = Pi-P x (helper k n t) (helper (suc𝕀 k) n t₁)
-    helper k n (All-P x t t₁) = All-P x (helper k n t) (helper (suc𝕀 k) n t₁)
-    helper k n (Iota-P x t t₁) = Iota-P x (helper k n t) (helper (suc𝕀 k) n t₁)
-    helper k n (Eq-P t t₁) = Eq-P (helper k n t) (helper k n t₁)
-    helper k n (M-P t) = M-P (helper k n t)
-    helper k n (Mu-P t t₁) = Mu-P (helper k n t) (helper k n t₁)
-    helper k n (Epsilon-P t) = Epsilon-P (helper k n t)
-    helper k n (Gamma-P t t₁) = Gamma-P (helper k n t) (helper k n t₁)
-    helper k n (Ev-P m args) = Ev-P m (mapPrimMetaArgs (helper k n) args)
-    helper k n (Char-P c) = Char-P c
-    helper k n (CharEq-P t t') = CharEq-P (helper k n t) (helper k n t')
+    helper k n v@(Var-P (Free x))  = v
+    helper k n v@(Sort-P x)        = v
+    helper k n v@(Const-P x)       = v
+    helper k n (App-P t t₁)        = App-P (helper k n t) (helper k n t₁)
+    helper k n (Lam-P x t)         = Lam-P x (helper (suc𝕀 k) n t)
+    helper k n (Pi-P x t t₁)       = Pi-P x (helper k n t) (helper (suc𝕀 k) n t₁)
+    helper k n (All-P x t t₁)      = All-P x (helper k n t) (helper (suc𝕀 k) n t₁)
+    helper k n (Iota-P x t t₁)     = Iota-P x (helper k n t) (helper (suc𝕀 k) n t₁)
+    helper k n (Eq-P t t₁)         = Eq-P (helper k n t) (helper k n t₁)
+    helper k n (M-P t)             = M-P (helper k n t)
+    helper k n (Mu-P t t₁)         = Mu-P (helper k n t) (helper k n t₁)
+    helper k n (Epsilon-P t)       = Epsilon-P (helper k n t)
+    helper k n (Gamma-P t t₁)      = Gamma-P (helper k n t) (helper k n t₁)
+    helper k n (Ev-P m args)       = Ev-P m (mapPrimMetaArgs (helper k n) args)
+    helper k n (Char-P c)          = Char-P c
+    helper k n (CharEq-P t t')     = CharEq-P (helper k n t) (helper k n t')
 
 incrementIndicesPureBy : 𝕀 → PureTerm → PureTerm
 incrementIndicesPureBy i = modifyIndicesPure (suc𝕀 i)
@@ -489,32 +493,32 @@ validInContext = helper 0
 
 {-# TERMINATING #-}
 Erase : AnnTerm → PureTerm
-Erase (Var-A x) = Var-P x
-Erase (Sort-A x) = Sort-P x
-Erase (Const-A x) = Const-P x
-Erase (Pr1-A t) = Erase t
-Erase (Pr2-A t) = Erase t
-Erase (Beta-A t t₁) = Erase t₁
-Erase (Delta-A t t₁) = Erase t₁
-Erase (Sigma-A t) = Erase t
-Erase (App-A t t₁) = App-P (Erase t) (Erase t₁)
-Erase (AppE-A t t₁) = Erase t
-Erase (Rho-A t t₁ t₂) = Erase t₂
-Erase (All-A n t t₁) = All-P n (Erase t) (Erase t₁)
-Erase (Pi-A n t t₁) = Pi-P n (Erase t) (Erase t₁)
-Erase (Iota-A n t t₁) = Iota-P n (Erase t) (Erase t₁)
-Erase (Lam-A n t t₁) = Lam-P n (Erase t₁)
-Erase (LamE-A _ t t₁) = decrementIndicesPure (Erase t₁)
+Erase (Var-A x)        = Var-P x
+Erase (Sort-A x)       = Sort-P x
+Erase (Const-A x)      = Const-P x
+Erase (Pr1-A t)        = Erase t
+Erase (Pr2-A t)        = Erase t
+Erase (Beta-A t t₁)    = Erase t₁
+Erase (Delta-A t t₁)   = Erase t₁
+Erase (Sigma-A t)      = Erase t
+Erase (App-A t t₁)     = App-P (Erase t) (Erase t₁)
+Erase (AppE-A t t₁)    = Erase t
+Erase (Rho-A t t₁ t₂)  = Erase t₂
+Erase (All-A n t t₁)   = All-P n (Erase t) (Erase t₁)
+Erase (Pi-A n t t₁)    = Pi-P n (Erase t) (Erase t₁)
+Erase (Iota-A n t t₁)  = Iota-P n (Erase t) (Erase t₁)
+Erase (Lam-A n t t₁)   = Lam-P n (Erase t₁)
+Erase (LamE-A _ t t₁)  = decrementIndicesPure (Erase t₁)
 Erase (Pair-A t t₁ t₂) = Erase t
-Erase (Phi-A t t₁ t₂) = Erase t₂
-Erase (Eq-A x x₁) = Eq-P (Erase x) (Erase x₁)
-Erase (M-A t) = M-P (Erase t)
-Erase (Mu-A t t₁) = Mu-P (Erase t) (Erase t₁)
-Erase (Epsilon-A t) = Epsilon-P (Erase t)
-Erase (Gamma-A t t₁) = Gamma-P (Erase t) (Erase t₁)
-Erase (Ev-A m args) = Ev-P m (mapPrimMetaArgs Erase args)
-Erase (Char-A c) = Char-P c
-Erase (CharEq-A x x₁) = CharEq-P (Erase x) (Erase x₁)
+Erase (Phi-A t t₁ t₂)  = Erase t₂
+Erase (Eq-A x x₁)      = Eq-P (Erase x) (Erase x₁)
+Erase (M-A t)          = M-P (Erase t)
+Erase (Mu-A t t₁)      = Mu-P (Erase t) (Erase t₁)
+Erase (Epsilon-A t)    = Epsilon-P (Erase t)
+Erase (Gamma-A t t₁)   = Gamma-P (Erase t) (Erase t₁)
+Erase (Ev-A m args)    = Ev-P m (mapPrimMetaArgs Erase args)
+Erase (Char-A c)       = Char-P c
+Erase (CharEq-A x x₁)  = CharEq-P (Erase x) (Erase x₁)
 
 -- substitute the first unbound variable in t with t'
 {-# TERMINATING #-}
@@ -577,48 +581,48 @@ substPure t t' = decrementIndicesPure $ substIndexPure t (fromℕ 0) t'
     substIndexPure (CharEq-P t t₁) k t' = CharEq-P (substIndexPure t k t') (substIndexPure t₁ k t')
 
 stripBinder : AnnTerm → Maybe AnnTerm
-stripBinder (All-A _ t' t'') = just t''
-stripBinder (Pi-A _ t' t'') = just t''
+stripBinder (All-A  _ t' t'') = just t''
+stripBinder (Pi-A   _ t' t'') = just t''
 stripBinder (Iota-A _ t' t'') = just t''
-stripBinder (Lam-A _ t' t'') = just t''
+stripBinder (Lam-A  _ t' t'') = just t''
 stripBinder (LamE-A _ t' t'') = just t''
 {-# CATCHALL #-}
-stripBinder t = nothing
+stripBinder t                 = nothing
 
 -- something in is head normal form, if its outermost constructor is not one of the following: Var-A (if the lookup fails), App-A, AppE-A
 {-# TERMINATING #-}
 hnfNorm : Context → AnnTerm → AnnTerm
-hnfNorm Γ (Var-A x) with lookupInContext x Γ
-hnfNorm Γ (Var-A x) | just (Let x₁ x₂) = hnfNorm Γ x₁
-hnfNorm Γ v@(Var-A x) | just (Axiom x₁) = v -- we cannot reduce axioms
-hnfNorm Γ v@(Var-A x) | nothing = v -- in case the lookup fails, we cannot reduce
-hnfNorm Γ (App-A t t₁) = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (t ⟪$⟫ t₁) $ stripBinder (hnfNorm Γ t)
+hnfNorm Γ v@(Var-A x) with lookupInContext x Γ
+... | just (Let x₁ x₂)  = hnfNorm Γ x₁
+... | just (Axiom x₁)   = v -- we cannot reduce axioms
+... | nothing           = v -- in case the lookup fails, we cannot reduce
+hnfNorm Γ (App-A t t₁)  = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (t ⟪$⟫ t₁) $ stripBinder (hnfNorm Γ t)
 hnfNorm Γ (AppE-A t t₁) = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (t ⟪$⟫ t₁) $ stripBinder (hnfNorm Γ t)
 {-# CATCHALL #-}
-hnfNorm Γ v = v
+hnfNorm Γ v             = v
 
 stripBinderPure : PureTerm → Maybe PureTerm
-stripBinderPure (Lam-P _ t') = just t'
-stripBinderPure (Pi-P _ t' t'') = just t''
-stripBinderPure (All-P _ t' t'') = just t''
+stripBinderPure (Lam-P  _ t')     = just t'
+stripBinderPure (Pi-P   _ t' t'') = just t''
+stripBinderPure (All-P  _ t' t'') = just t''
 stripBinderPure (Iota-P _ t' t'') = just t''
 {-# CATCHALL #-}
-stripBinderPure _ = nothing
+stripBinderPure _                 = nothing
 
 hnfNormPure : Context → PureTerm → PureTerm
 normalizePure : Context → PureTerm → PureTerm
 
 {-# NON_TERMINATING #-}
-hnfNormPure Γ (Var-P x) with lookupInContext x Γ
-hnfNormPure Γ (Var-P x) | just (Let x₁ x₂) = hnfNormPure Γ $ Erase x₁
-hnfNormPure Γ v@(Var-P x) | just (Axiom x₁) = v -- we cannot reduce axioms
-hnfNormPure Γ v@(Var-P x) | nothing = v -- in case the lookup fails, we cannot reduce
-hnfNormPure Γ (App-P t t₁) = case stripBinderPure (hnfNormPure Γ t) of λ
-  { (just t') → hnfNormPure Γ $ substPure t' t₁
-  ; nothing → App-P t t₁ }
+hnfNormPure Γ v@(Var-P x)       = case lookupInContext x Γ of λ where
+  (just (Let x₁ x₂)) → hnfNormPure Γ $ Erase x₁
+  (just (Axiom x₁))  → v -- we cannot reduce axioms
+  nothing            → v -- in case the lookup fails, we cannot reduce
+hnfNormPure Γ v@(App-P t t₁)    = case stripBinderPure (hnfNormPure Γ t) of λ where
+  (just t') → hnfNormPure Γ $ substPure t' t₁
+  nothing   → v
 hnfNormPure Γ v@(CharEq-P t t₁) = normalizePure Γ v
 {-# CATCHALL #-}
-hnfNormPure Γ v = v
+hnfNormPure Γ v                 = v
 
 {-# NON_TERMINATING #-}
 normalizePure Γ (Var-P x) with efficientLookupInContext x Γ

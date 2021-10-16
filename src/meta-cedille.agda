@@ -135,9 +135,9 @@ loadFiles context flags files =
 main : Main
 main = run $ do
   options ← readOptions
-  case options of λ
-    { (inj₁ x) → putStr x
-    ; (inj₂ record { startRepl = startRepl ; importFiles = importFiles ; verbose = verbose ; showHelp = showHelp }) →
+  case options of λ where
+    (inj₁ x) → putStr x
+    (inj₂ o) → let open Options o in
       if showHelp then putStr helpString else do
         (init , successInit) ← eval emptyMetaContext initEnv initFlagsDefault
         let initFlags = if verbose then runtimeFlagsDefault else initFlagsDefault
@@ -147,4 +147,3 @@ main = run $ do
           else if successInit ∧ successLoad
             then exitSuccess
             else exitFailure
-      }

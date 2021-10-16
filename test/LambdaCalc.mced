@@ -12,13 +12,14 @@ let init$lambdaTerm$=lambda=_space__string__space'_=dot=_space'__lambdaTerm_
 
 let init$lambdaStmt$let_space__string__space'_=colon==equal=_space'__lambdaTerm__space'_=dot=
   (_ : init$space) (name : String) (_ : init$space') (_ : init$space') (t : init$term) (_ : init$space') :
-    init$stmt' :=
-  quote$annotatedLet' name (lambdaTermToTerm t) (TermToInitTerm θ{Top}).
+    init$newStmt :=
+  stmtToNewStmt (quote$annotatedLet' name (lambdaTermToTerm t) (TermToInitTerm θ{Top})).
 
-let init$lambdaStmt$normalize_space__lambdaTerm__space'_=dot=
-  (_ : init$space) (t : init$term) (_ : init$space') : init$stmt' :=
-  quote$normalize' (lambdaTermToTerm t).
+-- TODO: FIXME
+-- let init$lambdaStmt$normalize_space__lambdaTerm__space'_=dot=
+--   (_ : init$space) (t : init$term) (_ : init$space') : init$newStmt :=
+--   seqEvalState ?init$term ?metaResult (normalize' (lambdaTermToTerm t)) emptyStmt.
 
-let init$newStmt'$=lambda==minus=_lambdaStmt_ (x : init$stmt') : init$newStmt := stmtToNewStmt x.
+let init$newStmt'$=lambda==minus=_lambdaStmt_ (x : init$newStmt) : init$newStmt := x.
 
 o-seteval [evalNewStmt emptyEvaluatorState] init newStmt.
