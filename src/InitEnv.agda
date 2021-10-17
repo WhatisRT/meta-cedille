@@ -73,6 +73,7 @@ private
     "term$=zeta=EvalStmt_space__term_" ∷
     "term$=zeta=ShellCmd_space__term__space__term_" ∷
     "term$=zeta=CheckTerm_space__term__space__term_" ∷
+    "term$=zeta=Parse_space__term__space__term__space__term_" ∷
     "term$=zeta=Normalize_space__term_" ∷
     "term$=zeta=HeadNormalize_space__term_" ∷
     "term$=zeta=CatchErr_space__term__space__term_" ∷ -- this is not actually in PrimMeta

@@ -10,6 +10,7 @@ let init$err := init$metaResult.
 let evalStmt := λ s : init$stmt ζEvalStmt s.
 let shellCmd := λ s : String λ args : init$stringList ζShellCmd s args : Π _ : String Π _ : init$stringList [M String].
 let checkTerm := λ X : * λ t : init$term ζCheckTerm X t : Π X : * Π _ : init$term [M X].
+let parse := λ nt : init$string λ T : * λ text : init$string ζParse nt T text.
 let normalize := λ t : init$term ζNormalize t.
 let headNormalize := λ t : init$term ζHeadNormalize t.
 

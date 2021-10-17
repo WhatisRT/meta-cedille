@@ -33,10 +33,7 @@ module LL1Parser {V : Set} {{_ : Eq V}} (showV : V → String) {a}
   (G : CFG V MultiChar) (M : Set₁ → Set a) {{_ : Monad M}} {{_ : MonadExcept M String}} where
   -- we don't care if it is actually a LL1 grammar
 
-  S = CFG.S G
-  R = CFG.R G
-  Rstring = CFG.Rstring G
-  AllRules = CFG.AllRules G
+  open CFG G
   Terminal = MultiChar ⊎ String
 
   Rule = Rules G

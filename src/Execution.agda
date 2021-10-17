@@ -76,6 +76,12 @@ module StateHelpers {M : Set → Set} {{_ : Monad M}}
       (inj₁ x) → throwError x
       (inj₂ y) → setContext y >> return ("Defined " + n + show d)
 
+  termFromTerm : PureTerm → M AnnTerm
+  termFromTerm t = do
+    Γ ← getContext
+    catchError (constrsToTerm Γ $ normalizePure Γ t)
+               (λ e → throwError $ "Error while converting " + show t + " to a term")
+
 open StateHelpers
 
 checkInit : List Char → List Char → Bool
@@ -124,10 +130,13 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   -- Parse the next top-level non-terminal symbol from a string, and return a
   -- term representing the result of the parse, as well as the unparsed rest of
   -- the string
-  parseMeta : Grammar × String × AnnTerm → String → M (AnnTerm × String)
-  parseMeta (G , namespace , interpreter) s = do
-    (t , rest) ← parse' G s
+  parseInit : (G : Grammar) → NonTerminal G → String → String → M (AnnTerm × String)
+  parseInit G S namespace s = do
+    (t , rest) ← parse'Init G S s
     return (parseResultToConstrTree namespace t , rest)
+
+  parseMeta : Grammar × String × AnnTerm → String → M (AnnTerm × String)
+  parseMeta (G , namespace , _) s = parseInit G (initNT G) namespace s
 
   {-# NON_TERMINATING #-}
   -- Execute a term of type M t for some t
@@ -215,8 +224,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executeTerm (Ev-P CheckTerm (t , t')) = do
     Γ ← getContext
-    u ← catchError (constrsToTerm Γ $ normalizePure Γ t')
-                    (λ e → throwError $ "Error while converting " + show t' + " to a term")
+    u ← termFromTerm t'
     T' ← check u
     catchError (checkβηPure Γ t $ Erase T')
       (λ e → throwError $
@@ -224,10 +232,26 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
         "\nSynthesized: " + show T')
     return (strResult "" , Erase u)
 
+  -- TODO: return rest as well
+  executeTerm (Ev-P Parse (t , type , t')) = do
+    Γ ← getContext
+    nonTerminal ← constrsToString Γ $ normalizePure Γ t
+    text ← constrsToString Γ $ normalizePure Γ t'
+    (G , namespace , _) ← getMeta
+    NT ← maybeToError (findNT G nonTerminal) ("Non-terminal " + nonTerminal + " does not exist in the current grammar!")
+    (res , rest) ← parseInit G NT namespace text
+    T ← appendIfError (synthType Γ res)
+                      ("\n\nError while interpreting input: "
+                        + (shortenString 10000 (show res))
+                        + "\nWhile parsing: " + (shortenString 10000 text))
+    appendIfError (checkβηPure Γ type $ Erase T)
+      ("Type mismatch with the provided type!\nProvided: " + show type +
+        "\nSynthesized: " + show T)
+    return (strResult "" , Erase res)
+
   executeTerm (Ev-P Normalize t) = do
     Γ ← getContext
-    u ← catchError (constrsToTerm Γ $ normalizePure Γ t)
-                    (λ e → throwError $ "Error while converting " + show t + " to a term")
+    u ← termFromTerm t
     T ← synthType Γ u
     return (strResult
       (show u + " : " + show T + " normalizes to: " +
@@ -235,8 +259,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executeTerm (Ev-P HeadNormalize t) = do
     Γ ← getContext
-    u ← catchError (constrsToTerm Γ $ normalizePure Γ t)
-                    (λ e → throwError $ "Error while converting " + show t + " to a term")
+    u ← termFromTerm t
     T ← synthType Γ u
     return (strResult
       (show t + " : " + show T + " head-normalizes to: " +
@@ -262,7 +285,6 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
       ; _ → do
         (fst , snd) ← parseMeta m s
         let exec = interpreter ⟪$⟫ fst
-        (G , _ , _) ← getMeta
         T ← appendIfError (synthType Γ exec)
                            ("\n\nError while interpreting input: "
                              + (shortenString 10000 (show fst))

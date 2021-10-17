@@ -296,6 +296,7 @@ primMetaS : (m : PrimMeta) → primMetaArgs AnnTerm m
 primMetaS EvalStmt      = FreeVar "init$stmt"
 primMetaS ShellCmd      = (FreeVar "init$string" , FreeVar "init$stringList")
 primMetaS CheckTerm     = (Sort-A ⋆ , FreeVar "init$term")
+primMetaS Parse         = (FreeVar "init$string" , Sort-A ⋆ , FreeVar "init$string")
 primMetaS Normalize     = FreeVar "init$term"
 primMetaS HeadNormalize = FreeVar "init$term"
 
@@ -303,6 +304,7 @@ primMetaT : (m : PrimMeta) → primMetaArgs AnnTerm m → AnnTerm
 primMetaT EvalStmt _        = FreeVar "init$metaResult"
 primMetaT ShellCmd _        = FreeVar "init$string"
 primMetaT CheckTerm (t , _) = t
+primMetaT Parse (_ , t , _) = t
 primMetaT Normalize _       = FreeVar "init$term"
 primMetaT HeadNormalize _   = FreeVar "init$term"
 

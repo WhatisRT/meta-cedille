@@ -327,6 +327,14 @@ toTerm = helper []
             return $ Ev-A CheckTerm (t , t')
           ; _ → nothing })) ∷
 
+        (ruleId "term" "ζParse_space__term__space__term__space__term_" , (case x₁ of λ
+          { (_ ∷ z ∷ _ ∷ z' ∷ _ ∷ z'' ∷ []) → do
+            t ← helper accu z
+            t' ← helper accu z'
+            t'' ← helper accu z''
+            return $ Ev-A Parse (t , t' , t'')
+          ; _ → nothing })) ∷
+
         (ruleId "term" "ζCatchErr_space__term__space__term_" , (case x₁ of λ
           { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
             t ← helper accu z
@@ -451,15 +459,15 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
   preCoreGrammar : M Grammar
   preCoreGrammar = generateCFG "stmt" (map fromList coreGrammarGenerator)
 
-  parse' : Grammar → String → M (Tree (String ⊎ Char) × String)
-  parse' (fst , fst₁ , snd) s = do
-    res ← LL1Parser.parse (proj₂ snd) matchMulti show fst₁ M s
-    return (Data.Product.map₁ (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ (proj₁ snd))) res)
+  parse'Init : (G : Grammar) → NonTerminal G → String → M (Tree (String ⊎ Char) × String)
+  parse'Init (_ , G , (showRule , showNT)) S s = do
+    res ← LL1Parser.parseInit showNT matchMulti show G M S s
+    return (Data.Product.map₁ (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ showRule)) res)
 
   parse : String → M (Tree (String ⊎ Char) × String)
   parse s = do
     G ← preCoreGrammar
-    parse' G s
+    parse'Init G (initNT G) s
 
   {-# TERMINATING #-} -- cannot just use sequence here because of the char special case
   synTreeToℕTree : Tree (String ⊎ Char) → M (Tree (ℕ ⊎ Char))
