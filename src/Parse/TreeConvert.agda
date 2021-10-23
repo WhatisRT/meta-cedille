@@ -23,7 +23,7 @@ open import Prelude
 open import Prelude.Strings
 
 open import CoreTheory
-open import InitEnv
+open import Bootstrap.InitEnv
 open import Parse.MultiChar
 open import Parse.LL1
 open import Parse.Generate

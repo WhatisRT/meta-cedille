@@ -40,3 +40,6 @@ takeEven (x ∷ x₁ ∷ l) = x₁ ∷ takeEven l
 maximum : List ℕ → ℕ
 maximum [] = 0
 maximum (x ∷ l) = x ⊔ maximum l
+
+mapWithIndex : ∀ {a b} {A : Set a} {B : Set b} → (ℕ → A → B) → List A → List B
+mapWithIndex f l = zipWith f (upTo (length l)) l

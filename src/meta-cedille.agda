@@ -12,9 +12,10 @@ open import Prelude.Strings
 
 open import Parse.Generate
 open import Parse.TreeConvert
+open import Bootstrap.InitEnv
+
 open import CoreTheory
 open import Execution
-open import InitEnv
 
 record EvalFlags : Set where
   field

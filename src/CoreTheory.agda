@@ -128,7 +128,7 @@ open TermLike {{...}} public
 showVar : List String → Name → String
 showVar l (Bound x) with lookupMaybe (toℕ x) l
 ... | nothing = show x
-... | just x₁ = x₁
+... | just x₁ = if x₁ ≣ "_" then show x else x₁
 showVar l (Free x) = x
 
 data Const : Set where

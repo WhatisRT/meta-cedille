@@ -3,7 +3,7 @@
 -- particular, it contains the grammar that is loaded initially.
 --------------------------------------------------------------------------------
 
-module InitEnv where
+module Bootstrap.InitEnv where
 
 open import Class.Map
 open import Data.Char.Ranges
@@ -16,10 +16,9 @@ open import Prelude
 open import Prelude.Strings
 
 open import Parse.Escape
-open import SimpleInductive
+open import Bootstrap.SimpleInductive
 
 private
-
   nameSymbols : List Char
   nameSymbols = "$='-/!@&"
 
