@@ -5,7 +5,7 @@
 
 {-# OPTIONS --type-in-type #-}
 
-module ParserGenerator where
+module Parse.Generate where
 
 open import Data.Product using (Σ-syntax)
 open import Class.Monad.Except
@@ -18,141 +18,16 @@ open import Data.String using (toList; fromChar; uncons) renaming (fromList to f
 open import Data.Vec using (Vec; lookup; fromList; []; _∷_; _[_]%=_; tabulate)
 open import Data.Vec.Exts
 
-open import Parser
+open import Parse.LL1
+open import Parse.MarkedString
+open import Parse.MultiChar
 
 open import Prelude
 open import Prelude.Strings
 
-data Marker : Set where
-  NonTerminalBracket : Marker
-  NameDivider : Marker
-  BlacklistWildcardBracket : Marker
-  WhitelistWildcardBracket : Marker
-  WildcardSeparator : Marker
-
-instance
-  Marker-Show : Show Marker
-  Marker-Show = record { show = λ
-    { NonTerminalBracket → "NonTerminalBracket"
-    ; NameDivider → "NameDivider"
-    ; BlacklistWildcardBracket → "BlacklistWildcardBracket"
-    ; WhitelistWildcardBracket → "WhitelistWildcardBracket"
-    ; WildcardSeparator → "WildcardSeparator"} }
-
-enumerateMarkers : List Marker
-enumerateMarkers =
-  NonTerminalBracket ∷
-  NameDivider ∷
-  BlacklistWildcardBracket ∷
-  WhitelistWildcardBracket ∷
-  WildcardSeparator ∷ []
-
-markerRepresentation : Marker → Char
-markerRepresentation NonTerminalBracket = '_'
-markerRepresentation NameDivider = '$'
-markerRepresentation BlacklistWildcardBracket = '!'
-markerRepresentation WhitelistWildcardBracket = '@'
-markerRepresentation WildcardSeparator = '&'
--- other good candidates: &*#~%
-
-escapeMarker = '\\'
-
-MarkedChar = Char ⊎ Marker
-MarkedString = List MarkedChar
-
-instance
-  Marker-Eq : Eq Marker
-  Marker-Eq = record { _≟_ = λ
-    { NonTerminalBracket NonTerminalBracket → yes refl
-    ; NonTerminalBracket NameDivider → no λ ()
-    ; NonTerminalBracket BlacklistWildcardBracket → no λ ()
-    ; NonTerminalBracket WhitelistWildcardBracket → no λ ()
-    ; NonTerminalBracket WildcardSeparator → no λ ()
-    ; NameDivider NonTerminalBracket → no λ ()
-    ; NameDivider NameDivider → yes refl
-    ; NameDivider BlacklistWildcardBracket → no λ ()
-    ; NameDivider WhitelistWildcardBracket → no λ ()
-    ; NameDivider WildcardSeparator → no λ ()
-    ; BlacklistWildcardBracket NonTerminalBracket → no λ ()
-    ; BlacklistWildcardBracket NameDivider → no λ ()
-    ; BlacklistWildcardBracket BlacklistWildcardBracket → yes refl
-    ; BlacklistWildcardBracket WhitelistWildcardBracket → no λ ()
-    ; BlacklistWildcardBracket WildcardSeparator → no λ ()
-    ; WhitelistWildcardBracket NonTerminalBracket → no λ ()
-    ; WhitelistWildcardBracket NameDivider → no λ ()
-    ; WhitelistWildcardBracket BlacklistWildcardBracket → no λ ()
-    ; WhitelistWildcardBracket WhitelistWildcardBracket → yes refl
-    ; WhitelistWildcardBracket WildcardSeparator → no λ ()
-    ; WildcardSeparator NonTerminalBracket → no λ ()
-    ; WildcardSeparator NameDivider → no λ ()
-    ; WildcardSeparator BlacklistWildcardBracket → no λ ()
-    ; WildcardSeparator WhitelistWildcardBracket → no λ ()
-    ; WildcardSeparator WildcardSeparator → yes refl} }
-
-  Marker-EqB = Eq→EqB {{Marker-Eq}}
-
-MultiCharGroup : Set
-MultiCharGroup = ⊥
-
-MultiChar' : Set
-MultiChar' = List (Char ⊎ MultiCharGroup)
-
-MultiChar : Set
-MultiChar = MultiChar' × Bool
-
-multiCharFromString : Maybe (Char × String) → MultiChar'
-multiCharFromString nothing = []
-multiCharFromString (just (c , s)) = if strNull s then [ inj₁ c ] else []
-
-multiChar'FromList : List String → MultiChar'
-multiChar'FromList [] = []
-multiChar'FromList (l ∷ l₁) = multiCharFromString (uncons l) + multiChar'FromList l₁
-
-multiCharFromList : List String → MultiChar
-multiCharFromList l = (multiChar'FromList l , true)
-
-negateMultiChar : MultiChar → MultiChar
-negateMultiChar = Data.Product.map₂ not
-
-matchMulti : Char → MultiChar → Bool
-matchMulti c (fst , snd) with or $ map (helper c) fst
-  where
-    helper : Char → Char ⊎ MultiCharGroup → Bool
-    helper c (inj₁ x) = c ≣ x
-... | matches = not (snd xor matches) -- true iff 'snd' equals 'matches'
-
-showMarkedString : MarkedString → String
-showMarkedString [] = ""
-showMarkedString (inj₁ x ∷ s) =
-  fromListS (decCase x of
-    map (λ x → (x , escapeMarker ∷ [ x ])) $
-      -- if we find anything in this list, escape it
-      escapeMarker ∷ map markerRepresentation enumerateMarkers
-    default [ x ])
-    + showMarkedString s
-showMarkedString (inj₂ x ∷ s) = (fromChar $ markerRepresentation x) + showMarkedString s
-
-convertToMarked : List Char → MarkedString
-convertToMarked = helper false
-  where
-    helper : Bool → List Char → MarkedString
-    helper escaped [] = []
-    helper false (x ∷ l) =
-      decCase x of
-        (escapeMarker , helper true l) ∷
-        map (λ x → (markerRepresentation x , inj₂ x ∷ helper false l)) enumerateMarkers
-        default (inj₁ x ∷ helper false l)
-    helper true (x ∷ l) = inj₁ x ∷ helper false l
-
-checkRuleName : String → String × List MarkedString → Set
-checkRuleName s r = s ≡ proj₁ r
-
-checkRuleNameDec : ∀ s → Decidable (checkRuleName s)
-checkRuleNameDec s (s' , _) = s ≟ s'
-
 -- Grammar with show functions for rules and non-terminals
 Grammar = ∃[ n ]
-  Σ[ G ∈ CFG (Fin (suc n)) MultiChar ] (Rules G → String) × (Fin (suc n) → String)
+  Σ[ G ∈ CFG (Fin (suc n)) MultiChar ] (CFG.Rule G → String) × (Fin (suc n) → String)
 
 NonTerminal : Grammar → Set
 NonTerminal (n , _) = Fin (suc n)
@@ -162,6 +37,12 @@ initNT (_ , G , _) = CFG.S G
 
 findNT : (G : Grammar) → String → Maybe (NonTerminal G)
 findNT (n , _ , _ , showNT) NT = findIndex (NT ≟_) (Data.Vec.tabulate showNT)
+
+checkRuleName : String → String × List MarkedString → Set
+checkRuleName s r = s ≡ proj₁ r
+
+checkRuleNameDec : ∀ s → Decidable (checkRuleName s)
+checkRuleNameDec s (s' , _) = s ≟ s'
 
 module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
@@ -187,13 +68,13 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
   preParseCFG [] = return $ zero , []
   preParseCFG (x ∷ l) with break (_≟ inj₂ NameDivider) x
   ... | name , rule' = if null name
-    then throwError $ "Parsing rule has no/empty name! Rule: " + showMarkedString x
+    then throwError $ "Parsing rule has no/empty name! Rule: " + markedStringToString x
     else do
       _ , rules ← preParseCFG l
       let rule = dropHeadIfAny rule'
-      return $ case findIndex (checkRuleNameDec $ showMarkedString name) rules of λ
+      return $ case findIndex (checkRuleNameDec $ markedStringToString name) rules of λ
         { (just x) → -, rules [ x ]%= Data.Product.map₂ (rule ∷_)
-        ; nothing → -, (showMarkedString name , [ rule ]) ∷ rules}
+        ; nothing → -, (markedStringToString name , [ rule ]) ∷ rules}
   
   {-# TERMINATING #-}
   generateCFG' : ∀ {n} → String → Vec (String × List MarkedString) (suc n) → M Grammar
@@ -208,7 +89,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
             ; AllRules = allFin ∘ numOfRules
             ; Rstring = λ {v} → ruleTable v }
           , (λ where (NT , rule) → let (NT' , rules') = lookup rules NT
-                                   in NT' + "$" + showMarkedString (lookup (fromList rules') rule))
+                                   in NT' + "$" + markedStringToString (lookup (fromList rules') rule))
           , proj₁ ∘ lookup rules)
       nothing → throwError $ "No non-terminal named " + start + " found!"
     where
@@ -248,12 +129,10 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       markedStringToRule (inj₂ BlacklistWildcardBracket ∷ s) = do
         (multiChar , rest) ← bracketHelper BlacklistWildcardBracket s
         res ← markedStringToRule rest
-        return
-          (inj₂ (inj₁ $ negateMultiChar $ multiCharFromList $ NE.toList multiChar) ∷ res)
+        return (inj₂ (inj₁ $ parseMultiCharNE true multiChar) ∷ res)
       markedStringToRule (inj₂ WhitelistWildcardBracket ∷ s) = do
         (multiChar , rest) ← bracketHelper WhitelistWildcardBracket s
-        res ← markedStringToRule rest
-        return ((inj₂ $ inj₁ $ multiCharFromList $ NE.toList multiChar) ∷ res)
+        inj₂ (inj₁ $ parseMultiCharNE false multiChar) ∷_ <$> markedStringToRule rest
       markedStringToRule (inj₂ WildcardSeparator ∷ s) =
         throwError "Wildcard separator outside of a wildcard!"
 
@@ -265,6 +144,6 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
   -- The first parameter describes the non-terminal the grammar should start with
   generateCFG : String → List String → M Grammar
   generateCFG start l = do
-    (suc k , y) ← preParseCFG $ map (convertToMarked ∘ toList) l
+    (suc k , y) ← preParseCFG $ map convertToMarked l
       where _ → throwError "The grammar is empty!"
     generateCFG' start y

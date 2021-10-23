@@ -18,9 +18,9 @@ open import IO using (IO; readFiniteFile)
 
 open import Conversion
 open import CoreTheory
-open import Escape
-open import ParseTreeConvert
-open import ParserGenerator
+open import Parse.Escape
+open import Parse.TreeConvert
+open import Parse.Generate
 
 open import Prelude
 open import Prelude.Strings

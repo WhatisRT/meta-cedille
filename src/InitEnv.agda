@@ -15,7 +15,7 @@ open import Data.Word32
 open import Prelude
 open import Prelude.Strings
 
-open import Escape
+open import Parse.Escape
 open import SimpleInductive
 
 private

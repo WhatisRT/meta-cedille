@@ -5,7 +5,7 @@
 
 {-# OPTIONS --type-in-type #-}
 
-module ParseTreeConvert where
+module Parse.TreeConvert where
 
 import Data.Product
 import Data.Sum
@@ -24,8 +24,9 @@ open import Prelude.Strings
 
 open import CoreTheory
 open import InitEnv
-open import Parser
-open import ParserGenerator
+open import Parse.MultiChar
+open import Parse.LL1
+open import Parse.Generate
 
 -- accepts the head and tail of a string and returns the head of the full string without escape symbols
 unescape : Char → String → Char
@@ -461,11 +462,11 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
   parse'Init : (G : Grammar) → NonTerminal G → String → M (Tree (String ⊎ Char) × String)
   parse'Init (_ , G , (showRule , showNT)) S s = do
-    res ← LL1Parser.parseInit showNT matchMulti show G M S s
+    res ← parseInit showNT matchMulti show G M S s
     return (Data.Product.map₁ (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ showRule)) res)
 
-  parse : String → M (Tree (String ⊎ Char) × String)
-  parse s = do
+  parsePreCoreGrammar : String → M (Tree (String ⊎ Char) × String)
+  parsePreCoreGrammar s = do
     G ← preCoreGrammar
     parse'Init G (initNT G) s
 
@@ -496,7 +497,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
   parseStmt : String → M (Stmt × String)
   parseStmt s = do
-    (y' , rest) ← parse s
+    (y' , rest) ← parsePreCoreGrammar s
     y ← synTreeToℕTree y'
     case toStmt y of λ
       { (just x) → return (x , rest)

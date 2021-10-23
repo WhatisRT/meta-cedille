@@ -2,7 +2,7 @@
 -- This file provides functions for escaping
 --------------------------------------------------------------------------------
 
-module Escape where
+module Parse.Escape where
 
 open import Class.Map
 open import Data.SimpleMap

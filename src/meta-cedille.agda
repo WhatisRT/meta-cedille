@@ -10,11 +10,11 @@ open import Monads.ExceptT
 open import Prelude
 open import Prelude.Strings
 
-open import ParserGenerator
+open import Parse.Generate
+open import Parse.TreeConvert
 open import CoreTheory
 open import Execution
 open import InitEnv
-open import ParseTreeConvert
 
 record EvalFlags : Set where
   field
