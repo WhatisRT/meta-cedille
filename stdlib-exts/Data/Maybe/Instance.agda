@@ -11,3 +11,6 @@ instance
 
   Maybe-Eq : ∀ {A} {{_ : Eq A}} → Eq (Maybe A)
   Maybe-Eq ⦃ record { _≟_ = _≟_ } ⦄ = record { _≟_ = ≡-dec _≟_ }
+
+  Maybe-EqB : ∀ {A} {{_ : Eq A}} → EqB (Maybe A)
+  Maybe-EqB = Eq→EqB

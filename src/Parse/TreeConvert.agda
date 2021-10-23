@@ -27,6 +27,7 @@ open import Bootstrap.InitEnv
 open import Parse.MultiChar
 open import Parse.LL1
 open import Parse.Generate
+open import Parse.Escape
 
 -- accepts the head and tail of a string and returns the head of the full string without escape symbols
 unescape : Char → String → Char
@@ -47,9 +48,6 @@ ruleId nonterm rule = do
   rules ← lookup nonterm parseRuleMap
   i ← findIndexList (_≟ (nonterm + "$" + rule)) rules
   return $ inj₁ i
-
-instance
-   _ = Eq→EqB
 
 _≡ᴹ_ : ℕ ⊎ Char → Maybe (ℕ ⊎ Char) → Bool
 x ≡ᴹ y = just x ≣ y
@@ -455,15 +453,48 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
 {-# CATCHALL #-}
 toStmt _ = nothing
 
+ruleToConstr : String → String
+ruleToConstr = fromList ∘ concat ∘ helper ∘ groupEscaped ∘ toList
+  where
+    helper : List (List Char) → List (List Char)
+    helper [] = []
+    helper (l ∷ l₁) = (case l of λ where
+      (c ∷ []) → if (_≣_ {{Char-EqB}} c '$') ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&'
+        then [ c ]
+        else escapeChar c
+      (_ ∷ c ∷ []) → if l ≣ "\\$" ∨ l ≣ "\\_" ∨ l ≣ "\\!" ∨ l ≣ "\\@" ∨ l ≣ "\\&"
+        then escapeChar c
+        else l
+      _ → l) ∷ (helper l₁)
+
+-- Folds a tree of constructors back into a term by properly applying the
+-- constructors and prefixing the namespace
+{-# TERMINATING #-}
+parseResultToConstrTree : String → Tree (String ⊎ Char) → AnnTerm
+parseResultToConstrTree namespace (Node x x₁) =
+  foldl (λ t t' → t ⟪$⟫ t') (ruleToTerm x) (parseResultToConstrTree namespace <$> x₁)
+    where
+      ruleToTerm : String ⊎ Char → AnnTerm
+      ruleToTerm (inj₁ x) = FreeVar (namespace + "$" + ruleToConstr x)
+      ruleToTerm (inj₂ y) = Char-A y
+
 module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
   preCoreGrammar : M Grammar
-  preCoreGrammar = generateCFG "stmt" (map fromList coreGrammarGenerator)
+  preCoreGrammar = generateCFGNonEscaped "stmt" (map fromList coreGrammarGenerator)
 
   parse'Init : (G : Grammar) → NonTerminal G → String → M (Tree (String ⊎ Char) × String)
   parse'Init (_ , G , (showRule , showNT)) S s = do
     res ← parseInit showNT matchMulti show G M S s
     return (Data.Product.map₁ (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ showRule)) res)
+
+  -- Parse the next top-level non-terminal symbol from a string, and return a
+  -- term representing the result of the parse, as well as the unparsed rest of
+  -- the string
+  parseInit' : (G : Grammar) → NonTerminal G → String → String → M (AnnTerm × String)
+  parseInit' G S namespace s = do
+    (t , rest) ← parse'Init G S s
+    return (parseResultToConstrTree namespace t , rest)
 
   parsePreCoreGrammar : String → M (Tree (String ⊎ Char) × String)
   parsePreCoreGrammar s = do

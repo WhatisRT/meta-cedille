@@ -45,18 +45,18 @@ groupEscaped = helper false
     helper true (x ∷ l) = ('\\' ∷ [ x ]) ∷ helper false l
 
 translate : List Char → Maybe (List Char)
-translate = (concat <$>_) ∘ helper ∘ splitMulti '='
+translate = helper ∘ splitMulti '='
   where
-    helper : List (List Char) → Maybe (List (List Char))
+    helper : List (List Char) → Maybe (List Char)
     helper [] = just []
-    helper (l ∷ []) = just (l ∷ [])
+    helper (l ∷ []) = just l
     helper (l ∷ l₁ ∷ l₂) = do
-      l' ← (lookup (fromList l₁) translationTable)
+      l' ← lookup (fromList l₁) translationTable
       l'' ← helper l₂
-      return $ l ∷
+      return $ l +
         (decCase l' of
           ('_' , "\\_") ∷ ('$' , "\\$") ∷ ('!' , "\\!") ∷ ('@' , "\\@") ∷ ('&' , "\\&") ∷ []
-          default [ l' ]) ∷ l''
+          default [ l' ]) + l''
 
 escapeChar : Char → List Char
 escapeChar c = maybe (λ s → "=" ++ toList s ++ "=") [ c ] $ lookup c escapeTable

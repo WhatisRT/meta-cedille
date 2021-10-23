@@ -89,7 +89,7 @@ readOptions = do
   return $ readArgs args defaultOptions
   where
     argumentDec : Decidable _
-    argumentDec s = false ≟ checkInit "--" (toList s)
+    argumentDec s = false ≟ isInit "--" (toList s)
 
     readArgs : List String → Options → Except String Options
     readArgs [] current = return current

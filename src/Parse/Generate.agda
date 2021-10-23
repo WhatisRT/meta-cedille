@@ -21,6 +21,7 @@ open import Data.Vec.Exts
 open import Parse.LL1
 open import Parse.MarkedString
 open import Parse.MultiChar
+open import Parse.Escape
 
 open import Prelude
 open import Prelude.Strings
@@ -142,8 +143,15 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
           appendIfError (markedStringToRule y) (" In: " + show y)
 
   -- The first parameter describes the non-terminal the grammar should start with
-  generateCFG : String → List String → M Grammar
-  generateCFG start l = do
+  generateCFGNonEscaped : String → List String → M Grammar
+  generateCFGNonEscaped start l = do
     (suc k , y) ← preParseCFG $ map convertToMarked l
       where _ → throwError "The grammar is empty!"
     generateCFG' start y
+
+  -- The first parameter describes the non-terminal the grammar should start with
+  generateCFG : String → List String → M Grammar
+  generateCFG start l =
+    maybe (generateCFGNonEscaped start)
+      (throwError "Error while un-escaping parsing rules!")
+      (sequence $ ((_<$>_ fromListS) ∘ translate ∘ toList) <$> l)

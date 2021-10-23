@@ -3,6 +3,7 @@ module Data.List.Exts where
 open import Class.Equality
 open import Class.Monad
 open import Class.Functor
+open import Data.Bool hiding (_≟_)
 open import Data.List
 open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Maybe.Instance
@@ -10,6 +11,10 @@ open import Data.Nat using (ℕ; zero; suc; _⊔_)
 open import Data.Product
 open import Relation.Nullary
 open import Relation.Unary
+
+private
+  variable
+    A : Set
 
 lookupMaybe : ∀ {a} {A : Set a} -> ℕ -> List A -> Maybe A
 lookupMaybe n [] = nothing
@@ -26,6 +31,7 @@ dropHeadIfAny : ∀ {a} {A : Set a} -> List A -> List A
 dropHeadIfAny [] = []
 dropHeadIfAny (x ∷ l) = l
 
+-- inverse to intercalate
 {-# TERMINATING #-}
 splitMulti : ∀ {A : Set} {{_ : Eq A}} -> A -> List A -> List (List A)
 splitMulti a [] = []
@@ -43,3 +49,8 @@ maximum (x ∷ l) = x ⊔ maximum l
 
 mapWithIndex : ∀ {a b} {A : Set a} {B : Set b} → (ℕ → A → B) → List A → List B
 mapWithIndex f l = zipWith f (upTo (length l)) l
+
+isInit : ⦃ EqB A ⦄ → List A → List A → Bool
+isInit [] l' = true
+isInit (x ∷ l) [] = false
+isInit (x ∷ l) (x₁ ∷ l') = x ≣ x₁ ∧ isInit l l'
