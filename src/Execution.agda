@@ -73,11 +73,11 @@ module _ {M : Set → Set} {{_ : Monad M}}
       (inj₁ x) → throwError x
       (inj₂ y) → setContext y >> return ("Defined " + n + show d)
 
-  termFromTerm : PureTerm → M AnnTerm
-  termFromTerm t = do
+  unquoteFromTerm : ∀ {A} ⦃ _ : Unquote A ⦄ → PureTerm → M A
+  unquoteFromTerm t = do
     Γ ← getContext
-    catchError (constrsToTerm Γ $ normalizePure Γ t)
-               (λ e → throwError $ "Error while converting " + show t + " to a term")
+    catchError (unquoteConstrs Γ $ normalizePure Γ t)
+               (λ e → throwError $ "Error while unquoting" <+> show t + ":\n" + e)
 
   -- Typecheck a term and return its type
   check : AnnTerm → M AnnTerm
@@ -148,25 +148,24 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   executeTerm (Epsilon-P t) = return (([] , []) , t)
 
   executeTerm (Gamma-P t t') =
-    catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ Erase (stringToTerm s)))
+    catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm s))
 
   executeTerm (Ev-P EvalStmt t) = do
     Γ ← getContext
-    let normStmt = normalizePure Γ t
-    stmt ← appendIfError (constrsToStmt Γ normStmt) ("Error with term: " + show t)
+    stmt ← unquoteFromTerm t
     res ← executeStmt stmt
-    return (res , Erase (embedMetaResult res))
+    return (res , quoteToPureTerm res)
 
   executeTerm (Ev-P ShellCmd (t , t')) = do
     Γ ← getContext
-    cmd ← constrsToString Γ $ normalizePure Γ t
-    args ← constrsToStringList Γ $ normalizePure Γ t'
+    cmd ← unquoteFromTerm t
+    args ← unquoteFromTerm t'
     res ← liftIO $ runShellCmd cmd args
-    return (strResult res , Erase (stringToTerm res))
+    return (strResult res , quoteToPureTerm res)
 
   executeTerm (Ev-P CheckTerm (t , t')) = do
     Γ ← getContext
-    u ← termFromTerm t'
+    u ← unquoteFromTerm t'
     T' ← check u
     catchError (checkβηPure Γ t $ Erase T')
       (λ e → throwError $
@@ -174,13 +173,12 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
         "\nSynthesized: " + show T')
     return (strResult "" , Erase u)
 
-  -- TODO: return rest as well
   executeTerm (Ev-P Parse (t , type , t')) = do
     Γ ← getContext
-    nonTerminal ← constrsToString Γ $ normalizePure Γ t
-    text ← constrsToString Γ $ normalizePure Γ t'
+    nonTerminal ← M String ∋ (unquoteFromTerm t)
+    text ← M String ∋ (unquoteFromTerm t')
     record { grammar = G ; namespace = namespace } ← getMeta
-    NT ← maybeToError (findNT G nonTerminal) ("Non-terminal " + nonTerminal + " does not exist in the current grammar!")
+    NT ← maybeToError (findNT G nonTerminal) ("Non-terminal" <+> nonTerminal <+> "does not exist in the current grammar!")
     (res , rest) ← parse G NT namespace text
     T ← appendIfError (synthType Γ res)
                       ("\n\nError while interpreting input: "
@@ -189,25 +187,25 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     appendIfError (checkβηPure Γ type $ Erase T)
       ("Type mismatch with the provided type!\nProvided: " + show type +
         "\nSynthesized: " + show T)
-    return (strResult "" , Erase res)
+    -- need to spell out instance manually, since we don't want to quote 'res'
+    return (strResult "" , quoteToPureTerm ⦃ Quotable-ProductData ⦃ Quotable-NoQuoteAnnTerm ⦄ ⦄
+      record { lType = T ; rType = FreeVar "init$string" ; l = res ; r = rest })
 
   executeTerm (Ev-P Normalize t) = do
     Γ ← getContext
-    u ← termFromTerm t
+    u ← unquoteFromTerm t
     T ← synthType Γ u
     return (strResult
       (show u + " : " + show T + " normalizes to: " +
-      (show $ normalizePure Γ $ Erase u)) , (Erase $ pureTermToTerm $ normalizePure Γ $ Erase u))
+      (show $ normalizePure Γ $ Erase u)) , (quoteToPureTerm $ normalizePure Γ $ Erase u))
 
   executeTerm (Ev-P HeadNormalize t) = do
     Γ ← getContext
-    u ← termFromTerm t
+    u ← unquoteFromTerm t
     T ← synthType Γ u
     return (strResult
       (show t + " : " + show T + " head-normalizes to: " +
-      (show $ hnfNorm Γ u)) , (Erase $ termToTerm $ hnfNorm Γ u))
-
-  -- executeStmt (EraseSt t) = return $ strResult $ show $ Erase t
+      (show $ hnfNorm Γ u)) , (quoteToPureTerm $ hnfNorm Γ u))
 
   {-# CATCHALL #-}
   executeTerm t =
@@ -234,10 +232,10 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     return (res , snd)
 
   parseAndExecute s = do
-    record { evaluator = interpreter } ← getMeta
-    (res , rest) ← case interpreter of λ where
-      (Sort-A □') → parseAndExecuteBootstrap s
-      _           → parseAndExecute' s
+    record { evaluator = evaluator } ← getMeta
+    (res , rest) ← case evaluator of λ where
+      (Sort-A □) → parseAndExecuteBootstrap s
+      _          → parseAndExecute' s
     res' ← if strNull rest then return mzero else parseAndExecute rest
     return (res + res')
 

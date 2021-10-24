@@ -87,8 +87,8 @@ b-let shellCmd' (cmd : String) (args : List String) : EvalState String :=
   liftMtoEvalState ?String (shellCmd cmd args).
 b-let checkTerm' (T : *) (t : Term) : EvalState T :=
   liftMtoEvalState ?T (checkTerm T (TermToInitTerm t)).
-b-let parse' (nt : String) (T : *) (text : String) : EvalState T :=
-  liftMtoEvalState ?T (parse nt T text).
+b-let parse' (nt : String) (T : *) (text : String) : EvalState (Product T String) :=
+  liftMtoEvalState ?(Product T String) (parse nt T text).
 
 -- these are currently broken
 b-let normalize' (t : Term) : EvalState init$term :=

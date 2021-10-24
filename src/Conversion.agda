@@ -29,7 +29,7 @@ module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
     extractConstrId (Var-P (Free x)) = throwError "Not a constructor"
     extractConstrId (Char-P c) = return $ inj₂ c
     {-# CATCHALL #-}
-    extractConstrId t = throwError ("Not a variable" + show t)
+    extractConstrId t = throwError ("Not a variable" <+> show t)
 
     {-# TERMINATING #-}
     extractConstrIdTree : Tree PureTerm → M (Tree (ℕ ⊎ Char))
@@ -38,56 +38,84 @@ module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       y' ← sequence (map extractConstrIdTree y)
       return $ Node x' y'
 
-    -- converts a normalized term to an appropriate agda term, if possible
-    constrsToAgda : {A : Set} → List Char → (Tree (ℕ ⊎ Char) → M A) → Context → PureTerm → M A
-    constrsToAgda init toTerm Γ t = do
-      t' ← extractConstrIdTree $ buildConstructorTree Γ t
-      toTerm t'
+  record Unquote (A : Set) : Set where
+    field
+      conversionFunction : Tree (ℕ ⊎ Char) → Maybe A
+      nameOfA            : String
 
-  constrsToStmt : Context → PureTerm → M Stmt
-  constrsToStmt = constrsToAgda "stmt" (λ t → maybeToError (toStmt t) ("Error while converting to stmt. Tree:\n" + show {{Tree-Show}} t))
+    unquoteConstrs : Context → PureTerm → M A
+    unquoteConstrs Γ t = do
+      t' ← appendIfError (extractConstrIdTree $ buildConstructorTree Γ t)
+                         ("Error while converting term" <+> show t
+                         <+> "to a tree of constructors of a" <+> nameOfA <+> "!")
+      maybeToError (conversionFunction t') ("Error while converting to" <+> nameOfA + ". Term:"
+                                           <+> show t + "\nTree:\n" + show {{Tree-Show}} t')
 
-  constrsToTerm : Context → PureTerm → M AnnTerm
-  constrsToTerm = constrsToAgda "term" (λ t → maybeToError (toTerm t) "Error while converting to term")
+  open Unquote {{...}} public
 
-  constrsToString : Context → PureTerm → M String
-  constrsToString = constrsToAgda "name" (λ x → maybeToError (toName x) "Error while converting to string")
+  instance
+    Unquote-Stmt : Unquote Stmt
+    Unquote-Stmt = record { conversionFunction = toStmt ; nameOfA = "statement" }
 
-  constrsToStringList : Context → PureTerm → M (List String)
-  constrsToStringList = constrsToAgda "name" (λ x → maybeToError (toNameList x) "Error while converting to string")
+    Unquote-Term : Unquote AnnTerm
+    Unquote-Term = record { conversionFunction = toTerm ; nameOfA = "term" }
 
-charListToTerm : List Char → AnnTerm
-charListToTerm [] = FreeVar "init$string$nil"
-charListToTerm (c ∷ cs) = FreeVar "init$string$cons" ⟪$⟫ Char-A c ⟪$⟫ charListToTerm cs
+    Unquote-String : Unquote String
+    Unquote-String = record { conversionFunction = toName ; nameOfA = "string" }
 
-stringToTerm : String → AnnTerm
-stringToTerm = charListToTerm ∘ toList
+    Unquote-StringList : Unquote (List String)
+    Unquote-StringList = record { conversionFunction = toNameList ; nameOfA = "string list" }
 
-stringListToTerm : List String → AnnTerm
-stringListToTerm [] = FreeVar "init$stringList$nil"
-stringListToTerm (x ∷ l) =
-  FreeVar "init$stringList$cons" ⟪$⟫ charListToTerm (toList x) ⟪$⟫ stringListToTerm l
+record Quotable (A : Set) : Set₁ where
+  field
+    quoteToAnnTerm : A → AnnTerm
 
--- Quote an AnnTerm
-termToTerm : AnnTerm → AnnTerm
-termToTerm t = Sort-A □ -- TODO
+  quoteToPureTerm : A → PureTerm
+  quoteToPureTerm = Erase ∘ quoteToAnnTerm
 
--- Quote a PureTerm
-pureTermToTerm : PureTerm → AnnTerm
-pureTermToTerm t = Sort-A □ -- TODO
+open Quotable {{...}} public
 
-termListToTerm : List AnnTerm → AnnTerm
-termListToTerm [] = FreeVar "init$termList$nil"
-termListToTerm (x ∷ l) = FreeVar "init$termList$cons" ⟪$⟫ termToTerm x ⟪$⟫ termListToTerm l
+instance
+  Quotable-ListChar : Quotable (List Char)
+  Quotable-ListChar .quoteToAnnTerm [] = FreeVar "init$string$nil"
+  Quotable-ListChar .quoteToAnnTerm (c ∷ cs) = FreeVar "init$string$cons" ⟪$⟫ Char-A c ⟪$⟫ quoteToAnnTerm cs
+
+  Quotable-String : Quotable String
+  Quotable-String .quoteToAnnTerm = quoteToAnnTerm ∘ toList
+
+  Quotable-ListString : Quotable (List String)
+  Quotable-ListString .quoteToAnnTerm [] = FreeVar "init$stringList$nil"
+  Quotable-ListString .quoteToAnnTerm (x ∷ l) =
+    FreeVar "init$stringList$cons" ⟪$⟫ quoteToAnnTerm x ⟪$⟫ quoteToAnnTerm l
+
+  Quotable-AnnTerm : Quotable AnnTerm
+  Quotable-AnnTerm .quoteToAnnTerm t = Sort-A □ -- TODO
+
+  Quotable-PureTerm : Quotable PureTerm
+  Quotable-PureTerm .quoteToAnnTerm t = Sort-A □ -- TODO
+
+  Quotable-ListTerm : Quotable (List AnnTerm)
+  Quotable-ListTerm .quoteToAnnTerm [] = FreeVar "init$termList$nil"
+  Quotable-ListTerm .quoteToAnnTerm (x ∷ l) = FreeVar "init$termList$cons" ⟪$⟫ quoteToAnnTerm x ⟪$⟫ quoteToAnnTerm l
+
+Quotable-NoQuoteAnnTerm : Quotable AnnTerm
+Quotable-NoQuoteAnnTerm .quoteToAnnTerm t = t
+
+record ProductData (L R : Set) : Set where
+  field
+    lType rType : AnnTerm
+    l : L
+    r : R
 
 -- The type of results of executing a statement in the interpreter. This can be
 -- returned back to the code via embedExecutionResult
 MetaResult = List String × List AnnTerm
 
-forceMetaResult : MetaResult → MetaResult
-forceMetaResult (fst , snd) = (_,_ $! fst) $! snd
+instance
+  Quotable-MetaResult : Quotable MetaResult
+  Quotable-MetaResult .quoteToAnnTerm (fst , snd) =
+    FreeVar "init$metaResult$pair" ⟪$⟫ quoteToAnnTerm fst ⟪$⟫ quoteToAnnTerm snd
 
--- Reflects the result into a term
-embedMetaResult : MetaResult → AnnTerm
-embedMetaResult (fst , snd) =
-  FreeVar "init$metaResult$pair" ⟪$⟫ stringListToTerm fst ⟪$⟫ termListToTerm snd
+  Quotable-ProductData : ∀ {L R} ⦃ _ : Quotable L ⦄ ⦃ _ : Quotable R ⦄ → Quotable (ProductData L R)
+  Quotable-ProductData .quoteToAnnTerm pDat = let open ProductData pDat in
+    FreeVar "init$pair" ⟪$⟫ lType ⟪$⟫ rType ⟪$⟫ quoteToAnnTerm l ⟪$⟫ quoteToAnnTerm r

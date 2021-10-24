@@ -143,6 +143,8 @@ private
     ++ "let init$string$_nameInitChar__string'_ := init$string$cons."
     ∷ "let init$string'$_nameTailChar__string'_ := init$string$cons."
     ∷ "let init$string'$ := init$string$nil."
+    ∷ "let init$product := λ A : * λ B : * ∀ X : * Π _ : Π _ : A Π _ : B X X."
+    ∷ "let init$pair := λ A : * λ B : * λ a : A λ b : B Λ X : * λ p : Π _ : A Π _ : B X [[p a] b]."
     ∷ "let eval := λ s : init$stmt ζEvalStmt s." ∷ "seteval eval init stmt." ∷ []
 
   grammarWithChars : List (List Char)

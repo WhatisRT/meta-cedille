@@ -112,7 +112,7 @@ instance
       helper (Free x) = x
 
 record TermLike (T : Set) : Set where
-  infixr -1 _⟪$⟫_ -- same as $
+  infixl -1 _⟪$⟫_ -- same as $ but on the left
   field
     Var : Name → T
     _⟪$⟫_ : T → T → T
@@ -180,19 +180,19 @@ instance
       helper l (Var-P x) = showVar l x
       helper l (Sort-P x) = show x
       helper l (Const-P x) = show x
-      helper l (App-P t t₁) = "[" + helper l t + " " + helper l t₁ + "]"
-      helper l (Lam-P n t) = "λ " + n + " " + helper (n ∷ l) t
-      helper l (Pi-P n t t₁) = "Π " + n + " " + helper (n ∷ l) t + " " + helper l t₁
-      helper l (All-P n t t₁) = "∀ " + n + " " + helper (n ∷ l) t + " " + helper l t₁
-      helper l (Iota-P n t t₁) = "ι " + n + " " + helper (n ∷ l) t + " " + helper l t₁
-      helper l (Eq-P t t₁) = "= " + helper l t + " " + helper l t₁
-      helper l (M-P t) = "M " + helper l t
-      helper l (Mu-P t t₁) = "μ " + helper l t + " " + helper l t₁
-      helper l (Epsilon-P t) = "ε " + helper l t
-      helper l (Gamma-P t t₁) = "Γ " + helper l t + " " + helper l t₁
-      helper l (Ev-P m args) = "ζ " + show m + " " + primMetaArgs-Show (helper l) args
-      helper l (Char-P c) = "Char " + show c
-      helper l (CharEq-P t t') = "CharEq " + show t + " " + show t'
+      helper l (App-P t t₁) = "[" + helper l t <+> helper l t₁ + "]"
+      helper l (Lam-P n t) = "λ" <+> n <+> helper (n ∷ l) t
+      helper l (Pi-P n t t₁) = "Π" <+> n <+> helper (n ∷ l) t <+> helper l t₁
+      helper l (All-P n t t₁) = "∀" <+> n <+> helper (n ∷ l) t <+> helper l t₁
+      helper l (Iota-P n t t₁) = "ι" <+> n <+> helper (n ∷ l) t <+> helper l t₁
+      helper l (Eq-P t t₁) = "=" <+> helper l t <+> helper l t₁
+      helper l (M-P t) = "M" <+> helper l t
+      helper l (Mu-P t t₁) = "μ" <+> helper l t <+> helper l t₁
+      helper l (Epsilon-P t) = "ε" <+> helper l t
+      helper l (Gamma-P t t₁) = "Γ" <+> helper l t <+> helper l t₁
+      helper l (Ev-P m args) = "ζ" <+> show m <+> primMetaArgs-Show (helper l) args
+      helper l (Char-P c) = "Char" <+> show c
+      helper l (CharEq-P t t') = "CharEq" <+> show t <+> show t'
 
 private
   beqMonadHelper : {{_ : EqB A}} {{_ : Show A}} {{_ : Monad M}} {{_ : MonadExcept M String}}
@@ -200,7 +200,7 @@ private
   beqMonadHelper a a' s =
     if a ≣ a'
       then return tt
-      else throwError (s + " " + show a + " isn't equal to name " + show a')
+      else throwError (s <+> show a <+> "isn't equal to name" <+> show a')
 
 {-# TERMINATING #-}
 pureTermBeq : {{_ : Monad M}} {{_ : MonadExcept M String}}
@@ -220,12 +220,12 @@ pureTermBeq (Epsilon-P t) (Epsilon-P x) = pureTermBeq t x
 pureTermBeq (Gamma-P t t₁) (Gamma-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
 pureTermBeq (Ev-P m t) (Ev-P m' x) with m ≟ m'
 ... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith pureTermBeq t x
-... | no  _    = throwError $ show m + " and " + show m' + " aren't equal!"
+... | no  _    = throwError $ show m <+> "and" <+> show m' <+> "aren't equal!"
 pureTermBeq (Char-P c) (Char-P c') = beqMonadHelper c c' "Char"
 pureTermBeq (CharEq-P t t₁) (CharEq-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
 {-# CATCHALL #-}
 pureTermBeq t t' =
-  throwError $ "The terms " + show t + " and " + show t' + " aren't equal!"
+  throwError $ "The terms" <+> show t <+> "and" <+> show t' <+> "aren't equal!"
 
 data AnnTerm : Set where
   Var-A : Name → AnnTerm
@@ -268,29 +268,29 @@ instance
       helper l (Var-A x)        = showVar l x
       helper l (Sort-A x)       = show x
       helper l (Const-A x)      = show x
-      helper l (Pr1-A t)        = "π1 " + helper l t
-      helper l (Pr2-A t)        = "π2 " + helper l t
-      helper l (Beta-A t t₁)    = "β " + helper l t + " " + helper l t₁
-      helper l (Delta-A t t₁)   = "Delta-A" + helper l t + " " + helper l t₁
+      helper l (Pr1-A t)        = "π1" <+> helper l t
+      helper l (Pr2-A t)        = "π2" <+> helper l t
+      helper l (Beta-A t t₁)    = "β" <+> helper l t <+> helper l t₁
+      helper l (Delta-A t t₁)   = "Delta-A" + helper l t <+> helper l t₁
       helper l (Sigma-A t)      = "ς" + helper l t
-      helper l (App-A t t₁)     = "[" + helper l t + " " + helper l t₁ + "]"
-      helper l (AppE-A t t₁)    = "<" + helper l t + " " + helper l t₁ + ">"
-      helper l (Rho-A t t₁ t₂)  = "ρ " + helper l t + " : " + helper l t₁ + " " + helper l t₂
-      helper l (All-A n t t₁)   = "∀ " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
-      helper l (Pi-A n t t₁)    = "Π " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
-      helper l (Iota-A n t t₁)  = "ι " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
-      helper l (Lam-A n t t₁)   = "λ " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
-      helper l (LamE-A n t t₁)  = "Λ " + n + " : " + helper l t + ". " + helper (n ∷ l) t₁
-      helper l (Pair-A t t₁ t₂) = "{" + helper l t + "," + helper l t₁ + " . " + helper l t₂ + "}"
-      helper l (Phi-A t t₁ t₂)  = "φ " + helper l t + " " + helper l t₁ + " " + helper l t₂
-      helper l (Eq-A t t₁)      = "(= " + helper l t + " " + helper l t₁ + ")"
-      helper l (M-A t)          = "M " + helper l t
-      helper l (Mu-A t t₁)      = "μ " + helper l t + " " + helper l t₁
-      helper l (Epsilon-A t)    = "ε " + helper l t
-      helper l (Gamma-A t t₁)   = "Γ " + helper l t + " " + helper l t₁
-      helper l (Ev-A m args)    = "Ev " + show m + " " + primMetaArgs-Show (helper l) args
-      helper l (Char-A c)       = "Char " + show c
-      helper l (CharEq-A t t')  = "CharEq " + show t + " " + show t'
+      helper l (App-A t t₁)     = "[" + helper l t <+> helper l t₁ + "]"
+      helper l (AppE-A t t₁)    = "<" + helper l t <+> helper l t₁ + ">"
+      helper l (Rho-A t t₁ t₂)  = "ρ" <+> helper l t <+> ":" <+> helper l t₁ <+> helper l t₂
+      helper l (All-A n t t₁)   = "∀" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
+      helper l (Pi-A n t t₁)    = "Π" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
+      helper l (Iota-A n t t₁)  = "ι" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
+      helper l (Lam-A n t t₁)   = "λ" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
+      helper l (LamE-A n t t₁)  = "Λ" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
+      helper l (Pair-A t t₁ t₂) = "{" + helper l t + "," + helper l t₁ <+> "." <+> helper l t₂ + "}"
+      helper l (Phi-A t t₁ t₂)  = "φ" <+> helper l t <+> helper l t₁ <+> helper l t₂
+      helper l (Eq-A t t₁)      = "(=" <+> helper l t <+> helper l t₁ + ")"
+      helper l (M-A t)          = "M" <+> helper l t
+      helper l (Mu-A t t₁)      = "μ" <+> helper l t <+> helper l t₁
+      helper l (Epsilon-A t)    = "ε" <+> helper l t
+      helper l (Gamma-A t t₁)   = "Γ" <+> helper l t <+> helper l t₁
+      helper l (Ev-A m args)    = "Ev" <+> show m <+> primMetaArgs-Show (helper l) args
+      helper l (Char-A c)       = "Char" <+> show c
+      helper l (CharEq-A t t')  = "CharEq" <+> show t <+> show t'
 
 primMetaS : (m : PrimMeta) → primMetaArgs AnnTerm m
 primMetaS EvalStmt      = FreeVar "init$stmt"
@@ -304,7 +304,7 @@ primMetaT : (m : PrimMeta) → primMetaArgs AnnTerm m → AnnTerm
 primMetaT EvalStmt _        = FreeVar "init$metaResult"
 primMetaT ShellCmd _        = FreeVar "init$string"
 primMetaT CheckTerm (t , _) = t
-primMetaT Parse (_ , t , _) = t
+primMetaT Parse (_ , t , _) = FreeVar "init$product" ⟪$⟫ t ⟪$⟫ FreeVar "init$string"
 primMetaT Normalize _       = FreeVar "init$term"
 primMetaT HeadNormalize _   = FreeVar "init$term"
 
@@ -329,8 +329,8 @@ instance
   Def-Show = record { show = helper }
     where
       helper : Def → String
-      helper (Let x x₁) = " := " + show x + " : " + show x₁
-      helper (Axiom x) = " : " + show x
+      helper (Let x x₁) = " :=" <+> show x <+> ":" <+> show x₁
+      helper (Axiom x) = " :" <+> show x
 
 typeOfDef : Def → AnnTerm
 typeOfDef (Let _ x) = x
@@ -446,7 +446,7 @@ instance
     where
       helper : Context → String
       helper (fst , snd) =
-        (show $ length snd) + " local variables:" + show snd
+        (show $ length snd) <+> "local variables:" + show snd
 
 globalToContext : GlobalContext → Context
 globalToContext Γ = Γ , []
@@ -672,7 +672,7 @@ findOutermostConstructor t = outermostApp $ stripBinders t
 insertInGlobalContext : GlobalName → Def → GlobalContext → String ⊎ GlobalContext
 insertInGlobalContext n d Γ =
   if is-just $ lookup n Γ
-    then inj₁ ("The name " + n + " is already defined!")
+    then inj₁ ("The name" <+> n <+> "is already defined!")
     else (inj₂ $ insert n (toEfficientDef d Γ) Γ)
   where
     toEfficientDef : Def → GlobalContext → EfficientDef
@@ -699,7 +699,7 @@ module CheckEquality {{_ : Monad M}} {{_ : MonadExcept M String}} (Γ : Context)
     where
       hnfError : PureTerm → PureTerm → M ⊤
       hnfError t t' =
-        throwError $ "The terms " + show t + " and " + show t' + " aren't equal!"
+        throwError $ "The terms" <+> show t <+> "and" <+> show t' <+> "aren't equal!"
 
       compareHnfs : PureTerm → PureTerm → M ⊤
       compareHnfs (Var-P x) (Var-P x₁) = beqMonadHelper x x₁ "Name"
@@ -742,12 +742,12 @@ synthType synthType' :
 
 synthType Γ t =
   appendIfError (synthType' Γ t) $
-    "\n\nWhile synthesizing type for " + shortenString 1000 (show t) + " in context:\n" + show {{Context-Show}} Γ
+    "\n\nWhile synthesizing type for" <+> shortenString 1000 (show t) <+> "in context:\n" + show {{Context-Show}} Γ
 
 synthType' Γ (Var-A x) =
   maybeToError
     (typeOfDef <$> lookupInContext x Γ)
-    ("Lookup failed: " + show x + " in context " + show {{Context-Show}} Γ)
+    ("Lookup failed:" <+> show x <+> "in context" <+> show {{Context-Show}} Γ)
 synthType' Γ (Sort-A ⋆) = return $ Sort-A □
 synthType' Γ (Sort-A □) = throwError "Cannot synthesize type for the superkind"
 
@@ -779,8 +779,8 @@ synthType' Γ (Delta-A t t₁) = do
         (pureTermBeq (normalizePure Γ $ Erase u) (Lam-P "" $ Lam-P "" $ BoundVar $ fromℕ 1) >>
          pureTermBeq (normalizePure Γ $ Erase u₁) (Lam-P "" $ Lam-P "" $ BoundVar $ fromℕ 0))
         (λ e → throwError $
-          "This equality cannot be used for the delta term: " + show u
-          + " = " + show u₁ + "\nError: " + e)
+          "This equality cannot be used for the delta term:" <+> show u
+          <+> "=" <+> show u₁ + "\nError:" <+> e)
       return t
     ; _ → throwError "The second argument of a delta needs to be of an eq type" }
 
@@ -797,11 +797,11 @@ synthType' Γ (App-A t t₁) = do
     { (Pi-A _ u u₁) → do
       catchError
         (checkβη Γ T₁ u)
-        (λ e → throwError ("Type mismatch in application, the type of " + show t₁
-          + " : " + show T₁ +  " is not βη-equivalent to " + show u + "\nError: " + e))
+        (λ e → throwError ("Type mismatch in application, the type of" <+> show t₁
+          <+> ":" <+> show T₁ +  " is not βη-equivalent to" <+> show u + "\nError:" <+> e))
       return $ subst u₁ t₁
     ; v → throwError $
-      "The left term in an application needs to have a pi type, while it has type " + show v }
+      "The left term in an application needs to have a pi type, while it has type" <+> show v }
 
 synthType' Γ (AppE-A t t₁) = do
   T ← synthType Γ t
@@ -815,7 +815,7 @@ synthType' Γ (AppE-A t t₁) = do
       return $ subst u₁ t₁
     ; v → throwError $
       "The left term in an erased application needs to have a forall type, while it has type "
-        + show v + "\nTest: " + show T }
+        + show v + "\nTest:" <+> show T }
 
 synthType' Γ (Rho-A t t₁ t₂) = do
   T ← synthType Γ t
@@ -823,8 +823,8 @@ synthType' Γ (Rho-A t t₁ t₂) = do
   case (hnfNorm Γ T) of λ
     { (Eq-A u u₁) → do
       catchError (checkβη Γ (subst t₁ u₁) T₁)
-        (λ e → throwError $ "Type mismatch in rho: " + show (subst t₁ u₁)
-          + " should be βη-equivalent to the synthesized type of " + show t₂ + " : "
+        (λ e → throwError $ "Type mismatch in rho:" <+> show (subst t₁ u₁)
+          <+> "should be βη-equivalent to the synthesized type of" <+> show t₂ <+> ": "
           + show T₁ + "\nError:\n" + e)
       return $ subst t₁ u
     ; _ → throwError "The type of the first argument of a rho needs to be an equality" }
@@ -839,7 +839,7 @@ synthType' Γ (All-A _ t t₁) = do
         { (Sort-A ⋆) → return $ Sort-A ⋆
         ; v → throwError $
           "The type family in forall should have type star, while it has type "
-          + show v + " (" + show t₁ + ")\nContext: " + show {{Context-Show}} Γ' }
+          + show v <+> "(" + show t₁ + ")\nContext:" <+> show {{Context-Show}} Γ' }
     ; _ → throwError "The type of the parameter type in forall should be star or square" }
 
 synthType' Γ (Pi-A _ t t₁) = do
@@ -851,7 +851,7 @@ synthType' Γ (Pi-A _ t t₁) = do
       case (hnfNorm Γ u₁) of λ
         { (Sort-A s') → return $ Sort-A s'
         ; v → throwError $
-          "The type family in pi should have type star or square, while it has type " + show v }
+          "The type family in pi should have type star or square, while it has type" <+> show v }
     ; _ → throwError "The type of the parameter type in pi should be star or square" }
 
 synthType' Γ (Iota-A _ t t₁) = do
@@ -890,7 +890,7 @@ synthType' Γ (Pair-A t t₁ t₂) = do
     (checkβη Γ (subst t₂ t) u₁)
     (λ e → throwError
       ("Type mismatch in the second argument of the dependent intersection: "
-        + show (subst t₂ t) + " should be βη-equivalent to the synthesized type "
+        + show (subst t₂ t) <+> "should be βη-equivalent to the synthesized type "
         + show u₁ + "\n" + e))
   let res = Iota-A "" u t₂
   u₂ ← synthType Γ res
@@ -915,9 +915,9 @@ synthType' Γ (Eq-A x x₁) =
     then if validInContext (Erase x₁) Γ
       then return $ Sort-A ⋆
       else throwError
-        ("The right term in the equality type needs to be valid in the context: " + show x₁)
+        ("The right term in the equality type needs to be valid in the context:" <+> show x₁)
     else throwError
-      ("The left term in the equality type needs to be valid in the context: " + show x)
+      ("The left term in the equality type needs to be valid in the context:" <+> show x)
 
 synthType' Γ (M-A t) = do
   T ← synthType Γ t
@@ -933,7 +933,7 @@ synthType' Γ (Mu-A t t₁) = do
       case (hnfNorm Γ T') of λ
         { (Pi-A _ v v₁) → do
           T'' ← if checkFree (Bound $ fromℕ 0) (Erase v₁)
-            then throwError ("Index 0 is not allowed to appear in " + show v₁)
+            then throwError ("Index 0 is not allowed to appear in" <+> show v₁)
             else synthType (pushVar v Γ) v₁
           case (hnfNorm Γ T'') of λ
             { (Sort-A ∗) →
@@ -956,7 +956,7 @@ synthType' Γ (Ev-A m t) = do
   T ← traversePrimMetaArgs (synthType Γ) t
   appendIfError
     (primMetaArgsSequence $ primMetaArgsZipWith (checkβη Γ) T $ primMetaS m)
-    ("The arguments for primitive " + show m + " have incorrect types!")
+    ("The arguments for primitive" <+> show m <+> "have incorrect types!")
   return $ M-A $ primMetaT m t
 
 synthType' Γ (Gamma-A t t₁) = do
@@ -965,8 +965,8 @@ synthType' Γ (Gamma-A t t₁) = do
   case (hnfNorm Γ T) of λ
     { (M-A u) → do
       appendIfError (checkβη Γ T₁ (Pi-A "" (FreeVar "init$err") (incrementIndicesBy (fromℕ 1) $ M-A u)))
-        ("The second term supplied to CatchErr has type " + show T₁ +
-         ", while it should have type 'init$err → M " + show u)
+        ("The second term supplied to CatchErr has type" <+> show T₁ +
+         ", while it should have type 'init$err → M" <+> show u)
       return $ M-A u
     ; _ → throwError "The first term in CatchErr needs to have type 'M t' for some 't'" }
 

@@ -86,10 +86,10 @@ readOptions = do
     readArgs : List String → Options → Except String Options
     readArgs [] current = return current
     readArgs ("--no-repl" ∷ input) current = readArgs input record current { startRepl = false }
-    readArgs ("--load"    ∷ input) current with span argumentDec input
-    ... | (files , rest)                   = readArgs rest record current { importFiles = files }
     readArgs ("--verbose" ∷ input) current = readArgs input record current { verbose = true }
     readArgs ("--help"    ∷ input) current = readArgs input record current { showHelp = true }
+    readArgs ("--load"    ∷ input) current with span argumentDec input
+    ... | (files , rest)                   = readArgs rest record current { importFiles = files }
     readArgs (x           ∷ input) current = inj₁ ("Unknown option: " + x)
 
 helpString : String
