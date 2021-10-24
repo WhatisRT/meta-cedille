@@ -5,7 +5,6 @@
 module Parse.MultiChar where
 
 import Data.List.NonEmpty as NE
-open import Data.List hiding (uncons)
 open import Data.String hiding (show)
 
 open import Prelude

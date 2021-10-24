@@ -7,12 +7,9 @@
 
 module Parse.TreeConvert where
 
-import Data.Product
 import Data.Sum
 open import Class.Map
 open import Class.Monad.Except
-open import Data.Fin.Instance
-open import Data.List using (break)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList; fromChar; uncons)
 open import Data.Tree
@@ -28,10 +25,6 @@ open import Parse.MultiChar
 open import Parse.LL1
 open import Parse.Generate
 open import Parse.Escape
-
--- accepts the head and tail of a string and returns the head of the full string without escape symbols
-unescape : Char → String → Char
-unescape c r = if ⌊ c ≟ '\\' ⌋ then (case strHead r of λ { nothing → c ; (just x) → x }) else c
 
 continueIfInit : ∀ {a} {A : Set a} → List Char → List Char → (List Char → A) → Maybe A
 continueIfInit {A = A} init s = helper init s
@@ -453,84 +446,71 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
 {-# CATCHALL #-}
 toStmt _ = nothing
 
-ruleToConstr : String → String
-ruleToConstr = fromList ∘ concat ∘ helper ∘ groupEscaped ∘ toList
-  where
-    helper : List (List Char) → List (List Char)
-    helper [] = []
-    helper (l ∷ l₁) = (case l of λ where
-      (c ∷ []) → if (_≣_ {{Char-EqB}} c '$') ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&'
-        then [ c ]
-        else escapeChar c
-      (_ ∷ c ∷ []) → if l ≣ "\\$" ∨ l ≣ "\\_" ∨ l ≣ "\\!" ∨ l ≣ "\\@" ∨ l ≣ "\\&"
-        then escapeChar c
-        else l
-      _ → l) ∷ (helper l₁)
+private
+  -- Folds a tree of constructors back into a term by properly applying the
+  -- constructors and prefixing the namespace
+  {-# TERMINATING #-}
+  foldConstrTree : String → Tree (String ⊎ Char) → AnnTerm
+  foldConstrTree namespace (Node x x₁) =
+    foldl (λ t t' → t ⟪$⟫ t') (ruleToTerm x) (foldConstrTree namespace <$> x₁)
+      where
+        ruleToTerm : String ⊎ Char → AnnTerm
+        ruleToTerm (inj₁ x) = FreeVar (namespace + "$" + ruleToConstr x)
+        ruleToTerm (inj₂ y) = Char-A y
 
--- Folds a tree of constructors back into a term by properly applying the
--- constructors and prefixing the namespace
-{-# TERMINATING #-}
-parseResultToConstrTree : String → Tree (String ⊎ Char) → AnnTerm
-parseResultToConstrTree namespace (Node x x₁) =
-  foldl (λ t t' → t ⟪$⟫ t') (ruleToTerm x) (parseResultToConstrTree namespace <$> x₁)
-    where
-      ruleToTerm : String ⊎ Char → AnnTerm
-      ruleToTerm (inj₁ x) = FreeVar (namespace + "$" + ruleToConstr x)
-      ruleToTerm (inj₂ y) = Char-A y
+  convertIfChar : Tree (String ⊎ Char) → Maybe (Tree (ℕ ⊎ Char))
+  convertIfChar (Node (inj₁ x) x₁) = do
+    rest ← stripPrefix "nameInitChar$" x <∣> stripPrefix "nameTailChar$" x
+    (c , s) ← uncons rest
+    just $ Node (inj₂ $ unescape c s) []
+  convertIfChar (Node (inj₂ x) x₁) = nothing
 
 module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
   preCoreGrammar : M Grammar
   preCoreGrammar = generateCFGNonEscaped "stmt" (map fromList coreGrammarGenerator)
 
-  parse'Init : (G : Grammar) → NonTerminal G → String → M (Tree (String ⊎ Char) × String)
-  parse'Init (_ , G , (showRule , showNT)) S s = do
-    res ← parseInit showNT matchMulti show G M S s
-    return (Data.Product.map₁ (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ showRule)) res)
+  private
+    parseToConstrTree : (G : Grammar) → NonTerminal G → String → M (Tree (String ⊎ Char) × String)
+    parseToConstrTree (_ , G , (showRule , showNT)) S s = do
+      (t , rest) ← parseWithInitNT showNT matchMulti show G M S s
+      return (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ showRule) t , rest)
+
+    parsePreCoreGrammar : String → M (Tree (String ⊎ Char) × String)
+    parsePreCoreGrammar s = do
+      G ← preCoreGrammar
+      parseToConstrTree G (initNT G) s
+
+    {-# TERMINATING #-} -- cannot just use sequence here because of the char special case
+    synTreeToℕTree : Tree (String ⊎ Char) → M (Tree (ℕ ⊎ Char))
+    synTreeToℕTree t@(Node (inj₁ x) x₁) with convertIfChar t
+    ... | (just t') = return t'
+    ... | nothing = do
+      id ← fullRuleId x
+      ids ← sequence $ map synTreeToℕTree x₁
+      return (Node id ids)
+      where
+        fullRuleId : String → M (ℕ ⊎ Char)
+        fullRuleId l with break (_≟ '$') (toList l) -- split at '$'
+        ... | (x , []) = throwError "No '$' character found!"
+        ... | (x , _ ∷ y) = maybeToError (ruleId x y) ("Rule " + l + "doesn't exist!")
+
+    synTreeToℕTree (Node (inj₂ x) x₁) = return $ Node (inj₂ x) []
 
   -- Parse the next top-level non-terminal symbol from a string, and return a
   -- term representing the result of the parse, as well as the unparsed rest of
   -- the string
-  parseInit' : (G : Grammar) → NonTerminal G → String → String → M (AnnTerm × String)
-  parseInit' G S namespace s = do
-    (t , rest) ← parse'Init G S s
-    return (parseResultToConstrTree namespace t , rest)
+  parse : (G : Grammar) → NonTerminal G → String → String → M (AnnTerm × String)
+  parse G S namespace s = do
+    (t , rest) ← parseToConstrTree G S s
+    return (foldConstrTree namespace t , rest)
 
-  parsePreCoreGrammar : String → M (Tree (String ⊎ Char) × String)
-  parsePreCoreGrammar s = do
-    G ← preCoreGrammar
-    parse'Init G (initNT G) s
-
-  {-# TERMINATING #-} -- cannot just use sequence here because of the char special case
-  synTreeToℕTree : Tree (String ⊎ Char) → M (Tree (ℕ ⊎ Char))
-  synTreeToℕTree t@(Node (inj₁ x) x₁) = do
-    case convertIfChar t of λ
-      { (just t') → return t'
-      ; nothing → do
-        id ← fullRuleId x
-        ids ← sequence $ map synTreeToℕTree x₁
-        return (Node id ids)
-      }
-    where
-      fullRuleId : String → M (ℕ ⊎ Char)
-      fullRuleId l with break (_≟ '$') (toList l) -- split at '$'
-      ... | (x , []) = throwError "No '$' character found!"
-      ... | (x , _ ∷ y) = maybeToError (ruleId x y) ("Rule " + l + "doesn't exist!")
-
-      convertIfChar : Tree (String ⊎ Char) → Maybe (Tree (ℕ ⊎ Char))
-      convertIfChar (Node (inj₁ x) x₁) = do
-        rest ← stripPrefix "nameInitChar$" x <∣> stripPrefix "nameTailChar$" x
-        (c , s) ← uncons rest
-        just $ Node (inj₂ $ unescape c s) []
-      convertIfChar (Node (inj₂ x) x₁) = nothing
-
-  synTreeToℕTree (Node (inj₂ x) x₁) = return $ Node (inj₂ x) []
-
+  -- Used for bootstrapping
   parseStmt : String → M (Stmt × String)
   parseStmt s = do
     (y' , rest) ← parsePreCoreGrammar s
     y ← synTreeToℕTree y'
-    case toStmt y of λ
-      { (just x) → return (x , rest)
-      ; nothing →
-        throwError ("Error while converting syntax tree to statement!\nTree:\n" + show y + "\nRemaining: " + s) }
+    case toStmt y of λ where
+      (just x) → return (x , rest)
+      nothing → throwError ("Error while converting syntax tree to statement!\nTree:\n" + show y
+                             + "\nRemaining: " + s)

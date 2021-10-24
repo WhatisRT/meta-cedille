@@ -10,7 +10,6 @@ open import Data.Char.Ranges
 open import Data.List using (dropWhile; takeWhile)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
-open import Data.Word32
 
 open import Prelude
 open import Prelude.Strings

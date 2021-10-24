@@ -15,16 +15,17 @@ open import Data.Char using (Char) public
 open import Data.Char.Instance public
 open import Data.Empty public
 open import Data.Empty.Instance public
-open import Data.List using (List; []; [_]; _∷_; drop; boolFilter; filter; head; reverse; _++_; zipWith; foldl; intersperse; map; null; span; length) public
+open import Data.Fin using (Fin) public
+open import Data.List using (List; []; [_]; _∷_; drop; boolFilter; filter; head; reverse; _++_; zipWith; foldl; intersperse; map; null; span; break; allFin; length; mapMaybe; or; and) public
 open import Data.List.Exts public
 open import Data.List.Instance public
 open import Data.Maybe using (Maybe; just; nothing; maybe; from-just; is-just; is-nothing; _<∣>_) public
 open import Data.Maybe.Instance public
 open import Data.Nat hiding (_+_; _≟_) public
 open import Data.Nat.Instance public
-open import Data.Product using (_×_; _,_; proj₁; proj₂; ∃-syntax; -,_; Σ; swap) public
+open import Data.Product using (_×_; _,_; proj₁; proj₂; ∃-syntax; -,_; Σ; swap; Σ-syntax; map₁; map₂) public
 open import Data.Product.Instance public
-open import Data.String using (String; unlines; padRight) public
+open import Data.String using (String; unwords; unlines; padRight; _<+>_) public
 open import Data.String.Exts public
 open import Data.String.Instance public
 open import Data.Sum using (_⊎_; inj₁; inj₂; from-inj₁; from-inj₂) public

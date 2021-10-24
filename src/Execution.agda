@@ -12,7 +12,6 @@ open import Class.Monad.Except
 open import Class.Monad.IO
 open import Class.Monad.State
 open import Data.HSTrie
-open import IO using (IO; readFiniteFile)
 
 open import Conversion
 open import CoreTheory
@@ -23,41 +22,41 @@ open import Parse.Generate
 open import Prelude
 open import Prelude.Strings
 
-Log : Set
-Log = ⊤
-
-instance
-  Log-Monoid : Monoid Log
-  Log-Monoid = Unit-Monoid
+record MetaEnv : Set where
+  field
+    grammar   : Grammar
+    namespace : String  -- we need to remember the current namespace
+                        -- because the rule string in the grammar doesn't
+    evaluator : AnnTerm
 
 -- The full state of the interpreter: the context of defined values plus parsing
 -- and semantics for generating code
 MetaContext : Set
-MetaContext = GlobalContext × Grammar × String × AnnTerm
+MetaContext = GlobalContext × MetaEnv
 
 -- Many statements just return a single string, in which case this function can
 -- be used
 strResult : String → MetaResult
 strResult s = [ s ] , []
 
+getParserNamespace : Context → String → List String
+getParserNamespace (Γ , _) n = strDrop (strLength n + 1) <$> (trieKeys $ lookupHSTrie n Γ)
+
 module _ {M : Set → Set} {{_ : Monad M}}
   {{_ : MonadExcept M String}} {{_ : MonadState M MetaContext}} where
 
   getContext : M Context
-  getContext = gets (λ m → (proj₁ m , []))
+  getContext = gets (globalToContext ∘ proj₁)
 
-  get' : M GlobalContext
-  get' = gets proj₁
-
-  getMeta : M (Grammar × String × AnnTerm)
+  getMeta : M MetaEnv
   getMeta = gets proj₂
 
   modify' : (MetaContext → MetaContext) → M ⊤
   modify' f = modify f >> return tt
 
-  setMeta : Grammar → String → AnnTerm → M ⊤
-  setMeta G namespace interpreter =
-    modify' λ { (Γ , _) → (Γ , G , namespace , interpreter) }
+  setMeta : MetaEnv → M ⊤
+  setMeta menv =
+    modify' λ { (Γ , _) → (Γ , menv) }
 
   setContext : GlobalContext → M ⊤
   setContext Γ = modify' λ { (_ , m) → (Γ , m) }
@@ -80,30 +79,26 @@ module _ {M : Set → Set} {{_ : Monad M}}
     catchError (constrsToTerm Γ $ normalizePure Γ t)
                (λ e → throwError $ "Error while converting " + show t + " to a term")
 
-getParserNamespace : GlobalContext → String → List String
-getParserNamespace Γ n = strDrop (strLength n + 1) <$> (trieKeys $ lookupHSTrie n Γ)
-
-module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
-  {{_ : MonadExcept M String}} {{_ : MonadState M MetaContext}} {{_ : MonadIO M}}
-  where
-
   -- Typecheck a term and return its type
   check : AnnTerm → M AnnTerm
   check t = do
     Γ ← getContext
     synthType Γ t
 
-  parseMeta : Grammar × String × AnnTerm → String → M (AnnTerm × String)
-  parseMeta (G , namespace , _) s = parseInit' G (initNT G) namespace s
+  parseMeta : MetaEnv → String → M (AnnTerm × String)
+  parseMeta menv s = let open MetaEnv menv in parse grammar (initNT grammar) namespace s
+
+module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
+  {{_ : MonadExcept M String}} {{_ : MonadState M MetaContext}} {{_ : MonadIO M}}
+  where
 
   {-# NON_TERMINATING #-}
   -- Execute a term of type M t for some t
   executeTerm : PureTerm → M (MetaResult × PureTerm)
   executeStmt : Stmt → M MetaResult
-  -- Parse and execute a string in the pre-meta language
-  tryExecute' : String → M MetaResult
   -- Parse and execute a string
-  tryExecute : String → M MetaResult
+  parseAndExecute' parseAndExecuteBootstrap : String → M (MetaResult × String)
+  parseAndExecute : String → M MetaResult
 
   executeStmt (Let n t nothing) = do
     T ← check t
@@ -120,26 +115,27 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     strResult <$> addDef n (Let t t')
 
   executeStmt (Ass n t) = do
-    t' ← check t
+    _ ← check t
     strResult <$> addDef n (Axiom t)
 
   executeStmt (SetEval t n start) = do
-    Γ ← get'
-    let Γ' = globalToContext Γ
+    Γ ← getContext
     y ← generateCFG start $ getParserNamespace Γ n
-    (Pi-A _ u u₁) ← hnfNorm Γ' <$> synthType Γ' t
+    (Pi-A _ u u₁) ← hnfNorm Γ <$> synthType Γ t
       where _ → throwError "The evaluator needs to have a pi type"
-    appendIfError (checkβη Γ' u $ FreeVar (n + "$" + start))
+    appendIfError (checkβη Γ u $ FreeVar (n + "$" + start))
       "The evaluator needs to accept the parse result as input"
-    case (hnfNorm Γ' u₁) of λ where
-      (M-A _) → setMeta y n t >> return (strResult "Successfully set the evaluator")
+    case (hnfNorm Γ u₁) of λ where
+      (M-A _) → do
+        setMeta record { grammar = y ; namespace = n ; evaluator = t }
+        return $ strResult "Successfully set the evaluator"
       _       → throwError "The evaluator needs to return a M type"
 
   executeStmt (Import x) = do
     res ← liftIO $ readFiniteFileError (x + ".mced")
     case res of λ where
       (inj₁ x) → throwError x
-      (inj₂ y) → tryExecute y
+      (inj₂ y) → parseAndExecute y
 
   executeStmt Empty = return (strResult "")
 
@@ -183,9 +179,9 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     Γ ← getContext
     nonTerminal ← constrsToString Γ $ normalizePure Γ t
     text ← constrsToString Γ $ normalizePure Γ t'
-    (G , namespace , _) ← getMeta
+    record { grammar = G ; namespace = namespace } ← getMeta
     NT ← maybeToError (findNT G nonTerminal) ("Non-terminal " + nonTerminal + " does not exist in the current grammar!")
-    (res , rest) ← parseInit' G NT namespace text
+    (res , rest) ← parse G NT namespace text
     T ← appendIfError (synthType Γ res)
                       ("\n\nError while interpreting input: "
                         + (shortenString 10000 (show res))
@@ -217,31 +213,33 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   executeTerm t =
     throwError ("Error: " + show t + " is not a term that can be evaluated!")
 
-  tryExecute' s = do
+  parseAndExecuteBootstrap s = do
     (fst , snd) ← parseStmt s
     res ← appendIfError (executeStmt fst) ("\n\nError while executing statement: " + show fst)
-    res' ← if strNull snd then return ([] , []) else tryExecute' snd
-    return (res + res')
+    return (res , snd)
 
-  tryExecute s = do
+  parseAndExecute' s = do
     Γ ← getContext
-    m@(_ , _ , interpreter) ← getMeta
-    case interpreter of λ
-      { (Sort-A □') → tryExecute' s -- this is the default interpreter that gets used to start the language
-      ; _ → do
-        (fst , snd) ← parseMeta m s
-        let exec = interpreter ⟪$⟫ fst
-        (M-A _) ← hnfNorm Γ <$>
-          appendIfError (synthType Γ exec)
-                        ("\n\nError while interpreting input: "
-                          + (shortenString 10000 (show fst))
-                          + "\nWhile parsing: " + (shortenString 10000 s))
-          where _ → throwError "Trying to execute something that isn't of type M t. This should never happen!"
-        let execHnf = hnfNormPure Γ $ Erase exec
-        (res , _) ← appendIfError (executeTerm execHnf) ("\n\nError while executing input: " + s)
-        res' ← if strNull snd then return mzero else tryExecute snd
-        return (res + res')
-      }
+    m ← getMeta
+    (fst , snd) ← parseMeta m s
+    let exec = MetaEnv.evaluator m ⟪$⟫ fst
+    (M-A _) ← hnfNorm Γ <$>
+      appendIfError (synthType Γ exec)
+                    ("\n\nError while interpreting input: "
+                      + (shortenString 10000 (show fst))
+                      + "\nWhile parsing: " + (shortenString 10000 s))
+      where _ → throwError "Trying to execute something that isn't of type M t. This should never happen!"
+    let execHnf = hnfNormPure Γ $ Erase exec
+    (res , _) ← appendIfError (executeTerm execHnf) ("\n\nError while executing input: " + s)
+    return (res , snd)
+
+  parseAndExecute s = do
+    record { evaluator = interpreter } ← getMeta
+    (res , rest) ← case interpreter of λ where
+      (Sort-A □') → parseAndExecuteBootstrap s
+      _           → parseAndExecute' s
+    res' ← if strNull rest then return mzero else parseAndExecute rest
+    return (res + res')
 
 module ExecutionMonad where
   open import Monads.ExceptT

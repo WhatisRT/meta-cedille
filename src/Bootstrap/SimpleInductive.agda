@@ -1,7 +1,6 @@
 module Bootstrap.SimpleInductive where
 
-open import Data.List
-open import Data.String using (_<+>_; unwords)
+open import Data.List using (applyUpTo)
 
 open import Prelude
 

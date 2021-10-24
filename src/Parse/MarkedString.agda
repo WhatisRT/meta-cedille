@@ -6,7 +6,7 @@
 
 module Parse.MarkedString where
 
-open import Data.String hiding (_≟_)
+open import Data.String using (fromList; fromChar; toList)
 
 open import Prelude
 

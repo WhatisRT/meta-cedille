@@ -36,6 +36,13 @@ private
   escapeTable : SimpleMap Char String
   escapeTable = map swap translationTable
 
+  isSpecialChar : Char → Bool
+  isSpecialChar c = c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&'
+
+-- accepts the head and tail of a string and returns the head of the full string without escape symbols
+unescape : Char → String → Char
+unescape c r = if ⌊ c ≟ '\\' ⌋ then (case strHead r of λ { nothing → c ; (just x) → x }) else c
+
 groupEscaped : List Char → List (List Char)
 groupEscaped = helper false
   where
@@ -53,10 +60,21 @@ translate = helper ∘ splitMulti '='
     helper (l ∷ l₁ ∷ l₂) = do
       l' ← lookup (fromList l₁) translationTable
       l'' ← helper l₂
-      return $ l +
-        (decCase l' of
-          ('_' , "\\_") ∷ ('$' , "\\$") ∷ ('!' , "\\!") ∷ ('@' , "\\@") ∷ ('&' , "\\&") ∷ []
-          default [ l' ]) + l''
+      return $ l + (if isSpecialChar l' then '\\' ∷ [ l' ] else [ l' ]) + l''
 
 escapeChar : Char → List Char
 escapeChar c = maybe (λ s → "=" ++ toList s ++ "=") [ c ] $ lookup c escapeTable
+
+ruleToConstr : String → String
+ruleToConstr = fromList ∘ concat ∘ helper ∘ groupEscaped ∘ toList
+  where
+    helper : List (List Char) → List (List Char)
+    helper [] = []
+    helper (l ∷ l₁) = (case l of λ where
+      (c ∷ []) → if isSpecialChar c
+        then [ c ]
+        else escapeChar c
+      ('\\' ∷ c ∷ []) → if isSpecialChar c
+        then escapeChar c
+        else l
+      _ → l) ∷ (helper l₁)

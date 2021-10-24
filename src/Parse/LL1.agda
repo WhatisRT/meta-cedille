@@ -11,7 +11,6 @@
 module Parse.LL1 where
 
 import Data.String as S
-open import Data.Product using (map₁)
 open import Data.Sum using (isInj₁)
 open import Class.Monad.Except
 open import Data.String using (fromList; toList; uncons)
@@ -91,8 +90,8 @@ module _ {V MultiChar : Set} (showV : V → String)
           helper x (inj₂ t ∷ _) = match x t
 
   {-# NON_TERMINATING #-}
-  parseInit : V → String → M (SynTree × String)
-  parseInit v a = do
+  parseWithInitNT : V → String → M (SynTree × String)
+  parseWithInitNT v a = do
     (y , rest) ← helper [ inj₁ v ] a
     maybe
       (λ z → return (z , rest)) (throwError "BUG: Error while creating syntax tree.")
@@ -133,6 +132,3 @@ module _ {V MultiChar : Set} (showV : V → String)
               needsChild (inj₂ (inj₁ x)) = true
               needsChild (inj₂ (inj₂ y)) = false
           resToTree' (inj₂ l ∷ l₁) = just (Node (inj₂ l) [] , l₁)
-
-  parse : String → M (SynTree × String)
-  parse = parseInit S

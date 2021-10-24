@@ -7,15 +7,12 @@
 
 module Parse.Generate where
 
-open import Data.Product using (Σ-syntax)
 open import Class.Monad.Except
-open import Data.Fin hiding (_≟_; _+_)
 open import Data.Fin.Map
-open import Data.List hiding (lookup; _[_]%=_; uncons)
 import Data.List.NonEmpty as NE
 open NE using (List⁺; _∷_)
 open import Data.String using (toList; fromChar; uncons) renaming (fromList to fromListS)
-open import Data.Vec using (Vec; lookup; fromList; []; _∷_; _[_]%=_; tabulate)
+open import Data.Vec using (Vec; lookup; fromList; []; _∷_; _[_]%=_)
 open import Data.Vec.Exts
 
 open import Parse.LL1
@@ -74,7 +71,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       _ , rules ← preParseCFG l
       let rule = dropHeadIfAny rule'
       return $ case findIndex (checkRuleNameDec $ markedStringToString name) rules of λ
-        { (just x) → -, rules [ x ]%= Data.Product.map₂ (rule ∷_)
+        { (just x) → -, rules [ x ]%= map₂ (rule ∷_)
         ; nothing → -, (markedStringToString name , [ rule ]) ∷ rules}
   
   {-# TERMINATING #-}
