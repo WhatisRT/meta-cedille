@@ -12,9 +12,8 @@ let defineInfix (symbol, funName : String) : init$newStmt :=
       (just ?Term θ{InfixData})))
     reloadMEnv.
 
-let init$newStmt'$infix_space_=doublequote=_newstring_=doublequote=_space_=colon==equal=_space__string_=dot=
-  (_ : init$space) (s : String) (_, _ : init$space) (s' : String) : init$newStmt :=
-  defineInfix s s'.
+let init$newStmt'$infix^space^=doublequote=_newstring_=doublequote=^space^=colon==equal=^space^_string_=dot=
+  (s : String) (s' : String) : init$newStmt := defineInfix s s'.
 
 updateEval.
 

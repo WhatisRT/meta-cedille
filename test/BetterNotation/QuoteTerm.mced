@@ -70,8 +70,8 @@ b-let quoteTerm (t : Term) : Term :=
 
 -- Syntax
 
-b-let init$singleTerm$=theta==lbrace=_space'__multiTerm_=rbrace= (_ : init$space') (t : Term) : Term := quoteTerm t.
-b-let init$singleTerm$=gamma==lbrace=_space'__multiTerm_=rbrace= (_ : init$space') (t : Term) : Term := unquoteTerm t.
+b-let init$singleTerm$=theta==lbrace=^space'^_multiTerm_=rbrace= (t : Term) : Term := quoteTerm t.
+b-let init$singleTerm$=gamma==lbrace=^space'^_multiTerm_=rbrace= (t : Term) : Term := unquoteTerm t.
 -- unquoteTerm is just a constructor of Term
 
 seteval eval init stmt.

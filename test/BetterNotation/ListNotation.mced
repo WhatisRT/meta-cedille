@@ -12,8 +12,8 @@ b-let quoteTermList (type : Term) (terms : List Term) : Term :=
 -- Syntax
 
 b-let init$termlist'$ : List Term := nil ?Term.
-b-let init$termlist'$=comma=_space'__multiTerm__termlist'_
-  (_ : init$space') (t : Term) (ts : List Term) : List Term :=
+b-let init$termlist'$=comma=^space'^_multiTerm__termlist'_
+  (t : Term) (ts : List Term) : List Term :=
   cons ?Term t ts.
 
 b-let init$termlist$ : List Term := nil ?Term.
@@ -21,8 +21,8 @@ b-let init$termlist$_multiTerm__termlist'_
   (t : Term) (ts : List Term) : List Term :=
   cons ?Term t ts.
 
-b-let init$singleTerm$=lsquare=_space'__multiTerm_=pipe=_space'__termlist_=rsquare=
-  (_ : init$space') (type : Term) (_ : init$space') (terms : List Term) : Term :=
+b-let init$singleTerm$=lsquare=^space'^_multiTerm_=pipe=^space'^_termlist_=rsquare=
+  (type : Term) (terms : List Term) : Term :=
   quoteTermList type terms.
 
 seteval eval init stmt.

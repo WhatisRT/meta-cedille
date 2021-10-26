@@ -11,65 +11,60 @@ open import Data.String using (fromList; fromChar; toList)
 open import Prelude
 
 data Marker : Set where
-  NonTerminalBracket : Marker
+  NonTerminalBracket : Bool → Marker
   NameDivider : Marker
-  BlacklistWildcardBracket : Marker
-  WhitelistWildcardBracket : Marker
+  WildcardBracket : Bool → Marker
   WildcardSeparator : Marker
 
 instance
   Marker-Show : Show Marker
-  Marker-Show = record { show = λ
-    { NonTerminalBracket → "NonTerminalBracket"
-    ; NameDivider → "NameDivider"
-    ; BlacklistWildcardBracket → "BlacklistWildcardBracket"
-    ; WhitelistWildcardBracket → "WhitelistWildcardBracket"
-    ; WildcardSeparator → "WildcardSeparator"} }
+  Marker-Show = record { show = λ where
+    (NonTerminalBracket true)  → "NonTerminalBracket"
+    (NonTerminalBracket false) → "IgnoredNonTerminalBracket"
+    NameDivider                → "NameDivider"
+    (WildcardBracket true)     → "BlacklistWildcardBracket"
+    (WildcardBracket false)    → "WhitelistWildcardBracket"
+    WildcardSeparator          → "WildcardSeparator" }
 
   Marker-Eq : Eq Marker
-  Marker-Eq = record { _≟_ = λ
-    { NonTerminalBracket NonTerminalBracket → yes refl
-    ; NonTerminalBracket NameDivider → no λ ()
-    ; NonTerminalBracket BlacklistWildcardBracket → no λ ()
-    ; NonTerminalBracket WhitelistWildcardBracket → no λ ()
-    ; NonTerminalBracket WildcardSeparator → no λ ()
-    ; NameDivider NonTerminalBracket → no λ ()
-    ; NameDivider NameDivider → yes refl
-    ; NameDivider BlacklistWildcardBracket → no λ ()
-    ; NameDivider WhitelistWildcardBracket → no λ ()
-    ; NameDivider WildcardSeparator → no λ ()
-    ; BlacklistWildcardBracket NonTerminalBracket → no λ ()
-    ; BlacklistWildcardBracket NameDivider → no λ ()
-    ; BlacklistWildcardBracket BlacklistWildcardBracket → yes refl
-    ; BlacklistWildcardBracket WhitelistWildcardBracket → no λ ()
-    ; BlacklistWildcardBracket WildcardSeparator → no λ ()
-    ; WhitelistWildcardBracket NonTerminalBracket → no λ ()
-    ; WhitelistWildcardBracket NameDivider → no λ ()
-    ; WhitelistWildcardBracket BlacklistWildcardBracket → no λ ()
-    ; WhitelistWildcardBracket WhitelistWildcardBracket → yes refl
-    ; WhitelistWildcardBracket WildcardSeparator → no λ ()
-    ; WildcardSeparator NonTerminalBracket → no λ ()
-    ; WildcardSeparator NameDivider → no λ ()
-    ; WildcardSeparator BlacklistWildcardBracket → no λ ()
-    ; WildcardSeparator WhitelistWildcardBracket → no λ ()
-    ; WildcardSeparator WildcardSeparator → yes refl} }
+  Marker-Eq = record { _≟_ = λ where
+    (NonTerminalBracket x) (NonTerminalBracket x₁) →
+      case x ≟ x₁ of λ { (yes refl) → yes refl ; (no ¬p) → no (λ { refl → ¬p refl }) }
+    (NonTerminalBracket x) NameDivider → no (λ ())
+    (NonTerminalBracket x) (WildcardBracket x₁) → no (λ ())
+    (NonTerminalBracket x) WildcardSeparator → no (λ ())
+    NameDivider (NonTerminalBracket x) → no (λ ())
+    NameDivider NameDivider → yes refl
+    NameDivider (WildcardBracket x) → no (λ ())
+    NameDivider WildcardSeparator → no (λ ())
+    (WildcardBracket x) (NonTerminalBracket x₁) → no (λ ())
+    (WildcardBracket x) NameDivider → no (λ ())
+    (WildcardBracket x) (WildcardBracket x₁) →
+      case x ≟ x₁ of λ { (yes refl) → yes refl ; (no ¬p) → no (λ { refl → ¬p refl }) }
+    (WildcardBracket x) WildcardSeparator → no (λ ())
+    WildcardSeparator (NonTerminalBracket x) → no (λ ())
+    WildcardSeparator NameDivider → no (λ ())
+    WildcardSeparator (WildcardBracket x) → no (λ ())
+    WildcardSeparator WildcardSeparator → yes refl }
 
   Marker-EqB = Eq→EqB {{Marker-Eq}}
 
 enumerateMarkers : List Marker
 enumerateMarkers =
-  NonTerminalBracket ∷
-  NameDivider ∷
-  BlacklistWildcardBracket ∷
-  WhitelistWildcardBracket ∷
-  WildcardSeparator ∷ []
+  NonTerminalBracket true  ∷
+  NonTerminalBracket false ∷
+  NameDivider              ∷
+  WildcardBracket true     ∷
+  WildcardBracket false    ∷
+  WildcardSeparator        ∷ []
 
 markerRepresentation : Marker → Char
-markerRepresentation NonTerminalBracket = '_'
-markerRepresentation NameDivider = '$'
-markerRepresentation BlacklistWildcardBracket = '!'
-markerRepresentation WhitelistWildcardBracket = '@'
-markerRepresentation WildcardSeparator = '&'
+markerRepresentation (NonTerminalBracket true)  = '_'
+markerRepresentation (NonTerminalBracket false) = '^'
+markerRepresentation NameDivider                = '$'
+markerRepresentation (WildcardBracket true)     = '!'
+markerRepresentation (WildcardBracket false)    = '@'
+markerRepresentation WildcardSeparator          = '&'
 -- other good candidates: &*#~%
 
 escapeMarker = '\\'

@@ -55,12 +55,12 @@ let convertLetInfo :=
 -- Syntax for `let`
 
 let init$betterLetType$ := [<<inr Term> Unit> tt].
-let init$betterLetType$_space__multiTerm_=colon= := λ _ : init$space λ t : Term [<<inl Term> Unit> t].
+let init$betterLetType$^space^_multiTerm_=colon= := λ t : Term [<<inl Term> Unit> t].
 
-let init$betterLet$_string__space__telescope_=colon=_betterLetType_=equal=_space'__multiTerm_=dot= :=
-  λ n : String λ _ : init$space λ tel : Telescope λ maybeType : [Maybe Term] λ _ : init$space' λ term : Term
+let init$betterLet$_string_^space^_telescope_=colon=_betterLetType_=equal=^space'^_multiTerm_=dot= :=
+  λ n : String λ tel : Telescope λ maybeType : [Maybe Term] λ term : Term
     [[appendTelToLetInfo tel] [[[mkLetInfo n] term] maybeType]].
 
-let init$stmt'$b=minus=let_space__betterLet_ := λ _ : init$space convertLetInfo.
+let init$stmt'$b=minus=let^space^_betterLet_ := convertLetInfo.
 
 seteval eval init stmt.

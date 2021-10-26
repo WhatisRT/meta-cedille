@@ -55,7 +55,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       then return (NE.[ "" ] , s)
       else
         if x ≣ WildcardSeparator
-          then if (m ≣ BlacklistWildcardBracket) ∨ (m ≣ WhitelistWildcardBracket)
+          then if (m ≣ WildcardBracket true) ∨ (m ≣ WildcardBracket false)
             then (do
               (res , rest) ← bracketHelper m s
               return ("" NE.∷⁺ res , rest))
@@ -85,7 +85,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
             { S = i
             ; R = Fin ∘ numOfRules
             ; AllRules = allFin ∘ numOfRules
-            ; Rstring = λ {v} → ruleTable v }
+            ; Rstring'' = λ {v} → ruleTable v }
           , (λ where (NT , rule) → let (NT' , rules') = lookup rules NT
                                    in NT' + "$" + markedStringToString (lookup (fromList rules') rule))
           , proj₁ ∘ lookup rules)
@@ -98,7 +98,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       RuleTable T = DepFinMap (suc n) (λ v → FinMap (numOfRules v) T)
 
       RuleString : Set
-      RuleString = List (Fin (suc n) ⊎ MultiChar ⊎ String)
+      RuleString = List ((Fin (suc n) × Bool) ⊎ MultiChar ⊎ String)
 
       sequenceRuleTable : ∀ {A} → RuleTable (M A) → M (RuleTable A)
       sequenceRuleTable f = sequenceDepFinMap (sequenceDepFinMap ∘ f)
@@ -115,22 +115,18 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
         res ← markedStringToRule s
         return (addCharToRuleString x res)
       -- this terminates because 'rest' is shorter than 's'
-      markedStringToRule (inj₂ NonTerminalBracket ∷ s) = do
-        (nonTerm ∷ _ , rest) ← bracketHelper NonTerminalBracket s
+      markedStringToRule (inj₂ (NonTerminalBracket b) ∷ s) = do
+        (nonTerm ∷ _ , rest) ← bracketHelper (NonTerminalBracket b) s
         res ← markedStringToRule rest
         nonTerm' ← maybeToError
           (findIndex (checkRuleNameDec nonTerm) rules)
           ("Couldn't find a non-terminal named '" + nonTerm + "'")
-        return (inj₁ nonTerm' ∷ res)
+        return (inj₁ (nonTerm' , b) ∷ res)
       markedStringToRule (inj₂ NameDivider ∷ s) =
         throwError "The rule cannot contain a name divider!"
-      markedStringToRule (inj₂ BlacklistWildcardBracket ∷ s) = do
-        (multiChar , rest) ← bracketHelper BlacklistWildcardBracket s
-        res ← markedStringToRule rest
-        return (inj₂ (inj₁ $ parseMultiCharNE true multiChar) ∷ res)
-      markedStringToRule (inj₂ WhitelistWildcardBracket ∷ s) = do
-        (multiChar , rest) ← bracketHelper WhitelistWildcardBracket s
-        inj₂ (inj₁ $ parseMultiCharNE false multiChar) ∷_ <$> markedStringToRule rest
+      markedStringToRule (inj₂ (WildcardBracket b) ∷ s) = do
+        (multiChar , rest) ← bracketHelper (WildcardBracket b) s
+        inj₂ (inj₁ $ parseMultiCharNE b multiChar) ∷_ <$> markedStringToRule rest
       markedStringToRule (inj₂ WildcardSeparator ∷ s) =
         throwError "Wildcard separator outside of a wildcard!"
 

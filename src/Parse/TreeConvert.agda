@@ -156,52 +156,52 @@ toTerm = helper []
           s ← head x₁ >>= toSort
           return $ Sort-A s) ∷
 
-        (ruleId "term" "π_space__term_" , (case x₁ of λ
-          { (_ ∷ y ∷ []) → do
+        (ruleId "term" "π^space^_term_" , (case x₁ of λ
+          { (y ∷ []) → do
             y' ← helper accu y
             return $ Pr1-A y'
           ; _ → nothing })) ∷
 
-        (ruleId "term" "ψ_space__term_" , (case x₁ of λ
-          { (_ ∷ y ∷ []) → do
+        (ruleId "term" "ψ^space^_term_" , (case x₁ of λ
+          { (y ∷ []) → do
             y' ← helper accu y
             return $ Pr2-A y'
           ; _ → nothing })) ∷
 
-        (ruleId "term" "β_space__term__space__term_" , (case x₁ of λ
-          { (_ ∷ y ∷ _ ∷ y' ∷ []) → do
+        (ruleId "term" "β^space^_term_^space^_term_" , (case x₁ of λ
+          { (y ∷ y' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ Beta-A t t'
           ; _ → nothing })) ∷
 
-        (ruleId "term" "δ_space__term__space__term_" , (case x₁ of λ
-          { (_ ∷ y ∷ _ ∷ y' ∷ []) → do
+        (ruleId "term" "δ^space^_term_^space^_term_" , (case x₁ of λ
+          { (y ∷ y' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ Delta-A t t'
           ; _ → nothing })) ∷
 
-        (ruleId "term" "σ_space__term_" , (case x₁ of λ
-          { (_ ∷ y ∷ []) → helper accu y >>= λ y' → return (Sigma-A y') ; _ → nothing })) ∷
+        (ruleId "term" "σ^space^_term_" , (case x₁ of λ
+          { (y ∷ []) → helper accu y >>= λ y' → return (Sigma-A y') ; _ → nothing })) ∷
 
-        (ruleId "term" "[_space'__term__space__term__space'_]" , (case x₁ of λ
-          { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ []) → do
+        (ruleId "term" "[^space'^_term_^space^_term_^space'^]" , (case x₁ of λ
+          { (y ∷ y' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ App-A t t'
           ; _ → nothing })) ∷
 
-        (ruleId "term" "<_space'__term__space__term__space'_>" , (case x₁ of λ
-          { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ []) → do
+        (ruleId "term" "<^space'^_term_^space^_term_^space'^>" , (case x₁ of λ
+          { (y ∷ y' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ AppE-A t t'
           ; _ → nothing })) ∷
 
         (ruleId "term"
-          "ρ_space__term__space__string__space'_._space'__term__space__term_" , (case x₁ of λ
-          { (_ ∷ y ∷ _ ∷ n' ∷ _ ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) → do
+          "ρ^space^_term_^space^_string_^space'^.^space'^_term_^space^_term_" , (case x₁ of λ
+          { (y ∷ n' ∷ y' ∷ y'' ∷ []) → do
             t ← helper accu y
             n ← toName n'
             t' ← helper (n ∷ accu) y'
@@ -210,8 +210,8 @@ toTerm = helper []
           ; _ → nothing })) ∷
 
         (ruleId "term"
-          "∀_space__string__space'_:_space'__term__space__term_" , (case x₁ of λ
-          { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) → do
+          "∀^space^_string_^space'^:^space'^_term_^space^_term_" , (case x₁ of λ
+          { (n' ∷ y ∷ y' ∷ []) → do
             n ← toName n'
             t ← helper accu y
             t' ← helper (n ∷ accu) y'
@@ -219,8 +219,8 @@ toTerm = helper []
           ; _ → nothing })) ∷
 
         (ruleId "term"
-          "Π_space__string__space'_:_space'__term__space__term_" , (case x₁ of λ
-          { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) → do
+          "Π^space^_string_^space'^:^space'^_term_^space^_term_" , (case x₁ of λ
+          { (n' ∷ y ∷ y' ∷ []) → do
             n ← toName n'
             t ← helper accu y
             t' ← helper (n ∷ accu) y'
@@ -228,8 +228,8 @@ toTerm = helper []
           ; _ → nothing })) ∷
 
         (ruleId "term"
-          "ι_space__string__space'_:_space'__term__space__term_" , (case x₁ of λ
-          { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) → do
+          "ι^space^_string_^space'^:^space'^_term_^space^_term_" , (case x₁ of λ
+          { (n' ∷ y ∷ y' ∷ []) → do
             n ← toName n'
             t ← helper accu y
             t' ← helper (n ∷ accu) y'
@@ -237,8 +237,8 @@ toTerm = helper []
           ; _ → nothing })) ∷
 
         (ruleId "term"
-          "λ_space__string__space'_:_space'__term__space__term_" , (case x₁ of λ
-          { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) → do
+          "λ^space^_string_^space'^:^space'^_term_^space^_term_" , (case x₁ of λ
+          { (n' ∷ y ∷ y' ∷ []) → do
             n ← toName n'
             t ← helper accu y
             t' ← helper (n ∷ accu) y'
@@ -246,8 +246,8 @@ toTerm = helper []
           ; _ → nothing })) ∷
 
         (ruleId "term"
-          "Λ_space__string__space'_:_space'__term__space__term_" , (case x₁ of λ
-          { (_ ∷ n' ∷ _ ∷ _ ∷ y ∷ _ ∷ y' ∷ []) → do
+          "Λ^space^_string_^space'^:^space'^_term_^space^_term_" , (case x₁ of λ
+          { (n' ∷ y ∷ y' ∷ []) → do
             n ← toName n'
             t ← helper accu y
             t' ← helper (n ∷ accu) y'
@@ -255,9 +255,9 @@ toTerm = helper []
           ; _ → nothing })) ∷
 
         (ruleId "term"
-          "{_space'__term__space'_,_space'__term__space__string__space'_._space'__term__space'_}" ,
+          "{^space'^_term_^space'^,^space'^_term_^space^_string_^space'^.^space'^_term_^space'^}" ,
           (case x₁ of λ
-          { (_ ∷ y ∷ _ ∷ _ ∷ y' ∷ _ ∷ n' ∷ _ ∷ _ ∷ y'' ∷ _ ∷ []) → do
+          { (y ∷ y' ∷ n' ∷ y'' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             n ← toName n'
@@ -265,83 +265,83 @@ toTerm = helper []
             return $ Pair-A t t' t''
           ; _ → nothing })) ∷
 
-        (ruleId "term" "φ_space__term__space__term__space__term_" , (case x₁ of λ
-          { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) → do
+        (ruleId "term" "φ^space^_term_^space^_term_^space^_term_" , (case x₁ of λ
+          { (y ∷ y' ∷ y'' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             t'' ← helper accu y''
             return $ Phi-A t t' t''
           ; _ → nothing })) ∷
 
-        (ruleId "term" "=_space__term__space__term_" , (case x₁ of λ
-          { (_ ∷ y ∷ _ ∷ y' ∷ []) → do
+        (ruleId "term" "=^space^_term_^space^_term_" , (case x₁ of λ
+          { (y ∷ y' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ Eq-A t t'
           ; _ → nothing })) ∷
 
-        (ruleId "term" "ω_space__term_" , (case x₁ of λ
-          { (_ ∷ y ∷ []) → do
+        (ruleId "term" "ω^space^_term_" , (case x₁ of λ
+          { (y ∷ []) → do
             t ← helper accu y
             return $ M-A t
           ; _ → nothing })) ∷
 
-        (ruleId "term" "μ_space__term__space__term_" , (case x₁ of λ
-          { (_ ∷ y ∷ _ ∷ y' ∷ []) → do
+        (ruleId "term" "μ^space^_term_^space^_term_" , (case x₁ of λ
+          { (y ∷ y' ∷ []) → do
             t ← helper accu y
             t' ← helper accu y'
             return $ Mu-A t t'
           ; _ → nothing })) ∷
 
-        (ruleId "term" "ε_space__term_" , (case x₁ of λ
-          { (_ ∷ y ∷ []) → do
+        (ruleId "term" "ε^space^_term_" , (case x₁ of λ
+          { (y ∷ []) → do
             t ← helper accu y
             return $ Epsilon-A t
           ; _ → nothing })) ∷
 
-        (ruleId "term" "ζEvalStmt_space__term_" , (case x₁ of λ
-          { (_ ∷ z ∷ []) → do
+        (ruleId "term" "ζEvalStmt^space^_term_" , (case x₁ of λ
+          { (z ∷ []) → do
             t ← helper accu z
             return $ Ev-A EvalStmt t
           ; _ → nothing })) ∷
 
-        (ruleId "term" "ζShellCmd_space__term__space__term_" , (case x₁ of λ
-          { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
+        (ruleId "term" "ζShellCmd^space^_term_^space^_term_" , (case x₁ of λ
+          { (z ∷ z' ∷ []) → do
             t ← helper accu z
             t' ← helper accu z'
             return $ Ev-A ShellCmd (t , t')
           ; _ → nothing })) ∷
 
-        (ruleId "term" "ζCheckTerm_space__term__space__term_" , (case x₁ of λ
-          { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
+        (ruleId "term" "ζCheckTerm^space^_term_^space^_term_" , (case x₁ of λ
+          { (z ∷ z' ∷ []) → do
             t ← helper accu z
             t' ← helper accu z'
             return $ Ev-A CheckTerm (t , t')
           ; _ → nothing })) ∷
 
-        (ruleId "term" "ζParse_space__term__space__term__space__term_" , (case x₁ of λ
-          { (_ ∷ z ∷ _ ∷ z' ∷ _ ∷ z'' ∷ []) → do
+        (ruleId "term" "ζParse^space^_term_^space^_term_^space^_term_" , (case x₁ of λ
+          { (z ∷ z' ∷ z'' ∷ []) → do
             t ← helper accu z
             t' ← helper accu z'
             t'' ← helper accu z''
             return $ Ev-A Parse (t , t' , t'')
           ; _ → nothing })) ∷
 
-        (ruleId "term" "ζCatchErr_space__term__space__term_" , (case x₁ of λ
-          { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
+        (ruleId "term" "ζCatchErr^space^_term_^space^_term_" , (case x₁ of λ
+          { (z ∷ z' ∷ []) → do
             t ← helper accu z
             t' ← helper accu z'
             return $ Gamma-A t t'
           ; _ → nothing })) ∷
 
-        (ruleId "term" "ζNormalize_space__term_" , (case x₁ of λ
-          { (_ ∷ z ∷ []) → do
+        (ruleId "term" "ζNormalize^space^_term_" , (case x₁ of λ
+          { (z ∷ []) → do
             t ← helper accu z
             return $ Ev-A Normalize t
           ; _ → nothing })) ∷
 
-        (ruleId "term" "ζHeadNormalize_space__term_" , (case x₁ of λ
-          { (_ ∷ z ∷ []) → do
+        (ruleId "term" "ζHeadNormalize^space^_term_" , (case x₁ of λ
+          { (z ∷ []) → do
             t ← helper accu z
             return $ Ev-A HeadNormalize t
           ; _ → nothing })) ∷
@@ -358,8 +358,8 @@ toTerm = helper []
             return $ Char-A c
           ; _ → nothing })) ∷
 
-        (ruleId "term" "γ_space__term__space__term_" , (case x₁ of λ
-          { (_ ∷ z ∷ _ ∷ z' ∷ []) → do
+        (ruleId "term" "γ^space^_term_^space^_term_" , (case x₁ of λ
+          { (z ∷ z' ∷ []) → do
             t ← helper accu z
             t' ← helper accu z'
             return $ CharEq-A t t'
@@ -388,39 +388,39 @@ instance
       helper Empty                = "Empty"
 
 toStmt : Tree (ℕ ⊎ Char) → Maybe Stmt
-toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
-  if x ≡ᴹ ruleId "stmt" "_space'__stmt'_"
+toStmt (Node x ((Node x' x₂) ∷ [])) =
+  if x ≡ᴹ ruleId "stmt" "^space'^_stmt'_"
     then
       decCase just x' of
-        (ruleId "stmt'" "let_space__string__space'_:=_space'__term__space'__lettail_" ,
+        (ruleId "stmt'" "let^space^_string_^space'^:=^space'^_term_^space'^_lettail_" ,
           (case x₂ of λ
-            { (_ ∷ y ∷ _ ∷ _ ∷ y' ∷ _ ∷ y'' ∷ []) → do
+            { (y ∷ y' ∷ y'' ∷ []) → do
               n ← toName y
               t ← toTerm y'
               return $ Let n t $ toLetTail y''
             ; _ → nothing })) ∷
 
         (ruleId "stmt'"
-          "ass_space__string__space'_:_space'__term__space'_." ,
+          "ass^space^_string_^space'^:^space'^_term_^space'^." ,
           (case x₂ of λ
-            { (_ ∷ y ∷ _ ∷ _ ∷ y₁ ∷ _ ∷ []) → do
+            { (y ∷ y₁ ∷ []) → do
               n ← toName y
               t ← toTerm y₁
               return $ Ass n t
             ; _ → nothing })) ∷
 
-        (ruleId "stmt'" "seteval_space__term__space__string__space__string__space'_." ,
+        (ruleId "stmt'" "seteval^space^_term_^space^_string_^space^_string_^space'^." ,
           (case x₂ of λ
-            { (_ ∷ y ∷ _ ∷ y' ∷ _ ∷ y'' ∷ _ ∷ []) → do
+            { (y ∷ y' ∷ y'' ∷ []) → do
               t ← toTerm y
               n ← toName y'
               n' ← toName y''
               return $ SetEval t n n'
             ; _ → nothing })) ∷
 
-        (ruleId "stmt'" "import_space__string__space'_." ,
+        (ruleId "stmt'" "import^space^_string_^space'^." ,
           (case x₂ of λ
-            { (_ ∷ y ∷ _ ∷ []) → do
+            { (y ∷ []) → do
               n ← toName y
               return $ Import n
             ; _ → nothing })) ∷
@@ -436,9 +436,9 @@ toStmt (Node x (_ ∷ (Node x' x₂) ∷ [])) =
     toLetTail : Tree (ℕ ⊎ Char) → Maybe AnnTerm
     toLetTail (Node x x₁) =
       decCase just x of
-        (ruleId "lettail" ":_space'__term__space'_." ,
+        (ruleId "lettail" ":^space'^_term_^space'^." ,
           (case x₁ of λ
-            { (_ ∷ y ∷ _ ∷ []) → toTerm y
+            { (y ∷ []) → toTerm y
             ; _ → nothing })) ∷
         []
       default nothing

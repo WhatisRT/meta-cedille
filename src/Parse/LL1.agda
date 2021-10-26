@@ -24,7 +24,13 @@ record CFG (V : Set) (MultiChar : Set) : Set₁ where
     S : V
     R : V → Set
     AllRules : (v : V) → List (R v)
-    Rstring : {v : V} → R v → List (V ⊎ MultiChar ⊎ String)
+
+  -- whether to keep track of the result
+  V' : Set
+  V' = V × Bool
+
+  field
+    Rstring'' : {v : V} → R v → List (V' ⊎ MultiChar ⊎ String)
 
   Terminal : Set
   Terminal = MultiChar ⊎ String
@@ -40,8 +46,11 @@ record CFG (V : Set) (MultiChar : Set) : Set₁ where
   Rule : Set
   Rule = ∃[ v ] R v
 
+  Rstring : {v : V} → R v → List (V ⊎ MultiChar ⊎ String)
+  Rstring r = map (Data.Sum.map₁ proj₁) (Rstring'' r)
+
   Rstring' : Rule → List (V ⊎ Terminal)
-  Rstring' (fst , snd) = Rstring snd
+  Rstring' (_ , r) = Rstring r
 
   SynTree : Set
   SynTree = Tree (Rule ⊎ Char)
@@ -114,21 +123,26 @@ module _ {V MultiChar : Set} (showV : V → String)
       resToTree : List (Rule ⊎ Char) → Maybe SynTree
       resToTree x = proj₁ <$> resToTree' x
         where
-          resToTree' : List (Rule ⊎ Char) → Maybe (SynTree × List (Rule ⊎ Char))
-          resToTree' [] = nothing
-          resToTree' (inj₁ l ∷ l₁) =
-            case applyTimes resToTree' (length $ boolFilter needsChild $ Rstring' l) l₁ of λ where
-              (fst , snd) → just ((Node (inj₁ l) fst) , snd)
-            where
-              applyTimes : ∀ {a b} {A : Set a} {B : Set b}
-                         → (A → Maybe (B × A)) → ℕ → A → (List B) × A
-              applyTimes f zero    a = ([] , a)
-              applyTimes f (suc k) a with f a
-              ... | just (fst , snd) = case applyTimes f k snd of λ { (fst' , snd') → (fst ∷ fst' , snd') }
-              ... | nothing          = ([] , a)
+          needsChild : V' ⊎ Terminal → Bool
+          needsChild (inj₁ x) = true
+          needsChild (inj₂ (inj₁ x)) = true
+          needsChild (inj₂ (inj₂ y)) = false
 
-              needsChild : V ⊎ Terminal → Bool
-              needsChild (inj₁ x) = true
-              needsChild (inj₂ (inj₁ x)) = true
-              needsChild (inj₂ (inj₂ y)) = false
+          attachChild : V' ⊎ Terminal → Bool
+          attachChild (inj₁ (_ , b)) = b
+          attachChild _              = true
+
+          resToTree' : List (Rule ⊎ Char) → Maybe (SynTree × List (Rule ⊎ Char))
+          ruleChildren : List (V' ⊎ Terminal) → List (Rule ⊎ Char) → Maybe (List SynTree × List (Rule ⊎ Char))
+
+          resToTree' [] = nothing
+          resToTree' (inj₁ l ∷ l₁) with ruleChildren (Rstring'' (proj₂ l)) l₁
+          ... | just (fst , snd)   = just (Node (inj₁ l) fst , snd)
+          ... | nothing            = nothing
           resToTree' (inj₂ l ∷ l₁) = just (Node (inj₂ l) [] , l₁)
+
+          ruleChildren [] l = just ([] , l)
+          ruleChildren (x ∷ s) l with needsChild x | resToTree' l
+          ... | false | _               = ruleChildren s l
+          ... | true  | just (t , rest) = (if attachChild x then map₁ (t ∷_) else id) <$> ruleChildren s rest
+          ... | true  | nothing         = nothing

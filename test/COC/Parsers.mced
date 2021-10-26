@@ -38,7 +38,7 @@ let getEnv : EvalState Env :=
 let updateLetInfoType (i : LetInfo) (T : Term) :=
   mkLetInfo (letInfoName i) (letInfoTerm i) (just ?Term T).
 
-let init$COCStmt$let_space__betterLet_ (_ : init$space) (i : LetInfo) : init$newStmt :=
+let init$COCStmt$let^space^_betterLet_ (i : LetInfo) : init$newStmt :=
   bindEvalState ?Env ?metaResult getEnv
     (λ e : Env.
       ifthenelse ?init$newStmt (isDefined e (letInfoName i))

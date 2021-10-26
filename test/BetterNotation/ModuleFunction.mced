@@ -170,17 +170,17 @@ b-let init$moduleName$_string__moduleName'_ (s : String) (n : ModuleName) := con
 -- Top-level statements
 
 b-let init$givenArgs$=dot= := [String|].
-b-let init$givenArgs$_space__string__givenArgs_ (_ : init$space) (s : String) (l : List String) := cons ?String s l.
+b-let init$givenArgs$^space^_string__givenArgs_ (s : String) (l : List String) := cons ?String s l.
 
-b-let init$newStmt'$module_space__string__telescope'_=dot=
-  (_ : init$space) (n : String) (t : Telescope) : init$newStmt :=
+b-let init$newStmt'$module^space^_string__telescope'_=dot=
+  (n : String) (t : Telescope) : init$newStmt :=
   initModule [String|n] t.
 b-let init$newStmt'$endModule=dot= : init$newStmt := endModule.
-b-let init$newStmt'$LoadModule_space__moduleName_=dot= (_ : init$space) (n : ModuleName) : init$newStmt := loadModule n "test/".
-b-let init$newStmt'$importModule_space__moduleName__maybeApplist_=dot= (_ : init$space) (n : ModuleName) (l : List App) : init$newStmt :=
+b-let init$newStmt'$LoadModule^space^_moduleName_=dot= (n : ModuleName) : init$newStmt := loadModule n "test/".
+b-let init$newStmt'$importModule^space^_moduleName__maybeApplist_=dot= (n : ModuleName) (l : List App) : init$newStmt :=
   importModule' n l.
 b-let init$newStmt'$Given_givenArgs_ (args : List String) : init$newStmt :=
   seqNewStmts (map ?String ?init$newStmt importExternalStmt args).
-b-let init$newStmt'$Unload_space__moduleName_=dot= (_ : init$space) (n : ModuleName) : init$newStmt :=
+b-let init$newStmt'$Unload^space^_moduleName_=dot= (n : ModuleName) : init$newStmt :=
   bindEvalState ?ModuleState ?metaResult getModuleState'
     (λ s : ModuleState. unloadModuleDictStmt n (ModuleStateDict s)).

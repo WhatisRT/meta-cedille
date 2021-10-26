@@ -19,7 +19,7 @@ open import Bootstrap.SimpleInductive
 
 private
   nameSymbols : List Char
-  nameSymbols = "$='-/!@&"
+  nameSymbols = "$='-/!@&^"
 
   nameInits : List Char
   nameInits = letters ++ "_"
@@ -33,6 +33,7 @@ private
       parseConstrToNonTerminals' : List Char → List (List Char)
       parseConstrToNonTerminals' =
         takeEven ∘ (map concat) ∘ (splitMulti "_") ∘ groupEscaped -- don't split on escaped underscores!
+        -- this also ignores ignored non-terminals automatically
 
   grammar : List (List Char)
   grammar =
@@ -49,43 +50,43 @@ private
     "term$_var_" ∷
     "term$_sort_" ∷
     "term$=Kappa=_const_" ∷
-    "term$=pi=_space__term_" ∷
-    "term$=psi=_space__term_" ∷
-    "term$=beta=_space__term__space__term_" ∷
-    "term$=delta=_space__term__space__term_" ∷
-    "term$=sigma=_space__term_" ∷
-    "term$=lsquare=_space'__term__space__term__space'_=rsquare=" ∷
-    "term$=langle=_space'__term__space__term__space'_=rangle=" ∷
-    "term$=rho=_space__term__space__string__space'_=dot=_space'__term__space__term_" ∷
-    "term$=forall=_space__string__space'_=colon=_space'__term__space__term_" ∷
-    "term$=Pi=_space__string__space'_=colon=_space'__term__space__term_" ∷
-    "term$=iota=_space__string__space'_=colon=_space'__term__space__term_" ∷
-    "term$=lambda=_space__string__space'_=colon=_space'__term__space__term_" ∷
-    "term$=Lambda=_space__string__space'_=colon=_space'__term__space__term_" ∷
-    "term$=lbrace=_space'__term__space'_=comma=_space'__term__space__string__space'_=dot=_space'__term__space'_=rbrace=" ∷
-    "term$=phi=_space__term__space__term__space__term_" ∷
-    "term$=equal=_space__term__space__term_" ∷
-    "term$=omega=_space__term_" ∷ -- this is M
-    "term$=mu=_space__term__space__term_" ∷
-    "term$=epsilon=_space__term_" ∷
-    "term$=zeta=EvalStmt_space__term_" ∷
-    "term$=zeta=ShellCmd_space__term__space__term_" ∷
-    "term$=zeta=CheckTerm_space__term__space__term_" ∷
-    "term$=zeta=Parse_space__term__space__term__space__term_" ∷
-    "term$=zeta=Normalize_space__term_" ∷
-    "term$=zeta=HeadNormalize_space__term_" ∷
-    "term$=zeta=CatchErr_space__term__space__term_" ∷ -- this is not actually in PrimMeta
+    "term$=pi=^space^_term_" ∷
+    "term$=psi=^space^_term_" ∷
+    "term$=beta=^space^_term_^space^_term_" ∷
+    "term$=delta=^space^_term_^space^_term_" ∷
+    "term$=sigma=^space^_term_" ∷
+    "term$=lsquare=^space'^_term_^space^_term_^space'^=rsquare=" ∷
+    "term$=langle=^space'^_term_^space^_term_^space'^=rangle=" ∷
+    "term$=rho=^space^_term_^space^_string_^space'^=dot=^space'^_term_^space^_term_" ∷
+    "term$=forall=^space^_string_^space'^=colon=^space'^_term_^space^_term_" ∷
+    "term$=Pi=^space^_string_^space'^=colon=^space'^_term_^space^_term_" ∷
+    "term$=iota=^space^_string_^space'^=colon=^space'^_term_^space^_term_" ∷
+    "term$=lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" ∷
+    "term$=Lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" ∷
+    "term$=lbrace=^space'^_term_^space'^=comma=^space'^_term_^space^_string_^space'^=dot=^space'^_term_^space'^=rbrace=" ∷
+    "term$=phi=^space^_term_^space^_term_^space^_term_" ∷
+    "term$=equal=^space^_term_^space^_term_" ∷
+    "term$=omega=^space^_term_" ∷ -- this is M
+    "term$=mu=^space^_term_^space^_term_" ∷
+    "term$=epsilon=^space^_term_" ∷
+    "term$=zeta=EvalStmt^space^_term_" ∷
+    "term$=zeta=ShellCmd^space^_term_^space^_term_" ∷
+    "term$=zeta=CheckTerm^space^_term_^space^_term_" ∷
+    "term$=zeta=Parse^space^_term_^space^_term_^space^_term_" ∷
+    "term$=zeta=Normalize^space^_term_" ∷
+    "term$=zeta=HeadNormalize^space^_term_" ∷
+    "term$=zeta=CatchErr^space^_term_^space^_term_" ∷ -- this is not actually in PrimMeta
     "term$=kappa=_char_" ∷ -- this constructs a Char
-    "term$=gamma=_space__term__space__term_" ∷ -- charEq
+    "term$=gamma=^space^_term_^space^_term_" ∷ -- charEq
 
-    "lettail$=dot=" ∷ "lettail$=colon=_space'__term__space'_=dot=" ∷
+    "lettail$=dot=" ∷ "lettail$=colon=^space'^_term_^space'^=dot=" ∷
 
-    "stmt'$let_space__string__space'_=colon==equal=_space'__term__space'__lettail_" ∷
-    "stmt'$ass_space__string__space'_=colon=_space'__term__space'_=dot=" ∷
-    "stmt'$seteval_space__term__space__string__space__string__space'_=dot=" ∷
-    "stmt'$import_space__string__space'_=dot=" ∷
+    "stmt'$let^space^_string_^space'^=colon==equal=^space'^_term_^space'^_lettail_" ∷
+    "stmt'$ass^space^_string_^space'^=colon=^space'^_term_^space'^=dot=" ∷
+    "stmt'$seteval^space^_term_^space^_string_^space^_string_^space'^=dot=" ∷
+    "stmt'$import^space^_string_^space'^=dot=" ∷
     "stmt'$" ∷
-    "stmt$_space'__stmt'_" ∷
+    "stmt$^space'^_stmt'_" ∷
     []
 
   sortGrammar : List (List Char) → SimpleMap (List Char) (List (List Char))

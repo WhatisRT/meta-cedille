@@ -158,15 +158,15 @@ let telescopeToApp := λ tel : Telescope [[<<map Param> App> λ p : Param [[mkAp
 --------------------------------------------------------------------------------
 
 let init$nameparams'$ := <nil String>.
-let init$nameparams'$=comma=_space'__string__nameparams'_ := λ _ : init$space' <cons String>.
+let init$nameparams'$=comma=^space'^_string__nameparams'_ := <cons String>.
 
 let init$nameparams$_string__nameparams'_ := <cons String>.
 
-let init$params$_nameparams__space_=colon=_space__multiTerm_ :=
-  λ ns : [List String] λ _ : init$space λ _ : init$space λ t : Term [[namesToPreParams ns] t].
+let init$params$_nameparams_^space^=colon=^space^_multiTerm_ :=
+  λ ns : [List String] λ t : Term [[namesToPreParams ns] t].
 
 let init$telescope'$ := telNil.
-let init$telescope'$_space__telescope_ := λ _ : init$space λ t : Telescope t.
+let init$telescope'$^space^_telescope_ := λ t : Telescope t.
 
 let init$telescope$=lparen=_params_=rparen=_telescope'_ := λ p : [List PreParam] [telApp p].
 let init$telescope$=lsquare=_params_=rsquare=_telescope'_ := λ p : [List PreParam] [telAppE p].
@@ -241,7 +241,7 @@ let init$applist$ := <nil App>.
 let init$applist$_app__maybeApplist_ := λ a : App λ as : [List App] [[<cons App> a] as].
 
 let init$maybeApplist$ := <nil App>.
-let init$maybeApplist$_space__applist_ := λ _ : init$space λ l : [List App] l.
+let init$maybeApplist$^space^_applist_ := λ l : [List App] l.
 
 -- A term applied to some arguments
 let init$appTerm$_singleTerm__maybeApplist_ := appLTerm.
@@ -254,12 +254,12 @@ let init$appTerm$_singleTerm__maybeApplist_ := appLTerm.
 let init$infix$=minus==rangle= := [[mkInfixData init$string$nil] [piTerm init$string$nil]].
 
 let init$multiTerm'$ := λ m : MultiTerm m : Π _ : MultiTerm MultiTerm.
-let init$multiTerm'$_infix__space__appTerm__space'__multiTerm'_ :=
-  λ inf : InfixData λ _ : init$space λ t : Term λ _ : init$space' λ trans : Π _ : MultiTerm MultiTerm
+let init$multiTerm'$_infix_^space^_appTerm_^space'^_multiTerm'_ :=
+  λ inf : InfixData λ t : Term λ trans : Π _ : MultiTerm MultiTerm
     λ m : MultiTerm [trans [[[consMultiTerm t] inf] m]].
 
-let init$multiTerm$_appTerm__space'__multiTerm'_ :=
-  λ t : Term λ _ : init$space' λ trans : Π _ : MultiTerm MultiTerm
+let init$multiTerm$_appTerm_^space'^_multiTerm'_ :=
+  λ t : Term λ trans : Π _ : MultiTerm MultiTerm
     [multiTermToTerm [trans [singleMultiTerm t]]].
 
 let init$singleTerm$=ast= := [sortTerm init$sort$=ast=].
@@ -273,6 +273,5 @@ let init$binder$=Lambda= := LambdaBinder.
 let init$binder$=Pi= := piBinder.
 let init$binder$=forall= := forallBinder.
 
-let init$singleTerm$_binder__space__params_=dot=_space__multiTerm_ :=
-  λ b : Binder λ _ : init$space λ p : [List PreParam] λ _ : init$space λ t : Term
-    [[[applyMultiBinder b] p] t].
+let init$singleTerm$_binder_^space^_params_=dot=^space^_multiTerm_ :=
+  λ b : Binder λ p : [List PreParam] λ t : Term [[[applyMultiBinder b] p] t].

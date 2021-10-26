@@ -19,7 +19,7 @@ private
     ("lsquare" , '[') ∷ ("rsquare" , ']') ∷ ("langle" , '<') ∷ ("rangle" , '>') ∷
     ("equal" , '=') ∷ ("dot" , '.') ∷ ("comma" , ',') ∷ ("colon" , ':') ∷ ("semicolon" , ';') ∷
     ("question" , '?') ∷ ("exclamation" , '!') ∷ ("at" , '@') ∷ ("doublequote" , '"') ∷
-    ("ampersand" , '&') ∷ ("backslash" , '\\') ∷ ("slash" , '/') ∷ ("pipe" , '|') ∷
+    ("ampersand" , '&') ∷ ("backslash" , '\\') ∷ ("slash" , '/') ∷ ("pipe" , '|') ∷ ("circumflex" , '^') ∷
     ("underscore" , '_') ∷ ("dollar" , '$') ∷ ("minus" , '-') ∷ ("forall" , '∀') ∷ ("exists" , '∃') ∷
     ("alpha" , 'α') ∷ ("beta" , 'β') ∷ ("gamma" , 'γ') ∷ ("delta" , 'δ') ∷ ("epsilon" , 'ε') ∷
     ("zeta" , 'ζ') ∷ ("eta" , 'η') ∷ ("theta" , 'θ') ∷ ("iota" , 'ι') ∷ ("kappa" , 'κ') ∷
@@ -37,7 +37,7 @@ private
   escapeTable = map swap translationTable
 
   isSpecialChar : Char → Bool
-  isSpecialChar c = c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&'
+  isSpecialChar c = c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&' ∨ c ≣ '^'
 
 -- accepts the head and tail of a string and returns the head of the full string without escape symbols
 unescape : Char → String → Char

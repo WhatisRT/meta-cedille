@@ -30,23 +30,23 @@ b-let init$flag$false := false.
 
 -- set statements
 
-b-let init$setStmt$RequireTypeAnnotations_space__flag_ (_ : init$space) (b : Bool) :=
+b-let init$setStmt$RequireTypeAnnotations^space^_flag_ (b : Bool) :=
   seqEvalState ?Unit ?metaResult (modifyEvalFlags (modifyAnnReq b))
     (bindEvalState ?EvaluatorState ?metaResult getEvalState updateEvalState).
 
 -- "native" statements in the new syntax
-b-let init$newStmt'$set_space__setStmt_=dot= (_ : init$space) (s : init$newStmt) := s.
-b-let init$newStmt'$let_space__betterLet_ (_ : init$space) (i : LetInfo) : init$newStmt := letInfoToNewStmtMod i.
-b-let init$newStmt'$qlet_space__betterLet_ (_ : init$space) (i : LetInfo) : init$newStmt :=
+b-let init$newStmt'$set^space^_setStmt_=dot= (s : init$newStmt) := s.
+b-let init$newStmt'$let^space^_betterLet_ (i : LetInfo) : init$newStmt := letInfoToNewStmtMod i.
+b-let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : init$newStmt :=
   seqNewStmt (letInfoToNewStmt i) (letInfoToNewStmt (letInfoTermToQuoted i)).
-b-let init$newStmt'$runMeta_space__multiTerm_=dot= (_ : init$space) (t : Term) : init$newStmt := runMetaCommand t.
-b-let init$newStmt'$echo_space__multiTerm_=dot= (_ : init$space) (t : Term) : init$newStmt :=
+b-let init$newStmt'$runMeta^space^_multiTerm_=dot= (t : Term) : init$newStmt := runMetaCommand t.
+b-let init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
   bindEvalState ?Term ?metaResult (modifyTermMod t) runEcho.
-b-let init$newStmt'$import_space__string_=dot= (_ : init$space) (n : String) : init$newStmt := stmtToNewStmt (quote$import' n).
+b-let init$newStmt'$import^space^_string_=dot= (n : String) : init$newStmt := stmtToNewStmt (quote$import' n).
 b-let init$newStmt'$updateEval=dot= : init$newStmt := reloadMEnv.
 b-let init$newStmt'$ : init$newStmt := emptyStmt.
 
-b-let init$newStmt$_space'__newStmt'_ (_ : init$space') (stmt : init$newStmt) : init$newStmt := stmt.
+b-let init$newStmt$^space'^_newStmt'_ (stmt : init$newStmt) : init$newStmt := stmt.
 
 -- new evaluator
 b-let evalNewStmt (s : EvaluatorState) (stmt : init$newStmt) : M (Product metaResult EvaluatorState) := stmt s.
@@ -55,3 +55,6 @@ seteval [evalNewStmt emptyEvaluatorState] init newStmt.
 
 -- this defines the initial dictionary
 runMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDict) θ{emptyModuleDict} (just ?Term θ{ModuleDict}))).
+
+-- Test parse:
+--runMeta bindEvalState ?(Product Term String) ?metaResult (parse' "singleTerm" Term "a b") (λ x : Product Term String. echoStmt (stringConcat [String| showTerm (pr1 ?Term ?String x) , ", " , pr2 ?Term ?String x])).
