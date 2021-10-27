@@ -409,12 +409,12 @@ checkFree : Name → PureTerm → Bool
 checkFree = helper 0
   where
     helper : ℕ → Name → PureTerm → Bool
-    helper k n (Var-P (Bound x)) = case n of λ
-      { (Bound x₁) → x ≣ (fromℕ k +𝕀 x₁)
-      ; (Free x₁) → false }
-    helper k n (Var-P (Free x)) = case n of λ
-      { (Bound x₁) → false
-      ; (Free x₁) → x ≣ x₁ }
+    helper k n (Var-P (Bound x)) = case n of λ where
+      (Bound x₁) → x ≣ (fromℕ k +𝕀 x₁)
+      (Free x₁) → false
+    helper k n (Var-P (Free x)) = case n of λ where
+      (Bound x₁) → false
+      (Free x₁) → x ≣ x₁
     helper k n (Sort-P x) = false
     helper k n (Const-P x) = false
     helper k n (App-P t t₁) = helper k n t ∧ helper k n t₁
@@ -611,49 +611,49 @@ stripBinderPure (Iota-P _ t' t'') = just t''
 {-# CATCHALL #-}
 stripBinderPure _                 = nothing
 
-hnfNormPure : Context → PureTerm → PureTerm
-normalizePure : Context → PureTerm → PureTerm
+hnfNormPure normalizePure : Context → PureTerm → PureTerm
 
 {-# NON_TERMINATING #-}
-hnfNormPure Γ v@(Var-P x)       = case lookupInContext x Γ of λ where
-  (just (Let x₁ x₂)) → hnfNormPure Γ $ Erase x₁
-  (just (Axiom x₁))  → v -- we cannot reduce axioms
-  nothing            → v -- in case the lookup fails, we cannot reduce
-hnfNormPure Γ v@(App-P t t₁)    = case stripBinderPure (hnfNormPure Γ t) of λ where
-  (just t') → hnfNormPure Γ $ substPure t' t₁
-  nothing   → v
-hnfNormPure Γ v@(CharEq-P t t₁) = normalizePure Γ v
+hnfNormPure Γ v@(Var-P x) with lookupInContext x Γ
+... | just (Let x₁ x₂)         = hnfNormPure Γ $ Erase x₁
+... | just (Axiom x₁)          = v -- we cannot reduce axioms
+... | nothing                  = v -- in case the lookup fails, we cannot reduce
+hnfNormPure Γ v@(App-P t t₁) with stripBinderPure (hnfNormPure Γ t)
+... | (just t')                = hnfNormPure Γ $ substPure t' t₁
+... | nothing                  = v
+hnfNormPure Γ v@(CharEq-P _ _) = normalizePure Γ v -- reduce to a bool, if possible
 {-# CATCHALL #-}
-hnfNormPure Γ v                 = v
+hnfNormPure Γ v                = v
 
 {-# NON_TERMINATING #-}
-normalizePure Γ (Var-P x) with efficientLookupInContext x Γ
-normalizePure Γ (Var-P x) | just (EfficientLet x₁ x₂ x₃) = x₂
-normalizePure Γ v@(Var-P x) | just (EfficientAxiom x₁) = v -- we cannot reduce axioms
-normalizePure Γ v@(Var-P x) | nothing = v -- in case the lookup fails, we cannot reduce
-normalizePure Γ v@(Sort-P x) = v
-normalizePure Γ v@(Const-P x) = v
-normalizePure Γ (App-P t t₁) = case hnfNormPure Γ t of λ t' →
-  case stripBinderPure t' of λ
-    { (just t'') → normalizePure Γ (substPure t'' t₁)
-    ; nothing → normalizePure Γ t ⟪$⟫ normalizePure Γ t₁ }
-normalizePure Γ (Lam-P n t) = case normalizePure Γ t of λ
-  { t''@(App-P t' (Var-P (Bound i))) → if i ≣ (fromℕ 0) ∧ validInContext t' Γ then decrementIndicesPure t' else Lam-P n t'' -- eta reduce here
-  ; t'' → Lam-P n t'' }
-normalizePure Γ (Pi-P n t t₁) = Pi-P n (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (All-P n t t₁) = All-P n (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (Iota-P n t t₁) = Iota-P n (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (Eq-P t t₁) = Eq-P (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (M-P t) = M-P (normalizePure Γ t)
-normalizePure Γ (Mu-P t t₁) = Mu-P (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (Epsilon-P t) = Epsilon-P (normalizePure Γ t)
-normalizePure Γ (Gamma-P t t₁) = Gamma-P (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (Ev-P m args) = Ev-P m (mapPrimMetaArgs (normalizePure Γ) args)
-normalizePure Γ (Char-P c) = (Char-P c)
+normalizePure Γ v@(Var-P x) with efficientLookupInContext x Γ
+... | just (EfficientLet x₁ x₂ x₃) = x₂
+... | just (EfficientAxiom x₁)     = v -- we cannot reduce axioms
+... | nothing                      = v -- in case the lookup fails, we cannot reduce
+normalizePure Γ v@(Sort-P x)       = v
+normalizePure Γ v@(Const-P x)      = v
+normalizePure Γ (App-P t t₁) with hnfNormPure Γ t
+...| t' = case stripBinderPure t' of λ where
+    (just t'') → normalizePure Γ (substPure t'' t₁)
+    nothing    → normalizePure Γ t' ⟪$⟫ normalizePure Γ t₁
+normalizePure Γ (Lam-P n t) with normalizePure Γ t
+... | t''@(App-P t' (Var-P (Bound i))) = if i ≣ (fromℕ 0) ∧ validInContext t' Γ
+  then normalizePure Γ (decrementIndicesPure t') else Lam-P n t'' -- eta reduce here
+... | t'' = Lam-P n t''
+normalizePure Γ (Pi-P n t t₁)      = Pi-P n (normalizePure Γ t) (normalizePure Γ t₁)
+normalizePure Γ (All-P n t t₁)     = All-P n (normalizePure Γ t) (normalizePure Γ t₁)
+normalizePure Γ (Iota-P n t t₁)    = Iota-P n (normalizePure Γ t) (normalizePure Γ t₁)
+normalizePure Γ (Eq-P t t₁)        = Eq-P (normalizePure Γ t) (normalizePure Γ t₁)
+normalizePure Γ (M-P t)            = M-P (normalizePure Γ t)
+normalizePure Γ (Mu-P t t₁)        = Mu-P (normalizePure Γ t) (normalizePure Γ t₁)
+normalizePure Γ (Epsilon-P t)      = Epsilon-P (normalizePure Γ t)
+normalizePure Γ (Gamma-P t t₁)     = Gamma-P (normalizePure Γ t) (normalizePure Γ t₁)
+normalizePure Γ (Ev-P m args)      = Ev-P m (mapPrimMetaArgs (normalizePure Γ) args)
+normalizePure Γ (Char-P c)         = (Char-P c)
 normalizePure Γ (CharEq-P t t₁) with normalizePure Γ t | normalizePure Γ t₁
-... | (Char-P c) | (Char-P c') = normalizePure Γ $ if c ≣ c' then FreeVar "true" else (FreeVar "false")
+... | (Char-P c) | (Char-P c')     = normalizePure Γ $ FreeVar $ show (c ≣ c')
 {-# CATCHALL #-}
-... | x | x₁ = CharEq-P x x₁
+... | x | x₁                       = CharEq-P x x₁
 
 {-# TERMINATING #-}
 findOutermostConstructor : PureTerm → PureTerm × List PureTerm
@@ -720,14 +720,14 @@ module CheckEquality {{_ : Monad M}} {{_ : MonadExcept M String}} (Γ : Context)
       ... | no  _    = hnfError t t'
       compareHnfs (Char-P c) (Char-P c') = beqMonadHelper c c' "Char"
       compareHnfs (CharEq-P t t₁) (CharEq-P x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
-      compareHnfs (Lam-P _ t) t₁ = case normalizePure Γ t of λ
-        { t''@(App-P t' (Var-P (Bound i))) →
-          if i ≣ (fromℕ 0) ∧ validInContext t' Γ then (compareHnfs (decrementIndicesPure t') t₁) else hnfError t'' t₁
-        ; t'' → hnfError t'' t₁ }
-      compareHnfs t (Lam-P _ t₁) = case normalizePure Γ t₁ of λ
-        { t''@(App-P t' (Var-P (Bound i))) →
-          if i ≣ (fromℕ 0) ∧ validInContext t' Γ then (compareHnfs t (decrementIndicesPure t')) else hnfError t t''
-        ; t'' → hnfError t t'' }
+      compareHnfs (Lam-P _ t) t₁ = case normalizePure Γ t of λ where
+        t''@(App-P t' (Var-P (Bound i))) → if i ≣ (fromℕ 0) ∧ validInContext t' Γ
+          then (compareHnfs (decrementIndicesPure t') t₁) else hnfError t'' t₁
+        t'' → hnfError t'' t₁
+      compareHnfs t (Lam-P _ t₁) = case normalizePure Γ t₁ of λ where
+        t''@(App-P t' (Var-P (Bound i))) → if i ≣ (fromℕ 0) ∧ validInContext t' Γ
+          then (compareHnfs t (decrementIndicesPure t')) else hnfError t t''
+        t'' → hnfError t t''
       {-# CATCHALL #-}
       compareHnfs t t' = hnfError t t'
 
@@ -948,9 +948,7 @@ synthType' Γ (Mu-A t t₁) = do
         ; _ → throwError "The second term in a μ needs to have a Pi type" }
     ; _ → throwError "The first term in a μ needs to have type 'M t' for some 't'" }
 
-synthType' Γ (Epsilon-A t) = do
-  T ← synthType Γ t
-  return $ M-A T
+synthType' Γ (Epsilon-A t) = M-A <$> synthType Γ t
 
 synthType' Γ (Ev-A m t) = do
   T ← traversePrimMetaArgs (synthType Γ) t
