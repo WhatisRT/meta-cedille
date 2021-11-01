@@ -346,6 +346,12 @@ toTerm = helper []
             return $ Ev-A HeadNormalize t
           ; _ → nothing })) ∷
 
+        (ruleId "term" "ζInferType^space^_term_" , (case x₁ of λ
+          { (z ∷ []) → do
+            t ← helper accu z
+            return $ Ev-A InferType t
+          ; _ → nothing })) ∷
+
         (ruleId "term" "Κ_const_" , (case x₁ of λ
           { (z ∷ []) → do
             c ← toConst z

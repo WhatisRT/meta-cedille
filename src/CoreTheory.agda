@@ -299,14 +299,16 @@ primMetaS CheckTerm     = (Sort-A ⋆ , FreeVar "init$term")
 primMetaS Parse         = (FreeVar "init$string" , Sort-A ⋆ , FreeVar "init$string")
 primMetaS Normalize     = FreeVar "init$term"
 primMetaS HeadNormalize = FreeVar "init$term"
+primMetaS InferType     = FreeVar "init$term"
 
-primMetaT : (m : PrimMeta) → primMetaArgs AnnTerm m → AnnTerm
+primMetaT : ∀ {T} {{_ : TermLike T}} (m : PrimMeta) → primMetaArgs T m → T
 primMetaT EvalStmt _        = FreeVar "init$metaResult"
 primMetaT ShellCmd _        = FreeVar "init$string"
 primMetaT CheckTerm (t , _) = t
 primMetaT Parse (_ , t , _) = FreeVar "init$product" ⟪$⟫ t ⟪$⟫ FreeVar "init$string"
 primMetaT Normalize _       = FreeVar "init$term"
 primMetaT HeadNormalize _   = FreeVar "init$term"
+primMetaT InferType     _   = FreeVar "init$term"
 
 data Def : Set where
   Let : AnnTerm → AnnTerm → Def

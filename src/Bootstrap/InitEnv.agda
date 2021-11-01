@@ -75,6 +75,7 @@ private
     "term$=zeta=Parse^space^_term_^space^_term_^space^_term_" ∷
     "term$=zeta=Normalize^space^_term_" ∷
     "term$=zeta=HeadNormalize^space^_term_" ∷
+    "term$=zeta=InferType^space^_term_" ∷
     "term$=zeta=CatchErr^space^_term_^space^_term_" ∷ -- this is not actually in PrimMeta
     "term$=kappa=_char_" ∷ -- this constructs a Char
     "term$=gamma=^space^_term_^space^_term_" ∷ -- charEq

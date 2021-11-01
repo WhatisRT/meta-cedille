@@ -80,10 +80,29 @@ module _ {M : Set → Set} {{_ : Monad M}}
                (λ e → throwError $ "Error while unquoting" <+> show t + ":\n" + e)
 
   -- Typecheck a term and return its type
-  check : AnnTerm → M AnnTerm
-  check t = do
+  inferType : AnnTerm → M AnnTerm
+  inferType t = do
     Γ ← getContext
     synthType Γ t
+
+  checkType : AnnTerm → AnnTerm → M ⊤
+  checkType t T = do
+    t' ← inferType t
+    inferType T
+    Γ ← getContext
+    catchError (checkβη Γ T t')
+      (λ e → throwError $
+        "Type mismatch with the provided type!\n" + e + "\nProvided: " + show t' +
+        "\nSynthesized: " + show T)
+
+  checkTypePure : AnnTerm → PureTerm → M ⊤
+  checkTypePure t T = do
+    t' ← inferType t
+    Γ ← getContext
+    catchError (checkβηPure Γ T $ Erase t')
+      (λ e → throwError $
+        "Type mismatch with the provided type!\n" + e + "\nProvided: " + show t' +
+        "\nSynthesized: " + show T)
 
   parseMeta : MetaEnv → String → M (AnnTerm × String)
   parseMeta menv s = let open MetaEnv menv in parse grammar (initNT grammar) namespace s
@@ -96,26 +115,21 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   -- Execute a term of type M t for some t
   executeTerm : PureTerm → M (MetaResult × PureTerm)
   executeStmt : Stmt → M MetaResult
+  executePrimitive : (m : PrimMeta) → primMetaArgs PureTerm m → M (MetaResult × AnnTerm)
   -- Parse and execute a string
   parseAndExecute' parseAndExecuteBootstrap : String → M (MetaResult × String)
   parseAndExecute : String → M MetaResult
 
   executeStmt (Let n t nothing) = do
-    T ← check t
+    T ← inferType t
     strResult <$> addDef n (Let t T)
 
   executeStmt (Let n t (just t')) = do
-    T ← check t
-    check t'
-    Γ ← getContext
-    catchError (checkβη Γ T t')
-      (λ e → throwError $
-        "Type mismatch with the provided type!\n" + e + "\nProvided: " + show t' +
-        "\nSynthesized: " + show T)
+    checkType t t'
     strResult <$> addDef n (Let t t')
 
   executeStmt (Ass n t) = do
-    _ ← check t
+    _ ← inferType t
     strResult <$> addDef n (Axiom t)
 
   executeStmt (SetEval t n start) = do
@@ -150,35 +164,45 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   executeTerm (Gamma-P t t') =
     catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm s))
 
-  executeTerm (Ev-P EvalStmt t) = do
+  executeTerm (Ev-P m t) = do
+    (res , t') ← executePrimitive m t
+    checkTypePure t' $ primMetaT m t
+    return (res , Erase t')
+
+  {-# CATCHALL #-}
+  executeTerm t =
+    throwError ("Error: " + show t + " is not a term that can be evaluated!")
+
+  executePrimitive EvalStmt t = do
     Γ ← getContext
     stmt ← unquoteFromTerm t
     res ← executeStmt stmt
-    return (res , quoteToPureTerm res)
+    return (res , quoteToAnnTerm res)
 
-  executeTerm (Ev-P ShellCmd (t , t')) = do
+  executePrimitive ShellCmd (t , t') = do
     Γ ← getContext
     cmd ← unquoteFromTerm t
     args ← unquoteFromTerm t'
     res ← liftIO $ runShellCmd cmd args
-    return (strResult res , quoteToPureTerm res)
+    return (strResult res , quoteToAnnTerm res)
 
-  executeTerm (Ev-P CheckTerm (t , t')) = do
+  executePrimitive CheckTerm (t , t') = do
     Γ ← getContext
     u ← unquoteFromTerm t'
-    T' ← check u
+    T' ← inferType u
     catchError (checkβηPure Γ t $ Erase T')
       (λ e → throwError $
         "Type mismatch with the provided type!\nProvided: " + show t +
         "\nSynthesized: " + show T')
-    return (strResult "" , Erase u)
+    return (strResult "" , u)
 
-  executeTerm (Ev-P Parse (t , type , t')) = do
+  executePrimitive Parse (t , type , t') = do
     Γ ← getContext
     nonTerminal ← M String ∋ (unquoteFromTerm t)
     text ← M String ∋ (unquoteFromTerm t')
     record { grammar = G ; namespace = namespace } ← getMeta
-    NT ← maybeToError (findNT G nonTerminal) ("Non-terminal" <+> nonTerminal <+> "does not exist in the current grammar!")
+    NT ← maybeToError (findNT G nonTerminal)
+                      ("Non-terminal" <+> nonTerminal <+> "does not exist in the current grammar!")
     (res , rest) ← parse G NT namespace text
     T ← appendIfError (synthType Γ res)
                       ("\n\nError while interpreting input: "
@@ -188,28 +212,30 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
       ("Type mismatch with the provided type!\nProvided: " + show type +
         "\nSynthesized: " + show T)
     -- need to spell out instance manually, since we don't want to quote 'res'
-    return (strResult "" , quoteToPureTerm ⦃ Quotable-ProductData ⦃ Quotable-NoQuoteAnnTerm ⦄ ⦄
+    return (strResult "" , quoteToAnnTerm ⦃ Quotable-ProductData ⦃ Quotable-NoQuoteAnnTerm ⦄ ⦄
       record { lType = T ; rType = FreeVar "init$string" ; l = res ; r = rest })
 
-  executeTerm (Ev-P Normalize t) = do
+  executePrimitive Normalize t = do
     Γ ← getContext
     u ← unquoteFromTerm t
     T ← synthType Γ u
     return (strResult
       (show u + " : " + show T + " normalizes to: " +
-      (show $ normalizePure Γ $ Erase u)) , (quoteToPureTerm $ normalizePure Γ $ Erase u))
+      (show $ normalizePure Γ $ Erase u)) , (quoteToAnnTerm $ normalizePure Γ $ Erase u))
 
-  executeTerm (Ev-P HeadNormalize t) = do
+  executePrimitive HeadNormalize t = do
     Γ ← getContext
     u ← unquoteFromTerm t
     T ← synthType Γ u
     return (strResult
       (show t + " : " + show T + " head-normalizes to: " +
-      (show $ hnfNorm Γ u)) , (quoteToPureTerm $ hnfNorm Γ u))
+      (show $ hnfNorm Γ u)) , (quoteToAnnTerm $ hnfNorm Γ u))
 
-  {-# CATCHALL #-}
-  executeTerm t =
-    throwError ("Error: " + show t + " is not a term that can be evaluated!")
+  executePrimitive InferType t = do
+    Γ ← getContext
+    u ← unquoteFromTerm t
+    T ← synthType Γ u
+    return (strResult "" , (quoteToAnnTerm T))
 
   parseAndExecuteBootstrap s = do
     (fst , snd) ← parseStmt s

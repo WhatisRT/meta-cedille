@@ -1,3 +1,7 @@
+open import Class.Listable
+open import Data.List.Relation.Unary.All
+open import Data.List.Relation.Unary.AllPairs
+open import Data.List.Relation.Unary.Any
 import Data.Vec.Recursive
 import Data.Vec.Recursive.Categorical
 
@@ -17,6 +21,7 @@ data PrimMeta : Set where
   Parse         : PrimMeta
   Normalize     : PrimMeta
   HeadNormalize : PrimMeta
+  InferType     : PrimMeta
 
 private
   variable
@@ -24,45 +29,21 @@ private
 
 instance
   PrimMeta-Eq : Eq PrimMeta
-  PrimMeta-Eq = record { _≟_ = helper }
-    where
-      helper : (m m' : PrimMeta) → Dec (m ≡ m')
-      helper EvalStmt EvalStmt = yes refl
-      helper EvalStmt ShellCmd = no (λ ())
-      helper EvalStmt CheckTerm = no (λ ())
-      helper EvalStmt Parse = no (λ ())
-      helper EvalStmt Normalize = no (λ ())
-      helper EvalStmt HeadNormalize = no (λ ())
-      helper ShellCmd EvalStmt = no (λ ())
-      helper ShellCmd ShellCmd = yes refl
-      helper ShellCmd CheckTerm = no (λ ())
-      helper ShellCmd Parse = no (λ ())
-      helper ShellCmd Normalize = no (λ ())
-      helper ShellCmd HeadNormalize = no (λ ())
-      helper CheckTerm EvalStmt = no (λ ())
-      helper CheckTerm ShellCmd = no (λ ())
-      helper CheckTerm CheckTerm = yes refl
-      helper CheckTerm Parse = no (λ ())
-      helper CheckTerm Normalize = no (λ ())
-      helper CheckTerm HeadNormalize = no (λ ())
-      helper Parse EvalStmt = no (λ ())
-      helper Parse ShellCmd = no (λ ())
-      helper Parse CheckTerm = no (λ ())
-      helper Parse Parse = yes refl
-      helper Parse Normalize = no (λ ())
-      helper Parse HeadNormalize = no (λ ())
-      helper Normalize EvalStmt = no (λ ())
-      helper Normalize ShellCmd = no (λ ())
-      helper Normalize CheckTerm = no (λ ())
-      helper Normalize Parse = no (λ ())
-      helper Normalize Normalize = yes refl
-      helper Normalize HeadNormalize = no (λ ())
-      helper HeadNormalize EvalStmt = no (λ ())
-      helper HeadNormalize ShellCmd = no (λ ())
-      helper HeadNormalize CheckTerm = no (λ ())
-      helper HeadNormalize Parse = no (λ ())
-      helper HeadNormalize Normalize = no (λ ())
-      helper HeadNormalize HeadNormalize = yes refl
+  PrimMeta-Eq = Listable.Listable→Eq record
+    { listing = EvalStmt ∷ ShellCmd ∷ CheckTerm ∷ Parse ∷ Normalize ∷ HeadNormalize ∷ InferType ∷ []
+    ; unique = ((λ ()) ∷ (λ ()) ∷ (λ ()) ∷ (λ ()) ∷ (λ ()) ∷ (λ ()) ∷ []) ∷
+                 ((λ ()) ∷ (λ ()) ∷ (λ ()) ∷ (λ ()) ∷ (λ ()) ∷ []) ∷
+                 ((λ ()) ∷ (λ ()) ∷ (λ ()) ∷ (λ ()) ∷ []) ∷
+                 ((λ ()) ∷ (λ ()) ∷ (λ ()) ∷ []) ∷
+                 ((λ ()) ∷ (λ ()) ∷ []) ∷ ((λ ()) ∷ []) ∷ [] ∷ []
+    ; complete = λ where
+        EvalStmt      → here refl
+        ShellCmd      → there (here refl)
+        CheckTerm     → there (there (here refl))
+        Parse         → there (there (there (here refl)))
+        Normalize     → there (there (there (there (here refl))))
+        HeadNormalize → there (there (there (there (there (here refl)))))
+        InferType     → there (there (there (there (there (there (here refl)))))) }
 
   PrimMeta-EqB : EqB PrimMeta
   PrimMeta-EqB = Eq→EqB
@@ -77,6 +58,7 @@ instance
       helper Parse         = "Parse"
       helper Normalize     = "Normalize"
       helper HeadNormalize = "HeadNormalize"
+      helper InferType     = "InferType"
 
 primMetaArity : PrimMeta → ℕ
 primMetaArity EvalStmt      = 1
@@ -85,6 +67,7 @@ primMetaArity CheckTerm     = 2
 primMetaArity Parse         = 3
 primMetaArity Normalize     = 1
 primMetaArity HeadNormalize = 1
+primMetaArity InferType     = 1
 
 primMetaArgs : Set → PrimMeta → Set
 primMetaArgs A m  = A Data.Vec.Recursive.^ (primMetaArity m)

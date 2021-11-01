@@ -44,5 +44,5 @@ b-let initTermToTerm (t : init$term) := t ?Term
     (λ s : String. λ t, t' : Term. binderTerm LambdaBinder s t t')
     (λ _, _ : Term. λ _ : String. λ _ : Term. nothingTerm)
     nothingTerm3 nothingTerm2 nothingTerm1 nothingTerm2 nothingTerm1
-    nothingTerm1 nothingTerm2 nothingTerm2 nothingTerm3 nothingTerm1 nothingTerm1 nothingTerm2
+    nothingTerm1 nothingTerm2 nothingTerm2 nothingTerm3 nothingTerm1 nothingTerm1 nothingTerm1 nothingTerm2
     (λ _ : init$char. nothingTerm) nothingTerm2.

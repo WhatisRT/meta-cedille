@@ -13,5 +13,6 @@ let checkTerm := λ X : * λ t : init$term ζCheckTerm X t : Π X : * Π _ : ini
 let parse := λ nt : init$string λ T : * λ text : init$string ζParse nt T text.
 let normalize := λ t : init$term ζNormalize t.
 let headNormalize := λ t : init$term ζHeadNormalize t.
+let inferType := λ t : init$term ζInferType t.
 
 let catchErr := Λ X : * λ run : [M X] λ catch : Π _ : init$err [M X] ζCatchErr run catch : ∀ X : * Π _ : [M X] Π _ : Π _ : init$err [M X] [M X].

@@ -89,12 +89,13 @@ b-let checkTerm' (T : *) (t : Term) : EvalState T :=
   liftMtoEvalState ?T (checkTerm T (TermToInitTerm t)).
 b-let parse' (nt : String) (T : *) (text : String) : EvalState (Product T String) :=
   liftMtoEvalState ?(Product T String) (parse nt T text).
-
--- these are currently broken
-b-let normalize' (t : Term) : EvalState init$term :=
-  liftMtoEvalState ?init$term (normalize (TermToInitTerm t)).
-b-let headNormalize' (t : Term) : EvalState init$term :=
-  liftMtoEvalState ?init$term (headNormalize (TermToInitTerm t)).
+-- normalize is currently broken
+b-let normalize' (t : Term) : EvalState Term :=
+  liftMtoEvalState ?Term (mapMeta ?init$term ?Term initTermToTerm (normalize (TermToInitTerm t))).
+b-let headNormalize' (t : Term) : EvalState Term :=
+  liftMtoEvalState ?Term (mapMeta ?init$term ?Term initTermToTerm (headNormalize (TermToInitTerm t))).
+b-let inferType' (t : Term) : EvalState Term :=
+  liftMtoEvalState ?Term (mapMeta ?init$term ?Term initTermToTerm (inferType (TermToInitTerm t))).
 
 --------------------------------------------------------------------------------
 -- Define the new statement type & useful functions
