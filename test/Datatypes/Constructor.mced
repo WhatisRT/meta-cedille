@@ -7,28 +7,29 @@ let ConstrData := Telescope × Term.
 let mkConstrData := prodPair ?Telescope ?Term.
 let noArgConstrData : Π _ : Term. ConstrData := mkConstrData telNil.
 let consArgConstrData (p : Param) (d : ConstrData) : ConstrData :=
-  mkConstrData (cons ?Param p (pr1 ?Telescope ?Term d)) (pr2 ?Telescope ?Term d).
+  mkConstrData (cons ?Param p $ pr1 ?Telescope ?Term d) (pr2 ?Telescope ?Term d).
 let ConstrDataTelescope := pr1 ?Telescope ?Term.
 let ConstrDataTerm := pr2 ?Telescope ?Term.
 
 let toConstrData (term : Term) : ConstrData :=
   recursionTerm ?ConstrData
-    (λ v : init$var. noArgConstrData (varTerm v))
-    (λ s : init$sort. noArgConstrData (sortTerm s))
+    (λ v : init$var. noArgConstrData $ varTerm v)
+    (λ s : init$sort. noArgConstrData $ sortTerm s)
     (λ b : Binder. λ n : String. λ T, t : Term. λ recT, rect : ConstrData.
       b ?ConstrData
-        (noArgConstrData (binderTerm b n T t)) (noArgConstrData (binderTerm b n T t))
-        (consArgConstrData (mkParam false (mkPreParam n T)) rect)
-        (consArgConstrData (mkParam true (mkPreParam n T)) rect))
-    (λ t : Term. λ l : List App. λ _ : ConstrData. λ _ : List (Bool × ConstrData). noArgConstrData (appLTerm t l))
-    (λ c : Char. noArgConstrData (charTerm c))
+        (noArgConstrData $ binderTerm b n T t) (noArgConstrData $ binderTerm b n T t)
+        (consArgConstrData (mkParam false $ mkPreParam n T) rect)
+        (consArgConstrData (mkParam true $ mkPreParam n T) rect))
+    (λ t : Term. λ l : List App. λ _ : ConstrData. λ _ : List (Bool × ConstrData). noArgConstrData $ appLTerm t l)
+    (λ c : Char. noArgConstrData $ charTerm c)
+    (noArgConstrData unknownTerm)
     (λ u : Term. λ recu : ConstrData. recu)
     (reduceTerm term).
 
 let constrArgToFunctor (t : Term) (match : List String) : Error ConstrFunctor :=
-  ifthenelse ?(Error ConstrFunctor) (matchTerm t match) (pureError ?ConstrFunctor idConstrFunctor)
-    (recursionTerm ?(Error ConstrFunctor)
-      (λ v : init$var. pureError ?ConstrFunctor (constConstrFunctor t))
+  ifthenelse ?(Error ConstrFunctor) (matchTerm t match) (pureError ?ConstrFunctor idConstrFunctor) $
+    recursionTerm ?(Error ConstrFunctor)
+      (λ v : init$var. pureError ?ConstrFunctor $ constConstrFunctor t)
       (λ s : init$sort. error ?ConstrFunctor "Cannot turn sort into functor")
       (λ b : Binder. λ n : String. λ T : Term. λ _ : Term. λ _ : Error ConstrFunctor. λ rect : Error ConstrFunctor.
         b ?(Error ConstrFunctor)
@@ -36,14 +37,15 @@ let constrArgToFunctor (t : Term) (match : List String) : Error ConstrFunctor :=
           (error ?ConstrFunctor "Can only have pi binder in constructors")
           (mapError ?ConstrFunctor ?ConstrFunctor (covDHomConstrFunctor n T) rect)
           (error ?ConstrFunctor "Can only have pi binder in constructors"))
-      (λ t : Term. λ l : List App. λ _ : Error ConstrFunctor. λ _ : List (Bool × (Error ConstrFunctor)).
-        pureError ?ConstrFunctor (constConstrFunctor (appLTerm t l)))
+      (λ t : Term. λ l : List App. λ _ : Error ConstrFunctor. λ _ : List (Bool × Error ConstrFunctor).
+        pureError ?ConstrFunctor $ constConstrFunctor $ appLTerm t l)
       (λ c : Char. error ?ConstrFunctor "Cannot turn char into functor")
+      (error ?ConstrFunctor "Cannot turn unknown into functor")
       (λ u : Term. λ _ : Error ConstrFunctor. error ?ConstrFunctor "Cannot turn unquote into functor")
-      t).
+      t.
 
 let constrToFunctorData (d : ConstrData) (match : List String) : Error ConstrFunctorData :=
-  ifthenelse ?(Error ConstrFunctorData) (matchTerm (reduceTerm (ConstrDataTerm d)) match)
+  ifthenelse ?(Error ConstrFunctorData) (matchTerm (reduceTerm $ ConstrDataTerm d) match)
     (traverseErrorList ?Param ?(String × ConstrFunctor)
       (λ p : Param. mapError ?ConstrFunctor ?(String × ConstrFunctor)
         (prodPair ?String ?ConstrFunctor (paramName p)) (constrArgToFunctor (paramType p) match))
@@ -58,7 +60,7 @@ let constrToFunctorData (d : ConstrData) (match : List String) : Error ConstrFun
 let functorDataToTelescope (d : ConstrFunctorData) (t : Term) : Telescope :=
   map ?(String × ConstrFunctor) ?Param
     (λ x : String × ConstrFunctor.
-      mkParam false (mkPreParam (pr1 ?String ?ConstrFunctor x) (ApplyConstrFunctor t (pr2 ?String ?ConstrFunctor x))))
+      mkParam false $ mkPreParam (pr1 ?String ?ConstrFunctor x) (ApplyConstrFunctor t $ pr2 ?String ?ConstrFunctor x))
     d.
 
 let functorDataToConstrData (d : ConstrFunctorData) (t : Term) : ConstrData :=

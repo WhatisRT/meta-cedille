@@ -8,8 +8,6 @@ let init$binnat'$ : List Bool := [Bool|].
 
 let init$binnat$_bindigit__binnat'_ := cons ?Bool.
 
-let boolToNat (b : Bool) : Nat := ifthenelse ?Nat b one zero.
-
 -- Decimal
 
 let init$decdigit$0 : Dec := Dec0.
@@ -31,8 +29,6 @@ let init$decnat$_decdigit__decnat'_ := cons ?Dec.
 let quoteDec (d : Dec) : Term :=
   d ?Term θ{Dec0} θ{Dec1} θ{Dec2} θ{Dec3} θ{Dec4} θ{Dec5} θ{Dec6} θ{Dec7} θ{Dec8} θ{Dec9}.
 
-let decToNat (d : Dec) : Nat := d ?Nat zero one two three four five six seven eight nine.
-
 --
 
 let quoteList [X : *] (quotedX : Term) (quoteX : X -> Term) : List X -> Term :=
@@ -41,39 +37,6 @@ let quoteList [X : *] (quotedX : Term) (quoteX : X -> Term) : List X -> Term :=
 
 let quoteListBool := quoteList ?Bool θ{Bool} quoteBool.
 let quoteListDec := quoteList ?Dec θ{Dec} quoteDec.
-
-let baseListToNat [B : *] (digitToNat : B -> Nat) (ds : List B) (base : Nat) : Nat :=
-  recursionList ?B ?Nat zero
-    (λ d : B. λ _ : List B. λ rec : Nat. (mul rec ten) + (digitToNat d))
-    (reverse ?B ds).
-
-let boolListToNat (bs : List Bool) : Nat := baseListToNat ?Bool boolToNat bs two.
-let decListToNat (ds : List Dec) : Nat := baseListToNat ?Dec decToNat ds ten.
-
---------------------------------------------------------------------------------
--- This section is here for convenience
---------------------------------------------------------------------------------
-
-let index'ToDigits (i : init$index') : List Dec :=
-  i ?(List Dec)
-    [Dec|]
-    (cons ?Dec Dec0) (cons ?Dec Dec1) (cons ?Dec Dec2) (cons ?Dec Dec3) (cons ?Dec Dec4)
-    (cons ?Dec Dec5) (cons ?Dec Dec6) (cons ?Dec Dec7) (cons ?Dec Dec8) (cons ?Dec Dec9).
-
-let indexToDigits (i : init$index) : List Dec :=
-  i ?(List Dec)
-    (λ i' : init$index'. cons ?Dec Dec0 (index'ToDigits i'))
-    (λ i' : init$index'. cons ?Dec Dec1 (index'ToDigits i'))
-    (λ i' : init$index'. cons ?Dec Dec2 (index'ToDigits i'))
-    (λ i' : init$index'. cons ?Dec Dec3 (index'ToDigits i'))
-    (λ i' : init$index'. cons ?Dec Dec4 (index'ToDigits i'))
-    (λ i' : init$index'. cons ?Dec Dec5 (index'ToDigits i'))
-    (λ i' : init$index'. cons ?Dec Dec6 (index'ToDigits i'))
-    (λ i' : init$index'. cons ?Dec Dec7 (index'ToDigits i'))
-    (λ i' : init$index'. cons ?Dec Dec8 (index'ToDigits i'))
-    (λ i' : init$index'. cons ?Dec Dec9 (index'ToDigits i')).
-
-let indexToNat (i : init$index) : Nat := decListToNat (indexToDigits i).
 
 --------------------------------------------------------------------------------
 

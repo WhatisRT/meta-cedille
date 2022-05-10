@@ -18,6 +18,9 @@ b-let runEcho (t : Term) : init$newStmt := runMetaCommand θ{echoStmt γ{t}}.
 
 b-let reloadMEnv : init$newStmt := evalStateUnitToNewStmt (modifyEvalState (λ e : EvaluatorState. e)).
 
+b-let showTypeStmt (t : Term) : init$newStmt :=
+  bindEvalState ?Term ?metaResult (inferType' t) (λ x : Term. echoStmt (showTerm x)).
+
 -- Syntax
 
 -- statements from the old syntax
@@ -42,6 +45,7 @@ b-let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : init$newStmt :=
 b-let init$newStmt'$runMeta^space^_multiTerm_=dot= (t : Term) : init$newStmt := runMetaCommand t.
 b-let init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
   bindEvalState ?Term ?metaResult (modifyTermMod t) runEcho.
+b-let init$newStmt'$showType^space^_multiTerm_=dot= (t : Term) : init$newStmt := showTypeStmt t.
 b-let init$newStmt'$import^space^_string_=dot= (n : String) : init$newStmt := stmtToNewStmt (quote$import' n).
 b-let init$newStmt'$updateEval=dot= : init$newStmt := reloadMEnv.
 b-let init$newStmt'$ : init$newStmt := emptyStmt.
@@ -57,4 +61,5 @@ seteval [evalNewStmt emptyEvaluatorState] init newStmt.
 runMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDict) θ{emptyModuleDict} (just ?Term θ{ModuleDict}))).
 
 -- Test parse:
---runMeta bindEvalState ?(Product Term String) ?metaResult (parse' "singleTerm" Term "a b") (λ x : Product Term String. echoStmt (stringConcat [String| showTerm (pr1 ?Term ?String x) , ", " , pr2 ?Term ?String x])).
+--runMeta bindEvalState ?Term ?metaResult (inferType' θ{evalNewStmt}) (λ x : Term. echoStmt (showTerm x)).
+--showType filter.

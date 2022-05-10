@@ -45,6 +45,7 @@ let toCOCTerm (t : MCTerm) : Maybe Term :=
               (maybe ?Term ?(Maybe Term) (nothing ?Term)
                 (λ x' : Term. just ?Term (App x' x)) rec)) (pr2 ?Bool ?(List String -> Maybe Term) a l)))
     (λ _ : Char. λ _ : List String. nothing ?Term)
+    (λ _ : List String. nothing ?Term)
     (λ _ : List String -> Maybe Term. λ _ : List String. nothing ?Term) -- nothing on unquote
     [String|].
 

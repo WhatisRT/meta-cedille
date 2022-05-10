@@ -46,3 +46,29 @@ b-let initTermToTerm (t : init$term) := t ?Term
     nothingTerm3 nothingTerm2 nothingTerm1 nothingTerm2 nothingTerm1
     nothingTerm1 nothingTerm2 nothingTerm2 nothingTerm3 nothingTerm1 nothingTerm1 nothingTerm1 nothingTerm2
     (λ _ : init$char. nothingTerm) nothingTerm2.
+
+-- assuming no unknowns in f and no recursive unknowns in app, infer
+-- unknowns in app and return the applied term
+
+b-let telescopeFromTypeHelper (t : Term) : Product Telescope Term :=
+  prodPair ?Telescope ?Term telNil t.
+
+b-let telCons  (n : String) (T : Term) := cons ?Param (mkParam false (mkPreParam n T)).
+b-let telConsE (n : String) (T : Term) := cons ?Param (mkParam true  (mkPreParam n T)).
+
+b-let telescopeFromType : Term -> Product Telescope Term :=
+  recursionTerm ?(Product Telescope Term)
+    (λ v : init$var. telescopeFromTypeHelper (varTerm v))
+    (λ s : init$sort. telescopeFromTypeHelper (sortTerm s))
+    (λ b : Binder. λ n : String. λ t, t' : Term. λ rect, rect' : Product Telescope Term.
+      b ?(Product Telescope Term)
+        (telescopeFromTypeHelper (lambdaTerm n t t'))
+        (telescopeFromTypeHelper (LambdaTerm n t t'))
+        (productMap1 ?Telescope ?Term ?Telescope (telCons n t) rect')
+        (productMap1 ?Telescope ?Term ?Telescope (telConsE n t) rect'))
+    (λ t : Term. λ app : List App.
+     λ _ : Product Telescope Term. λ _ : List (Product Bool (Product Telescope Term)).
+       telescopeFromTypeHelper (appLTerm t app))
+    (λ c : init$char. telescopeFromTypeHelper (charTerm c))
+    (telescopeFromTypeHelper unknownTerm)
+    (λ u : Term. λ _ : Product Telescope Term. telescopeFromTypeHelper (unquoteTerm u)).

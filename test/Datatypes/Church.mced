@@ -7,12 +7,12 @@ let FixC (F : * -> *) := ∀ X : *. AlgC F X -> X.
 
 let foldC (F : * -> *) [X : *] (alg : AlgC F X) (fix : FixC F) : X := fix ?X alg.
 let inC (F : * -> *) (fmap : Functor F) : AlgC F (FixC F) :=
-  λ fix : F (FixC F). Λ X : *. λ alg : AlgC F X. alg (fmap ?(FixC F) ?X (foldC F ?X alg) fix).
+  λ fix : F (FixC F). Λ X : *. λ alg : AlgC F X. alg $ fmap ?(FixC F) ?X (foldC F ?X alg) fix.
 
 let composeLeft [X : *] [F1, F2 : * -> *] (alg : AlgC (FunctorSumF F1 F2) X) : AlgC F1 X :=
-  λ x : F1 X. alg (inl ?(F1 X) ?(F2 X) x).
+  λ x : F1 X. alg $ inl ?(F1 X) ?(F2 X) x.
 let composeRight [X : *] [F1, F2 : * -> *] (alg : AlgC (FunctorSumF F1 F2) X) : AlgC F2 X :=
-  λ x : F2 X. alg (inr ?(F1 X) ?(F2 X) x).
+  λ x : F2 X. alg $ inr ?(F1 X) ?(F2 X) x.
 
 let sumAlg [X : *] [F1, F2 : * -> *] (alg1 : AlgC F1 X) (alg2 : AlgC F2 X) : AlgC (FunctorSumF F1 F2) X :=
   recursionSum ?(F1 X) ?(F2 X) ?X alg1 alg2.

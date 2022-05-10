@@ -23,5 +23,5 @@ let digitListToIndex : Π _ : List Dec. init$index :=
     (init$index$0_index'_ init$index'$)
     (λ d : Dec. λ ds : List Dec. λ _ : init$index. consDecToIndex (digitListToIndex' ds) d).
 
-let natToIndex (n : Nat) : init$index := digitListToIndex (natToDecList n).
-let natToVar (n : Nat) : Term := varTerm (init$var$_index_ (natToIndex n)).
+let natToIndex (n : Nat) : init$index := digitListToIndex $ natToDecList n.
+let natToVar (n : Nat) : Term := varTerm $ init$var$_index_ $ natToIndex n.

@@ -23,21 +23,31 @@ b-let showIndex (i : init$index) : String :=
     (λ i' : init$index'. stringApp "8" (showIndex' i'))
     (λ i' : init$index'. stringApp "9" (showIndex' i')).
 
-b-let showVar (v : init$var) : String := v ?String (λ s : String. s) showIndex.
+b-let showVar (con : List String) (v : init$var) : String :=
+  v ?String (λ s : String. s) (λ i : init$index. lookupDefault ?String (indexToNat i) (showIndex i) con).
 b-let showSort (s : init$sort) : String := s ?String "*" "□".
 b-let showBinder (b : Binder) : String := b ?String "λ" "Λ" "Π" "∀".
 
-b-let showTerm (t : Term) : String :=
-  t ?String
-    (λ v : init$var. showVar v)
-    (λ s : init$sort. showSort s)
-    (λ b : Binder. λ n : String. λ T, t : String.
-      stringConcat [String| showBinder b, " ", n, " : ", T, ". ", t])
-    (λ t : String. λ l : List (Product Bool String).
-      stringConcat (cons ?String t
-                          (map ?(Product Bool String) ?String
-                               (λ bs : Product Bool String.
-                                 stringConcat [String| ifthenelse ?String (pr1 ?Bool ?String bs) " ?" " ",
-                                                             "(", pr2 ?Bool ?String bs, ")"]) l)))
-    (λ c : Char. stringConcat [String| "κ", stringCons c stringNil])
-    (λ t : String. stringConcat [String| "γ{", t, "}"]).
+b-let isArrow (b : Binder) : Bool := b ?Bool false false true true.
+b-let showBinderArrow (b : Binder) : String := b ?String "λ is not an arrow!" "Λ is not an arrow!" "->" "=>".
+
+b-let showTermWithContext (t : Term) : List String -> String :=
+  t ?(List String -> String)
+    (λ v : init$var. λ con : List String. showVar con v)
+    (λ s : init$sort. λ _ : List String. showSort s)
+    (λ b : Binder. λ n : String. λ T, t : List String -> String. λ con : List String.
+      ifthenelse ?String (and (stringEq n "_") (isArrow b))
+        (stringConcat [String| T con, " ", showBinderArrow b, " ", t (cons ?String n con)])
+        (stringConcat [String| showBinder b, " ", n, " : ", T con, ". ", t (cons ?String n con)]))
+    (λ t : List String -> String. λ l : List (Product Bool (List String -> String)). λ con : List String.
+      stringConcat (cons ?String (t con)
+                          (map ?(Product Bool (List String -> String)) ?String
+                               (λ bs : Product Bool (List String -> String).
+                                 stringConcat [String|
+                                   ifthenelse ?String (pr1 ?Bool ?(List String -> String) bs) " ?" " ",
+                                   "(", pr2 ?Bool ?(List String -> String) bs con, ")"]) l)))
+    (λ c : Char. λ _ : List String. stringConcat [String| "κ", stringCons c stringNil])
+    (λ _ : List String. "_")
+    (λ t : List String -> String. λ con : List String. stringConcat [String| "γ{", t con, "}"]).
+
+b-let showTerm (t : Term) : String := showTermWithContext t (nil ?String).

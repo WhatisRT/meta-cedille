@@ -21,12 +21,12 @@ let ListRec (A, X : *)
   (fcons : A -> List A -> X -> X)
   (l : List A)
   : X :=
-  pr1 ?X ?(List A) (ListFold A (X × (List A))
-    (prodPair ?X ?(List A) fnil (nil ?A))
-    (λ a : A. λ as : X × (List A).
+  pr1 ?X ?(List A) (ListFold A (X × List A)
+    (prodPair ?X ?(List A) fnil $ nil ?A)
+    (λ a : A. λ as : X × List A.
       prodPair ?X ?(List A)
         (fcons a (pr2 ?X ?(List A) as) (pr1 ?X ?(List A) as))
-        (cons ?A a (pr2 ?X ?(List A) as)))
+        (cons ?A a $ pr2 ?X ?(List A) as))
     l).
 
 let maybeToList [A : *] (x : Maybe A) : List A :=
@@ -41,7 +41,7 @@ let tail [A : *] (l : List A) : List A :=
 let drop [A : *] (n : Nat) (l : List A) : List A :=
   NatFold (List A -> List A)
     (λ x : List A. x)
-    (λ rec : List A -> List A. λ x : List A. tail ?A (rec x))
+    (λ rec : List A -> List A. λ x : List A. tail ?A $ rec x)
     n l.
 
 let headMaybe [A : *] : List A -> Maybe A :=

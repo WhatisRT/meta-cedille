@@ -4,7 +4,7 @@
 
 let Entries := List PreParam.
 
-let DatatypeDecl := TripleProduct String Telescope Entries.
+let DatatypeDecl := String × Telescope × Entries.
 
 let toRecordDecl (d : DatatypeDecl) : DatatypeDecl :=
   recursionTripleProduct ?String ?Telescope ?Entries ?DatatypeDecl
@@ -12,13 +12,13 @@ let toRecordDecl (d : DatatypeDecl) : DatatypeDecl :=
       mkTripleProduct ?String ?Telescope ?Entries name t
         [PreParam| prodPair ?String ?Term
           (stringApp "mk" name)
-          (applyMultiBinder piBinder es (appLTerm (sVarTerm name) (telescopeToApp t)))])
+          (applyMultiBinder piBinder es $ appLTerm (sVarTerm name) $ telescopeToApp t)])
     d.
 
 let DatatypeDeclToStmt (d : DatatypeDecl) (m : String) : init$newStmt :=
   catchError ?DatatypeData ?init$newStmt
     (recursionTripleProduct ?String ?Telescope ?Entries ?(Error DatatypeData) mkDatatypeData d)
-    (λ e : String. echoStmt (stringApp m e))
+    (λ e : String. echoStmt $ stringApp m e)
     datatypeToLet.
 
 let init$entry$_string_^space^=colon=^space^_multiTerm_

@@ -8,10 +8,8 @@ importModule Nat.
 
 Given CNat Czero Csucc.
 
-let toChurchNat (n : Nat) : CNat :=
-  NatFold CNat Czero Csucc n.
+let toChurchNat (n : Nat) : CNat := NatFold CNat Czero Csucc n.
 
-let fromChurchNat (n : CNat) : Nat :=
-  n ?Nat zero succ.
+let fromChurchNat (n : CNat) : Nat := n ?Nat zero succ.
 
 endModule.

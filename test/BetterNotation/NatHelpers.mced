@@ -1,0 +1,128 @@
+--------------------------------------------------------------------------------
+-- Helper & conversion functions for natural numbers
+--------------------------------------------------------------------------------
+
+b-let one := suc zero.
+b-let two := suc one.
+b-let three := suc two.
+b-let four := suc three.
+b-let five := suc four.
+b-let six := suc five.
+b-let seven := suc six.
+b-let eight := suc seven.
+b-let nine := suc eight.
+b-let ten := suc nine.
+
+b-let add (n, m : Nat) : Nat := recursionNat ?Nat n (λ _, rec : Nat. suc rec) m.
+
+b-let mul (n, m : Nat) : Nat := recursionNat ?Nat zero (λ _, rec : Nat. add rec n) m.
+b-let pred (n : Nat) : Nat := recursionNat ?Nat zero (λ n', _ : Nat. n') n.
+b-let sub (n, m : Nat) : Nat := recursionNat ?Nat n (λ _, rec : Nat. pred rec) m.
+
+b-let isZero : Nat -> Bool := recursionNat ?Bool true (λ _ : Nat. λ _ : Bool. false).
+
+b-let natEq : Nat -> Nat -> Bool :=
+  recursionNat ?(Nat -> Bool)
+    isZero
+    (λ _ : Nat. λ rec : Nat -> Bool. recursionNat ?Bool false (λ n : Nat. λ _ : Bool. rec n)).
+
+--------------------------------------------------------------------------------
+-- Decimal digits
+--------------------------------------------------------------------------------
+
+b-let Dec := ∀ X : *. Π _, _, _, _, _, _, _, _, _, _ : X. X.
+b-let Dec0 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d0.
+b-let Dec1 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d1.
+b-let Dec2 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d2.
+b-let Dec3 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d3.
+b-let Dec4 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d4.
+b-let Dec5 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d5.
+b-let Dec6 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d6.
+b-let Dec7 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d7.
+b-let Dec8 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d8.
+b-let Dec9 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d9.
+
+b-let showDec (d : Dec) : String := d ?String "0" "1" "2" "3" "4" "5" "6" "7" "8" "9".
+
+--------------------------------------------------------------------------------
+-- Conversions to Nat
+--------------------------------------------------------------------------------
+
+b-let baseListToNat [B : *] (digitToNat : B -> Nat) (ds : List B) (base : Nat) : Nat :=
+  recursionList ?B ?Nat zero
+    (λ d : B. λ _ : List B. λ rec : Nat. add (mul rec ten) (digitToNat d))
+    (reverse ?B ds).
+
+b-let boolToNat (b : Bool) : Nat := ifthenelse ?Nat b one zero.
+b-let decToNat (d : Dec) : Nat := d ?Nat zero one two three four five six seven eight nine.
+
+b-let boolListToNat (bs : List Bool) : Nat := baseListToNat ?Bool boolToNat bs two.
+b-let decListToNat (ds : List Dec) : Nat := baseListToNat ?Dec decToNat ds ten.
+
+-- Index conversion
+
+b-let index'ToDigits (i : init$index') : List Dec :=
+  i ?(List Dec)
+    [Dec|]
+    (cons ?Dec Dec0) (cons ?Dec Dec1) (cons ?Dec Dec2) (cons ?Dec Dec3) (cons ?Dec Dec4)
+    (cons ?Dec Dec5) (cons ?Dec Dec6) (cons ?Dec Dec7) (cons ?Dec Dec8) (cons ?Dec Dec9).
+
+b-let indexToDigits (i : init$index) : List Dec :=
+  i ?(List Dec)
+    (λ i' : init$index'. cons ?Dec Dec0 (index'ToDigits i'))
+    (λ i' : init$index'. cons ?Dec Dec1 (index'ToDigits i'))
+    (λ i' : init$index'. cons ?Dec Dec2 (index'ToDigits i'))
+    (λ i' : init$index'. cons ?Dec Dec3 (index'ToDigits i'))
+    (λ i' : init$index'. cons ?Dec Dec4 (index'ToDigits i'))
+    (λ i' : init$index'. cons ?Dec Dec5 (index'ToDigits i'))
+    (λ i' : init$index'. cons ?Dec Dec6 (index'ToDigits i'))
+    (λ i' : init$index'. cons ?Dec Dec7 (index'ToDigits i'))
+    (λ i' : init$index'. cons ?Dec Dec8 (index'ToDigits i'))
+    (λ i' : init$index'. cons ?Dec Dec9 (index'ToDigits i')).
+
+b-let indexToNat (i : init$index) : Nat := decListToNat (indexToDigits i).
+
+--------------------------------------------------------------------------------
+-- Conversions from Nat
+--------------------------------------------------------------------------------
+
+b-let incrementBoolList (l : List Bool) : List Bool :=
+  recursionList ?Bool ?(List Bool)
+    [Bool | true]
+    (λ b : Bool. λ bs : List Bool. λ rec : List Bool.
+      ifthenelse ?(List Bool) b (cons ?Bool false rec) (cons ?Bool true bs))
+    l.
+
+b-let incrementDecList (l : List Dec) : List Dec :=
+  recursionList ?Dec ?(List Dec)
+    [Dec | Dec1]
+    (λ d : Dec. λ ds : List Dec. λ rec : List Dec.
+      d ?(List Dec)
+        (cons ?Dec Dec1 ds) (cons ?Dec Dec2 ds) (cons ?Dec Dec3 ds) (cons ?Dec Dec4 ds) (cons ?Dec Dec5 ds)
+        (cons ?Dec Dec6 ds) (cons ?Dec Dec7 ds) (cons ?Dec Dec8 ds) (cons ?Dec Dec9 ds) (cons ?Dec Dec0 rec))
+    l.
+
+b-let natToBoolList (n : Nat) : List Bool :=
+  recursionNat ?(List Bool)
+    [Bool | false]
+    (λ _ : Nat. λ rec : List Bool. incrementBoolList rec)
+    n.
+
+b-let natToDecList (n : Nat) : List Dec :=
+  recursionNat ?(List Dec)
+    [Dec | Dec0]
+    (λ _ : Nat. λ rec : List Dec. incrementDecList rec)
+    n.
+
+--------------------------------------------------------------------------------
+-- Show functions
+--------------------------------------------------------------------------------
+
+-- Prints a list of digits in a certain base
+b-let showListOfDigitsBased [X : *] (showX : X -> String) (l : List X) : String :=
+  stringConcat (map ?X ?String showX (reverse ?X l)).
+
+b-let showNatBinary (n : Nat) : String :=
+  showListOfDigitsBased ?Bool (λ b : Bool. ifthenelse ?String b "1" "0") (natToBoolList n).
+b-let showNatDecimal (n : Nat) : String :=
+  showListOfDigitsBased ?Dec showDec (natToDecList n).

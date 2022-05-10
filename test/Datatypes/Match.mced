@@ -13,27 +13,30 @@ let termToName (t : Term) : Maybe String :=
     varToName
     (λ s : init$sort. nothing ?String)
     (λ b : Binder. λ n : String. λ _ : Maybe String. λ _ : Maybe String. nothing ?String)
-    (λ t : Maybe String. λ l : List (Product Bool (Maybe String)). nothing ?String)
+    (λ t : Maybe String. λ l : List (Bool × Maybe String). nothing ?String)
     (λ c : Char. nothing ?String)
+    (nothing ?String)
     (λ _ : Maybe String. nothing ?String).
 
 -- if t is of the form n n1 ... nk, returns that list
 let termToNameList (t : Term) : Maybe (List String) :=
-  recursionTerm ?(Maybe (List String))
-    (λ v : init$var. mapMaybe ?String ?(List String) (pureList ?String) (varToName v))
+  recursionTerm ?(Maybe $ List String)
+    (λ v : init$var. mapMaybe ?String ?(List String) (pureList ?String) $ varToName v)
     (λ s : init$sort. nothing ?(List String))
     (λ b : Binder. λ n : String. λ _ : Term. λ _ : Term. λ _ : Maybe (List String). λ _ : Maybe (List String).
       nothing ?(List String))
-    (λ _ : Term. λ l : List App. λ ns : Maybe (List String). λ _ : List (Product Bool (Maybe (List String))).
+    (λ _ : Term. λ l : List App. λ ns : Maybe (List String). λ _ : List (Bool × Maybe (List String)).
       liftMaybe2 ?(List String) ?(List String) ?(List String) (app ?String)
-                 ns (traverseMaybeList ?App ?String (λ a : App. termToName (appTerm a)) l))
+                 ns $ traverseMaybeList ?App ?String (λ a : App. termToName $ appTerm a) l)
     (λ c : Char. nothing ?(List String))
+    (nothing ?(List String))
     (λ _ : Term. λ _ : Maybe (List String). nothing ?(List String))
     t.
 
 -- returns true iff t is of the form n n1 ... nk and the list of names equals `match`
 let matchTerm (t : Term) (match : List String) : Bool :=
-  maybe ?(List String) ?Bool false (λ ns : List String. listEq ?String stringEq match ns) (termToNameList t).
+  maybe ?(List String) ?Bool false (λ ns : List String. listEq ?String stringEq match ns) $ termToNameList t.
 
 -- this function is used to get the data to match against from a definition
-let getMatch (n : String) (t : Telescope) : List String := cons ?String n (map ?Param ?String paramName t).
+let getMatch (n : String) (t : Telescope) : List String :=
+  cons ?String n $ map ?Param ?String paramName t.

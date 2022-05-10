@@ -10,7 +10,7 @@ import test/BetterNotation/ListNotation.
 import test/BetterNotation/QuoteTerm.
 
 import test/BetterNotation/ListExt.
-import test/BetterNotation/ShowNat.
+import test/BetterNotation/NatHelpers.
 import test/BetterNotation/ShowTerm.
 import test/BetterNotation/ConversionHelpers.
 
@@ -18,4 +18,5 @@ import test/BetterNotation/ModuleDefinitions.
 import test/BetterNotation/EvalTypes.
 import test/BetterNotation/ModuleFunction.
 import test/BetterNotation/BetterSyntax.
+
 import test/BetterNotation/InfixNotations.

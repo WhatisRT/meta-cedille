@@ -12,7 +12,7 @@ data Nat where
 let NatRec (X : *) (recZero : X) (recSucc : X -> Nat -> X) (n : Nat) : X :=
   pr1 ?X ?Nat (NatFold (X × Nat)
     (prodPair ?X ?Nat recZero zero)
-    (λ x : X × Nat. prodPair ?X ?Nat (recSucc (pr1 ?X ?Nat x) (pr2 ?X ?Nat x)) (succ (pr2 ?X ?Nat x)))
+    (λ x : X × Nat. prodPair ?X ?Nat (recSucc (pr1 ?X ?Nat x) (pr2 ?X ?Nat x)) (succ $ pr2 ?X ?Nat x))
     n).
 
 let plus (n, m : Nat) : Nat := NatFold Nat m (λ rec : Nat. succ rec) n.
@@ -39,7 +39,6 @@ let natToDecList (n : Nat) : List Dec :=
     (λ rec : List Dec. incrementDecList rec)
     n.
 
-let showNat (n : Nat) : String :=
-  showListOfDigitsBased ?Dec showDec (natToDecList n).
+let showNat (n : Nat) : String := showListOfDigitsBased ?Dec showDec $ natToDecList n.
 
 endModule.

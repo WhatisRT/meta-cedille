@@ -5,6 +5,13 @@
 b-let showList [X : *] (showX : X -> String) (l : List X) : String :=
   stringApp "[" (stringApp (stringConcat (intersperse ?String ", " (map ?X ?String showX l))) "]").
 
+b-let lookupDefault [A : *] (n : Nat) (d : A) (l : List A) : A :=
+  recursionList ?A ?(Nat -> A)
+    (λ _ : Nat. d)
+    (λ a : A. λ _ : List A. λ rec : Nat -> A.
+      recursionNat ?A a (λ k : Nat. λ _ : A. rec k))
+    l n.
+
 b-let initsNonEmpty [A : *] (l : List A) : List (Product A (List A)) :=
   recursionList ?A ?(List (Product A (List A)))
     [Product A (List A)|]

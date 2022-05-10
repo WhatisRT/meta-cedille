@@ -51,17 +51,17 @@ let recursionConstrFunctor [X : *]
   (covHomf : String -> Term -> ConstrFunctor -> X -> X)
   (pairf : String -> Π _, _ : ConstrFunctor. Π _, _ : X. X)
   (f : ConstrFunctor) : X :=
-  pr1 ?X ?ConstrFunctor (f ?(X × ConstrFunctor)
+  pr1 ?X ?ConstrFunctor $ f ?(X × ConstrFunctor)
     (prodPair ?X ?ConstrFunctor idf idConstrFunctor)
-    (λ t : Term. prodPair ?X ?ConstrFunctor (constf t) (constConstrFunctor t))
+    (λ t : Term. prodPair ?X ?ConstrFunctor (constf t) $ constConstrFunctor t)
     (λ n : String. λ t : Term. λ t' : X × ConstrFunctor.
       prodPair ?X ?ConstrFunctor
         (covHomf n t (pr2 ?X ?ConstrFunctor t') (pr1 ?X ?ConstrFunctor t'))
-        (covDHomConstrFunctor n t (pr2 ?X ?ConstrFunctor t')))
+        (covDHomConstrFunctor n t $ pr2 ?X ?ConstrFunctor t'))
     (λ s : String. λ t, t' : X × ConstrFunctor.
       prodPair ?X ?ConstrFunctor
         (pairf s (pr2 ?X ?ConstrFunctor t) (pr2 ?X ?ConstrFunctor t') (pr1 ?X ?ConstrFunctor t) (pr1 ?X ?ConstrFunctor t'))
-        (pairConstrFunctor s (pr2 ?X ?ConstrFunctor t) (pr2 ?X ?ConstrFunctor t')))).
+        (pairConstrFunctor s (pr2 ?X ?ConstrFunctor t) (pr2 ?X ?ConstrFunctor t'))).
 
 let CFParam := String × ConstrFunctor.
 let cfParamName := pr1 ?String ?ConstrFunctor.
@@ -72,7 +72,7 @@ let ConstrFunctorData := List CFParam.
 let FoldConstrFunctorData (d : ConstrFunctorData) : ConstrFunctor :=
   foldl ?(String × ConstrFunctor) ?ConstrFunctor
     (λ f : ConstrFunctor. λ x : String × ConstrFunctor. pairConstrFunctor (cfParamName x) (cfParamFunctor x) f)
-    d (constConstrFunctor θ{Unit}).
+    d $ constConstrFunctor θ{Unit}.
 
 let ApplyConstrFunctor (term : Term) (f : ConstrFunctor) : Term :=
   f ?Term
@@ -82,14 +82,16 @@ let ApplyConstrFunctor (term : Term) (f : ConstrFunctor) : Term :=
     (λ s : String. λ recF, recF' : Term. θ{DSum γ{recF} γ{lambdaTerm s recF recF'}}).
 
 let ConstrFunctorF' (name : String) (f : ConstrFunctor) : Term :=
-  lambdaTerm name θ{*} (ApplyConstrFunctor (sVarTerm name) f).
+  lambdaTerm name θ{*} $ ApplyConstrFunctor (sVarTerm name) f.
 
-let ConstrFunctorF (name : String) (f : ConstrFunctorData) : Term := ConstrFunctorF' name (FoldConstrFunctorData f).
+let ConstrFunctorF (name : String) (f : ConstrFunctorData) : Term :=
+  ConstrFunctorF' name $ FoldConstrFunctorData f.
 
 let ApplyConstrFunctorData (f : ConstrFunctorData) (t : Term) : Term :=
   recursionList ?CFParam ?Term
     t
-    (λ p : CFParam. λ ps : List CFParam. λ rec : Term. piTerm (cfParamName p) (ApplyConstrFunctor t (cfParamFunctor p)) rec)
+    (λ p : CFParam. λ ps : List CFParam. λ rec : Term.
+      piTerm (cfParamName p) (ApplyConstrFunctor t $ cfParamFunctor p) rec)
     f.
 
 let ConstrFunctorFunctor' (name : String) (f : ConstrFunctor) : Term :=
@@ -107,7 +109,7 @@ let ConstrFunctorFunctor' (name : String) (f : ConstrFunctor) : Term :=
                 γ{lambdaTerm s θ{γ{ConstrFunctorF' name fun} DataX} intFmap'}}) f}}.
 
 let ConstrFunctorFunctor (name : String) (f : ConstrFunctorData) : Term :=
-  ConstrFunctorFunctor' name (FoldConstrFunctorData f).
+  ConstrFunctorFunctor' name $ FoldConstrFunctorData f.
 
 -- Turn a list of constructors into a functor
 let ConstrsFunctorF' (name : String) (constrs : List ConstrFunctorData) : Term :=
