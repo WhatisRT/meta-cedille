@@ -1,17 +1,13 @@
-{ nixpkgs ?  <nixpkgs> }:
-let ghcpkgs = import ((import <nixpkgs> {}).fetchFromGitHub {
+{ nixpkgs ? <nixpkgs> }:
+let fetchFromGitHub = (import <nixpkgs> {}).fetchFromGitHub;
+    pinnedPkgs = import (fetchFromGitHub {
       owner = "NixOS";
       repo = "nixpkgs";
-      rev = "068984c00e0d4e54b6684d98f6ac47c92dcb642e";
-      sha256 = "00j4xv4lhhqwry7jd67brnws4pwb8vn660n43pvxpkalbpxszwfg";
-    }) {}; # pinned to 20.09, as bytestring-trie is broken later
-    oldpkgs = import ((import <nixpkgs> {}).fetchFromGitHub {
-      owner = "NixOS";
-      repo = "nixpkgs";
-      rev = "dd98b100651cfbb8804f32d852f75ef7c97a6b74";
-      sha256 = "08ck4y9yhw75qdqh3m6mfk7k0pqcwylffrw30h6dphmgsxq188ip";
-    }) {}; # pinned to 21.05
-in with oldpkgs;
+      rev = "08dc90729fc8b4ab072607cf7257900a9cacb1f6";
+      sha256 = "oieO93uofWhvmbsV62mBBW+75/KZq42Osmn0mLTnA5E=";
+    }) {};
+    ghcpkgs = pinnedPkgs; # in case we need a different GHC
+in with pinnedPkgs;
 stdenv.mkDerivation {
   name = "meta-cedille";
   src = ./.;
