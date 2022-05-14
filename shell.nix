@@ -1,2 +1,2 @@
 with import <nixpkgs> {};
-(callPackage ./default.nix {}).overrideAttrs (old: {src = null;})
+(callPackage ./default.nix {}).meta-cedille.overrideAttrs (old: {src = null;})
