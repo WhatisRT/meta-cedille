@@ -26,455 +26,206 @@ open import Parse.LL1
 open import Parse.Generate
 open import Parse.Escape
 
-continueIfInit : ∀ {a} {A : Set a} → List Char → List Char → (List Char → A) → Maybe A
-continueIfInit {A = A} init s = helper init s
-  where
-    helper : List Char → List Char → (List Char → A) → Maybe A
-    helper [] s f = just $ f s
-    helper (x₁ ∷ init) [] f = nothing
-    helper (x₁ ∷ init) (x ∷ s) f with x ≟ x₁
-    ... | yes p = helper init s f
-    ... | no ¬p = nothing
+PTree : Set
+PTree = Tree (ℕ ⊎ Char)
+
+RuleType : Set
+RuleType = Fin 5
+
+ruleFun : Set → RuleType → Set
+ruleFun A 0F = Maybe A
+ruleFun A 1F = PTree → Maybe A
+ruleFun A 2F = PTree → PTree → Maybe A
+ruleFun A 3F = PTree → PTree → PTree → Maybe A
+ruleFun A 4F = PTree → PTree → PTree → PTree → Maybe A
 
 ruleId : List Char → List Char → Maybe (ℕ ⊎ Char)
 ruleId nonterm rule = do
   rules ← lookup nonterm parseRuleMap
-  i ← findIndexList (_≟ (nonterm + "$" + rule)) rules
-  return $ inj₁ i
+  inj₁ <$> findIndexList (_≟ (nonterm + "$" + rule)) rules
 
 _≡ᴹ_ : ℕ ⊎ Char → Maybe (ℕ ⊎ Char) → Bool
 x ≡ᴹ y = just x ≣ y
 
-toSort : Tree (ℕ ⊎ Char) → Maybe Sort
-toSort (Node x x₁) =
-  if x ≡ᴹ ruleId "sort" "*"
-    then return ⋆
-    else if x ≡ᴹ ruleId "sort" "□"
-      then return □
-      else nothing
+ruleIdN : ∀ {A} → (n : RuleType) → List Char → List Char → ruleFun A n → List PTree → Maybe (ℕ ⊎ Char) × Maybe A
+ruleIdN 0F s s' f [] = (ruleId s s' , f)
+ruleIdN 1F s s' f (x₁ ∷ []) = (ruleId s s' , f x₁)
+ruleIdN 2F s s' f (x₁ ∷ x₂ ∷ []) = (ruleId s s' , f x₁ x₂)
+ruleIdN 3F s s' f (x₁ ∷ x₂ ∷ x₃ ∷ []) = (ruleId s s' , f x₁ x₂ x₃)
+ruleIdN 4F s s' f (x₁ ∷ x₂ ∷ x₃ ∷ x₄ ∷ []) = (ruleId s s' , f x₁ x₂ x₃ x₄)
+ruleIdN n s s' f _ = (ruleId s s' , nothing)
 
-toConst : Tree (ℕ ⊎ Char) → Maybe Const
-toConst (Node x x₁) =
-  if x ≡ᴹ ruleId "const" "Char"
-    then return CharT
-    else nothing
+ruleCaseN : {A : Set} → PTree → List Char → List (List Char × Σ[ t ∈ RuleType ] ruleFun A t) → Maybe A
+ruleCaseN (Node x x₁) r cs =
+  decCase just x of map (λ where (x , t , f) → ruleIdN t r x f x₁) cs default nothing
 
-toChar : Tree (ℕ ⊎ Char) → Maybe Char
+toSort : PTree → Maybe Sort
+toSort x = ruleCaseN x "sort" (("*" , 0F , just ⋆) ∷ ("□" , 0F , just □) ∷ [])
+
+toConst : PTree → Maybe Const
+toConst x = ruleCaseN x "const" (("Char" , 0F , just CharT) ∷ [])
+
+toChar : PTree → Maybe Char
 toChar (Node (inj₁ x) x₁) = nothing
 toChar (Node (inj₂ y) x₁) = just y
 
-toChar' : Tree (ℕ ⊎ Char) → Maybe Char
-toChar' (Node x x₁) =
-  if x ≡ᴹ ruleId "char" "!!"
-    then (case x₁ of λ { (y ∷ []) → toChar y ; _ → nothing })
-    else nothing
+toChar' : PTree → Maybe Char
+toChar' x = ruleCaseN x "char" (("!!" , 1F , toChar) ∷ [])
 
-toName : Tree (ℕ ⊎ Char) → Maybe String
-toName (Node x x₁) = case x₁ of λ
-  { (y ∷ y' ∷ _) → do
-    c ← toChar y
-    n ← toName y'
-    return (fromChar c + n)
-  ; [] → if x ≡ᴹ ruleId "string'" ""
-      then return ""
-      else nothing
-  ; _ → nothing }
+toName : PTree → Maybe String
+toName (Node x (y ∷ y' ∷ [])) = (λ y → fromChar y +_) <$₂> toChar y , toName y'
+toName (Node x []) = if x ≡ᴹ ruleId "string'" "" then return "" else nothing
+toName _ = nothing
 
-toNameList : Tree (ℕ ⊎ Char) → Maybe (List String)
+toNameList : PTree → Maybe (List String)
 toNameList (Node x []) = just []
-toNameList (Node x (x₁ ∷ x₂ ∷ _)) = do
-  n ← toName x₁
-  rest ← toNameList x₂
-  return $ n ∷ rest
-{-# CATCHALL #-}
+toNameList (Node x (x₁ ∷ x₂ ∷ _)) = _∷_ <$₂> toName x₁ , toNameList x₂
 toNameList _ = nothing
 
-toIndex : Tree (ℕ ⊎ Char) → Maybe ℕ
-toIndex t = do
-  res ← helper t
-  foldl {A = Maybe ℕ} (λ x c → (λ x' → 10 * x' + c) <$> x) (just 0) res
+toIndex : PTree → Maybe ℕ
+toIndex t = helper t >>= foldl {A = Maybe ℕ} (λ x c → (λ x' → 10 * x' + c) <$> x) (just 0)
   where
-    helper' : Tree (ℕ ⊎ Char) → Maybe (List ℕ)
+    helper'' : List Char → ℕ ⊎ Char → List ℕ → Maybe (List ℕ)
+    helper'' r x rest =
+      decCase (just x) of
+        applyUpTo (λ n → ruleId r (toList $ show n + "_index'_") , return (n ∷ rest)) 10
+        default nothing
+
+    helper' : PTree → Maybe (List ℕ)
     helper' (Node x []) =
       if x ≡ᴹ ruleId "index'" ""
         then return []
         else nothing
-    helper' (Node x (x₁ ∷ _)) = do
-      rest ← helper' x₁
-      decCase (just x) of
-        (ruleId "index'" "0_index'_" , return (0 ∷ rest)) ∷
-        (ruleId "index'" "1_index'_" , return (1 ∷ rest)) ∷
-        (ruleId "index'" "2_index'_" , return (2 ∷ rest)) ∷
-        (ruleId "index'" "3_index'_" , return (3 ∷ rest)) ∷
-        (ruleId "index'" "4_index'_" , return (4 ∷ rest)) ∷
-        (ruleId "index'" "5_index'_" , return (5 ∷ rest)) ∷
-        (ruleId "index'" "6_index'_" , return (6 ∷ rest)) ∷
-        (ruleId "index'" "7_index'_" , return (7 ∷ rest)) ∷
-        (ruleId "index'" "8_index'_" , return (8 ∷ rest)) ∷
-        (ruleId "index'" "9_index'_" , return (9 ∷ rest)) ∷ []
-        default nothing
+    helper' (Node x (x₁ ∷ _)) = helper' x₁ >>= helper'' "index'" x
 
-    helper : Tree (ℕ ⊎ Char) → Maybe (List ℕ)
+    helper : PTree → Maybe (List ℕ)
     helper (Node x []) = nothing
-    helper (Node x (x₁ ∷ _)) = do
-      rest ← helper' x₁
-      decCase just x of
-        (ruleId "index" "0_index'_" , return (0 ∷ rest)) ∷
-        (ruleId "index" "1_index'_" , return (1 ∷ rest)) ∷
-        (ruleId "index" "2_index'_" , return (2 ∷ rest)) ∷
-        (ruleId "index" "3_index'_" , return (3 ∷ rest)) ∷
-        (ruleId "index" "4_index'_" , return (4 ∷ rest)) ∷
-        (ruleId "index" "5_index'_" , return (5 ∷ rest)) ∷
-        (ruleId "index" "6_index'_" , return (6 ∷ rest)) ∷
-        (ruleId "index" "7_index'_" , return (7 ∷ rest)) ∷
-        (ruleId "index" "8_index'_" , return (8 ∷ rest)) ∷
-        (ruleId "index" "9_index'_" , return (9 ∷ rest)) ∷ []
-        default nothing
+    helper (Node x (x₁ ∷ _)) = helper' x₁ >>= helper'' "index" x
 
-toTerm : Tree (ℕ ⊎ Char) → Maybe AnnTerm
+{-# TERMINATING #-} -- inlining the termRuleN's would make the checker happy
+toTerm : PTree → Maybe AnnTerm
 toTerm = helper []
   where
-    helper : List String → Tree (ℕ ⊎ Char) → Maybe AnnTerm
-    helper accu (Node x x₁) =
-      decCase just x of
-      
-        (ruleId "term" "_var_" , (case x₁ of λ
-          { ((Node y (n ∷ [])) ∷ []) →
-            decCase just y of
-              (ruleId "var" "_string_" , do
-                n' ← toName n
-                return $ case findIndexList (n' ≟_) accu of λ
-                  { (just x) → BoundVar $ fromℕ x
-                  ; nothing → FreeVar n' }) ∷
-              (ruleId "var" "_index_" , do
-                n' ← toIndex n
-                return $ BoundVar $ fromℕ n') ∷ []
-            default nothing
-          ; _ → nothing })) ∷
+    helper : List String → PTree → Maybe AnnTerm
+    helper accu y =
+      let conv1ʰ : (AnnTerm → AnnTerm) → ruleFun AnnTerm 1F
+          conv1ʰ f x = f <$> helper accu x
 
-        (ruleId "term" "_sort_" , do
-          s ← head x₁ >>= toSort
-          return $ Sort-A s) ∷
+          conv2ʰ : (AnnTerm → AnnTerm → AnnTerm) → ruleFun AnnTerm 2F
+          conv2ʰ f x y = f <$₂> helper accu x , helper accu y
 
-        (ruleId "term" "π^space^_term_" , (case x₁ of λ
-          { (y ∷ []) → do
-            y' ← helper accu y
-            return $ Pr1-A y'
-          ; _ → nothing })) ∷
+          conv3ʰ : (AnnTerm → AnnTerm → AnnTerm → AnnTerm) → ruleFun AnnTerm 3F
+          conv3ʰ f x y z = do x ← helper accu x; y ← helper accu y; z ← helper accu z; return $ f x y z
 
-        (ruleId "term" "ψ^space^_term_" , (case x₁ of λ
-          { (y ∷ []) → do
-            y' ← helper accu y
-            return $ Pr2-A y'
-          ; _ → nothing })) ∷
+          conv2ʰᶜ : (AnnTerm × AnnTerm → AnnTerm) → ruleFun AnnTerm 2F
+          conv2ʰᶜ f = conv2ʰ (curry f)
 
-        (ruleId "term" "β^space^_term_^space^_term_" , (case x₁ of λ
-          { (y ∷ y' ∷ []) → do
-            t ← helper accu y
-            t' ← helper accu y'
-            return $ Beta-A t t'
-          ; _ → nothing })) ∷
+          conv3ʰᶜ : (AnnTerm × AnnTerm × AnnTerm → AnnTerm) → ruleFun AnnTerm 3F
+          conv3ʰᶜ f = conv3ʰ (λ x → curry (curry f x))
 
-        (ruleId "term" "δ^space^_term_^space^_term_" , (case x₁ of λ
-          { (y ∷ y' ∷ []) → do
-            t ← helper accu y
-            t' ← helper accu y'
-            return $ Delta-A t t'
-          ; _ → nothing })) ∷
+          convᵇ : (String → AnnTerm → AnnTerm → AnnTerm) → ruleFun AnnTerm 3F
+          convᵇ f n y y' = do n ← toName n; y ← helper accu y; y' ← helper (n ∷ accu) y'; return $ f n y y'
 
-        (ruleId "term" "σ^space^_term_" , (case x₁ of λ
-          { (y ∷ []) → helper accu y >>= λ y' → return (Sigma-A y') ; _ → nothing })) ∷
+      in ruleCaseN y "term"
+        (("_var_" , 1F , (λ x → ruleCaseN x "var"
+          (("_string_" , 1F , λ n → do
+            n' ← toName n
+            return $ case findIndexList (n' ≟_) accu of λ where
+              (just x) → BoundVar $ fromℕ x
+              nothing  → FreeVar n') ∷
+          ("_index_" , 1F , (λ n → BoundVar ∘ fromℕ <$> toIndex n)) ∷ []))) ∷
 
-        (ruleId "term" "[^space'^_term_^space^_term_^space'^]" , (case x₁ of λ
-          { (y ∷ y' ∷ []) → do
-            t ← helper accu y
-            t' ← helper accu y'
-            return $ App-A t t'
-          ; _ → nothing })) ∷
+        ("_sort_" , 1F , λ y → Sort-A <$> toSort y) ∷
 
-        (ruleId "term" "<^space'^_term_^space^_term_^space'^>" , (case x₁ of λ
-          { (y ∷ y' ∷ []) → do
-            t ← helper accu y
-            t' ← helper accu y'
-            return $ AppE-A t t'
-          ; _ → nothing })) ∷
+        ("π^space^_term_" , 1F , conv1ʰ Pr1-A) ∷
+        ("ψ^space^_term_" , 1F , conv1ʰ Pr2-A) ∷
 
-        (ruleId "term"
-          "ρ^space^_term_^space^_string_^space'^.^space'^_term_^space^_term_" , (case x₁ of λ
-          { (y ∷ n' ∷ y' ∷ y'' ∷ []) → do
-            t ← helper accu y
-            n ← toName n'
-            t' ← helper (n ∷ accu) y'
-            t'' ← helper accu y''
-            return $ Rho-A t t' t''
-          ; _ → nothing })) ∷
+        ("β^space^_term_^space^_term_" , 2F , conv2ʰ Beta-A) ∷
+        ("δ^space^_term_^space^_term_" , 2F , conv2ʰ Delta-A) ∷
+        ("σ^space^_term_" , 1F , conv1ʰ Sigma-A) ∷
 
-        (ruleId "term"
-          "∀^space^_string_^space'^:^space'^_term_^space^_term_" , (case x₁ of λ
-          { (n' ∷ y ∷ y' ∷ []) → do
-            n ← toName n'
-            t ← helper accu y
-            t' ← helper (n ∷ accu) y'
-            return $ All-A n t t'
-          ; _ → nothing })) ∷
+        ("[^space'^_term_^space^_term_^space'^]" , 2F , conv2ʰ App-A) ∷
+        ("<^space'^_term_^space^_term_^space'^>" , 2F , conv2ʰ AppE-A) ∷
 
-        (ruleId "term"
-          "Π^space^_string_^space'^:^space'^_term_^space^_term_" , (case x₁ of λ
-          { (n' ∷ y ∷ y' ∷ []) → do
-            n ← toName n'
-            t ← helper accu y
-            t' ← helper (n ∷ accu) y'
-            return $ Pi-A n t t'
-          ; _ → nothing })) ∷
+        ("ρ^space^_term_^space^_string_^space^" , 4F , (λ y n' y' y'' → do
+          t ← helper accu y
+          n ← toName n'
+          t' ← helper (n ∷ accu) y'
+          t'' ← helper accu y''
+          return $ Rho-A t t' t'')) ∷
 
-        (ruleId "term"
-          "ι^space^_string_^space'^:^space'^_term_^space^_term_" , (case x₁ of λ
-          { (n' ∷ y ∷ y' ∷ []) → do
-            n ← toName n'
-            t ← helper accu y
-            t' ← helper (n ∷ accu) y'
-            return $ Iota-A n t t'
-          ; _ → nothing })) ∷
+        ("∀^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ All-A) ∷
+        ("Π^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ Pi-A) ∷
+        ("ι^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ Iota-A) ∷
+        ("λ^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ Lam-A) ∷
+        ("Λ^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ LamE-A) ∷
 
-        (ruleId "term"
-          "λ^space^_string_^space'^:^space'^_term_^space^_term_" , (case x₁ of λ
-          { (n' ∷ y ∷ y' ∷ []) → do
-            n ← toName n'
-            t ← helper accu y
-            t' ← helper (n ∷ accu) y'
-            return $ Lam-A n t t'
-          ; _ → nothing })) ∷
+        ("{^space'^_term_^space'^,^space'^_term_^space^_string_^space'^.^space'^_term_^space'^}" , 4F , (λ y y' n y'' → do
+          t ← helper accu y
+          t' ← helper accu y'
+          n ← toName n
+          t'' ← helper (n ∷ accu) y''
+          return $ Rho-A t t' t'')) ∷
 
-        (ruleId "term"
-          "Λ^space^_string_^space'^:^space'^_term_^space^_term_" , (case x₁ of λ
-          { (n' ∷ y ∷ y' ∷ []) → do
-            n ← toName n'
-            t ← helper accu y
-            t' ← helper (n ∷ accu) y'
-            return $ LamE-A n t t'
-          ; _ → nothing })) ∷
+        ("φ^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰ Phi-A) ∷
+        ("=^space^_term_^space^_term_" , 2F , conv2ʰ Eq-A) ∷
+        ("ω^space^_term_" , 1F , conv1ʰ M-A) ∷
+        ("μ^space^_term_^space^_term_" , 2F , conv2ʰ Mu-A) ∷
+        ("ε^space^_term_" , 1F , conv1ʰ Epsilon-A) ∷
 
-        (ruleId "term"
-          "{^space'^_term_^space'^,^space'^_term_^space^_string_^space'^.^space'^_term_^space'^}" ,
-          (case x₁ of λ
-          { (y ∷ y' ∷ n' ∷ y'' ∷ []) → do
-            t ← helper accu y
-            t' ← helper accu y'
-            n ← toName n'
-            t'' ← helper (n ∷ accu) y''
-            return $ Pair-A t t' t''
-          ; _ → nothing })) ∷
+        ("ζLet^space^_term_^space^_term_" , 2F , conv2ʰᶜ (Ev-A Let)) ∷
+        ("ζAnnLet^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰᶜ (Ev-A AnnLet)) ∷
+        ("ζSetEval^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰᶜ (Ev-A SetEval)) ∷
+        ("ζShellCmd^space^_term_^space^_term_" , 2F , conv2ʰᶜ (Ev-A ShellCmd)) ∷
+        ("ζCheckTerm^space^_term_^space^_term_" , 2F , conv2ʰᶜ (Ev-A CheckTerm)) ∷
+        ("ζParse^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰᶜ (Ev-A Parse)) ∷
+        ("ζCatchErr^space^_term_^space^_term_" , 2F , conv2ʰ Gamma-A) ∷
+        ("ζNormalize^space^_term_" , 1F , conv1ʰ (Ev-A Normalize)) ∷
+        ("ζHeadNormalize^space^_term_" , 1F , conv1ʰ (Ev-A HeadNormalize)) ∷
+        ("ζInferType^space^_term_" , 1F , conv1ʰ (Ev-A InferType)) ∷
+        ("ζImport^space^_term_" , 1F , conv1ʰ (Ev-A Import)) ∷
 
-        (ruleId "term" "φ^space^_term_^space^_term_^space^_term_" , (case x₁ of λ
-          { (y ∷ y' ∷ y'' ∷ []) → do
-            t ← helper accu y
-            t' ← helper accu y'
-            t'' ← helper accu y''
-            return $ Phi-A t t' t''
-          ; _ → nothing })) ∷
+        ("Κ_const_" , 1F , (λ z → Const-A <$> toConst z)) ∷
+        ("κ_char_" , 1F , (λ z → Char-A <$> toChar z <∣> toChar' z)) ∷
 
-        (ruleId "term" "=^space^_term_^space^_term_" , (case x₁ of λ
-          { (y ∷ y' ∷ []) → do
-            t ← helper accu y
-            t' ← helper accu y'
-            return $ Eq-A t t'
-          ; _ → nothing })) ∷
+        ("γ^space^_term_^space^_term_" , 2F , conv2ʰ CharEq-A) ∷ [])
 
-        (ruleId "term" "ω^space^_term_" , (case x₁ of λ
-          { (y ∷ []) → do
-            t ← helper accu y
-            return $ M-A t
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "μ^space^_term_^space^_term_" , (case x₁ of λ
-          { (y ∷ y' ∷ []) → do
-            t ← helper accu y
-            t' ← helper accu y'
-            return $ Mu-A t t'
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "ε^space^_term_" , (case x₁ of λ
-          { (y ∷ []) → do
-            t ← helper accu y
-            return $ Epsilon-A t
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "ζEvalStmt^space^_term_" , (case x₁ of λ
-          { (z ∷ []) → do
-            t ← helper accu z
-            return $ Ev-A EvalStmt t
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "ζShellCmd^space^_term_^space^_term_" , (case x₁ of λ
-          { (z ∷ z' ∷ []) → do
-            t ← helper accu z
-            t' ← helper accu z'
-            return $ Ev-A ShellCmd (t , t')
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "ζCheckTerm^space^_term_^space^_term_" , (case x₁ of λ
-          { (z ∷ z' ∷ []) → do
-            t ← helper accu z
-            t' ← helper accu z'
-            return $ Ev-A CheckTerm (t , t')
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "ζParse^space^_term_^space^_term_^space^_term_" , (case x₁ of λ
-          { (z ∷ z' ∷ z'' ∷ []) → do
-            t ← helper accu z
-            t' ← helper accu z'
-            t'' ← helper accu z''
-            return $ Ev-A Parse (t , t' , t'')
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "ζCatchErr^space^_term_^space^_term_" , (case x₁ of λ
-          { (z ∷ z' ∷ []) → do
-            t ← helper accu z
-            t' ← helper accu z'
-            return $ Gamma-A t t'
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "ζNormalize^space^_term_" , (case x₁ of λ
-          { (z ∷ []) → do
-            t ← helper accu z
-            return $ Ev-A Normalize t
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "ζHeadNormalize^space^_term_" , (case x₁ of λ
-          { (z ∷ []) → do
-            t ← helper accu z
-            return $ Ev-A HeadNormalize t
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "ζInferType^space^_term_" , (case x₁ of λ
-          { (z ∷ []) → do
-            t ← helper accu z
-            return $ Ev-A InferType t
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "Κ_const_" , (case x₁ of λ
-          { (z ∷ []) → do
-            c ← toConst z
-            return $ Const-A c
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "κ_char_" , (case x₁ of λ
-          { (z ∷ []) → do
-            c ← toChar z <∣> toChar' z
-            return $ Char-A c
-          ; _ → nothing })) ∷
-
-        (ruleId "term" "γ^space^_term_^space^_term_" , (case x₁ of λ
-          { (z ∷ z' ∷ []) → do
-            t ← helper accu z
-            t' ← helper accu z'
-            return $ CharEq-A t t'
-          ; _ → nothing })) ∷
-
-        []
-        default nothing
-
-data Stmt : Set where
-  Let           : GlobalName → AnnTerm → Maybe AnnTerm → Stmt
-  Ass           : GlobalName → AnnTerm → Stmt
-  SetEval       : AnnTerm → String → String → Stmt
-  Import        : String → Stmt
-  Empty         : Stmt
+data BootstrapStmt : Set where
+  Let           : GlobalName → AnnTerm → Maybe AnnTerm → BootstrapStmt
+  SetEval       : AnnTerm → String → String → BootstrapStmt
+  Empty         : BootstrapStmt
 
 instance
-  Stmt-Show : Show Stmt
-  Stmt-Show = record { show = helper }
+  BootstrapStmt-Show : Show BootstrapStmt
+  BootstrapStmt-Show = record { show = helper }
     where
-      helper : Stmt → String
+      helper : BootstrapStmt → String
       helper (Let x x₁ (just x₂)) = "let " + x + " := " + show x₁ + " : " + show x₂
       helper (Let x x₁ nothing)   = "let " + x + " := " + show x₁
-      helper (Ass x x₁)           = "ass " + x + " : " + show x₁
       helper (SetEval x n n')     = "seteval " + show x + " " + n + " " + n'
-      helper (Import s)           = "import " + s
       helper Empty                = "Empty"
 
-toStmt : Tree (ℕ ⊎ Char) → Maybe Stmt
-toStmt (Node x ((Node x' x₂) ∷ [])) =
-  if x ≡ᴹ ruleId "stmt" "^space'^_stmt'_"
-    then
-      decCase just x' of
-        (ruleId "stmt'" "let^space^_string_^space'^:=^space'^_term_^space'^_lettail_" ,
-          (case x₂ of λ
-            { (y ∷ y' ∷ y'' ∷ []) → do
-              n ← toName y
-              t ← toTerm y'
-              return $ Let n t $ toLetTail y''
-            ; _ → nothing })) ∷
-
-        (ruleId "stmt'"
-          "ass^space^_string_^space'^:^space'^_term_^space'^." ,
-          (case x₂ of λ
-            { (y ∷ y₁ ∷ []) → do
-              n ← toName y
-              t ← toTerm y₁
-              return $ Ass n t
-            ; _ → nothing })) ∷
-
-        (ruleId "stmt'" "seteval^space^_term_^space^_string_^space^_string_^space'^." ,
-          (case x₂ of λ
-            { (y ∷ y' ∷ y'' ∷ []) → do
-              t ← toTerm y
-              n ← toName y'
-              n' ← toName y''
-              return $ SetEval t n n'
-            ; _ → nothing })) ∷
-
-        (ruleId "stmt'" "import^space^_string_^space'^." ,
-          (case x₂ of λ
-            { (y ∷ []) → do
-              n ← toName y
-              return $ Import n
-            ; _ → nothing })) ∷
-
-        (ruleId "stmt'" "" ,
-          return Empty) ∷
-
-        []
-      default nothing
-    else nothing
-
-  where
-    toLetTail : Tree (ℕ ⊎ Char) → Maybe AnnTerm
-    toLetTail (Node x x₁) =
-      decCase just x of
-        (ruleId "lettail" ":^space'^_term_^space'^." ,
-          (case x₁ of λ
-            { (y ∷ []) → toTerm y
-            ; _ → nothing })) ∷
-        []
-      default nothing
-
-{-# CATCHALL #-}
-toStmt _ = nothing
-
 private
-  -- Folds a tree of constructors back into a term by properly applying the
-  -- constructors and prefixing the namespace
-  {-# TERMINATING #-}
-  foldConstrTree : String → Tree (String ⊎ Char) → AnnTerm
-  foldConstrTree namespace (Node x x₁) =
-    foldl (λ t t' → t ⟪$⟫ t') (ruleToTerm x) (foldConstrTree namespace <$> x₁)
-      where
-        ruleToTerm : String ⊎ Char → AnnTerm
-        ruleToTerm (inj₁ x) = FreeVar (namespace + "$" + ruleToConstr x)
-        ruleToTerm (inj₂ y) = Char-A y
+  toBootstrapStmt : PTree → Maybe BootstrapStmt
+  toBootstrapStmt (Node x (x' ∷ [])) =
+    if x ≡ᴹ ruleId "stmt" "^space'^_stmt'_"
+      then ruleCaseN x' "stmt'"
+        (("let^space^_string_^space'^:=^space'^_term_^space'^_lettail_" , 3F , λ y y' y'' →
+          do y ← toName y; y' ← toTerm y'; y'' ← toLetTail y''; return $ Let y y' y'') ∷
+        ("seteval^space^_term_^space^_string_^space^_string_^space'^." , 3F , λ y y' y'' →
+          do y ← toTerm y; y' ← toName y'; y'' ← toName y''; return $ SetEval y y' y'') ∷ [])
+      else nothing
+    where
+      toLetTail : PTree → Maybe (Maybe AnnTerm)
+      toLetTail x = ruleCaseN x "lettail"
+        ((":^space'^_term_^space'^." , 1F , λ y → just <$> toTerm y) ∷ ("." , 0F , just nothing) ∷ [])
 
-  convertIfChar : Tree (String ⊎ Char) → Maybe (Tree (ℕ ⊎ Char))
-  convertIfChar (Node (inj₁ x) x₁) = do
-    rest ← stripPrefix "nameInitChar$" x <∣> stripPrefix "nameTailChar$" x
-    (c , s) ← uncons rest
-    just $ Node (inj₂ $ unescape c s) []
-  convertIfChar (Node (inj₂ x) x₁) = nothing
+  toBootstrapStmt _ = nothing
 
 module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
   preCoreGrammar : M Grammar
-  preCoreGrammar = generateCFGNonEscaped "stmt" (map fromList coreGrammarGenerator)
+  preCoreGrammar = generateCFGNonEscaped "stmt" coreGrammarGenerator
 
   private
     parseToConstrTree : (G : Grammar) → NonTerminal G → String → M (Tree (String ⊎ Char) × String)
@@ -482,41 +233,57 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       (t , rest) ← parseWithInitNT showNT matchMulti show G M S s
       return (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ showRule) t , rest)
 
-    parsePreCoreGrammar : String → M (Tree (String ⊎ Char) × String)
-    parsePreCoreGrammar s = do
-      G ← preCoreGrammar
-      parseToConstrTree G (initNT G) s
-
-    {-# TERMINATING #-} -- cannot just use sequence here because of the char special case
-    synTreeToℕTree : Tree (String ⊎ Char) → M (Tree (ℕ ⊎ Char))
-    synTreeToℕTree t@(Node (inj₁ x) x₁) with convertIfChar t
-    ... | (just t') = return t'
-    ... | nothing = do
-      id ← fullRuleId x
-      ids ← sequence $ map synTreeToℕTree x₁
-      return (Node id ids)
-      where
-        fullRuleId : String → M (ℕ ⊎ Char)
-        fullRuleId l with break (_≟ '$') (toList l) -- split at '$'
-        ... | (x , []) = throwError "No '$' character found!"
-        ... | (x , _ ∷ y) = maybeToError (ruleId x y) ("Rule " + l + "doesn't exist!")
-
-    synTreeToℕTree (Node (inj₂ x) x₁) = return $ Node (inj₂ x) []
-
   -- Parse the next top-level non-terminal symbol from a string, and return a
   -- term representing the result of the parse, as well as the unparsed rest of
   -- the string
+  {-# TERMINATING #-}
   parse : (G : Grammar) → NonTerminal G → String → String → M (AnnTerm × String)
-  parse G S namespace s = do
-    (t , rest) ← parseToConstrTree G S s
-    return (foldConstrTree namespace t , rest)
+  parse G S namespace s = map₁ (foldConstrTree namespace) <$> parseToConstrTree G S s
+    where
+      -- Folds a tree of constructors back into a term by properly applying the
+      -- constructors and prefixing the namespace
+      foldConstrTree : String → Tree (String ⊎ Char) → AnnTerm
+      foldConstrTree namespace (Node x x₁) =
+        foldl _⟪$⟫_ (ruleToTerm x) (foldConstrTree namespace <$> x₁)
+          where
+            ruleToTerm : String ⊎ Char → AnnTerm
+            ruleToTerm (inj₁ x) = FreeVar (namespace + "$" + ruleToConstr x)
+            ruleToTerm (inj₂ y) = Char-A y
 
   -- Used for bootstrapping
-  parseStmt : String → M (Stmt × String)
-  parseStmt s = do
+  {-# TERMINATING #-} -- cannot just use sequence in synTreetoℕtree because of the char special case
+  parseBootstrap : String → M (BootstrapStmt × String)
+  parseBootstrap s = do
     (y' , rest) ← parsePreCoreGrammar s
     y ← synTreeToℕTree y'
-    case toStmt y of λ where
+    case toBootstrapStmt y of λ where
       (just x) → return (x , rest)
-      nothing → throwError ("Error while converting syntax tree to statement!\nTree:\n" + show y
+      nothing → throwError ("Error while converting syntax tree to statement!\nTree:\n" + show y'
                              + "\nRemaining: " + s)
+    where
+      parsePreCoreGrammar : String → M (Tree (String ⊎ Char) × String)
+      parsePreCoreGrammar s = do
+        G ← preCoreGrammar
+        parseToConstrTree G (initNT G) s
+
+      convertIfChar : Tree (String ⊎ Char) → Maybe PTree
+      convertIfChar (Node (inj₁ x) x₁) = do
+        rest ← stripPrefix "nameInitChar$" x <∣> stripPrefix "nameTailChar$" x
+        (c , s) ← uncons rest
+        just $ Node (inj₂ $ unescape c s) []
+      convertIfChar (Node (inj₂ x) x₁) = nothing
+
+      synTreeToℕTree : Tree (String ⊎ Char) → M PTree
+      synTreeToℕTree t@(Node (inj₁ x) x₁) with convertIfChar t
+      ... | (just t') = return t'
+      ... | nothing = do
+        id ← fullRuleId x
+        ids ← sequence $ map synTreeToℕTree x₁
+        return (Node id ids)
+        where
+          fullRuleId : String → M (ℕ ⊎ Char)
+          fullRuleId l with break (_≟ '$') (toList l) -- split at '$'
+          ... | (x , []) = throwError "No '$' character found!"
+          ... | (x , _ ∷ y) = maybeToError (ruleId x y) ("Rule " + l + "doesn't exist!")
+
+      synTreeToℕTree (Node (inj₂ x) x₁) = return $ Node (inj₂ x) []

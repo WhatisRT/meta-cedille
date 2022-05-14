@@ -26,8 +26,6 @@ b-let strToMetaResult (s : String) : metaResult := mkMetaResult [String | s] [in
 b-let metaResultToLists (res : init$metaResult) : metaResult :=
   res ?metaResult (λ l : init$stringList. λ l' : init$termList. mkMetaResult (stringListToList l) (termListToList l')).
 
-b-let eval' (stmt : init$stmt) : M metaResult := mapMeta ?init$metaResult ?metaResult metaResultToLists (eval stmt).
-
 b-let nothingTerm := θ{□}.
 b-let nothingTerm1 (_ : Term) := nothingTerm.
 b-let nothingTerm2 (_, _ : Term) := nothingTerm.
@@ -44,7 +42,9 @@ b-let initTermToTerm (t : init$term) := t ?Term
     (λ s : String. λ t, t' : Term. binderTerm LambdaBinder s t t')
     (λ _, _ : Term. λ _ : String. λ _ : Term. nothingTerm)
     nothingTerm3 nothingTerm2 nothingTerm1 nothingTerm2 nothingTerm1
-    nothingTerm1 nothingTerm2 nothingTerm2 nothingTerm3 nothingTerm1 nothingTerm1 nothingTerm1 nothingTerm2
+    -- Zetas
+    nothingTerm2 nothingTerm3 nothingTerm3 nothingTerm2 nothingTerm2
+    nothingTerm3 nothingTerm1 nothingTerm1 nothingTerm1 nothingTerm2 nothingTerm1
     (λ _ : init$char. nothingTerm) nothingTerm2.
 
 -- assuming no unknowns in f and no recursive unknowns in app, infer

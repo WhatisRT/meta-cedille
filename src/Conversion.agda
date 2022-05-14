@@ -13,7 +13,7 @@ open import Data.Word using (toℕ)
 open import Data.List using (uncons)
 
 open import CoreTheory
-open import Parse.TreeConvert
+open import Parse.TreeConvert using (toTerm; toName; toNameList)
 
 open import Prelude
 open import Prelude.Strings
@@ -47,7 +47,7 @@ module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
     unquoteConstrs : Context → PureTerm → M A
     unquoteConstrs Γ t = do
       t' ← appendIfError (extractConstrIdTree $ buildConstructorTree Γ t)
-                         ("Error while converting term" <+> show t
+                         ("\nError while converting term" <+> show t
                          <+> "to a tree of constructors of a" <+> nameOfA <+> "!")
       maybeToError (conversionFunction t') ("Error while converting to" <+> nameOfA + ". Term:"
                                            <+> show t + "\nTree:\n" + show {{Tree-Show}} t')
@@ -55,9 +55,6 @@ module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
   open Unquote {{...}} public
 
   instance
-    Unquote-Stmt : Unquote Stmt
-    Unquote-Stmt = record { conversionFunction = toStmt ; nameOfA = "statement" }
-
     Unquote-Term : Unquote AnnTerm
     Unquote-Term = record { conversionFunction = toTerm ; nameOfA = "term" }
 

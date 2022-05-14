@@ -14,3 +14,6 @@ module _ {a} {M : Set a → Set a} {{m : Monad M}} where
 
   void : ∀ {A} → M A → M ⊤
   void x = x >> return tt
+
+  _<$₂>_,_ : ∀ {A B C} → (A → B → C) → M A → M B → M C
+  f <$₂> x , y = do x ← x; y ← y; return (f x y)

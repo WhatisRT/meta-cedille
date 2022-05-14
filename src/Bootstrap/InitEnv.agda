@@ -69,7 +69,9 @@ private
     "term$=omega=^space^_term_" ∷ -- this is M
     "term$=mu=^space^_term_^space^_term_" ∷
     "term$=epsilon=^space^_term_" ∷
-    "term$=zeta=EvalStmt^space^_term_" ∷
+    "term$=zeta=Let^space^_term_^space^_term_" ∷
+    "term$=zeta=AnnLet^space^_term_^space^_term_^space^_term_" ∷
+    "term$=zeta=SetEval^space^_term_^space^_term_^space^_term_" ∷
     "term$=zeta=ShellCmd^space^_term_^space^_term_" ∷
     "term$=zeta=CheckTerm^space^_term_^space^_term_" ∷
     "term$=zeta=Parse^space^_term_^space^_term_^space^_term_" ∷
@@ -77,17 +79,11 @@ private
     "term$=zeta=HeadNormalize^space^_term_" ∷
     "term$=zeta=InferType^space^_term_" ∷
     "term$=zeta=CatchErr^space^_term_^space^_term_" ∷ -- this is not actually in PrimMeta
+    "term$=zeta=Import^space^_term_" ∷
     "term$=kappa=_char_" ∷ -- this constructs a Char
     "term$=gamma=^space^_term_^space^_term_" ∷ -- charEq
 
     "lettail$=dot=" ∷ "lettail$=colon=^space'^_term_^space'^=dot=" ∷
-
-    "stmt'$let^space^_string_^space'^=colon==equal=^space'^_term_^space'^_lettail_" ∷
-    "stmt'$ass^space^_string_^space'^=colon=^space'^_term_^space'^=dot=" ∷
-    "stmt'$seteval^space^_term_^space^_string_^space^_string_^space'^=dot=" ∷
-    "stmt'$import^space^_string_^space'^=dot=" ∷
-    "stmt'$" ∷
-    "stmt$^space'^_stmt'_" ∷
     []
 
   sortGrammar : List (List Char) → SimpleMap (List Char) (List (List Char))
@@ -139,24 +135,37 @@ private
       (λ { (name , rule) → toInductiveData "init" (fromList name) (map fromList rule) }) $
       sortGrammar grammar)
 
+  definedGrammar : List (String × String)
+  definedGrammar =
+      ("string$_nameInitChar__string'_" , "init$string$cons")
+    ∷ ("string'$_nameTailChar__string'_" , "init$string$cons")
+    ∷ ("string'$" , "init$string$nil")
+
+    ∷ ("stmt'$let^space^_string_^space'^=colon==equal=^space'^_term_^space'^_lettail_"
+        , "λ s : init$string λ t : init$term λ lt : init$lettail
+           [[<lt ω init$metaResult> ζLet s t] λ T : init$term ζAnnLet s t T]")
+    ∷ ("stmt'$seteval^space^_term_^space^_string_^space^_string_^space'^=dot="
+        , "λ ev : init$term λ NT : init$string λ namespace : init$string ζSetEval ev NT namespace")
+    ∷ ("stmt'$runMeta^space^_term_^space'^=dot=" , "λ x : ω init$metaResult x")
+    ∷ ("stmt'$import^space^_string_^space'^=dot=" , "λ s : init$string ζImport s")
+    ∷ ("stmt'$" , "ε [[init$metaResult$pair init$stringList$nil] init$termList$nil]")
+    ∷ ("stmt$^space'^_stmt'_" , "λ x : ω init$metaResult x")
+    ∷ []
+
   otherInit : List String
   otherInit =
     map simpleInductive (stringListData ∷ termListData ∷ metaResultData ∷ [])
-    ++ "let init$string$_nameInitChar__string'_ := init$string$cons."
-    ∷ "let init$string'$_nameTailChar__string'_ := init$string$cons."
-    ∷ "let init$string'$ := init$string$nil."
-    ∷ "let init$product := λ A : * λ B : * ∀ X : * Π _ : Π _ : A Π _ : B X X."
+    ++ map (λ where (n , d) → "let init$" + n + " := " + d + ".") definedGrammar
+    ++ "let init$product := λ A : * λ B : * ∀ X : * Π _ : Π _ : A Π _ : B X X."
     ∷ "let init$pair := λ A : * λ B : * λ a : A λ b : B Λ X : * λ p : Π _ : A Π _ : B X [[p a] b]."
-    ∷ "let eval := λ s : init$stmt ζEvalStmt s." ∷ "seteval eval init stmt." ∷ []
+    ∷ "let eval := λ x : ω init$metaResult x." ∷ "seteval eval init stmt." ∷ []
 
   grammarWithChars : List (List Char)
   grammarWithChars = grammar ++
     map ("nameTailChar$" ++_) (map escapeChar nameTails) ++
     map ("nameInitChar$" ++_) (map escapeChar nameInits) ++
-    "char$!!" ∷
-    "string'$_nameTailChar__string'_" ∷ "string'$" ∷
-    "string$_nameInitChar__string'_" ∷
-    "var$_string_" ∷ "var$_index_" ∷ []
+    map (toList ∘ proj₁) definedGrammar ++
+    "char$!!" ∷ "var$_string_" ∷ "var$_index_" ∷ []
 
 --------------------------------------------------------------------------------
 
@@ -170,5 +179,5 @@ parseRuleMap = from-just $ sequence $ map (λ { (fst , snd) → do
   snd' ← sequence (map (λ x → translate $ fst ++ "$" ++ x) snd)
   return (fst , reverse snd') }) $ sortGrammar grammarWithChars
 
-coreGrammarGenerator : List (List Char)
-coreGrammarGenerator = from-just $ sequence $ map translate grammarWithChars
+coreGrammarGenerator : List String
+coreGrammarGenerator = map fromList $ from-just $ sequence $ map translate grammarWithChars

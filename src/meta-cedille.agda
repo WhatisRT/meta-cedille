@@ -11,7 +11,7 @@ open import Prelude
 open import Prelude.Strings
 
 open import Parse.Generate
-open import Parse.TreeConvert
+open import Parse.TreeConvert using (preCoreGrammar)
 open import Bootstrap.InitEnv
 
 open import CoreTheory
@@ -106,6 +106,8 @@ helpString = "Usage: meta-cedille [OPTIONS...]\n" +
     padLength : ℕ
     padLength = 4 + maximum (Data.String.length ∘ proj₁ <$> helpTable)
 
+-- this is never actually used, `parseBootstrap` provides its own copy of this
+-- TODO: remove this, or rework the bootstrapping phase
 initGrammar : Grammar
 initGrammar = from-inj₂ $ preCoreGrammar {{Except-Monad}} {{Except-MonadExcept}}
 

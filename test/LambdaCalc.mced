@@ -10,7 +10,7 @@ let init$lambdaTerm$=lambda=^space^_string_^space'^=dot=^space'^_lambdaTerm_
 
 let init$lambdaStmt$let^space^_string_^space'^=colon==equal=^space'^_lambdaTerm_^space'^=dot=
   (name : String) (t : init$term) : init$newStmt :=
-  stmtToNewStmt $ quote$annotatedLet' name (lambdaTermToTerm t) $ TermToInitTerm θ{Top}.
+  stmtToNewStmt $ primAnnLet name (lambdaTermToTerm t) $ TermToInitTerm θ{Top}.
 
 -- TODO: FIXME
 -- let init$lambdaStmt$normalize^space^_lambdaTerm_^space'^=dot=
@@ -19,4 +19,4 @@ let init$lambdaStmt$let^space^_string_^space'^=colon==equal=^space'^_lambdaTerm_
 
 let init$newStmt'$=lambda==minus=_lambdaStmt_ (x : init$newStmt) : init$newStmt := x.
 
-o-seteval [evalNewStmt emptyEvaluatorState] init newStmt.
+updateEval.

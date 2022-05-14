@@ -292,23 +292,38 @@ instance
       helper l (Char-A c)       = "Char" <+> show c
       helper l (CharEq-A t t')  = "CharEq" <+> show t <+> show t'
 
-primMetaS : (m : PrimMeta) → primMetaArgs AnnTerm m
-primMetaS EvalStmt      = FreeVar "init$stmt"
-primMetaS ShellCmd      = (FreeVar "init$string" , FreeVar "init$stringList")
-primMetaS CheckTerm     = (Sort-A ⋆ , FreeVar "init$term")
-primMetaS Parse         = (FreeVar "init$string" , Sort-A ⋆ , FreeVar "init$string")
-primMetaS Normalize     = FreeVar "init$term"
-primMetaS HeadNormalize = FreeVar "init$term"
-primMetaS InferType     = FreeVar "init$term"
+module _ where
+  private
+    tString tTerm tStringList tMetaResult tProduct : ∀ {T} {{_ : TermLike T}} → T
+    tString     = FreeVar "init$string"
+    tStringList = FreeVar "init$stringList"
+    tTerm       = FreeVar "init$term"
+    tMetaResult = FreeVar "init$metaResult"
+    tProduct    = FreeVar "init$product"
 
-primMetaT : ∀ {T} {{_ : TermLike T}} (m : PrimMeta) → primMetaArgs T m → T
-primMetaT EvalStmt _        = FreeVar "init$metaResult"
-primMetaT ShellCmd _        = FreeVar "init$string"
-primMetaT CheckTerm (t , _) = t
-primMetaT Parse (_ , t , _) = FreeVar "init$product" ⟪$⟫ t ⟪$⟫ FreeVar "init$string"
-primMetaT Normalize _       = FreeVar "init$term"
-primMetaT HeadNormalize _   = FreeVar "init$term"
-primMetaT InferType     _   = FreeVar "init$term"
+  primMetaS : (m : PrimMeta) → primMetaArgs AnnTerm m
+  primMetaS Let               = (tString , tTerm)
+  primMetaS AnnLet            = (tString , tTerm , tTerm)
+  primMetaS SetEval           = (tTerm , tString , tString)
+  primMetaS ShellCmd          = (tString , tStringList)
+  primMetaS CheckTerm         = (Sort-A ⋆ , tTerm)
+  primMetaS Parse             = (tString , Sort-A ⋆ , tString)
+  primMetaS Normalize         = tTerm
+  primMetaS HeadNormalize     = tTerm
+  primMetaS InferType         = tTerm
+  primMetaS Import            = tString
+
+  primMetaT : ∀ {T} {{_ : TermLike T}} (m : PrimMeta) → primMetaArgs T m → T
+  primMetaT Let _             = tMetaResult
+  primMetaT AnnLet _          = tMetaResult
+  primMetaT SetEval _         = tMetaResult
+  primMetaT ShellCmd _        = tString
+  primMetaT CheckTerm (t , _) = t
+  primMetaT Parse (_ , t , _) = tProduct ⟪$⟫ t ⟪$⟫ tString
+  primMetaT Normalize _       = tTerm
+  primMetaT HeadNormalize _   = tTerm
+  primMetaT InferType     _   = tTerm
+  primMetaT Import _          = tMetaResult
 
 data Def : Set where
   Let : AnnTerm → AnnTerm → Def

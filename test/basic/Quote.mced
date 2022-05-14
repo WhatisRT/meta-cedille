@@ -4,79 +4,68 @@
 -- Please use the quotation mechanism defined in `QuoteTerm` whenever possible.
 --------------------------------------------------------------------------------
 
-let quote$ast := [init$term$_sort_ init$sort$=ast=] : init$term.
-let quote$sq := [init$term$_sort_ init$sort$=sq=] : init$term.
+let quote$ast := [init$term$_sort_ init$sort$=ast=] : iTerm.
+let quote$sq := [init$term$_sort_ init$sort$=sq=] : iTerm.
 
-let quote$var := λ n : String [init$term$_var_ [init$var$_string_ n]] : Π _ : String init$term.
+let quote$var := λ n : String [init$term$_var_ [init$var$_string_ n]] : Π _ : String iTerm.
 
-let quote$pi := init$term$=pi=^space^_term_ : Π _ : init$term init$term.
-let quote$psi := init$term$=psi=^space^_term_ : Π _ : init$term init$term.
+let quote$pi := init$term$=pi=^space^_term_ : Π _ : iTerm iTerm.
+let quote$psi := init$term$=psi=^space^_term_ : Π _ : iTerm iTerm.
 
-let quote$beta := λ t : init$term [init$term$=beta=^space^_term_^space^_term_ t] : Π _ : init$term Π _ : init$term init$term.
+let quote$beta := λ t : iTerm [init$term$=beta=^space^_term_^space^_term_ t] : Π _ : iTerm Π _ : iTerm iTerm.
 
-let quote$delta := λ t : init$term [init$term$=delta=^space^_term_^space^_term_ t] : Π _ : init$term Π _ : init$term init$term.
+let quote$delta := λ t : iTerm [init$term$=delta=^space^_term_^space^_term_ t] : Π _ : iTerm Π _ : iTerm iTerm.
 
-let quote$sigma := init$term$=sigma=^space^_term_ : Π _ : init$term init$term.
+let quote$sigma := init$term$=sigma=^space^_term_ : Π _ : iTerm iTerm.
 
-let quote$square := λ t : init$term λ t' : init$term [[init$term$=lsquare=^space'^_term_^space^_term_^space'^=rsquare= t] t'] : Π _ : init$term Π _ : init$term init$term.
+let quote$square := λ t : iTerm λ t' : iTerm [[init$term$=lsquare=^space'^_term_^space^_term_^space'^=rsquare= t] t'] : Π _ : iTerm Π _ : iTerm iTerm.
 
-let quote$angle := λ t : init$term λ t' : init$term [[init$term$=langle=^space'^_term_^space^_term_^space'^=rangle= t] t'] : Π _ : init$term Π _ : init$term init$term.
+let quote$angle := λ t : iTerm λ t' : iTerm [[init$term$=langle=^space'^_term_^space^_term_^space'^=rangle= t] t'] : Π _ : iTerm Π _ : iTerm iTerm.
 
-let quote$rho := λ t : init$term λ n : String λ t' : init$term λ t'' : init$term [[[[init$term$=rho=^space^_term_^space^_string_^space'^=dot=^space'^_term_^space^_term_ t] n] t'] t''].
+let quote$rho := λ t : iTerm λ n : String λ t' : iTerm λ t'' : iTerm [[[[init$term$=rho=^space^_term_^space^_string_^space'^=dot=^space'^_term_^space^_term_ t] n] t'] t''].
 
-let quote$forall := λ name : String λ t : init$term λ t' : init$term [[[init$term$=forall=^space^_string_^space'^=colon=^space'^_term_^space^_term_ name] t] t'] : Π _ : String Π _ : init$term Π _ : init$term init$term.
+let quote$forall := λ name : String λ t : iTerm λ t' : iTerm [[[init$term$=forall=^space^_string_^space'^=colon=^space'^_term_^space^_term_ name] t] t'] : Π _ : String Π _ : iTerm Π _ : iTerm iTerm.
 
-let quote$Pi := λ name : String λ t : init$term λ t' : init$term [[[init$term$=Pi=^space^_string_^space'^=colon=^space'^_term_^space^_term_ name] t] t'] : Π _ : String Π _ : init$term Π _ : init$term init$term.
+let quote$Pi := λ name : String λ t : iTerm λ t' : iTerm [[[init$term$=Pi=^space^_string_^space'^=colon=^space'^_term_^space^_term_ name] t] t'] : Π _ : String Π _ : iTerm Π _ : iTerm iTerm.
 
-let quote$iota := λ name : String λ t : init$term λ t' : init$term [[[init$term$=iota=^space^_string_^space'^=colon=^space'^_term_^space^_term_ name] t] t'] : Π _ : String Π _ : init$term Π _ : init$term init$term.
+let quote$iota := λ name : String λ t : iTerm λ t' : iTerm [[[init$term$=iota=^space^_string_^space'^=colon=^space'^_term_^space^_term_ name] t] t'] : Π _ : String Π _ : iTerm Π _ : iTerm iTerm.
 
-let quote$lambda := λ name : String λ t : init$term λ t' : init$term [[[init$term$=lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_ name] t] t'] : Π _ : String Π _ : init$term Π _ : init$term init$term.
+let quote$lambda := λ name : String λ t : iTerm λ t' : iTerm [[[init$term$=lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_ name] t] t'] : Π _ : String Π _ : iTerm Π _ : iTerm iTerm.
 
-let quote$Lambda := λ name : String λ t : init$term λ t' : init$term [[[init$term$=Lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_ name] t] t'] : Π _ : String Π _ : init$term Π _ : init$term init$term.
+let quote$Lambda := λ name : String λ t : iTerm λ t' : iTerm [[[init$term$=Lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_ name] t] t'] : Π _ : String Π _ : iTerm Π _ : iTerm iTerm.
 
-let quote$brace := λ t : init$term λ t' : init$term λ n : String λ t'' : init$term [[[[init$term$=lbrace=^space'^_term_^space'^=comma=^space'^_term_^space^_string_^space'^=dot=^space'^_term_^space'^=rbrace= t] t'] n] t''].
+let quote$brace := λ t : iTerm λ t' : iTerm λ n : String λ t'' : iTerm [[[[init$term$=lbrace=^space'^_term_^space'^=comma=^space'^_term_^space^_string_^space'^=dot=^space'^_term_^space'^=rbrace= t] t'] n] t''].
 
-let quote$phi := λ t : init$term λ t' : init$term λ t'' : init$term [[[init$term$=phi=^space^_term_^space^_term_^space^_term_ t] t] t].
+let quote$phi := λ t : iTerm λ t' : iTerm λ t'' : iTerm [[[init$term$=phi=^space^_term_^space^_term_^space^_term_ t] t] t].
 
-let quote$equal := λ t : init$term λ t' : init$term [[init$term$=equal=^space^_term_^space^_term_ t] t'].
+let quote$equal := λ t : iTerm λ t' : iTerm [[init$term$=equal=^space^_term_^space^_term_ t] t'].
 
-let quote$omega := λ t : init$term [init$term$=omega=^space^_term_ t].
+let quote$omega := λ t : iTerm [init$term$=omega=^space^_term_ t].
 
-let quote$mu := λ t : init$term λ t' : init$term [[init$term$=mu=^space^_term_^space^_term_ t] t'].
+let quote$mu := λ t : iTerm λ t' : iTerm [[init$term$=mu=^space^_term_^space^_term_ t] t'].
 
-let quote$epsilon := λ t : init$term [init$term$=epsilon=^space^_term_ t].
+let quote$epsilon := λ t : iTerm [init$term$=epsilon=^space^_term_ t].
 
-let quote$ZetaEvalStmt := λ t : init$term [init$term$=zeta=EvalStmt^space^_term_ t].
+let quote$ZetaLet := λ t : iTerm λ t' : iTerm [[init$term$=zeta=Let^space^_term_^space^_term_ t] t'].
 
-let quote$ZetaShellCmd := λ t : init$term λ t' : init$term [[init$term$=zeta=ShellCmd^space^_term_^space^_term_ t] t'].
+let quote$ZetaAnnLet := λ t : iTerm λ t' : iTerm λ t'' : iTerm [[[init$term$=zeta=AnnLet^space^_term_^space^_term_^space^_term_ t] t'] t''].
 
-let quote$ZetaCheckTerm := λ t : init$term λ t' : init$term [[init$term$=zeta=CheckTerm^space^_term_^space^_term_ t] t'].
+let quote$ZetaSetEval := λ t : iTerm λ t' : iTerm λ t'' : iTerm [[[init$term$=zeta=SetEval^space^_term_^space^_term_^space^_term_ t] t'] t''].
 
-let quote$ZetaNormalize := λ t : init$term [init$term$=zeta=Normalize^space^_term_ t].
+let quote$ZetaShellCmd := λ t : iTerm λ t' : iTerm [[init$term$=zeta=ShellCmd^space^_term_^space^_term_ t] t'].
 
-let quote$ZetaHeadNormalize := λ t : init$term [init$term$=zeta=HeadNormalize^space^_term_ t].
+let quote$ZetaCheckTerm := λ t : iTerm λ t' : iTerm [[init$term$=zeta=CheckTerm^space^_term_^space^_term_ t] t'].
 
-let quote$ZetaCatchErr := λ t : init$term λ t' : init$term [[init$term$=zeta=CatchErr^space^_term_^space^_term_ t] t'].
+let quote$ZetaNormalize := λ t : iTerm [init$term$=zeta=Normalize^space^_term_ t].
+
+let quote$ZetaHeadNormalize := λ t : iTerm [init$term$=zeta=HeadNormalize^space^_term_ t].
+
+let quote$ZetaCatchErr := λ t : iTerm λ t' : iTerm [[init$term$=zeta=CatchErr^space^_term_^space^_term_ t] t'].
 
 let quote$constChar := init$const$Char.
 let quote$Kappa := λ c : init$const init$term$=Kappa=_const_.
 
 let quote$kappa := λ c : init$char [init$term$=kappa=_char_ c].
-
-let quote$stmt'ToStmt := init$stmt$^space'^_stmt'_.
-
-let quote$simpleLet' := λ n : String λ t : init$term [[[init$stmt'$let^space^_string_^space'^=colon==equal=^space'^_term_^space'^_lettail_ n] t] init$lettail$=dot=] : Π _ : String Π _ : init$term init$stmt'.
-
-let quote$simpleLet := λ n : String λ t : init$term [quote$stmt'ToStmt [[quote$simpleLet' n] t]] : Π _ : String Π _ : init$term init$stmt.
-
-let quote$annotatedLet' := λ n : String λ t : init$term λ t' : init$term [[[init$stmt'$let^space^_string_^space'^=colon==equal=^space'^_term_^space'^_lettail_ n] t] [init$lettail$=colon=^space'^_term_^space'^=dot= t']] : Π _ : String Π _ : init$term Π _ : init$term init$stmt'.
-
-let quote$annotatedLet := λ n : String λ t : init$term λ t' : init$term [quote$stmt'ToStmt [[[quote$annotatedLet' n] t] t']] : Π _ : String Π _ : init$term Π _ : init$term init$stmt.
-
-let quote$seteval' := λ t : init$term λ n : String λ n' : String
-[[[init$stmt'$seteval^space^_term_^space^_string_^space^_string_^space'^=dot= t] n] n'].
-
-let quote$import' := λ n : String [init$stmt'$import^space^_string_^space'^=dot= n].
 
 let quote$A := init$nameInitChar$A.
 let quote$B := init$nameInitChar$B.

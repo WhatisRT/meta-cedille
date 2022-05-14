@@ -4,28 +4,25 @@
 -- We define some basic statements and the new syntax here
 --------------------------------------------------------------------------------
 
-b-let simpleCommand (s : String) : M metaResult :=
-  mapMeta ?String ?metaResult strToMetaResult (shellCmd s (listToStringList [String |])).
-
 b-let letInfoTermToQuoted (i : LetInfo) : LetInfo :=
   mkLetInfo (stringApp "qTerm" (letInfoName i)) (quoteTerm (letInfoTerm i)) (just ?Term θ{Term}).
 
 b-let runMetaCommand (t : Term) : init$newStmt :=
   λ s : EvaluatorState.
-    bindMeta ?init$newStmt ?(Product metaResult EvaluatorState) (checkTerm init$newStmt (TermToInitTerm t)) (λ stmt : init$newStmt. stmt s).
+    bindMeta ?init$newStmt ?(Product metaResult EvaluatorState) (primCheckTerm init$newStmt (TermToInitTerm t)) (λ stmt : init$newStmt. stmt s).
 
 b-let runEcho (t : Term) : init$newStmt := runMetaCommand θ{echoStmt γ{t}}.
 
 b-let reloadMEnv : init$newStmt := evalStateUnitToNewStmt (modifyEvalState (λ e : EvaluatorState. e)).
 
 b-let showTypeStmt (t : Term) : init$newStmt :=
-  bindEvalState ?Term ?metaResult (inferType' t) (λ x : Term.
+  bindEvalState ?Term ?metaResult (inferType t) (λ x : Term.
     echoStmt (stringConcat [String|showTerm t, " : ", showTerm x])).
 
 -- Syntax
 
 -- statements from the old syntax
-b-let init$newStmt'$o=minus=_stmt'_ (stmt : init$stmt') : init$newStmt := stmtToNewStmt stmt.
+b-let init$newStmt'$o=minus=_stmt'_ (stmt : M metaResult) : init$newStmt := stmtToNewStmt stmt.
 
 -- flags
 
@@ -47,7 +44,7 @@ b-let init$newStmt'$runMeta^space^_multiTerm_=dot= (t : Term) : init$newStmt := 
 b-let init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
   bindEvalState ?Term ?metaResult (modifyTermMod t) runEcho.
 b-let init$newStmt'$showType^space^_multiTerm_=dot= (t : Term) : init$newStmt := showTypeStmt t.
-b-let init$newStmt'$import^space^_string_=dot= (n : String) : init$newStmt := stmtToNewStmt (quote$import' n).
+b-let init$newStmt'$import^space^_string_=dot= (n : String) : init$newStmt := import n.
 b-let init$newStmt'$updateEval=dot= : init$newStmt := reloadMEnv.
 b-let init$newStmt'$ : init$newStmt := emptyStmt.
 

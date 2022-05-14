@@ -33,7 +33,7 @@ let getEnvVersion : EvalState Nat :=
 
 let getEnv : EvalState Env :=
   bindEvalState ?Nat ?Env getEnvVersion
-    (λ n : Nat. checkTerm' Env (sVarTerm (natToEnv n))).
+    (λ n : Nat. checkTerm Env $ sVarTerm $ natToEnv n).
 
 let updateLetInfoType (i : LetInfo) (T : Term) :=
   mkLetInfo (letInfoName i) (letInfoTerm i) (just ?Term T).

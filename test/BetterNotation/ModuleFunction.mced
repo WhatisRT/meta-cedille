@@ -146,7 +146,7 @@ b-let importModule (m : Module) (l : List App) : init$newStmt :=
         (nothing ?Term)))
       (ModuleContents m))).
 
-b-let importFile (file : String) : init$newStmt := stmtToNewStmt (quote$import' file).
+b-let importFile (file : String) : init$newStmt := import file.
 b-let moduleNameToPath (n : ModuleName) : String := stringConcat (intersperse ?String "/" n).
 
 b-let importModuleOrStmt (n : ModuleName) (l : List App) (stmt : init$newStmt) : init$newStmt :=
