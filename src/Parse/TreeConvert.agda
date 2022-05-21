@@ -59,7 +59,7 @@ ruleCaseN : {A : Set} → PTree → List Char → List (List Char × Σ[ t ∈ R
 ruleCaseN (Node x x₁) r cs =
   decCase just x of map (λ where (x , t , f) → ruleIdN t r x f x₁) cs default nothing
 
-toSort : PTree → Maybe Sort
+toSort : PTree → Maybe AnnTerm
 toSort x = ruleCaseN x "sort" (("*" , 0F , just ⋆) ∷ ("□" , 0F , just □) ∷ [])
 
 toConst : PTree → Maybe Const
@@ -135,7 +135,7 @@ toTerm = helper []
               nothing  → FreeVar n') ∷
           ("_index_" , 1F , (λ n → BoundVar ∘ fromℕ <$> toIndex n)) ∷ []))) ∷
 
-        ("_sort_" , 1F , λ y → Sort-A <$> toSort y) ∷
+        ("_sort_" , 1F , toSort) ∷
 
         ("π^space^_term_" , 1F , conv1ʰ Pr1-A) ∷
         ("ψ^space^_term_" , 1F , conv1ʰ Pr2-A) ∷

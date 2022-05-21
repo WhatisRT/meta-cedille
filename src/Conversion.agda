@@ -19,40 +19,52 @@ open import Prelude
 open import Prelude.Strings
 
 module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
-  private
-    {-# TERMINATING #-} -- findOutermostConstructor returns a list of smaller terms
-    buildConstructorTree : Context → PureTerm → Tree PureTerm
-    buildConstructorTree Γ t with findOutermostConstructor t
-    ... | t' , ts = Node t' $ map (buildConstructorTree Γ) $ reverse ts
-
-    extractConstrId : PureTerm → M (ℕ ⊎ Char)
-    extractConstrId (Var-P (Bound x)) = return $ inj₁ $ toℕ x
-    extractConstrId (Var-P (Free x)) = throwError ("Not a constructor:" <+> x)
-    extractConstrId (Char-P c) = return $ inj₂ c
-    {-# CATCHALL #-}
-    extractConstrId t = throwError ("Not a variable" <+> show t)
-
-    {-# TERMINATING #-}
-    extractConstrIdTree : Tree PureTerm → M (Tree (ℕ ⊎ Char))
-    extractConstrIdTree (Node x y) = do
-      x' ← extractConstrId x
-      y' ← sequence (map extractConstrIdTree y)
-      return $ Node x' y'
 
   record Unquote (A : Set) : Set where
     field
       conversionFunction : Tree (ℕ ⊎ Char) → Maybe A
       nameOfA            : String
 
-    unquoteConstrs : Context → PureTerm → M A
-    unquoteConstrs Γ t = do
-      t' ← appendIfError (extractConstrIdTree $ buildConstructorTree Γ t)
-                         ("\nError while converting term" <+> show t
-                         <+> "to a tree of constructors of a" <+> nameOfA <+> "!")
-      maybeToError (conversionFunction t') ("Error while converting to" <+> nameOfA + ". Term:"
-                                           <+> show t + "\nTree:\n" + show {{Tree-Show}} t')
-
   open Unquote {{...}} public
+
+  {-# TERMINATING #-}
+  unquoteConstrs : {A : Set} ⦃ _ : Unquote A ⦄ → Context → PureTerm → M A
+  unquoteConstrs Γ t = do
+    t' ← appendIfError (extractConstrIdTree $ buildConstructorTree Γ t)
+                       ("\nError while converting term" <+> show t
+                       <+> "to a tree of constructors of a" <+> nameOfA <+> "!")
+    maybeToError (conversionFunction t') ("Error while converting to" <+> nameOfA + ". Term:"
+                                         <+> show t + "\nTree:\n" + show {{Tree-Show}} t')
+    where
+      findOutermostConstructor : PureTerm → PureTerm × List PureTerm
+      findOutermostConstructor = outermostApp ∘ stripBinders
+        where
+          stripBinders : PureTerm → PureTerm
+          stripBinders t with stripBinderPure t
+          ... | just x = stripBinders x
+          ... | nothing = t
+
+          outermostApp : PureTerm → PureTerm × List PureTerm
+          outermostApp (App-P t t₁) = map₂ (t₁ ∷_) $ outermostApp t
+          {-# CATCHALL #-}
+          outermostApp t = t , []
+
+      buildConstructorTree : Context → PureTerm → Tree PureTerm
+      buildConstructorTree Γ t with findOutermostConstructor t
+      ... | t' , ts = Node t' $ map (buildConstructorTree Γ) $ reverse ts
+
+      extractConstrId : PureTerm → M (ℕ ⊎ Char)
+      extractConstrId (Var-P (Bound x)) = return $ inj₁ $ toℕ x
+      extractConstrId (Var-P (Free x)) = throwError ("Not a constructor:" <+> x)
+      extractConstrId (Char-P c) = return $ inj₂ c
+      {-# CATCHALL #-}
+      extractConstrId t = throwError ("Not a variable" <+> show t)
+
+      extractConstrIdTree : Tree PureTerm → M (Tree (ℕ ⊎ Char))
+      extractConstrIdTree (Node x y) = do
+        x' ← extractConstrId x
+        y' ← sequence (map extractConstrIdTree y)
+        return $ Node x' y'
 
   instance
     Unquote-Term : Unquote AnnTerm
@@ -89,7 +101,7 @@ instance
   private
     Quotable-Index : Quotable 𝕀
     Quotable-Index .quoteToAnnTerm i with uncons (toList (show i))
-    ... | nothing      = Sort-A □ -- impossible
+    ... | nothing      = □ -- impossible
     ... | just (x , i) = FreeVar ("init$index$" + fromList [ x ] + "_index'_") ⟪$⟫ quoteIndex' i
       where
         quoteIndex' : List Char → AnnTerm
@@ -101,8 +113,8 @@ instance
     ⟪$⟫ (FreeVar "init$var$_index_" ⟪$⟫ quoteToAnnTerm x)
   Quotable-AnnTerm .quoteToAnnTerm (Var-A (Free x)) = FreeVar "init$term$_var_"
     ⟪$⟫ (FreeVar "init$var$_string_" ⟪$⟫ quoteToAnnTerm x)
-  Quotable-AnnTerm .quoteToAnnTerm (Sort-A ⋆) = FreeVar "init$term$_sort_" ⟪$⟫ FreeVar "init$sort$=ast="
-  Quotable-AnnTerm .quoteToAnnTerm (Sort-A □) = FreeVar "init$term$_sort_" ⟪$⟫ FreeVar "init$sort$=sq="
+  Quotable-AnnTerm .quoteToAnnTerm (Sort-A Ast) = FreeVar "init$term$_sort_" ⟪$⟫ FreeVar "init$sort$=ast="
+  Quotable-AnnTerm .quoteToAnnTerm (Sort-A Sq) = FreeVar "init$term$_sort_" ⟪$⟫ FreeVar "init$sort$=sq="
   Quotable-AnnTerm .quoteToAnnTerm (Const-A CharT) =
     FreeVar "init$term$=Kappa=_const_" ⟪$⟫ FreeVar "init$const$Char"
   Quotable-AnnTerm .quoteToAnnTerm (Pr1-A t) = FreeVar "init$term$=pi=^space^_term_" ⟪$⟫ quoteToAnnTerm t
@@ -154,13 +166,13 @@ instance
     FreeVar "init$term$=epsilon=^space^_term_" ⟪$⟫ quoteToAnnTerm t
   Quotable-AnnTerm .quoteToAnnTerm (Gamma-A t t₁) =
     FreeVar "init$term$=zeta=CatchErr^space^_term_^space^_term_" ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
-  Quotable-AnnTerm .quoteToAnnTerm (Ev-A x x₁) = Sort-A □ -- TODO
+  Quotable-AnnTerm .quoteToAnnTerm (Ev-A x x₁) = □ -- TODO
   Quotable-AnnTerm .quoteToAnnTerm (Char-A x) = FreeVar "init$term$=kappa=_char_" ⟪$⟫ Char-A x
   Quotable-AnnTerm .quoteToAnnTerm (CharEq-A t t₁) =
     FreeVar "init$term$=gamma=^space^_term_^space^_term_" ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
 
   Quotable-PureTerm : Quotable PureTerm
-  Quotable-PureTerm .quoteToAnnTerm t = Sort-A □ -- TODO
+  Quotable-PureTerm .quoteToAnnTerm t = □ -- TODO
 
   Quotable-ListTerm : Quotable (List AnnTerm)
   Quotable-ListTerm .quoteToAnnTerm [] = FreeVar "init$termList$nil"

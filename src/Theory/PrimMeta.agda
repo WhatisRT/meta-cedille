@@ -6,6 +6,7 @@ import Data.Vec.Recursive
 import Data.Vec.Recursive.Categorical
 
 open import Prelude
+open import Theory.TermLike
 
 module Theory.PrimMeta where
 
@@ -105,3 +106,36 @@ primMetaArgsSequence {{mon}} = Data.Vec.Recursive.Categorical.sequenceM mon
 
 primMetaArgsAnd : primMetaArgs Bool m → Bool
 primMetaArgsAnd = Data.Vec.Recursive.foldr {P = const Bool} true id (const _∧_) _
+
+module _ {T} {{_ : TermLike T}} where
+  private
+    tString tTerm tStringList tMetaResult tProduct : T
+    tString     = FreeVar "init$string"
+    tStringList = FreeVar "init$stringList"
+    tTerm       = FreeVar "init$term"
+    tMetaResult = FreeVar "init$metaResult"
+    tProduct    = FreeVar "init$product"
+
+  primMetaS : (m : PrimMeta) → primMetaArgs T m
+  primMetaS Let               = (tString , tTerm)
+  primMetaS AnnLet            = (tString , tTerm , tTerm)
+  primMetaS SetEval           = (tTerm , tString , tString)
+  primMetaS ShellCmd          = (tString , tStringList)
+  primMetaS CheckTerm         = (⋆ , tTerm)
+  primMetaS Parse             = (tString , ⋆ , tString)
+  primMetaS Normalize         = tTerm
+  primMetaS HeadNormalize     = tTerm
+  primMetaS InferType         = tTerm
+  primMetaS Import            = tString
+
+  primMetaT : (m : PrimMeta) → primMetaArgs T m → T
+  primMetaT Let _             = tMetaResult
+  primMetaT AnnLet _          = tMetaResult
+  primMetaT SetEval _         = tMetaResult
+  primMetaT ShellCmd _        = tString
+  primMetaT CheckTerm (t , _) = t
+  primMetaT Parse (_ , t , _) = tProduct ⟪$⟫ t ⟪$⟫ tString
+  primMetaT Normalize _       = tTerm
+  primMetaT HeadNormalize _   = tTerm
+  primMetaT InferType     _   = tTerm
+  primMetaT Import _          = tMetaResult
