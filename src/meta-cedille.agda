@@ -94,6 +94,7 @@ readOptions = do
 
 helpString : String
 helpString = "Usage: meta-cedille [OPTIONS...]\n" +
+  "  Version: 0.9\n\n" +
   concat ((λ { (fst , snd) → "    --" + padRight ' ' padLength fst + snd + "\n" }) <$> helpTable)
   where
     helpTable : List (String × String)
