@@ -40,7 +40,7 @@ module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       findOutermostConstructor = outermostApp ∘ stripBinders
         where
           stripBinders : PureTerm → PureTerm
-          stripBinders t with stripBinderPure t
+          stripBinders t with stripBinder t
           ... | just x = stripBinders x
           ... | nothing = t
 

@@ -28,93 +28,31 @@ private
     A B C : Set
     M : Set → Set
 
-private
-  beqMonadHelper : {{_ : EqB A}} {{_ : Show A}} {{_ : Monad M}} {{_ : MonadExcept M String}}
-                → A → A → String → M ⊤
-  beqMonadHelper a a' s =
-    if a ≣ a'
-      then return tt
-      else throwError (s <+> show a <+> "isn't equal to" <+> s <+> show a')
-
-{-# TERMINATING #-}
-pureTermBeq : {{_ : Monad M}} {{_ : MonadExcept M String}}
-  → PureTerm → PureTerm → M ⊤
-pureTermBeq (Var-P x) (Var-P x₁) = beqMonadHelper x x₁ "Name"
-pureTermBeq (Sort-P x) (Sort-P x₁) = beqMonadHelper x x₁ "Sort"
-pureTermBeq (Const-P x) (Const-P x₁) = beqMonadHelper x x₁ "Const"
-pureTermBeq (App-P t t₁) (App-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
-pureTermBeq (Lam-P _ t) (Lam-P _ t₁) = pureTermBeq t t₁
-pureTermBeq (Pi-P _ t t₁) (Pi-P _ x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
-pureTermBeq (All-P _ t t₁) (All-P _ x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
-pureTermBeq (Iota-P _ t t₁) (Iota-P _ x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
-pureTermBeq (Eq-P t t₁) (Eq-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
-pureTermBeq (M-P t) (M-P x) = pureTermBeq x t
-pureTermBeq (Mu-P t t₁) (Mu-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
-pureTermBeq (Epsilon-P t) (Epsilon-P x) = pureTermBeq t x
-pureTermBeq (Gamma-P t t₁) (Gamma-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
-pureTermBeq (Ev-P m t) (Ev-P m' x) with m ≟ m'
-... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith pureTermBeq t x
-... | no  _    = throwError $ show m <+> "and" <+> show m' <+> "aren't equal!"
-pureTermBeq (Char-P c) (Char-P c') = beqMonadHelper c c' "Char"
-pureTermBeq (CharEq-P t t₁) (CharEq-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
-{-# CATCHALL #-}
-pureTermBeq t t' =
-  throwError $ "The terms" <+> show t <+> "and" <+> show t' <+> "aren't equal!"
-
 data Def : Set where
   Let : AnnTerm → AnnTerm → Def
   Axiom : AnnTerm → Def
 
-data EfficientDef : Set where
-  EfficientLet : AnnTerm → PureTerm → AnnTerm → EfficientDef
-  EfficientAxiom : AnnTerm → EfficientDef
-
-toDef : EfficientDef → Def
-toDef (EfficientLet x x₁ x₂)   = Let x x₂
-toDef (EfficientAxiom x)       = Axiom x
-
-getNorm : EfficientDef → Maybe PureTerm
-getNorm (EfficientLet x x₁ x₂) = return x₁
-getNorm (EfficientAxiom x)     = nothing
-
 instance
   Def-Show : Show Def
-  Def-Show = record { show = helper }
-    where
-      helper : Def → String
-      helper (Let x x₁) = " :=" <+> show x <+> ":" <+> show x₁
-      helper (Axiom x) = " :" <+> show x
+  Def-Show .show (Let x x₁) = " :=" <+> show x <+> ":" <+> show x₁
+  Def-Show .show (Axiom x) = " :" <+> show x
 
-typeOfDef : Def → AnnTerm
-typeOfDef (Let _ x) = x
-typeOfDef (Axiom x) = x
+private
+  data EfficientDef : Set where
+    EfficientLet : AnnTerm → PureTerm → AnnTerm → EfficientDef
+    EfficientAxiom : AnnTerm → EfficientDef
 
-{-# TERMINATING #-}
-checkFree : Name → PureTerm → Bool
-checkFree = helper 0
-  where
-    helper : 𝕀 → Name → PureTerm → Bool
-    helper k n (Var-P (Bound x)) = case n of λ where
-      (Bound x₁) → x ≣ (k +𝕀 x₁)
-      (Free x₁) → false
-    helper k n (Var-P (Free x)) = case n of λ where
-      (Bound x₁) → false
-      (Free x₁) → x ≣ x₁
-    helper k n (Sort-P x) = false
-    helper k n (Const-P x) = false
-    helper k n (App-P t t₁) = helper k n t ∧ helper k n t₁
-    helper k n (Lam-P _ t) = helper (suc𝕀 k) n t
-    helper k n (Pi-P _ t t₁) = helper k n t ∧ helper (suc𝕀 k) n t₁
-    helper k n (All-P _ t t₁) = helper k n t ∧ helper (suc𝕀 k) n t₁
-    helper k n (Iota-P _ t t₁) = helper k n t ∧ helper (suc𝕀 k) n t₁
-    helper k n (Eq-P t t₁) = helper k n t ∧ helper k n t₁
-    helper k n (M-P t) = helper k n t
-    helper k n (Mu-P t t₁) = helper k n t ∧ helper k n t₁
-    helper k n (Epsilon-P t) = helper k n t
-    helper k n (Gamma-P t t₁) = helper k n t ∧ helper k n t₁
-    helper k n (Ev-P m t) = primMetaArgsAnd $ mapPrimMetaArgs (helper k n) t
-    helper k n (Char-P c) = false
-    helper k n (CharEq-P t t₁) = helper k n t ∧ helper k n t₁
+  toDef : EfficientDef → Def
+  toDef (EfficientLet x x₁ x₂)   = Let x x₂
+  toDef (EfficientAxiom x)       = Axiom x
+
+  getNorm : EfficientDef → Maybe PureTerm
+  getNorm (EfficientLet x x₁ x₂) = return x₁
+  getNorm (EfficientAxiom x)     = nothing
+
+  typeOfDef : Def → AnnTerm
+  typeOfDef (Let _ x) = x
+  typeOfDef (Axiom x) = x
 
 GlobalContext : Set
 GlobalContext = HSTrie EfficientDef
@@ -125,9 +63,10 @@ emptyGlobalContext = emptyMap
 Context : Set
 Context = GlobalContext × List AnnTerm
 
-instance
-  Context-Show : Show Context
-  Context-Show .show (fst , snd) = (show $ length snd) <+> "local variables:" + show snd
+private
+  instance
+    Context-Show : Show Context
+    Context-Show .show (fst , snd) = (show $ length snd) <+> "local variables:" + show snd
 
 globalToContext : GlobalContext → Context
 globalToContext Γ = Γ , []
@@ -135,53 +74,72 @@ globalToContext Γ = Γ , []
 contextToGlobal : Context → GlobalContext
 contextToGlobal (fst , snd) = fst
 
--- add variable to context, so that index 0 points to that variable
-pushVar : AnnTerm → Context → Context
-pushVar v (fst , snd) = fst , v ∷ snd
+private
+  -- add variable to context, so that index 0 points to that variable
+  pushVar : AnnTerm → Context → Context
+  pushVar v (fst , snd) = fst , v ∷ snd
 
-localContextLength : Context → ℕ
-localContextLength (fst , snd) = length snd
+  localContextLength : Context → ℕ
+  localContextLength (fst , snd) = length snd
 
-efficientLookupInContext : Name → Context → Maybe EfficientDef
-efficientLookupInContext (Bound x) (fst , snd) =
-  EfficientAxiom ∘ weakenBy (suc𝕀 x) <$> lookupMaybe (toℕ x) snd
-efficientLookupInContext (Free x) (fst , snd) = lookup x fst
+  efficientLookupInContext : Name → Context → Maybe EfficientDef
+  efficientLookupInContext (Bound x) (fst , snd) =
+    EfficientAxiom ∘ weakenBy (suc𝕀 x) <$> lookupMaybe (toℕ x) snd
+  efficientLookupInContext (Free x) (fst , snd) = lookup x fst
 
-lookupInContext : Name → Context → Maybe Def
-lookupInContext n Γ = toDef <$> efficientLookupInContext n Γ
+  lookupInContext : Name → Context → Maybe Def
+  lookupInContext n Γ = toDef <$> efficientLookupInContext n Γ
 
-{-# TERMINATING #-}
-validInContext : PureTerm → Context → Bool
-validInContext = helper 0
-  where
-    -- instead of modifying the context here, we just count how many variables we would have added if we did
-    helper : 𝕀 → PureTerm → Context → Bool
-    helper k (Var-P (Bound x)) Γ = x <𝕀 (fromℕ (localContextLength Γ) +𝕀 k)
-    helper k (Var-P n@(Free x)) Γ = maybe (λ _ → true) false $ lookupInContext n Γ
-    helper k (Sort-P x) Γ = true
-    helper k (Const-P x) Γ = true
-    helper k (App-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
-    helper k (Lam-P _ t) Γ = helper (suc𝕀 k) t Γ
-    helper k (Pi-P _ t t₁) Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
-    helper k (All-P _ t t₁) Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
-    helper k (Iota-P _ t t₁) Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
-    helper k (Eq-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
-    helper k (M-P t) Γ = helper k t Γ
-    helper k (Mu-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
-    helper k (Epsilon-P t) Γ = helper k t Γ
-    helper k (Gamma-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
-    helper k (Ev-P m t) Γ = primMetaArgsAnd $ mapPrimMetaArgs (λ x → helper k x Γ) t
-    helper k (Char-P c) Γ = true
-    helper k (CharEq-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
+  {-# TERMINATING #-}
+  validInContext : PureTerm → Context → Bool
+  validInContext = helper 0
+    where
+      -- instead of modifying the context here, we just count how many variables we would have added if we did
+      helper : 𝕀 → PureTerm → Context → Bool
+      helper k (Var-P (Bound x)) Γ = x <𝕀 (fromℕ (localContextLength Γ) +𝕀 k)
+      helper k (Var-P n@(Free x)) Γ = maybe (λ _ → true) false $ lookupInContext n Γ
+      helper k (Sort-P x) Γ = true
+      helper k (Const-P x) Γ = true
+      helper k (App-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
+      helper k (Lam-P _ t) Γ = helper (suc𝕀 k) t Γ
+      helper k (Pi-P _ t t₁) Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
+      helper k (All-P _ t t₁) Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
+      helper k (Iota-P _ t t₁) Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
+      helper k (Eq-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
+      helper k (M-P t) Γ = helper k t Γ
+      helper k (Mu-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
+      helper k (Epsilon-P t) Γ = helper k t Γ
+      helper k (Gamma-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
+      helper k (Ev-P m t) Γ = primMetaArgsAnd $ mapPrimMetaArgs (λ x → helper k x Γ) t
+      helper k (Char-P c) Γ = true
+      helper k (CharEq-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
 
-stripBinder : AnnTerm → Maybe AnnTerm
-stripBinder (All-A  _ t' t'') = just t''
-stripBinder (Pi-A   _ t' t'') = just t''
-stripBinder (Iota-A _ t' t'') = just t''
-stripBinder (Lam-A  _ t' t'') = just t''
-stripBinder (LamE-A _ t' t'') = just t''
-{-# CATCHALL #-}
-stripBinder t                 = nothing
+  {-# TERMINATING #-}
+  checkFree : Name → PureTerm → Bool
+  checkFree = helper 0
+    where
+      helper : 𝕀 → Name → PureTerm → Bool
+      helper k n (Var-P (Bound x)) = case n of λ where
+        (Bound x₁) → x ≣ (k +𝕀 x₁)
+        (Free x₁) → false
+      helper k n (Var-P (Free x)) = case n of λ where
+        (Bound x₁) → false
+        (Free x₁) → x ≣ x₁
+      helper k n (Sort-P x) = false
+      helper k n (Const-P x) = false
+      helper k n (App-P t t₁) = helper k n t ∧ helper k n t₁
+      helper k n (Lam-P _ t) = helper (suc𝕀 k) n t
+      helper k n (Pi-P _ t t₁) = helper k n t ∧ helper (suc𝕀 k) n t₁
+      helper k n (All-P _ t t₁) = helper k n t ∧ helper (suc𝕀 k) n t₁
+      helper k n (Iota-P _ t t₁) = helper k n t ∧ helper (suc𝕀 k) n t₁
+      helper k n (Eq-P t t₁) = helper k n t ∧ helper k n t₁
+      helper k n (M-P t) = helper k n t
+      helper k n (Mu-P t t₁) = helper k n t ∧ helper k n t₁
+      helper k n (Epsilon-P t) = helper k n t
+      helper k n (Gamma-P t t₁) = helper k n t ∧ helper k n t₁
+      helper k n (Ev-P m t) = primMetaArgsAnd $ mapPrimMetaArgs (helper k n) t
+      helper k n (Char-P c) = false
+      helper k n (CharEq-P t t₁) = helper k n t ∧ helper k n t₁
 
 -- something in is head normal form, if its outermost constructor is not one of the following: Var-A (if the lookup fails), App-A, AppE-A
 {-# TERMINATING #-}
@@ -195,14 +153,6 @@ hnfNorm Γ (AppE-A t t₁) = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (t ⟪
 {-# CATCHALL #-}
 hnfNorm Γ v             = v
 
-stripBinderPure : PureTerm → Maybe PureTerm
-stripBinderPure (Lam-P  _ t')     = just t'
-stripBinderPure (Pi-P   _ t' t'') = just t''
-stripBinderPure (All-P  _ t' t'') = just t''
-stripBinderPure (Iota-P _ t' t'') = just t''
-{-# CATCHALL #-}
-stripBinderPure _                 = nothing
-
 hnfNormPure normalizePure : Context → PureTerm → PureTerm
 
 {-# NON_TERMINATING #-}
@@ -210,8 +160,8 @@ hnfNormPure Γ v@(Var-P x) with lookupInContext x Γ
 ... | just (Let x₁ x₂)         = hnfNormPure Γ $ Erase x₁
 ... | just (Axiom x₁)          = v -- we cannot reduce axioms
 ... | nothing                  = v -- in case the lookup fails, we cannot reduce
-hnfNormPure Γ v@(App-P t t₁) with stripBinderPure (hnfNormPure Γ t)
-... | (just t')                = hnfNormPure Γ $ substPure t' t₁
+hnfNormPure Γ v@(App-P t t₁) with stripBinder (hnfNormPure Γ t)
+... | (just t')                = hnfNormPure Γ $ subst t' t₁
 ... | nothing                  = v
 hnfNormPure Γ v@(CharEq-P _ _) = normalizePure Γ v -- reduce to a bool, if possible
 {-# CATCHALL #-}
@@ -225,12 +175,12 @@ normalizePure Γ v@(Var-P x) with efficientLookupInContext x Γ
 normalizePure Γ v@(Sort-P x)       = v
 normalizePure Γ v@(Const-P x)      = v
 normalizePure Γ (App-P t t₁) with hnfNormPure Γ t
-...| t' = case stripBinderPure t' of λ where
-    (just t'') → normalizePure Γ (substPure t'' t₁)
+...| t' = case stripBinder t' of λ where
+    (just t'') → normalizePure Γ (subst t'' t₁)
     nothing    → normalizePure Γ t' ⟪$⟫ normalizePure Γ t₁
 normalizePure Γ (Lam-P n t) with normalizePure Γ t
 ... | t''@(App-P t' (Var-P (Bound i))) = if i ≣ 0 ∧ validInContext t' Γ
-  then normalizePure Γ (strengthenPure t') else Lam-P n t'' -- eta reduce here
+  then normalizePure Γ (strengthen t') else Lam-P n t'' -- eta reduce here
 ... | t'' = Lam-P n t''
 normalizePure Γ (Pi-P n t t₁)      = Pi-P n (normalizePure Γ t) (normalizePure Γ t₁)
 normalizePure Γ (All-P n t t₁)     = All-P n (normalizePure Γ t) (normalizePure Γ t₁)
@@ -257,8 +207,40 @@ insertInGlobalContext n d Γ =
     toEfficientDef (Let x x₁) Γ = EfficientLet x (normalizePure (globalToContext Γ) $ Erase x) x₁
     toEfficientDef (Axiom x) Γ = EfficientAxiom x
 
-module _ {{_ : Monad M}} {{_ : MonadExcept M String}} (Γ : Context) where
+private
+  beqMonadHelper : {{_ : EqB A}} {{_ : Show A}} {{_ : Monad M}} {{_ : MonadExcept M String}}
+                → A → A → String → M ⊤
+  beqMonadHelper a a' s =
+    if a ≣ a'
+      then return tt
+      else throwError (s <+> show a <+> "isn't equal to" <+> s <+> show a')
 
+  {-# TERMINATING #-}
+  pureTermBeq : {{_ : Monad M}} {{_ : MonadExcept M String}}
+    → PureTerm → PureTerm → M ⊤
+  pureTermBeq (Var-P x) (Var-P x₁) = beqMonadHelper x x₁ "Name"
+  pureTermBeq (Sort-P x) (Sort-P x₁) = beqMonadHelper x x₁ "Sort"
+  pureTermBeq (Const-P x) (Const-P x₁) = beqMonadHelper x x₁ "Const"
+  pureTermBeq (App-P t t₁) (App-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
+  pureTermBeq (Lam-P _ t) (Lam-P _ t₁) = pureTermBeq t t₁
+  pureTermBeq (Pi-P _ t t₁) (Pi-P _ x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
+  pureTermBeq (All-P _ t t₁) (All-P _ x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
+  pureTermBeq (Iota-P _ t t₁) (Iota-P _ x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
+  pureTermBeq (Eq-P t t₁) (Eq-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
+  pureTermBeq (M-P t) (M-P x) = pureTermBeq x t
+  pureTermBeq (Mu-P t t₁) (Mu-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
+  pureTermBeq (Epsilon-P t) (Epsilon-P x) = pureTermBeq t x
+  pureTermBeq (Gamma-P t t₁) (Gamma-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
+  pureTermBeq (Ev-P m t) (Ev-P m' x) with m ≟ m'
+  ... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith pureTermBeq t x
+  ... | no  _    = throwError $ show m <+> "and" <+> show m' <+> "aren't equal!"
+  pureTermBeq (Char-P c) (Char-P c') = beqMonadHelper c c' "Char"
+  pureTermBeq (CharEq-P t t₁) (CharEq-P x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
+  {-# CATCHALL #-}
+  pureTermBeq t t' =
+    throwError $ "The terms" <+> show t <+> "and" <+> show t' <+> "aren't equal!"
+
+module _ {{_ : Monad M}} {{_ : MonadExcept M String}} (Γ : Context) where
   compareNames : PureTerm → PureTerm → M ⊤
   compareNames (Var-P x) (Var-P x₁) =
     if x ≣ x₁
@@ -300,11 +282,11 @@ module _ {{_ : Monad M}} {{_ : MonadExcept M String}} (Γ : Context) where
       compareHnfs (CharEq-P t t₁) (CharEq-P x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
       compareHnfs (Lam-P _ t) t₁ = case normalizePure Γ t of λ where
         t''@(App-P t' (Var-P (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
-          then (compareHnfs (strengthenPure t') t₁) else hnfError t'' t₁
+          then (compareHnfs (strengthen t') t₁) else hnfError t'' t₁
         t'' → hnfError t'' t₁
       compareHnfs t (Lam-P _ t₁) = case normalizePure Γ t₁ of λ where
         t''@(App-P t' (Var-P (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
-          then (compareHnfs t (strengthenPure t')) else hnfError t t''
+          then (compareHnfs t (strengthen t')) else hnfError t t''
         t'' → hnfError t t''
       {-# CATCHALL #-}
       compareHnfs t t' = hnfError t t'
@@ -498,7 +480,7 @@ synthType' Γ (Eq-A x x₁) =
 synthType' Γ (M-A t) = do
   T ← synthType Γ t
   case (hnfNorm Γ T) of λ
-    { (Sort-A ∗) → return $ Sort-A ∗
+    { (Sort-A Ast) → return ⋆
     ; _ → throwError "The term M is applied to should have type ∗"}
 
 synthType' Γ (Mu-A t t₁) = do
