@@ -220,7 +220,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executePrimitive Import t = do
     x ← M String ∋ (unquoteFromTerm t)
-    res ← liftIO $ readFiniteFileError (x + ".mced")
+    res ← liftIO $ readFileError (x + ".mced")
     case res of λ where
       (inj₁ x) → throwError x
       (inj₂ y) → parseAndExecute y >>= λ res → return (res , quoteToAnnTerm res)
