@@ -16,3 +16,8 @@ jobs:
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
     - run: nix-build
     - run: nix-shell --run "echo OK"
+    - name: Archive times
+      uses: actions/upload-artifact@v3
+      with:
+        name: times
+        path: result*/test-time*
