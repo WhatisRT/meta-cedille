@@ -44,6 +44,10 @@ b-let init$newStmt'$runMeta^space^_multiTerm_=dot= (t : Term) : init$newStmt := 
 b-let init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
   bindEvalState ?Term ?metaResult (modifyTermMod t) runEcho.
 b-let init$newStmt'$showType^space^_multiTerm_=dot= (t : Term) : init$newStmt := showTypeStmt t.
+b-let init$newStmt'$normalize^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
+  seqEvalState ?Term ?metaResult (normalize t) (pureEvalState ?metaResult emptyMetaResult).
+b-let init$newStmt'$headNormalize^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
+  seqEvalState ?Term ?metaResult (headNormalize t) (pureEvalState ?metaResult emptyMetaResult).
 b-let init$newStmt'$import^space^_string_=dot= (n : String) : init$newStmt := import n.
 b-let init$newStmt'$updateEval=dot= : init$newStmt := reloadMEnv.
 b-let init$newStmt'$ : init$newStmt := emptyStmt.
