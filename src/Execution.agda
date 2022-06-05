@@ -14,7 +14,7 @@ open import Class.Monad.State
 open import Data.HSTrie
 
 open import Conversion
-open import CoreTheory
+open import Theory.TypeChecking
 
 open import Parse.TreeConvert using (parseBootstrap; parse; BootstrapStmt; Let; SetEval; Empty)
 open import Parse.Generate
@@ -92,8 +92,8 @@ module _ {M : Set → Set} {{_ : Monad M}}
     Γ ← getContext
     catchError (checkβη Γ T t')
       (λ e → throwError $
-        "checkType: Type mismatch with the provided type!\n" + e + "\nProvided: " + show T +
-        "\nSynthesized: " + show t')
+        "checkType: Type mismatch with the provided type!\n" + e + "\nProvided:    " + show T +
+        "\nSynthesized:" <+> show t')
 
   checkTypePure : AnnTerm → PureTerm → M ⊤
   checkTypePure t T = do
@@ -101,8 +101,8 @@ module _ {M : Set → Set} {{_ : Monad M}}
     Γ ← getContext
     catchError (checkβηPure Γ T $ Erase t')
       (λ e → throwError $
-        "checkTypePure: Type mismatch with the provided type!\n" + e + "\nProvided: " + show T +
-        "\nSynthesized: " + show t')
+        "checkTypePure: Type mismatch with the provided type!\n" + e + "\nProvided:    " + show T +
+        "\nSynthesized:" <+> show t')
 
   parseMeta : MetaEnv → String → M (AnnTerm × String)
   parseMeta menv s = let open MetaEnv menv in parse grammar (initNT grammar) namespace s
@@ -202,7 +202,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     T ← synthType Γ u
     return (strResult
       (show u + " : " + show T + " normalizes to: " +
-      (show $ normalizePure Γ $ Erase u)) , (quoteToAnnTerm $ normalizePure Γ $ Erase u))
+      (show $ normalizePure Γ $ Erase u)) , quoteToAnnTerm u)
 
   executePrimitive HeadNormalize t = do
     Γ ← getContext
@@ -229,7 +229,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     T ← case T of λ where
       (just T) → checkType t T >> return T
       nothing  → inferType t
-    < strResult , quoteToAnnTerm ∘ strResult > <$> addDef n (Let t T)
+    < strResult , quoteToAnnTerm ∘ strResult > <$> addDef n (record { def = just t ; type = T; extra = nothing })
 
   executeBootstrapStmt (SetEval t n start) = do
     Γ ← getContext
@@ -246,7 +246,8 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     < strResult , quoteToAnnTerm > <$> return ""
 
   parseAndExecuteBootstrap s = do
-    (fst , snd) ← parseBootstrap s
+    record { grammar = G } ← getMeta
+    (fst , snd) ← parseBootstrap G s
     res ← appendIfError (proj₁ <$> executeBootstrapStmt fst) ("\n\nError while executing term" <+> show fst)
     return (res , snd)
 
@@ -262,7 +263,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
                       + "\nWhile parsing: " + (shortenString 10000 s))
       where _ → throwError "Trying to execute something that isn't of type M t. This should never happen!"
     let execHnf = hnfNormPure Γ $ Erase exec
-    (res , _) ← appendIfError (executeTerm execHnf) ("\n\nError while executing input: " + s)
+    (res , _) ← appendIfError (executeTerm execHnf) ("\n\nError while executing input:" <+> s + "\n")
     return (res , snd)
 
   parseAndExecute s = do

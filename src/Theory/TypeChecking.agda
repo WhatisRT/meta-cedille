@@ -5,13 +5,13 @@
 
 {-# OPTIONS --type-in-type #-}
 
-module CoreTheory where
+module Theory.TypeChecking where
 
 import Data.Product
 
+open import Data.HSTrie
 open import Class.Map
 open import Class.Monad.Except
-open import Data.HSTrie
 open import Data.Word using (toℕ; fromℕ)
 open import Monads.Except
 
@@ -21,98 +21,19 @@ open import Prelude.Nat
 open import Theory.Names public
 open import Theory.TermLike public
 open import Theory.PrimMeta public
-open import Theory.Terms public
+open import Theory.Terms hiding (PureTerm) public
+import Theory.NBE as NBE
+open import Theory.Context public
+open import Theory.Normalisation public
+open import Theory.NBE using (genExtra)
+
+PureTerm : Set
+PureTerm = Theory.Terms.PureTerm false
 
 private
   variable
     A B C : Set
     M : Set → Set
-
-data Def : Set where
-  Let : AnnTerm → AnnTerm → Def
-  Axiom : AnnTerm → Def
-
-instance
-  Def-Show : Show Def
-  Def-Show .show (Let x x₁) = " :=" <+> show x <+> ":" <+> show x₁
-  Def-Show .show (Axiom x) = " :" <+> show x
-
-private
-  data EfficientDef : Set where
-    EfficientLet : AnnTerm → PureTerm → AnnTerm → EfficientDef
-    EfficientAxiom : AnnTerm → EfficientDef
-
-  toDef : EfficientDef → Def
-  toDef (EfficientLet x x₁ x₂)   = Let x x₂
-  toDef (EfficientAxiom x)       = Axiom x
-
-  getNorm : EfficientDef → Maybe PureTerm
-  getNorm (EfficientLet x x₁ x₂) = return x₁
-  getNorm (EfficientAxiom x)     = nothing
-
-  typeOfDef : Def → AnnTerm
-  typeOfDef (Let _ x) = x
-  typeOfDef (Axiom x) = x
-
-GlobalContext : Set
-GlobalContext = HSTrie EfficientDef
-
-emptyGlobalContext : GlobalContext
-emptyGlobalContext = emptyMap
-
-Context : Set
-Context = GlobalContext × List AnnTerm
-
-private
-  instance
-    Context-Show : Show Context
-    Context-Show .show (fst , snd) = (show $ length snd) <+> "local variables:" + show snd
-
-globalToContext : GlobalContext → Context
-globalToContext Γ = Γ , []
-
-contextToGlobal : Context → GlobalContext
-contextToGlobal (fst , snd) = fst
-
-private
-  -- add variable to context, so that index 0 points to that variable
-  pushVar : AnnTerm → Context → Context
-  pushVar v (fst , snd) = fst , v ∷ snd
-
-  localContextLength : Context → ℕ
-  localContextLength (fst , snd) = length snd
-
-  efficientLookupInContext : Name → Context → Maybe EfficientDef
-  efficientLookupInContext (Bound x) (fst , snd) =
-    EfficientAxiom ∘ weakenBy (suc𝕀 x) <$> lookupMaybe (toℕ x) snd
-  efficientLookupInContext (Free x) (fst , snd) = lookup x fst
-
-  lookupInContext : Name → Context → Maybe Def
-  lookupInContext n Γ = toDef <$> efficientLookupInContext n Γ
-
-  {-# TERMINATING #-}
-  validInContext : PureTerm → Context → Bool
-  validInContext = helper 0
-    where
-      -- instead of modifying the context here, we just count how many variables we would have added if we did
-      helper : 𝕀 → PureTerm → Context → Bool
-      helper k (Var-P (Bound x)) Γ = x <𝕀 (fromℕ (localContextLength Γ) +𝕀 k)
-      helper k (Var-P n@(Free x)) Γ = maybe (λ _ → true) false $ lookupInContext n Γ
-      helper k (Sort-P x) Γ = true
-      helper k (Const-P x) Γ = true
-      helper k (App-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
-      helper k (Lam-P _ t) Γ = helper (suc𝕀 k) t Γ
-      helper k (Pi-P _ t t₁) Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
-      helper k (All-P _ t t₁) Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
-      helper k (Iota-P _ t t₁) Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
-      helper k (Eq-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
-      helper k (M-P t) Γ = helper k t Γ
-      helper k (Mu-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
-      helper k (Epsilon-P t) Γ = helper k t Γ
-      helper k (Gamma-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
-      helper k (Ev-P m t) Γ = primMetaArgsAnd $ mapPrimMetaArgs (λ x → helper k x Γ) t
-      helper k (Char-P c) Γ = true
-      helper k (CharEq-P t t₁) Γ = helper k t Γ ∧ helper k t₁ Γ
 
   {-# TERMINATING #-}
   checkFree : Name → PureTerm → Bool
@@ -141,71 +62,15 @@ private
       helper k n (Char-P c) = false
       helper k n (CharEq-P t t₁) = helper k n t ∧ helper k n t₁
 
--- something in is head normal form, if its outermost constructor is not one of the following: Var-A (if the lookup fails), App-A, AppE-A
-{-# TERMINATING #-}
-hnfNorm : Context → AnnTerm → AnnTerm
-hnfNorm Γ v@(Var-A x) with lookupInContext x Γ
-... | just (Let x₁ x₂)  = hnfNorm Γ x₁
-... | just (Axiom x₁)   = v -- we cannot reduce axioms
-... | nothing           = v -- in case the lookup fails, we cannot reduce
-hnfNorm Γ (App-A t t₁)  = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (t ⟪$⟫ t₁) $ stripBinder (hnfNorm Γ t)
-hnfNorm Γ (AppE-A t t₁) = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (t ⟪$⟫ t₁) $ stripBinder (hnfNorm Γ t)
-{-# CATCHALL #-}
-hnfNorm Γ v             = v
-
-hnfNormPure normalizePure : Context → PureTerm → PureTerm
-
-{-# NON_TERMINATING #-}
-hnfNormPure Γ v@(Var-P x) with lookupInContext x Γ
-... | just (Let x₁ x₂)         = hnfNormPure Γ $ Erase x₁
-... | just (Axiom x₁)          = v -- we cannot reduce axioms
-... | nothing                  = v -- in case the lookup fails, we cannot reduce
-hnfNormPure Γ v@(App-P t t₁) with stripBinder (hnfNormPure Γ t)
-... | (just t')                = hnfNormPure Γ $ subst t' t₁
-... | nothing                  = v
-hnfNormPure Γ v@(CharEq-P _ _) = normalizePure Γ v -- reduce to a bool, if possible
-{-# CATCHALL #-}
-hnfNormPure Γ v                = v
-
-{-# NON_TERMINATING #-}
-normalizePure Γ v@(Var-P x) with efficientLookupInContext x Γ
-... | just (EfficientLet x₁ x₂ x₃) = x₂
-... | just (EfficientAxiom x₁)     = v -- we cannot reduce axioms
-... | nothing                      = v -- in case the lookup fails, we cannot reduce
-normalizePure Γ v@(Sort-P x)       = v
-normalizePure Γ v@(Const-P x)      = v
-normalizePure Γ (App-P t t₁) with hnfNormPure Γ t
-...| t' = case stripBinder t' of λ where
-    (just t'') → normalizePure Γ (subst t'' t₁)
-    nothing    → normalizePure Γ t' ⟪$⟫ normalizePure Γ t₁
-normalizePure Γ (Lam-P n t) with normalizePure Γ t
-... | t''@(App-P t' (Var-P (Bound i))) = if i ≣ 0 ∧ validInContext t' Γ
-  then normalizePure Γ (strengthen t') else Lam-P n t'' -- eta reduce here
-... | t'' = Lam-P n t''
-normalizePure Γ (Pi-P n t t₁)      = Pi-P n (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (All-P n t t₁)     = All-P n (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (Iota-P n t t₁)    = Iota-P n (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (Eq-P t t₁)        = Eq-P (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (M-P t)            = M-P (normalizePure Γ t)
-normalizePure Γ (Mu-P t t₁)        = Mu-P (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (Epsilon-P t)      = Epsilon-P (normalizePure Γ t)
-normalizePure Γ (Gamma-P t t₁)     = Gamma-P (normalizePure Γ t) (normalizePure Γ t₁)
-normalizePure Γ (Ev-P m args)      = Ev-P m (mapPrimMetaArgs (normalizePure Γ) args)
-normalizePure Γ (Char-P c)         = (Char-P c)
-normalizePure Γ (CharEq-P t t₁) with normalizePure Γ t | normalizePure Γ t₁
-... | (Char-P c) | (Char-P c')     = normalizePure Γ $ FreeVar $ show (c ≣ c')
-{-# CATCHALL #-}
-... | x | x₁                       = CharEq-P x x₁
-
 insertInGlobalContext : GlobalName → Def → GlobalContext → String ⊎ GlobalContext
 insertInGlobalContext n d Γ =
   if is-just $ lookup n Γ
     then inj₁ ("The name" <+> n <+> "is already defined!")
     else (inj₂ $ insert n (toEfficientDef d Γ) Γ)
   where
-    toEfficientDef : Def → GlobalContext → EfficientDef
-    toEfficientDef (Let x x₁) Γ = EfficientLet x (normalizePure (globalToContext Γ) $ Erase x) x₁
-    toEfficientDef (Axiom x) Γ = EfficientAxiom x
+    toEfficientDef : Def → GlobalContext → Def
+    toEfficientDef d@(≔ x) Γ = record d { extra = just $ genExtra (globalToContext Γ) $ Erase x }
+    toEfficientDef d Γ = d
 
 private
   beqMonadHelper : {{_ : EqB A}} {{_ : Show A}} {{_ : Monad M}} {{_ : MonadExcept M String}}
@@ -304,7 +169,7 @@ synthType Γ t =
 
 synthType' Γ (Var-A x) =
   maybeToError
-    (typeOfDef <$> lookupInContext x Γ)
+    (lookupTypeInContext x Γ)
     ("Lookup failed:" <+> show x <+> "in context" <+> show {{Context-Show}} Γ)
 synthType' Γ (Sort-A Ast) = return □
 synthType' Γ (Sort-A Sq) = throwError "Cannot synthesize type for the superkind"
@@ -387,11 +252,11 @@ synthType' Γ (Rho-A t t₁ t₂) = do
       return $ subst t₁ u
     ; _ → throwError "The type of the first argument of a rho needs to be an equality" }
 
-synthType' Γ (All-A _ t t₁) = do
+synthType' Γ (All-A n t t₁) = do
   u ← synthType Γ t
   case (hnfNorm Γ u) of λ
     { (Sort-A s) → do
-      let Γ' = pushVar t Γ
+      let Γ' = pushType Γ (n , t)
       u₁ ← synthType Γ' t₁
       case (hnfNorm Γ' u₁) of λ
         { (Sort-A Ast) → return ⋆
@@ -400,11 +265,11 @@ synthType' Γ (All-A _ t t₁) = do
           + show v <+> "(" + show t₁ + ")\nContext:" <+> show {{Context-Show}} Γ' }
     ; _ → throwError "The type of the parameter type in forall should be star or square" }
 
-synthType' Γ (Pi-A _ t t₁) = do
+synthType' Γ (Pi-A n t t₁) = do
   u ← synthType Γ t
   case (hnfNorm Γ u) of λ
     { (Sort-A s) → do
-      let Γ' = pushVar t Γ
+      let Γ' = pushType Γ (n , t)
       u₁ ← synthType Γ' t₁
       case (hnfNorm Γ u₁) of λ
         { (Sort-A s') → return $ Sort-A s'
@@ -412,11 +277,11 @@ synthType' Γ (Pi-A _ t t₁) = do
           "The type family in pi should have type star or square, while it has type" <+> show v }
     ; _ → throwError "The type of the parameter type in pi should be star or square" }
 
-synthType' Γ (Iota-A _ t t₁) = do
+synthType' Γ (Iota-A n t t₁) = do
   u ← synthType Γ t
   case (hnfNorm Γ u) of λ
     { (Sort-A Ast) → do
-      let Γ' = pushVar t Γ
+      let Γ' = pushType Γ (n , t)
       u₁ ← synthType Γ' t₁
       case (hnfNorm Γ' u₁) of λ
         { (Sort-A Ast) → return ⋆
@@ -425,7 +290,7 @@ synthType' Γ (Iota-A _ t t₁) = do
 
 synthType' Γ (Lam-A n t t₁) = do
   synthType Γ t
-  u ← synthType (pushVar t Γ) t₁
+  u ← synthType (pushType Γ (n , t)) t₁
   return (Pi-A n t u)
 
 synthType' Γ (LamE-A n t t₁) =
@@ -433,7 +298,7 @@ synthType' Γ (LamE-A n t t₁) =
     then throwError "Erased arguments cannot appear bound in a term"
     else do
       synthType Γ t
-      u ← synthType (pushVar t Γ) t₁
+      u ← synthType (pushType Γ (n , t)) t₁
       return $ All-A n t u
 
 synthType' Γ (Pair-A t t₁ t₂) = do
@@ -492,7 +357,7 @@ synthType' Γ (Mu-A t t₁) = do
         { (Pi-A _ v v₁) → do
           T'' ← if checkFree (Bound 0) (Erase v₁)
             then throwError ("Index 0 is not allowed to appear in" <+> show v₁)
-            else synthType (pushVar v Γ) v₁
+            else synthType (pushType Γ ("_" , v)) v₁
           case (hnfNorm Γ T'') of λ
             { (Sort-A ∗) →
               case (hnfNorm Γ v₁) of λ

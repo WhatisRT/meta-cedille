@@ -13,39 +13,46 @@ open import Theory.Names public
 open import Theory.TermLike public
 open import Theory.PrimMeta public
 
-data PureTerm : Set where
-  Var-P     : Name → PureTerm
-  Sort-P    : Sort → PureTerm
-  Const-P   : Const → PureTerm
-  App-P     : PureTerm → PureTerm → PureTerm
-  Lam-P     : String → PureTerm → PureTerm
-  Pi-P      : String → PureTerm → PureTerm → PureTerm
-  All-P     : String → PureTerm → PureTerm → PureTerm
-  Iota-P    : String → PureTerm → PureTerm → PureTerm
-  Eq-P      : PureTerm → PureTerm → PureTerm
-  M-P       : PureTerm → PureTerm
-  Mu-P      : PureTerm → PureTerm → PureTerm
-  Epsilon-P : PureTerm → PureTerm
-  Gamma-P   : PureTerm → PureTerm → PureTerm
-  Ev-P      : (m : PrimMeta) → primMetaArgs PureTerm m → PureTerm
-  Char-P    : Char → PureTerm
-  CharEq-P  : PureTerm → PureTerm → PureTerm
+private variable b : Bool
+
+-- the bool decides whether to have the NBE constructors
+data PureTerm : @0 Bool → Set where
+  Var-P     : Name → PureTerm b
+  FDB-P     : 𝕀 → PureTerm true
+  Sort-P    : Sort → PureTerm b
+  Const-P   : Const → PureTerm b
+  App-P     : PureTerm b → PureTerm b → PureTerm b
+  Lam-P     : String → PureTerm b → PureTerm b
+  Cont-P    : String → List (String × Maybe (PureTerm true)) → PureTerm true → PureTerm true
+  Pi-P      : String → PureTerm b → PureTerm b → PureTerm b
+  All-P     : String → PureTerm b → PureTerm b → PureTerm b
+  Iota-P    : String → PureTerm b → PureTerm b → PureTerm b
+  Eq-P      : PureTerm b → PureTerm b → PureTerm b
+  M-P       : PureTerm b → PureTerm b
+  Mu-P      : PureTerm b → PureTerm b → PureTerm b
+  Epsilon-P : PureTerm b → PureTerm b
+  Gamma-P   : PureTerm b → PureTerm b → PureTerm b
+  Ev-P      : (m : PrimMeta) → primMetaArgs (PureTerm b) m → PureTerm b
+  Char-P    : Char → PureTerm b
+  CharEq-P  : PureTerm b → PureTerm b → PureTerm b
 
 instance
   {-# TERMINATING #-}
-  PureTerm-TermLike : TermLike PureTerm
+  PureTerm-TermLike : TermLike (PureTerm b)
   PureTerm-TermLike .Var             = Var-P
   PureTerm-TermLike .SortC           = Sort-P
   PureTerm-TermLike ._⟪$⟫_           = App-P
-  PureTerm-TermLike .byUniformFold f = helper 0
+  PureTerm-TermLike {b} .byUniformFold f = helper 0
     where
-      helper : 𝕀 → PureTerm → PureTerm
+      helper : 𝕀 → PureTerm b → PureTerm b
       helper k (Var-P (Bound x))  = f k x
+      helper k v@(FDB-P _)        = v
       helper k v@(Var-P (Free _)) = v
       helper k v@(Sort-P x)       = v
       helper k v@(Const-P x)      = v
       helper k (App-P t t₁)       = App-P (helper k t) (helper k t₁)
       helper k (Lam-P x t)        = Lam-P x (helper (suc𝕀 k) t)
+      helper k v@(Cont-P _ _ _)   = v
       helper k (Pi-P x t t₁)      = Pi-P x (helper k t) (helper (suc𝕀 k) t₁)
       helper k (All-P x t t₁)     = All-P x (helper k t) (helper (suc𝕀 k) t₁)
       helper k (Iota-P x t t₁)    = Iota-P x (helper k t) (helper (suc𝕀 k) t₁)
@@ -64,18 +71,20 @@ instance
   PureTerm-TermLike .stripBinder _                 = nothing
 
   {-# TERMINATING #-}
-  PureTerm-Show : Show PureTerm
+  PureTerm-Show : Show (PureTerm b)
   PureTerm-Show = record { show = helper [] }
     where
-      helper : List String → PureTerm → String
+      helper : List String → PureTerm b → String
       helper l (Var-P x)       = showVar l x
+      helper l (FDB-P x)       = "FDB" <+> show x
       helper l (Sort-P x)      = show x
       helper l (Const-P x)     = show x
       helper l (App-P t t₁)    = "[" + helper l t <+> helper l t₁ + "]"
-      helper l (Lam-P n t)     = "λ" <+> n <+> helper (n ∷ l) t
-      helper l (Pi-P n t t₁)   = "Π" <+> n <+> helper (n ∷ l) t <+> helper l t₁
-      helper l (All-P n t t₁)  = "∀" <+> n <+> helper (n ∷ l) t <+> helper l t₁
-      helper l (Iota-P n t t₁) = "ι" <+> n <+> helper (n ∷ l) t <+> helper l t₁
+      helper l (Lam-P n t)     = "λ" <+> n + "." <+> helper (n ∷ l) t
+      helper l (Cont-P n _ t)  = "Cont" <+> n + "." <+> helper (n ∷ l) t
+      helper l (Pi-P n t t₁)   = "Π" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
+      helper l (All-P n t t₁)  = "∀" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
+      helper l (Iota-P n t t₁) = "ι" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
       helper l (Eq-P t t₁)     = "=" <+> helper l t <+> helper l t₁
       helper l (M-P t)         = "M" <+> helper l t
       helper l (Mu-P t t₁)     = "μ" <+> helper l t <+> helper l t₁
@@ -190,7 +199,7 @@ instance
       helper l (CharEq-A t t')  = "CharEq" <+> show t <+> show t'
 
 {-# TERMINATING #-}
-Erase : AnnTerm → PureTerm
+Erase : AnnTerm → PureTerm b
 Erase (Var-A x)        = Var-P x
 Erase (Sort-A x)       = Sort-P x
 Erase (Const-A x)      = Const-P x

@@ -8,35 +8,83 @@ let fetchFromGitHub = nixpkgs.fetchFromGitHub;
     }) {};
     ghcpkgs = nixpkgs; # in case we need a different GHC
 
-    meta-cedille-gen = with pinnedPkgs; ghcpkgs: stdenv.mkDerivation {
-      name = "meta-cedille";
+    profiledHaskellPackages = (import <nixpkgs> {}).haskellPackages.override {
+      overrides = hself: hsuper: rec {
+        mkDerivation = args: hsuper.mkDerivation (args // {
+          enableLibraryProfiling = true;
+        });
+      };
+    };
+
+    meta-cedille-src = with pinnedPkgs.agdaPackages; mkDerivation {
+      pname = "meta-cedille-src";
+      version = "0.9";
       src = ./.;
+      meta = {};
+      buildInputs = [ standard-library ];
+      everythingFile = "src/meta-cedille.agda";
+      buildPhase = "cd src; agda -c --ghc-dont-call-ghc --compile-dir $out meta-cedille.agda; cd ..";
+      installPhase = "cp -r src stdlib-exts test $out";
+      extraExtensions = [ "hs" "mced" ];
+    };
+
+    meta-cedille-gen = with pinnedPkgs; localGhcpkgs: stdenv.mkDerivation {
+      name = "meta-cedille";
+      src = "${meta-cedille-src}";
       buildInputs = [
         (agda.withPackages {
           pkgs = [ agdaPackages.standard-library ];
-          ghc = ghcpkgs.ghcWithPackages (pkgs: with pkgs; [ ieee bytestring-trie ]);
+          ghc = localGhcpkgs.ghcWithPackages (pkgs: with pkgs; [ ieee bytestring-trie containers ]);
         })
       ];
       buildPhase = ''
-                  cd src
-                  agda --ghc --ghc-flag=-O2 meta-cedille.agda
-                  '';
-      installPhase = "mkdir $out && cp meta-cedille $out/";
+        cd src
+        agda --ghc --ghc-flag=-O2 --ghc-flag=-j4 meta-cedille.agda
+        cd ..'';
+      installPhase = "mkdir $out && cp src/meta-cedille $out/ && cp -r test $out/";
     };
 
     self = with pinnedPkgs; {
+      meta-cedille-src = meta-cedille-src;
+
       meta-cedille = meta-cedille-gen ghcpkgs.haskellPackages;
+
+      meta-cedille-prof = (meta-cedille-gen profiledHaskellPackages).overrideAttrs (old: {
+        buildInputs = old.buildInputs ++ [ nixpkgs.haskellPackages.profiteur ];
+        name = "meta-cedille-prof";
+        buildPhase = ''
+          cd src
+          agda --ghc --ghc-flag=-j4 --ghc-flag=-prof --ghc-flag=-fprof-auto meta-cedille.agda
+          cd ..'';
+        installPhase = ''
+          mkdir $out && cp src/meta-cedille $out/
+          $out/meta-cedille +RTS -p -po$out/meta-cedille-1 -RTS --no-repl &
+          $out/meta-cedille +RTS -p -po$out/meta-cedille-2 -RTS --no-repl --load test/Test &
+          wait
+          cd $out
+          profiteur meta-cedille-1.prof
+          profiteur meta-cedille-2.prof'';
+      });
 
       tests = stdenv.mkDerivation {
         name = "meta-cedille-tests";
-        src = ./.;
-        buildInputs = [ time self.meta-cedille ];
+        src = "${self.meta-cedille}";
+        buildInputs = [ time ];
         buildPhase = ''
-          ${time}/bin/time -o test-time-1 ${self.meta-cedille}/meta-cedille --no-repl &
-          ${time}/bin/time -o test-time-2 ${self.meta-cedille}/meta-cedille --load test/Test --no-repl &
-          wait
-                     '';
+          ${time}/bin/time -o test-time-1 ./meta-cedille --no-repl &
+          ${time}/bin/time -o test-time-2 ./meta-cedille --no-repl --load test/Test &
+          wait'';
         installPhase = "mkdir $out && cp test-time-* $out";
+      };
+
+      benchmarks = stdenv.mkDerivation {
+        name = "meta-cedille-benchmarks";
+        src = ./.;
+        buildInputs = [ bench self.meta-cedille ];
+        buildPhase = ''
+                   bench '${self.meta-cedille}/meta-cedille --no-repl' '${self.meta-cedille}/meta-cedille --load test/Test --no-repl' --output bench.html
+                   '';
+        installPhase = "mkdir $out && cp bench.html $out";
       };
     };
 in self

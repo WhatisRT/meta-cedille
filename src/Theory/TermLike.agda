@@ -6,24 +6,18 @@ open import Theory.Names
 
 data Sort : Set where
   Ast : Sort
-  Sq : Sort
+  Sq  : Sort
 
 instance
   Sort-Show : Show Sort
-  Sort-Show = record { show = helper }
-    where
-      helper : Sort → String
-      helper Ast = "*"
-      helper Sq = "□"
+  Sort-Show .show Ast = "*"
+  Sort-Show .show Sq  = "□"
 
   Sort-Eq : Eq Sort
-  Sort-Eq = record { _≟_ = helper }
-    where
-      helper : (s s' : Sort) → Dec (s ≡ s')
-      helper Ast Ast = yes refl
-      helper Ast Sq = no λ ()
-      helper Sq Ast = no λ ()
-      helper Sq Sq = yes refl
+  Sort-Eq ._≟_ Ast Ast = yes refl
+  Sort-Eq ._≟_ Ast Sq  = no λ ()
+  Sort-Eq ._≟_ Sq Ast  = no λ ()
+  Sort-Eq ._≟_ Sq Sq   = yes refl
 
   Sort-EqB = Eq→EqB {{Sort-Eq}}
 
@@ -32,19 +26,13 @@ data Const : Set where
 
 instance
   Const-Eq : Eq Const
-  Const-Eq = record { _≟_ = helper }
-    where
-      helper : (c c' : Const) → Dec (c ≡ c')
-      helper CharT CharT = yes refl
+  Const-Eq ._≟_ CharT CharT = yes refl
 
   Const-EqB : EqB Const
   Const-EqB = Eq→EqB
 
   Const-Show : Show Const
-  Const-Show = record { show = helper }
-    where
-      helper : Const → String
-      helper CharT = "CharT"
+  Const-Show .show CharT = "CharT"
 
 record TermLike (T : Set) : Set where
   infixl -1 _⟪$⟫_ -- same as $ but on the left
@@ -85,3 +73,6 @@ module _ {T : Set} ⦃ _ : TermLike T ⦄ where
   subst : T → T → T
   subst t t' = strengthen $ byUniformFold
     (λ k x → if k ≣ x then weakenBy (suc𝕀 k) t' else BoundVar x) t
+
+  evalCharEq : Char → Char → T
+  evalCharEq c c' = FreeVar $ show (c ≣ c')

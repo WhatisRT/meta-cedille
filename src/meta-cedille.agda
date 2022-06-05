@@ -7,14 +7,16 @@ open import IO using (Main; run)
 open import Monads.Except
 open import Monads.ExceptT
 
-open import Prelude
+open import Prelude hiding (from-inj₂)
 open import Prelude.Strings
+open import Unsafe using (from-inj₂)
+open import Data.Map.String
 
 open import Parse.Generate
 open import Parse.TreeConvert using (preCoreGrammar)
 open import Bootstrap.InitEnv
 
-open import CoreTheory
+open import Theory.TypeChecking
 open import Execution
 
 record EvalFlags : Set where

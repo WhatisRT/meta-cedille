@@ -11,6 +11,7 @@ import Data.Sum
 open import Class.Map
 open import Class.Monad.Except
 open import Data.SimpleMap
+open import Data.Map.String
 open import Data.String using (fromList; toList; fromChar; uncons)
 open import Data.Tree
 open import Data.Tree.Instance
@@ -19,7 +20,7 @@ open import Data.Word using (fromℕ)
 open import Prelude
 open import Prelude.Strings
 
-open import CoreTheory
+open import Theory.TypeChecking
 open import Bootstrap.InitEnv
 open import Parse.MultiChar
 open import Parse.LL1
@@ -39,15 +40,16 @@ ruleFun A 2F = PTree → PTree → Maybe A
 ruleFun A 3F = PTree → PTree → PTree → Maybe A
 ruleFun A 4F = PTree → PTree → PTree → PTree → Maybe A
 
-ruleId : List Char → List Char → Maybe (ℕ ⊎ Char)
-ruleId nonterm rule = do
-  rules ← lookup nonterm parseRuleMap
-  inj₁ <$> findIndexList (_≟ (nonterm + "$" + rule)) rules
+ruleIdMap : StringMap (StringMap ℕ)
+ruleIdMap = mapSnd (fromListSM ∘ mapWithIndex (flip _,_)) $ fromListSM parseRuleMap
+
+ruleId : String → String → Maybe (ℕ ⊎ Char)
+ruleId nonterm rule = inj₁ <$> (lookup rule =<< lookup nonterm ruleIdMap)
 
 _≡ᴹ_ : ℕ ⊎ Char → Maybe (ℕ ⊎ Char) → Bool
 x ≡ᴹ y = just x ≣ y
 
-ruleIdN : ∀ {A} → (n : RuleType) → List Char → List Char → ruleFun A n → List PTree → Maybe (ℕ ⊎ Char) × Maybe A
+ruleIdN : ∀ {A} → (n : RuleType) → String → String → ruleFun A n → List PTree → Maybe (ℕ ⊎ Char) × Maybe A
 ruleIdN 0F s s' f [] = (ruleId s s' , f)
 ruleIdN 1F s s' f (x₁ ∷ []) = (ruleId s s' , f x₁)
 ruleIdN 2F s s' f (x₁ ∷ x₂ ∷ []) = (ruleId s s' , f x₁ x₂)
@@ -55,9 +57,9 @@ ruleIdN 3F s s' f (x₁ ∷ x₂ ∷ x₃ ∷ []) = (ruleId s s' , f x₁ x₂ x
 ruleIdN 4F s s' f (x₁ ∷ x₂ ∷ x₃ ∷ x₄ ∷ []) = (ruleId s s' , f x₁ x₂ x₃ x₄)
 ruleIdN n s s' f _ = (ruleId s s' , nothing)
 
-ruleCaseN : {A : Set} → PTree → List Char → List (List Char × Σ[ t ∈ RuleType ] ruleFun A t) → Maybe A
+ruleCaseN : {A : Set} → PTree → String → List (List Char × Σ[ t ∈ RuleType ] ruleFun A t) → Maybe A
 ruleCaseN (Node x x₁) r cs =
-  decCase just x of map (λ where (x , t , f) → ruleIdN t r x f x₁) cs default nothing
+  decCase just x of map (λ where (x , t , f) → ruleIdN t r (fromList x) f x₁) cs default nothing
 
 toSort : PTree → Maybe AnnTerm
 toSort x = ruleCaseN x "sort" (("*" , 0F , just ⋆) ∷ ("□" , 0F , just □) ∷ [])
@@ -85,10 +87,10 @@ toNameList _ = nothing
 toIndex : PTree → Maybe ℕ
 toIndex t = helper t >>= foldl {A = Maybe ℕ} (λ x c → (λ x' → 10 * x' + c) <$> x) (just 0)
   where
-    helper'' : List Char → ℕ ⊎ Char → List ℕ → Maybe (List ℕ)
+    helper'' : String → ℕ ⊎ Char → List ℕ → Maybe (List ℕ)
     helper'' r x rest =
       decCase (just x) of
-        applyUpTo (λ n → ruleId r (toList $ show n + "_index'_") , return (n ∷ rest)) 10
+        applyUpTo (λ n → ruleId r (show n + "_index'_") , return (n ∷ rest)) 10
         default nothing
 
     helper' : PTree → Maybe (List ℕ)
@@ -130,7 +132,7 @@ toTerm = helper []
         (("_var_" , 1F , (λ x → ruleCaseN x "var"
           (("_string_" , 1F , λ n → do
             n' ← toName n
-            return $ case findIndexList (n' ≟_) accu of λ where
+            return $ case findIndexList (n' ≣_) accu of λ where
               (just x) → BoundVar $ fromℕ x
               nothing  → FreeVar n') ∷
           ("_index_" , 1F , (λ n → BoundVar ∘ fromℕ <$> toIndex n)) ∷ []))) ∷
@@ -252,20 +254,15 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
   -- Used for bootstrapping
   {-# TERMINATING #-} -- cannot just use sequence in synTreetoℕtree because of the char special case
-  parseBootstrap : String → M (BootstrapStmt × String)
-  parseBootstrap s = do
-    (y' , rest) ← parsePreCoreGrammar s
+  parseBootstrap : Grammar → String → M (BootstrapStmt × String)
+  parseBootstrap G s = do
+    (y' , rest) ← parseToConstrTree G (initNT G) s
     y ← synTreeToℕTree y'
     case toBootstrapStmt y of λ where
       (just x) → return (x , rest)
       nothing → throwError ("Error while converting syntax tree to statement!\nTree:\n" + show y'
                              + "\nRemaining: " + s)
     where
-      parsePreCoreGrammar : String → M (Tree (String ⊎ Char) × String)
-      parsePreCoreGrammar s = do
-        G ← preCoreGrammar
-        parseToConstrTree G (initNT G) s
-
       convertIfChar : Tree (String ⊎ Char) → Maybe PTree
       convertIfChar (Node (inj₁ x) x₁) = do
         rest ← stripPrefix "nameInitChar$" x <∣> stripPrefix "nameTailChar$" x
@@ -284,6 +281,6 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
           fullRuleId : String → M (ℕ ⊎ Char)
           fullRuleId l with break (_≟ '$') (toList l) -- split at '$'
           ... | (x , []) = throwError "No '$' character found!"
-          ... | (x , _ ∷ y) = maybeToError (ruleId x y) ("Rule " + l + "doesn't exist!")
+          ... | (x , _ ∷ y) = maybeToError (ruleId (fromList x) (fromList y)) ("Rule " + l + "doesn't exist!")
 
       synTreeToℕTree (Node (inj₂ x) x₁) = return $ Node (inj₂ x) []

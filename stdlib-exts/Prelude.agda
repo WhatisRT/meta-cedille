@@ -17,7 +17,7 @@ open import Data.Empty public
 open import Data.Empty.Instance public
 open import Data.Fin using (Fin; zero; suc) public
 open import Data.Fin.Patterns public
-open import Data.List using (List; []; [_]; _∷_; drop; boolFilter; filter; head; reverse; _++_; zipWith; foldl; intersperse; map; null; span; break; allFin; length; mapMaybe; or; and; applyUpTo) public
+open import Data.List using (List; []; [_]; _∷_; drop; boolFilter; filter; head; reverse; _++_; zipWith; foldl; intersperse; map; null; span; break; allFin; length; mapMaybe; or; and; applyUpTo; replicate) public
 open import Data.List.Exts public
 open import Data.List.Instance public
 open import Data.Maybe using (Maybe; just; nothing; maybe; from-just; is-just; is-nothing; _<∣>_) public

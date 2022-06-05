@@ -6,7 +6,9 @@ import Data.Vec.Recursive
 import Data.Vec.Recursive.Categorical
 
 open import Prelude
+open import Prelude.Nat
 open import Theory.TermLike
+open import Theory.Names
 
 module Theory.PrimMeta where
 
@@ -96,7 +98,8 @@ traversePrimMetaArgs : {{Monad M}} → (A → M B) → primMetaArgs A m → M (p
 traversePrimMetaArgs {{mon}} = Data.Vec.Recursive.Categorical.mapM mon
 
 primMetaArgs-Show : (A → String) → primMetaArgs A m → String
-primMetaArgs-Show showA = Data.Vec.Recursive.foldr "" showA (λ _ a s → showA a + s) _
+primMetaArgs-Show showA = let showA' = λ s → "(" + showA s + ")"
+  in Data.Vec.Recursive.foldr "" showA' (λ _ a s → showA' a <+> s) _
 
 primMetaArgsZipWith : (A → B → C) → primMetaArgs A m → primMetaArgs B m → primMetaArgs C m
 primMetaArgsZipWith f x y = Data.Vec.Recursive.zipWith f _ x y
@@ -106,6 +109,9 @@ primMetaArgsSequence {{mon}} = Data.Vec.Recursive.Categorical.sequenceM mon
 
 primMetaArgsAnd : primMetaArgs Bool m → Bool
 primMetaArgsAnd = Data.Vec.Recursive.foldr {P = const Bool} true id (const _∧_) _
+
+primMetaArgsMax : primMetaArgs 𝕀 m → 𝕀
+primMetaArgsMax = Data.Vec.Recursive.foldr {P = const 𝕀} 0 id (const _⊔𝕀_) _
 
 module _ {T} {{_ : TermLike T}} where
   private

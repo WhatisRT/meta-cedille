@@ -6,6 +6,7 @@ module Parse.Escape where
 
 open import Class.Map
 open import Data.SimpleMap
+open import Data.Map.Char
 open import Data.String using (fromList; toList)
 
 open import Prelude
@@ -33,8 +34,8 @@ private
     ("Upsilon" , 'Υ') ∷ ("Phi" , 'Φ') ∷ ("Chi" , 'Χ') ∷ ("Psi" , 'Ψ') ∷ ("Omega" , 'Ω') ∷
     []
 
-  escapeTable : SimpleMap Char String
-  escapeTable = map swap translationTable
+  escapeTable : CharMap String
+  escapeTable = fromListCM $ map swap translationTable
 
   isSpecialChar : Char → Bool
   isSpecialChar c = c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&' ∨ c ≣ '^'
@@ -61,6 +62,9 @@ translate = helper ∘ splitMulti '='
       l' ← lookup (fromList l₁) translationTable
       l'' ← helper l₂
       return $ l + (if isSpecialChar l' then '\\' ∷ [ l' ] else [ l' ]) + l''
+
+translateS : String → Maybe String
+translateS s = fromList <$> (translate $ toList s)
 
 escapeChar : Char → List Char
 escapeChar c = maybe (λ s → "=" ++ toList s ++ "=") [ c ] $ lookup c escapeTable

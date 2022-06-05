@@ -11,10 +11,10 @@
 module Parse.LL1 where
 
 import Data.String as S
-open import Data.Sum using (isInj₁)
 open import Class.Monad.Except
-open import Data.String using (fromList; toList; uncons)
 open import Data.List using (boolDropWhile)
+open import Data.String using (fromList; toList; uncons)
+open import Data.Sum using (isInj₁)
 open import Data.Tree
 
 open import Prelude
@@ -32,6 +32,8 @@ record CFG (V : Set) (MultiChar : Set) : Set₁ where
   field
     Rstring'' : {v : V} → R v → List (V' ⊎ MultiChar ⊎ String)
 
+  private variable v : V
+
   Terminal : Set
   Terminal = MultiChar ⊎ String
 
@@ -46,7 +48,7 @@ record CFG (V : Set) (MultiChar : Set) : Set₁ where
   Rule : Set
   Rule = ∃[ v ] R v
 
-  Rstring : {v : V} → R v → List (V ⊎ MultiChar ⊎ String)
+  Rstring : R v → List (V ⊎ MultiChar ⊎ String)
   Rstring r = map (Data.Sum.map₁ proj₁) (Rstring'' r)
 
   Rstring' : Rule → List (V ⊎ Terminal)
@@ -54,8 +56,6 @@ record CFG (V : Set) (MultiChar : Set) : Set₁ where
 
   SynTree : Set
   SynTree = Tree (Rule ⊎ Char)
-  
-  private variable v : V
 
   produces-ε : R v → Bool
   produces-ε = null ∘ Rstring
@@ -64,8 +64,6 @@ module _ {V MultiChar : Set} (showV : V → String)
   (matchMulti : MultiChar → Char → Bool) (showMulti : MultiChar → String)
   (G : CFG V MultiChar) (M : Set → Set) {{_ : Monad M}} {{_ : MonadExcept M String}} where
   -- we don't care if it is actually a LL1 grammar
-
-  private variable v : V
 
   open CFG G
 
@@ -77,7 +75,7 @@ module _ {V MultiChar : Set} (showV : V → String)
   match s (inj₁ x) with strHead s
   ... | nothing = false
   ... | just c  = matchMulti x c
-  match s (inj₂ y) = strTake (S.length y) s ≣ y
+  match s (inj₂ y) = strTake (strLength y) s ≣ y
 
   -- select the first rule satisfying the predicate
   firstRule : (v : V) → (R v → Bool) → Maybe (R v)
@@ -88,7 +86,7 @@ module _ {V MultiChar : Set} (showV : V → String)
   parsingTable v' x = -,_ <$> firstRule v' (startWith x) <∣> firstRule v' produces-ε
                       -- select the first rule starting with x, or the first that is empty
     where
-      startWith : String → R v → Bool
+      startWith : {v : V} → String → R v → Bool
       startWith x = helper x ∘ Rstring
         where
           helper : String → List (V ⊎ Terminal) → Bool

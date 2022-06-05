@@ -6,13 +6,15 @@
 module Bootstrap.InitEnv where
 
 open import Class.Map
+open import Data.Map.String
 open import Data.Char.Ranges
 open import Data.List using (dropWhile; takeWhile)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
 
-open import Prelude
+open import Prelude hiding (from-just)
 open import Prelude.Strings
+open import Unsafe using (from-just)
 
 open import Parse.Escape
 open import Bootstrap.SimpleInductive
@@ -35,13 +37,13 @@ private
         takeEven ∘ (map concat) ∘ (splitMulti "_") ∘ groupEscaped -- don't split on escaped underscores!
         -- this also ignores ignored non-terminals automatically
 
-  grammar : List (List Char)
+  grammar : List String
   grammar =
     "space'$" ∷ "space'$=newline=_space'_" ∷ "space'$=space=_space'_" ∷
     "space$=newline=_space'_" ∷ "space$=space=_space'_" ∷
 
-    "index'$" ∷ map (λ c → "index'$" ++ [ c ] ++ "_index'_") digits ++
-    map (λ c → "index$" ++ [ c ] ++ "_index'_") digits ++
+    "index'$" ∷ map (λ c → fromList ("index'$" ++ [ c ] ++ "_index'_")) digits ++
+    map (λ c → fromList ("index$" ++ [ c ] ++ "_index'_")) digits ++
     "var$_string_" ∷ "var$_index_" ∷
 
     "sort$=ast=" ∷ "sort$=sq=" ∷
@@ -86,9 +88,9 @@ private
     "lettail$=dot=" ∷ "lettail$=colon=^space'^_term_^space'^=dot=" ∷
     []
 
-  sortGrammar : List (List Char) → SimpleMap (List Char) (List (List Char))
-  sortGrammar G = mapSnd (map (dropHeadIfAny ∘ dropWhile (¬? ∘ _≟ '$'))) $
-    mapFromList (takeWhile (¬? ∘ _≟ '$')) G
+  sortGrammar : List String → SimpleMap String (List String)
+  sortGrammar G = mapSnd (map (fromList ∘ dropHeadIfAny ∘ dropWhile (¬? ∘ _≟ '$'))) $
+    mapFromList (fromList ∘ takeWhile (¬? ∘ _≟ '$')) $ map toList G
 
   toInductiveData : String → String → List String → InductiveData
   toInductiveData namespace name constrs =
@@ -132,7 +134,7 @@ private
   initEnvConstrs : List InductiveData
   initEnvConstrs = stringData ∷
     (map
-      (λ { (name , rule) → toInductiveData "init" (fromList name) (map fromList rule) }) $
+      (λ { (name , rule) → toInductiveData "init" name rule }) $
       sortGrammar grammar)
 
   definedGrammar : List (String × String)
@@ -160,12 +162,12 @@ private
     ∷ "let init$pair := λ A : * λ B : * λ a : A λ b : B Λ X : * λ p : Π _ : A Π _ : B X [[p a] b]."
     ∷ "let eval := λ x : ω init$metaResult x." ∷ "seteval eval init stmt." ∷ []
 
-  grammarWithChars : List (List Char)
+  grammarWithChars : List String
   grammarWithChars = grammar ++
-    map ("nameTailChar$" ++_) (map escapeChar nameTails) ++
-    map ("nameInitChar$" ++_) (map escapeChar nameInits) ++
-    map (toList ∘ proj₁) definedGrammar ++
-    "char$!!" ∷ "var$_string_" ∷ "var$_index_" ∷ []
+    map (λ c → fromList ("nameTailChar$" ++ escapeChar c)) nameTails ++
+    map (λ c → fromList ("nameInitChar$" ++ escapeChar c)) nameInits ++
+    map proj₁ definedGrammar ++
+    "char$!!" ∷ []
 
 --------------------------------------------------------------------------------
 
@@ -174,10 +176,10 @@ initEnv = "let init$char := ΚChar." + Data.String.concat
   (map simpleInductive initEnvConstrs ++ nameInitConstrs ++ nameTailConstrs ++ otherInit)
 
 -- a map from non-terminals to their possible expansions
-parseRuleMap : SimpleMap (List Char) (List (List Char))
-parseRuleMap = from-just $ sequence $ map (λ { (fst , snd) → do
-  snd' ← sequence (map (λ x → translate $ fst ++ "$" ++ x) snd)
-  return (fst , reverse snd') }) $ sortGrammar grammarWithChars
+parseRuleMap : SimpleMap String (List String)
+parseRuleMap = from-just $
+  traverse (λ where (fst , snd) → (fst ,_) <$> (traverse translateS $ reverse snd)) $
+    sortGrammar grammarWithChars
 
 coreGrammarGenerator : List String
-coreGrammarGenerator = map fromList $ from-just $ sequence $ map translate grammarWithChars
+coreGrammarGenerator = from-just $ traverse translateS grammarWithChars

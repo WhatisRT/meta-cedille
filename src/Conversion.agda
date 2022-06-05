@@ -12,7 +12,7 @@ open import Data.Tree.Instance
 open import Data.Word using (toℕ)
 open import Data.List using (uncons)
 
-open import CoreTheory
+open import Theory.TypeChecking
 open import Parse.TreeConvert using (toTerm; toName; toNameList)
 
 open import Prelude

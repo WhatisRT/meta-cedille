@@ -1,6 +1,7 @@
 module Data.List.Instance where
 
 open import Class.Equality
+open import Class.Functor
 open import Class.Monad
 open import Class.Monoid
 open import Class.Show
@@ -30,14 +31,11 @@ instance
   List-Monoid = record { mzero = [] ; _+_ = _++_ }
 
   List-Traversable : ∀ {a} -> Traversable {a} (List {a})
-  List-Traversable = record { sequence = helper }
-    where
-      helper : ∀ {a} {M : Set a → Set a} ⦃ _ : Monad M ⦄ {A : Set a} → List (M A) → M (List A)
-      helper [] = return []
-      helper (x ∷ xs) = do
-        x' <- x
-        xs' <- helper xs
-        return (x' ∷ xs')
+  List-Traversable .sequence [] = return []
+  List-Traversable .sequence (x ∷ xs) = do
+    x' <- x
+    xs' <- sequence xs
+    return (x' ∷ xs')
 
   List-Show : ∀ {a} {A : Set a} {{_ : Show A}} -> Show (List A)
   List-Show = record { show = showList show }
