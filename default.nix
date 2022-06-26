@@ -39,9 +39,9 @@ let fetchFromGitHub = nixpkgs.fetchFromGitHub;
       ];
       buildPhase = ''
         cd src
-        agda --ghc --ghc-flag=-O2 --ghc-flag=-j4 meta-cedille.agda
+        agda --ghc --ghc-flag=-O2 --ghc-flag=-j$NIX_BUILD_CORES meta-cedille.agda
         cd ..'';
-      installPhase = "mkdir $out && cp src/meta-cedille $out/ && cp -r test $out/";
+      installPhase = "mkdir $out && mkdir $out/bin && cp src/meta-cedille $out/bin && cp -r test $out/";
     };
 
     self = with pinnedPkgs; {
@@ -71,8 +71,8 @@ let fetchFromGitHub = nixpkgs.fetchFromGitHub;
         src = "${self.meta-cedille}";
         buildInputs = [ time ];
         buildPhase = ''
-          ${time}/bin/time -o test-time-1 ./meta-cedille --no-repl &
-          ${time}/bin/time -o test-time-2 ./meta-cedille --no-repl --load test/Test &
+          ${time}/bin/time -o test-time-1 ./bin/meta-cedille --no-repl &
+          ${time}/bin/time -o test-time-2 ./bin/meta-cedille --no-repl --load test/Test &
           wait'';
         installPhase = "mkdir $out && cp test-time-* $out";
       };
@@ -82,7 +82,7 @@ let fetchFromGitHub = nixpkgs.fetchFromGitHub;
         src = ./.;
         buildInputs = [ bench self.meta-cedille ];
         buildPhase = ''
-                   bench '${self.meta-cedille}/meta-cedille --no-repl' '${self.meta-cedille}/meta-cedille --load test/Test --no-repl' --output bench.html
+                   bench '${self.meta-cedille}/bin/meta-cedille --no-repl' '${self.meta-cedille}/bin/meta-cedille --load test/Test --no-repl' --output bench.html
                    '';
         installPhase = "mkdir $out && cp bench.html $out";
       };
