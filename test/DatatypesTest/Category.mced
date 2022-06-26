@@ -33,10 +33,11 @@ let composition (obj : *) (hom : Π _, _ : obj. *) (C : Category obj hom) : Π a
                      Eq (hom a d) (composition a b d (composition b c d h g) f) (composition a c d h (composition a b c g f)).
       composition) C.
 
-record Iso (obj : *) (hom : Π _, _ : obj. *) (C : Category obj hom) (a, b : obj) where
-| f : hom a b
-| inv : hom b a
-| lInv : Eq (hom a a) (composition obj hom C a b a inv f) (identity obj hom C a)
-| rInv : Eq (hom b b) (composition obj hom C b a b f inv) (identity obj hom C b).
+-- This seems to loop forever?
+-- record Iso (obj : *) (hom : Π _, _ : obj. *) (C : Category obj hom) (a, b : obj) where
+-- | f : hom a b
+-- | inv : hom b a
+-- | lInv : Eq (hom a a) (composition obj hom C a b a inv f) (identity obj hom C a)
+-- | rInv : Eq (hom b b) (composition obj hom C b a b f inv) (identity obj hom C b).
 
 endModule.

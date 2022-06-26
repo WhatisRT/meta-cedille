@@ -5,6 +5,17 @@
 b-let quoteNat (n : Nat) : Term :=
   recursionNat ?Term θ{zero} (λ _ : Nat. λ rec : Term. θ{suc γ{rec}}) n.
 
+--------------------------------------------------------------------------------
+-- State: flags, module & some magic
+--
+-- The state is stored in the meta environment. Specifically, if we
+-- want to store the state s with an evaluator f, we actually set the
+-- evaluator to (f s). This means that we need to be careful to keep
+-- the state in the meta environment in sync with the actual state in
+-- computations. Also, since setting the evaluatior like that means we
+-- need a term, we need a function that quotes s.
+--------------------------------------------------------------------------------
+
 -- Flags that can be used to control the evaluator (currently only one)
 b-let EvalFlags : * := Bool.
 b-let defaultFlags : EvalFlags := false.
@@ -38,138 +49,193 @@ b-let quoteOtherState (s : OtherState) := quoteNat s.
 b-let emptyOtherState := zero.
 
 -- The additional state in the evaluator contains the ModuleState as well as the flags
-b-let EvaluatorState : * := TripleProduct EvalFlags ModuleState OtherState.
-b-let mkEvaluatorState (f : EvalFlags) (s : ModuleState) (o : OtherState) : EvaluatorState :=
+b-let EvalState : * := TripleProduct EvalFlags ModuleState OtherState.
+b-let mkEvalState (f : EvalFlags) (s : ModuleState) (o : OtherState) : EvalState :=
   mkTripleProduct ?EvalFlags ?ModuleState ?OtherState f s o.
 b-let getEvalFlags := pr31 ?EvalFlags ?ModuleState ?OtherState.
 b-let getModuleState := pr32 ?EvalFlags ?ModuleState ?OtherState.
 b-let getOtherState := pr33 ?EvalFlags ?ModuleState ?OtherState.
 
-b-let modifyModuleInState (f : Maybe Module -> Maybe Module) (s : EvaluatorState) : EvaluatorState :=
-  mkEvaluatorState (getEvalFlags s)
+b-let modifyModuleInState (f : Maybe Module -> Maybe Module) (s : EvalState) : EvalState :=
+  mkEvalState (getEvalFlags s)
                    (mkModuleState (f (ModuleStateModule (getModuleState s))) (ModuleStateDict (getModuleState s)))
                    (getOtherState s).
 
-b-let modifyModuleDictInState (f : ModuleDict -> ModuleDict) (s : EvaluatorState) : EvaluatorState :=
-  mkEvaluatorState (getEvalFlags s)
+b-let modifyModuleDictInState (f : ModuleDict -> ModuleDict) (s : EvalState) : EvalState :=
+  mkEvalState (getEvalFlags s)
                    (mkModuleState (ModuleStateModule (getModuleState s)) (f (ModuleStateDict (getModuleState s))))
                    (getOtherState s).
 
-b-let incrementStateCounter (s : EvaluatorState) : EvaluatorState :=
-  mkEvaluatorState (getEvalFlags s) (getModuleState s) (suc (getOtherState s)).
+b-let incrementStateCounter (s : EvalState) : EvalState :=
+  mkEvalState (getEvalFlags s) (getModuleState s) (suc (getOtherState s)).
 
-b-let quoteEvaluatorState (s : EvaluatorState) : Term :=
-  θ{mkEvaluatorState γ{quoteEvalFlags (getEvalFlags s)} γ{quoteModuleState (getModuleState s)} γ{quoteOtherState (getOtherState s)}}.
+b-let quoteEvalState (s : EvalState) : Term :=
+  θ{mkEvalState γ{quoteEvalFlags (getEvalFlags s)} γ{quoteModuleState (getModuleState s)} γ{quoteOtherState (getOtherState s)}}.
 
-b-let emptyEvaluatorState : EvaluatorState := mkEvaluatorState defaultFlags emptyModState emptyOtherState.
-
---------------------------------------------------------------------------------
--- EvalState monad. This is a combination of the state and meta monads
--- to give us access to the mutable state
---------------------------------------------------------------------------------
-b-let EvalState : * -> * := λ T : *. EvaluatorState -> M (Product T EvaluatorState).
-b-let pureEvalState [T : *] (t : T) : EvalState T :=
-  λ s : EvaluatorState. returnMeta ?(Product T EvaluatorState) (prodPair ?T ?EvaluatorState t s).
-b-let bindEvalState [T, T' : *] (x : EvalState T) (f : T -> EvalState T') : EvalState T' :=
-  λ s : EvaluatorState.
-    bindMeta ?(Product T EvaluatorState) ?(Product T' EvaluatorState) (x s)
-             (λ res : (Product T EvaluatorState). f (pr1 ?T ?EvaluatorState res) (pr2 ?T ?EvaluatorState res)).
-
-b-let mapEvalState [T, T' : *] (f : T -> T') (t : EvalState T) : EvalState T' :=
-  bindEvalState ?T ?T' t (λ x : T. pureEvalState ?T' (f x)).
-b-let seqEvalState [T, T' : *] (t : EvalState T) (t' : EvalState T') : EvalState T' :=
-  bindEvalState ?T ?T' t (λ _ : T. t').
-b-let sequenceEvalState [T : *] (l : List (EvalState T)) : EvalState (List T) :=
-  foldl ?(EvalState T) ?(EvalState (List T)) (λ l' : EvalState (List T). λ x : EvalState T.
-    bindEvalState ?T ?(List T) x (λ x' : T. mapEvalState ?(List T) ?(List T) (cons ?T x') l'))
-    l (pureEvalState ?(List T) (nil ?T)).
-
-b-let liftMtoEvalState [T : *] (t : M T) : EvalState T :=
-  λ s : EvaluatorState.
-    bindMeta ?T ?(Product T EvaluatorState) t
-      (λ x : T. returnMeta ?(Product T EvaluatorState) (prodPair ?T ?EvaluatorState x s)).
+b-let emptyEvalState : EvalState := mkEvalState defaultFlags emptyModState emptyOtherState.
 
 --------------------------------------------------------------------------------
--- Lift the primitives into EvalState
+-- Environment: local context
+--
+-- The environment is not stored directly in the meta environment like
+-- the state is. Instead, it is computed from the state at the
+-- beginning of a computation.
 --------------------------------------------------------------------------------
-b-let let (n : String) (t : Term) : EvalState metaResult :=
-  liftMtoEvalState ?metaResult (primLet n (TermToInitTerm t)).
-b-let annLet (n : String) (t, T : Term) : EvalState metaResult :=
-  liftMtoEvalState ?metaResult (primAnnLet n (TermToInitTerm t) (TermToInitTerm T)).
-b-let setEval (eval : Term) (NT, ns : String) : EvalState metaResult :=
-  liftMtoEvalState ?metaResult (primSetEval (TermToInitTerm eval) NT ns).
-b-let shellCmd (cmd : String) (args : List String) : EvalState String :=
-  liftMtoEvalState ?String (primShellCmd cmd args).
-b-let checkTerm (T : *) (t : Term) : EvalState T :=
-  liftMtoEvalState ?T (primCheckTerm T (TermToInitTerm t)).
-b-let parse (nt : String) (T : *) (text : String) : EvalState (Product T String) :=
-  liftMtoEvalState ?(Product T String) (primParse nt T text).
+
+b-let EvalEnv : * := List (Product String Term).
+
+b-let initEvalEnv (s : EvalState) : EvalEnv :=
+  nil ?(Product String Term).
+
+--------------------------------------------------------------------------------
+-- Eval monad. This is a reader & state monad on top of the meta monad.
+--------------------------------------------------------------------------------
+
+b-let Eval : * -> * := λ T : *. EvalEnv -> EvalState -> M (Product T EvalState).
+b-let pureEval [T : *] (t : T) : Eval T := λ e : EvalEnv. λ s : EvalState.
+  returnMeta ?(Product T EvalState) (prodPair ?T ?EvalState t s).
+b-let bindEval [T, T' : *] (x : Eval T) (f : T -> Eval T') : Eval T' :=
+  λ e : EvalEnv. λ s : EvalState.
+    bindMeta ?(Product T EvalState) ?(Product T' EvalState) (x e s)
+      (λ res : Product T EvalState. f (pr1 ?T ?EvalState res) e (pr2 ?T ?EvalState res)).
+
+-- Basic monad functions
+b-let joinEval [T : *] (t : Eval (Eval T)) :=
+  bindEval ?(Eval T) ?T t (λ t' : Eval T. t').
+b-let mapEval [T, T' : *] (f : T -> T') (t : Eval T) : Eval T' :=
+  bindEval ?T ?T' t (λ x : T. pureEval ?T' (f x)).
+b-let seqEval [T, T' : *] (t : Eval T) (t' : Eval T') : Eval T' :=
+  bindEval ?T ?T' t (λ _ : T. t').
+b-let sequenceEval [T : *] (l : List (Eval T)) : Eval (List T) :=
+  foldl ?(Eval T) ?(Eval (List T)) (λ l' : Eval (List T). λ x : Eval T.
+    bindEval ?T ?(List T) x (λ x' : T. mapEval ?(List T) ?(List T) (cons ?T x') l'))
+    l (pureEval ?(List T) (nil ?T)).
+b-let voidEval [T : *] (x : Eval T) : Eval Unit :=
+  seqEval ?T ?Unit x (pureEval ?Unit tt).
+
+b-let liftMtoEval [T : *] (t : M T) : Eval T :=
+  λ _ : EvalEnv. λ s : EvalState.
+    bindMeta ?T ?(Product T EvalState) t
+      (λ x : T. returnMeta ?(Product T EvalState) (prodPair ?T ?EvalState x s)).
+
+-- State monad functions
+b-let getEval : Eval EvalState := λ _ : EvalEnv. λ s : EvalState.
+  returnMeta ?(Product EvalState EvalState) (prodPair ?EvalState ?EvalState s s).
+b-let setEval (s : EvalState) : Eval Unit := λ _ : EvalEnv. λ _ : EvalState.
+  returnMeta ?(Product Unit EvalState) (prodPair ?Unit ?EvalState tt s).
+b-let modifyEval (f : EvalState -> EvalState) : Eval Unit :=
+  bindEval ?EvalState ?Unit getEval (λ s : EvalState. setEval (f s)).
+
+b-let getModuleState' : Eval ModuleState := mapEval ?EvalState ?ModuleState getModuleState getEval.
+b-let modifyModuleState (f : ModuleState -> ModuleState) : Eval Unit :=
+  modifyEval (λ s : EvalState. mkEvalState (getEvalFlags s) (f (getModuleState s)) (getOtherState s)).
+b-let setModuleState (s : ModuleState) : Eval Unit :=
+  bindEval ?EvalState ?Unit getEval
+    (λ s' : EvalState. setEval (mkEvalState (getEvalFlags s') s (getOtherState s'))).
+
+b-let getFlags : Eval EvalFlags :=
+  mapEval ?EvalState ?EvalFlags getEvalFlags getEval.
+b-let modifyEvalFlags (f : EvalFlags -> EvalFlags) : Eval Unit :=
+  modifyEval (λ s : EvalState. mkEvalState (f (getEvalFlags s)) (getModuleState s) (getOtherState s)).
+b-let modifyOtherState (f : OtherState -> OtherState) : Eval Unit :=
+  modifyEval (λ s : EvalState. mkEvalState (getEvalFlags s) (getModuleState s) (f (getOtherState s))).
+
+-- Reader monad functions
+b-let askEval : Eval EvalEnv := λ e : EvalEnv. λ s : EvalState.
+  returnMeta ?(Product EvalEnv EvalState) (prodPair ?EvalEnv ?EvalState e s).
+
+--------------------------------------------------------------------------------
+-- Lift the primitives into Eval
+--------------------------------------------------------------------------------
+b-let let (n : String) (t : Term) : Eval metaResult :=
+  liftMtoEval ?metaResult (primLet n (TermToInitTerm t)).
+b-let annLet (n : String) (t, T : Term) : Eval metaResult :=
+  liftMtoEval ?metaResult (primAnnLet n (TermToInitTerm t) (TermToInitTerm T)).
+b-let setMEnv (eval : Term) (NT, ns : String) : Eval metaResult :=
+  liftMtoEval ?metaResult (primSetEval (TermToInitTerm eval) NT ns).
+b-let shellCmd (cmd : String) (args : List String) : Eval String :=
+  liftMtoEval ?String (primShellCmd cmd args).
+b-let checkTerm (T : *) (t : Term) : Eval T :=
+  liftMtoEval ?T (primCheckTerm T (TermToInitTerm t)).
+b-let parse (nt : String) (T : *) (text : String) : Eval (Product T String) :=
+  liftMtoEval ?(Product T String) (primParse nt T text).
 -- normalize is currently broken
-b-let normalize (t : Term) : EvalState Term :=
-  liftMtoEvalState ?Term (mapMeta ?init$term ?Term initTermToTerm (primNormalize (TermToInitTerm t))).
-b-let headNormalize (t : Term) : EvalState Term :=
-  liftMtoEvalState ?Term (mapMeta ?init$term ?Term initTermToTerm (primHeadNormalize (TermToInitTerm t))).
-b-let inferType (t : Term) : EvalState Term :=
-  liftMtoEvalState ?Term (mapMeta ?init$term ?Term initTermToTerm (primInferType (TermToInitTerm t))).
-b-let import (s : String) : EvalState metaResult :=
-  liftMtoEvalState ?metaResult (primImport s).
+b-let normalize (t : Term) : Eval Term :=
+  liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm (primNormalize (TermToInitTerm t))).
+b-let headNormalize (t : Term) : Eval Term :=
+  liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm (primHeadNormalize (TermToInitTerm t))).
+b-let inferType (t : Term) : Eval Term :=
+  liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm (primInferType (TermToInitTerm t))).
+
+-- Importing is special, see below
+-- b-let import (s : String) : Eval metaResult :=
+--   liftMtoEval ?metaResult (primImport s).
+
+b-let getEval' : Eval Term :=
+  liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm primGetEval).
 
 --------------------------------------------------------------------------------
--- Define the new statement type & useful functions
+-- Statements are just special Eval computations that run at the top level
 --------------------------------------------------------------------------------
-b-let init$newStmt : * := EvalState metaResult.
+b-let init$newStmt : * := Eval metaResult.
 
-b-let stmtToNewStmt (stmt : M metaResult) : init$newStmt :=
-  liftMtoEvalState ?metaResult stmt.
+-- Useful functions for working with statements
+b-let emptyStmt : init$newStmt := pureEval ?metaResult emptyMetaResult.
 
-b-let updateEvalState (s : EvaluatorState) : init$newStmt :=
-  setEval (appSingle θ{evalNewStmt} (quoteEvaluatorState s)) "init" "newStmt".
-
-b-let getEvalState : EvalState EvaluatorState :=
-  λ s : EvaluatorState. returnMeta ?(Product EvaluatorState EvaluatorState) (prodPair ?EvaluatorState ?EvaluatorState s s).
-b-let setEvalState (s : EvaluatorState) : EvalState Unit :=
-  seqEvalState ?metaResult ?Unit
-    (updateEvalState s)
-    (λ _ : EvaluatorState. returnMeta ?(Product Unit EvaluatorState) (prodPair ?Unit ?EvaluatorState tt s)).
-b-let modifyEvalState (f : EvaluatorState -> EvaluatorState) : EvalState Unit :=
-  bindEvalState ?EvaluatorState ?Unit getEvalState
-    (λ s : EvaluatorState. setEvalState (f s)).
-b-let getModuleState' : EvalState ModuleState := mapEvalState ?EvaluatorState ?ModuleState getModuleState getEvalState.
-b-let voidEvalState [T : *] (x : EvalState T) : EvalState Unit :=
-  seqEvalState ?T ?Unit x (pureEvalState ?Unit tt).
-
-b-let getFlags : EvalState EvalFlags :=
-  mapEvalState ?EvaluatorState ?EvalFlags getEvalFlags getEvalState.
-b-let modifyEvalFlags (f : EvalFlags -> EvalFlags) : EvalState Unit :=
-  modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (f (getEvalFlags s)) (getModuleState s) (getOtherState s)).
-b-let modifyModuleState (f : ModuleState -> ModuleState) : EvalState Unit :=
-  modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (getEvalFlags s) (f (getModuleState s)) (getOtherState s)).
-b-let modifyOtherState (f : OtherState -> OtherState) : EvalState Unit :=
-  modifyEvalState (λ s : EvaluatorState. mkEvaluatorState (getEvalFlags s) (getModuleState s) (f (getOtherState s))).
-
-b-let emptyStmt : init$newStmt := pureEvalState ?metaResult emptyMetaResult.
+b-let evalUnitToNewStmt (x : Eval Unit) : init$newStmt :=
+  seqEval ?Unit ?metaResult x (pureEval ?metaResult emptyMetaResult).
 
 b-let seqNewStmt (s, s' : init$newStmt) : init$newStmt :=
-  seqEvalState ?metaResult ?metaResult s s'.
+  seqEval ?metaResult ?metaResult s s'.
 
 b-let seqNewStmts (l : List init$newStmt) : init$newStmt :=
   foldl ?init$newStmt ?init$newStmt seqNewStmt (reverse ?init$newStmt l) emptyStmt.
 
-b-let evalStateUnitToNewStmt (x : EvalState Unit) : init$newStmt :=
-  seqEvalState ?Unit ?metaResult x (pureEvalState ?metaResult emptyMetaResult).
+-- Lift old statements
+b-let stmtToNewStmt (stmt : M metaResult) : init$newStmt :=
+  liftMtoEval ?metaResult stmt.
 
-b-let modifyEvalStateStmt (f : EvaluatorState -> EvaluatorState) : init$newStmt :=
-  evalStateUnitToNewStmt (modifyEvalState f).
+-- Some statements that will get their syntax later
+b-let modifyEvalStmt (f : EvalState -> EvalState) : init$newStmt :=
+  evalUnitToNewStmt (modifyEval f).
 
-b-let updateModuleState (s : ModuleState) : EvalState Unit :=
-  bindEvalState ?EvaluatorState ?Unit getEvalState
-    (λ s' : EvaluatorState. setEvalState (mkEvaluatorState (getEvalFlags s') s (getOtherState s'))).
+b-let updateMEnv : init$newStmt :=
+  bindEval ?EvalState ?metaResult getEval (λ s : EvalState.
+    setMEnv (appSingle θ{evalNewStmt} (quoteEvalState s)) "init" "newStmt").
 
 b-let echoStmt (s : String) : init$newStmt :=
-  mapEvalState ?String ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [String | s])).
+  mapEval ?String ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [String | s])).
+
+b-let readFile (filename : String) : Eval String := shellCmd "cat" (listToStringList [String| filename]).
 
 b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
-  bindEvalState ?EvalFlags ?metaResult getFlags (λ f : EvalFlags.
+  bindEval ?EvalFlags ?metaResult getFlags (λ f : EvalFlags.
     ifthenelse ?init$newStmt (or (not (getAnnReq f)) (letInfoHasAnn i))
       (stmtToNewStmt (convertLetInfo i))
       (echoStmt "The provided command has no type annotation!")).
+
+--------------------------------------------------------------------------------
+-- Importing is special
+--
+-- We need to make sure the state in the meta environment is tracked
+-- correctly accross imports. We could either have some mechanism to
+-- get the state from the import primitive, or we can just make our
+-- own.
+--------------------------------------------------------------------------------
+
+b-let Evaluator : * := init$newStmt -> M (Product metaResult EvalState).
+b-let import (filename : String) : init$newStmt :=
+  seqEval ?metaResult ?metaResult
+    (liftMtoEval ?metaResult (primImport filename))
+    (bindEval ?Evaluator ?metaResult (bindEval ?Term ?Evaluator getEval' (checkTerm Evaluator))
+      (λ ev : Evaluator. bindEval ?EvalState ?metaResult
+        (liftMtoEval ?EvalState (mapMeta ?(Product metaResult EvalState) ?EvalState
+                                         (pr2 ?metaResult ?EvalState) (ev emptyStmt)))
+        (λ s : EvalState. evalUnitToNewStmt (setEval s)))).
+
+--------------------------------------------------------------------------------
+-- Invoking Eval computations.
+--------------------------------------------------------------------------------
+
+b-let runEval [T : *] (eval : Eval T) (s : EvalState) : M (Product T EvalState) :=
+  (bindEval ?T ?T eval (λ t : T. seqEval ?metaResult ?T updateMEnv (pureEval ?T t))) (initEvalEnv s) s.

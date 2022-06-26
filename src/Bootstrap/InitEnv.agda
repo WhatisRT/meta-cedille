@@ -82,6 +82,7 @@ private
     "term$=zeta=InferType^space^_term_" ∷
     "term$=zeta=CatchErr^space^_term_^space^_term_" ∷ -- this is not actually in PrimMeta
     "term$=zeta=Import^space^_term_" ∷
+    "term$=zeta=GetEval" ∷
     "term$=kappa=_char_" ∷ -- this constructs a Char
     "term$=gamma=^space^_term_^space^_term_" ∷ -- charEq
 
@@ -132,10 +133,7 @@ private
   nameTailConstrs = map (flip charDataConstructor "init$nameTailChar$") nameTails
 
   initEnvConstrs : List InductiveData
-  initEnvConstrs = stringData ∷
-    (map
-      (λ { (name , rule) → toInductiveData "init" name rule }) $
-      sortGrammar grammar)
+  initEnvConstrs = stringData ∷ ((uncurry (toInductiveData "init")) <$> sortGrammar grammar)
 
   definedGrammar : List (String × String)
   definedGrammar =

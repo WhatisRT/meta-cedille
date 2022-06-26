@@ -6,8 +6,6 @@ import test/BetterNotation.
 import test/LambdaCalc.
 import test/LambdaCalcExample.
 
-import test/NatSyntax.
-
 import test/Eq.
 
 import test/Datatypes.

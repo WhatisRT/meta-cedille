@@ -225,6 +225,10 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
       (inj₁ x) → throwError x
       (inj₂ y) → parseAndExecute y >>= λ res → return (res , quoteToAnnTerm res)
 
+  executePrimitive GetEval t = do
+    ev ← MetaEnv.evaluator <$> getMeta
+    return (strResult "" , quoteToAnnTerm ev)
+
   executeBootstrapStmt (Let n t T) = do
     T ← case T of λ where
       (just T) → checkType t T >> return T

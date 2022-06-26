@@ -2,9 +2,8 @@ import test/DatatypesTest/Unit.
 import test/DatatypesTest/DSum.
 
 -- The following use the module system
-import test/DatatypesTest/Maybe.
-import test/DatatypesTest/Nat.
-import test/DatatypesTest/NatConversions.
-import test/DatatypesTest/List.
-
---import test/DatatypesTest/Category.
+loadModule DatatypesTest/Maybe.
+loadModule DatatypesTest/Nat.
+loadModule DatatypesTest/NatConversions.
+loadModule DatatypesTest/List.
+loadModule DatatypesTest/Category.

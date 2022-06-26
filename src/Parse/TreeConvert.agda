@@ -110,7 +110,10 @@ toTerm = helper []
   where
     helper : List String → PTree → Maybe AnnTerm
     helper accu y =
-      let conv1ʰ : (AnnTerm → AnnTerm) → ruleFun AnnTerm 1F
+      let conv0ʰ : (⊤ → AnnTerm) → ruleFun AnnTerm 0F
+          conv0ʰ f = f <$> (just _)
+
+          conv1ʰ : (AnnTerm → AnnTerm) → ruleFun AnnTerm 1F
           conv1ʰ f x = f <$> helper accu x
 
           conv2ʰ : (AnnTerm → AnnTerm → AnnTerm) → ruleFun AnnTerm 2F
@@ -144,7 +147,7 @@ toTerm = helper []
 
         ("β^space^_term_^space^_term_" , 2F , conv2ʰ Beta-A) ∷
         ("δ^space^_term_^space^_term_" , 2F , conv2ʰ Delta-A) ∷
-        ("σ^space^_term_" , 1F , conv1ʰ Sigma-A) ∷
+        ("σ^space^_term_"              , 1F , conv1ʰ Sigma-A) ∷
 
         ("[^space'^_term_^space^_term_^space'^]" , 2F , conv2ʰ App-A) ∷
         ("<^space'^_term_^space^_term_^space'^>" , 2F , conv2ʰ AppE-A) ∷
@@ -170,22 +173,23 @@ toTerm = helper []
           return $ Rho-A t t' t'')) ∷
 
         ("φ^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰ Phi-A) ∷
-        ("=^space^_term_^space^_term_" , 2F , conv2ʰ Eq-A) ∷
-        ("ω^space^_term_" , 1F , conv1ʰ M-A) ∷
-        ("μ^space^_term_^space^_term_" , 2F , conv2ʰ Mu-A) ∷
-        ("ε^space^_term_" , 1F , conv1ʰ Epsilon-A) ∷
+        ("=^space^_term_^space^_term_"              , 2F , conv2ʰ Eq-A) ∷
+        ("ω^space^_term_"                           , 1F , conv1ʰ M-A) ∷
+        ("μ^space^_term_^space^_term_"              , 2F , conv2ʰ Mu-A) ∷
+        ("ε^space^_term_"                           , 1F , conv1ʰ Epsilon-A) ∷
 
-        ("ζLet^space^_term_^space^_term_" , 2F , conv2ʰᶜ (Ev-A Let)) ∷
-        ("ζAnnLet^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰᶜ (Ev-A AnnLet)) ∷
+        ("ζLet^space^_term_^space^_term_"                  , 2F , conv2ʰᶜ (Ev-A Let)) ∷
+        ("ζAnnLet^space^_term_^space^_term_^space^_term_"  , 3F , conv3ʰᶜ (Ev-A AnnLet)) ∷
         ("ζSetEval^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰᶜ (Ev-A SetEval)) ∷
-        ("ζShellCmd^space^_term_^space^_term_" , 2F , conv2ʰᶜ (Ev-A ShellCmd)) ∷
-        ("ζCheckTerm^space^_term_^space^_term_" , 2F , conv2ʰᶜ (Ev-A CheckTerm)) ∷
-        ("ζParse^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰᶜ (Ev-A Parse)) ∷
-        ("ζCatchErr^space^_term_^space^_term_" , 2F , conv2ʰ Gamma-A) ∷
-        ("ζNormalize^space^_term_" , 1F , conv1ʰ (Ev-A Normalize)) ∷
-        ("ζHeadNormalize^space^_term_" , 1F , conv1ʰ (Ev-A HeadNormalize)) ∷
-        ("ζInferType^space^_term_" , 1F , conv1ʰ (Ev-A InferType)) ∷
-        ("ζImport^space^_term_" , 1F , conv1ʰ (Ev-A Import)) ∷
+        ("ζShellCmd^space^_term_^space^_term_"             , 2F , conv2ʰᶜ (Ev-A ShellCmd)) ∷
+        ("ζCheckTerm^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev-A CheckTerm)) ∷
+        ("ζParse^space^_term_^space^_term_^space^_term_"   , 3F , conv3ʰᶜ (Ev-A Parse)) ∷
+        ("ζCatchErr^space^_term_^space^_term_"             , 2F , conv2ʰ Gamma-A) ∷
+        ("ζNormalize^space^_term_"                         , 1F , conv1ʰ (Ev-A Normalize)) ∷
+        ("ζHeadNormalize^space^_term_"                     , 1F , conv1ʰ (Ev-A HeadNormalize)) ∷
+        ("ζInferType^space^_term_"                         , 1F , conv1ʰ (Ev-A InferType)) ∷
+        ("ζImport^space^_term_"                            , 1F , conv1ʰ (Ev-A Import)) ∷
+        ("ζGetEval"                                        , 0F , conv0ʰ (Ev-A GetEval)) ∷
 
         ("Κ_const_" , 1F , (λ z → Const-A <$> toConst z)) ∷
         ("κ_char_" , 1F , (λ z → Char-A <$> toChar z <∣> toChar' z)) ∷

@@ -20,3 +20,5 @@ import test/BetterNotation/ModuleFunction.
 import test/BetterNotation/BetterSyntax.
 
 import test/BetterNotation/InfixNotations.
+
+import test/NatSyntax.
