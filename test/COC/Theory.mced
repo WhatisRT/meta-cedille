@@ -5,7 +5,7 @@
 module Theory.
 
 -- Temporary workaround to make all the names that `data` needs available
-import test/Datatypes/ModuleCompatibility.
+import Datatypes/ModuleCompatibility.
 
 importModule List.
 importModule Maybe.

@@ -101,7 +101,7 @@ b-let importExternalStmt (name : String) : init$newStmt :=
 
 b-let letInfoToNewStmtMod (i : LetInfo) : init$newStmt :=
   bindEval ?EvalState ?metaResult getEval (λ s : EvalState.
-    ifthenelse ?init$newStmt (or (not (getAnnReq (getEvalFlags s))) (letInfoHasAnn i))
+    ifthenelse ?init$newStmt (or (not (getAnnReq (getEvalOpts s))) (letInfoHasAnn i))
       (letInMaybeModule i (ModuleStateModule (getModuleState s)))
       (echoStmt "The provided command has no type annotation!")).
 
@@ -158,7 +158,7 @@ b-let importModuleOrStmt (n : ModuleName) (l : List App) (stmt : init$newStmt) :
           (echoStmt "Module currently not loaded!"))).
 
 b-let loadModule (n : ModuleName) (prefix : String) : init$newStmt :=
-  importFile (stringApp prefix (moduleNameToPath n)).
+  importFile (moduleNameToPath n).
 
 b-let importModule' (n : ModuleName) (l : List App) : init$newStmt :=
   importModuleOrStmt n l (echoStmt "Could not find module!").

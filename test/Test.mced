@@ -1,14 +1,14 @@
-import test/Basic.
-import test/BasicTest.
+import bootstrap/Bootstrap.
 
-import test/BetterNotation.
+set PWD "test/".
+import BootstrapTest.
 
-import test/LambdaCalc.
-import test/LambdaCalcExample.
+import LambdaCalc.
+import LambdaCalcExample.
 
-import test/Eq.
+import Eq.
 
-import test/Datatypes.
-import test/DatatypesTest.
+import Datatypes.
+import DatatypesTest.
 
-import test/COC.
+import COC.

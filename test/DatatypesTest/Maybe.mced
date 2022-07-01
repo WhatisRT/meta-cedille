@@ -1,7 +1,7 @@
 module Maybe.
 
 -- Temporary workaround to make all the names that `data` needs available
-import test/Datatypes/ModuleCompatibility.
+import Datatypes/ModuleCompatibility.
 
 data Maybe (A : *) where
 | nothing : Maybe A

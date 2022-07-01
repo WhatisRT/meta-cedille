@@ -1,7 +1,7 @@
 module List.
 
 -- Temporary workaround to make all the names that `data` needs available
-import test/Datatypes/ModuleCompatibility.
+import Datatypes/ModuleCompatibility.
 
 Given Bool ifthenelse.
 

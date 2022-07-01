@@ -1,7 +1,7 @@
 module Nat.
 
 -- Temporary workaround to make all the names that `data` needs available
-import test/Datatypes/ModuleCompatibility.
+import Datatypes/ModuleCompatibility.
 
 Given Eq refl Bool false true.
 

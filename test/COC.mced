@@ -1,8 +1,8 @@
-import test/COC/Map.
-import test/COC/Theory.
-import test/COC/TermAliases.
-import test/COC/Conversion.
-import test/COC/Parsers.
+import COC/Map.
+import COC/Theory.
+import COC/TermAliases.
+import COC/Conversion.
+import COC/Parsers.
 
 c-let Void : * := Π X : *. X.
 

@@ -29,8 +29,14 @@ b-let init$flag$false := false.
 
 -- set statements
 
+b-let modifyAndUpdateEvalOpts (f : EvalOpts -> EvalOpts) : init$newStmt :=
+  seqEval ?Unit ?metaResult (modifyEvalOpts f) updateMEnv.
+
 b-let init$setStmt$RequireTypeAnnotations^space^_flag_ (b : Bool) :=
-  seqEval ?Unit ?metaResult (modifyEvalFlags (modifyAnnReq b)) updateMEnv.
+  modifyAndUpdateEvalOpts (setAnnReq b).
+b-let init$setStmt$PWD^space^_term_ (dirT : Term) :=
+  bindEval ?String ?metaResult (checkTerm String dirT)
+    (λ dir : String. modifyAndUpdateEvalOpts (setWorkingDir dir)).
 
 -- "native" statements in the new syntax
 b-let init$newStmt'$set^space^_setStmt_=dot= (s : init$newStmt) := s.

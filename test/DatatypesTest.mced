@@ -1,5 +1,5 @@
-import test/DatatypesTest/Unit.
-import test/DatatypesTest/DSum.
+import DatatypesTest/Unit.
+import DatatypesTest/DSum.
 
 -- The following use the module system
 loadModule DatatypesTest/Maybe.

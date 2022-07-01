@@ -17,14 +17,21 @@ b-let quoteNat (n : Nat) : Term :=
 --------------------------------------------------------------------------------
 
 -- Flags that can be used to control the evaluator (currently only one)
-b-let EvalFlags : * := Bool.
-b-let defaultFlags : EvalFlags := false.
-b-let quoteEvalFlags (f : EvalFlags) : Term :=
-  ifthenelse ?Term f θ{true} θ{false}.
+b-let EvalOpts : * := Product Bool String.
+b-let defaultFlags : EvalOpts := prodPair ?Bool ?String false "".
+b-let quoteEvalOpts : EvalOpts -> Term :=
+  recursionProduct ?Bool ?String ?Term (λ annReq : Bool. λ workingDir : String.
+    θ{prodPair ?Bool ?String γ{quoteBool annReq} γ{quote$String workingDir}}).
 
 -- Controls whether `let` has to have a type annotation at the end to be accepted
-b-let getAnnReq (f : EvalFlags) : Bool := f.
-b-let modifyAnnReq (b : Bool) (_ : EvalFlags) : EvalFlags := b.
+b-let getAnnReq               : EvalOpts -> Bool := pr1 ?Bool ?String.
+b-let setAnnReq (b : Bool) : EvalOpts -> EvalOpts :=
+  productMap1 ?Bool ?String ?Bool (λ _ : Bool. b).
+
+-- Working directory for imports
+b-let getWorkingDir                : EvalOpts -> String := pr2 ?Bool ?String.
+b-let setWorkingDir (dir : String) : EvalOpts -> EvalOpts :=
+  productMap2 ?Bool ?String ?String (λ _ : String. dir).
 
 -- ModuleState contains a module if we are in the process of defining one, as
 -- well as the module dictionary. Quoting ModuleState requires the Module and
@@ -44,33 +51,34 @@ b-let quoteDict (d : ModuleDict) : Term := sVarTerm (mkModuleDictName d).
 b-let quoteModuleState (s : ModuleState) : Term :=
   θ{mkModuleState γ{quoteMaybeModule (ModuleStateModule s)} γ{quoteDict (ModuleStateDict s)}}.
 
+-- OtherState is a trick/hack for storing arbitrary things in the state
 b-let OtherState := Nat. -- used for counting
 b-let quoteOtherState (s : OtherState) := quoteNat s.
 b-let emptyOtherState := zero.
 
 -- The additional state in the evaluator contains the ModuleState as well as the flags
-b-let EvalState : * := TripleProduct EvalFlags ModuleState OtherState.
-b-let mkEvalState (f : EvalFlags) (s : ModuleState) (o : OtherState) : EvalState :=
-  mkTripleProduct ?EvalFlags ?ModuleState ?OtherState f s o.
-b-let getEvalFlags := pr31 ?EvalFlags ?ModuleState ?OtherState.
-b-let getModuleState := pr32 ?EvalFlags ?ModuleState ?OtherState.
-b-let getOtherState := pr33 ?EvalFlags ?ModuleState ?OtherState.
+b-let EvalState : * := TripleProduct EvalOpts ModuleState OtherState.
+b-let mkEvalState (f : EvalOpts) (s : ModuleState) (o : OtherState) : EvalState :=
+  mkTripleProduct ?EvalOpts ?ModuleState ?OtherState f s o.
+b-let getEvalOpts := pr31 ?EvalOpts ?ModuleState ?OtherState.
+b-let getModuleState := pr32 ?EvalOpts ?ModuleState ?OtherState.
+b-let getOtherState := pr33 ?EvalOpts ?ModuleState ?OtherState.
 
 b-let modifyModuleInState (f : Maybe Module -> Maybe Module) (s : EvalState) : EvalState :=
-  mkEvalState (getEvalFlags s)
+  mkEvalState (getEvalOpts s)
                    (mkModuleState (f (ModuleStateModule (getModuleState s))) (ModuleStateDict (getModuleState s)))
                    (getOtherState s).
 
 b-let modifyModuleDictInState (f : ModuleDict -> ModuleDict) (s : EvalState) : EvalState :=
-  mkEvalState (getEvalFlags s)
+  mkEvalState (getEvalOpts s)
                    (mkModuleState (ModuleStateModule (getModuleState s)) (f (ModuleStateDict (getModuleState s))))
                    (getOtherState s).
 
 b-let incrementStateCounter (s : EvalState) : EvalState :=
-  mkEvalState (getEvalFlags s) (getModuleState s) (suc (getOtherState s)).
+  mkEvalState (getEvalOpts s) (getModuleState s) (suc (getOtherState s)).
 
 b-let quoteEvalState (s : EvalState) : Term :=
-  θ{mkEvalState γ{quoteEvalFlags (getEvalFlags s)} γ{quoteModuleState (getModuleState s)} γ{quoteOtherState (getOtherState s)}}.
+  θ{mkEvalState γ{quoteEvalOpts (getEvalOpts s)} γ{quoteModuleState (getModuleState s)} γ{quoteOtherState (getOtherState s)}}.
 
 b-let emptyEvalState : EvalState := mkEvalState defaultFlags emptyModState emptyOtherState.
 
@@ -128,17 +136,17 @@ b-let modifyEval (f : EvalState -> EvalState) : Eval Unit :=
 
 b-let getModuleState' : Eval ModuleState := mapEval ?EvalState ?ModuleState getModuleState getEval.
 b-let modifyModuleState (f : ModuleState -> ModuleState) : Eval Unit :=
-  modifyEval (λ s : EvalState. mkEvalState (getEvalFlags s) (f (getModuleState s)) (getOtherState s)).
+  modifyEval (λ s : EvalState. mkEvalState (getEvalOpts s) (f (getModuleState s)) (getOtherState s)).
 b-let setModuleState (s : ModuleState) : Eval Unit :=
   bindEval ?EvalState ?Unit getEval
-    (λ s' : EvalState. setEval (mkEvalState (getEvalFlags s') s (getOtherState s'))).
+    (λ s' : EvalState. setEval (mkEvalState (getEvalOpts s') s (getOtherState s'))).
 
-b-let getFlags : Eval EvalFlags :=
-  mapEval ?EvalState ?EvalFlags getEvalFlags getEval.
-b-let modifyEvalFlags (f : EvalFlags -> EvalFlags) : Eval Unit :=
-  modifyEval (λ s : EvalState. mkEvalState (f (getEvalFlags s)) (getModuleState s) (getOtherState s)).
+b-let getEvalOpts' : Eval EvalOpts :=
+  mapEval ?EvalState ?EvalOpts getEvalOpts getEval.
+b-let modifyEvalOpts (f : EvalOpts -> EvalOpts) : Eval Unit :=
+  modifyEval (λ s : EvalState. mkEvalState (f (getEvalOpts s)) (getModuleState s) (getOtherState s)).
 b-let modifyOtherState (f : OtherState -> OtherState) : Eval Unit :=
-  modifyEval (λ s : EvalState. mkEvalState (getEvalFlags s) (getModuleState s) (f (getOtherState s))).
+  modifyEval (λ s : EvalState. mkEvalState (getEvalOpts s) (getModuleState s) (f (getOtherState s))).
 
 -- Reader monad functions
 b-let askEval : Eval EvalEnv := λ e : EvalEnv. λ s : EvalState.
@@ -204,12 +212,14 @@ b-let updateMEnv : init$newStmt :=
     setMEnv (appSingle θ{evalNewStmt} (quoteEvalState s)) "init" "newStmt").
 
 b-let echoStmt (s : String) : init$newStmt :=
-  mapEval ?String ?metaResult strToMetaResult (shellCmd "echo" (listToStringList [String | s])).
+  mapEval ?String ?metaResult strToMetaResult (shellCmd "echo" [String | s]).
 
-b-let readFile (filename : String) : Eval String := shellCmd "cat" (listToStringList [String| filename]).
+b-let readFile (filename : String) : Eval String := shellCmd "cat" [String| filename].
+
+b-let getPWD : Eval String := shellCmd "pwd" [String|].
 
 b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
-  bindEval ?EvalFlags ?metaResult getFlags (λ f : EvalFlags.
+  bindEval ?EvalOpts ?metaResult getEvalOpts' (λ f : EvalOpts.
     ifthenelse ?init$newStmt (or (not (getAnnReq f)) (letInfoHasAnn i))
       (stmtToNewStmt (convertLetInfo i))
       (echoStmt "The provided command has no type annotation!")).
@@ -225,13 +235,14 @@ b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
 
 b-let Evaluator : * := init$newStmt -> M (Product metaResult EvalState).
 b-let import (filename : String) : init$newStmt :=
-  seqEval ?metaResult ?metaResult
-    (liftMtoEval ?metaResult (primImport filename))
-    (bindEval ?Evaluator ?metaResult (bindEval ?Term ?Evaluator getEval' (checkTerm Evaluator))
-      (λ ev : Evaluator. bindEval ?EvalState ?metaResult
-        (liftMtoEval ?EvalState (mapMeta ?(Product metaResult EvalState) ?EvalState
-                                         (pr2 ?metaResult ?EvalState) (ev emptyStmt)))
-        (λ s : EvalState. evalUnitToNewStmt (setEval s)))).
+  bindEval ?String ?metaResult (mapEval ?EvalOpts ?String getWorkingDir getEvalOpts')
+    (λ workingDir : String. seqEval ?metaResult ?metaResult
+      (liftMtoEval ?metaResult (primImport (stringConcat [String| workingDir, filename])))
+      (bindEval ?Evaluator ?metaResult (bindEval ?Term ?Evaluator getEval' (checkTerm Evaluator))
+        (λ ev : Evaluator. bindEval ?EvalState ?metaResult
+          (liftMtoEval ?EvalState (mapMeta ?(Product metaResult EvalState) ?EvalState
+                                           (pr2 ?metaResult ?EvalState) (ev emptyStmt)))
+          (λ s : EvalState. evalUnitToNewStmt (setEval s))))).
 
 --------------------------------------------------------------------------------
 -- Invoking Eval computations.

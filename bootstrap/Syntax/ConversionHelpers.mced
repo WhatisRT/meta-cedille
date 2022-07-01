@@ -45,7 +45,7 @@ b-let initTermToTerm (t : init$term) := t ?Term
     -- Zetas
     nothingTerm2 nothingTerm3 nothingTerm3 nothingTerm2 nothingTerm2 nothingTerm3
     nothingTerm1 nothingTerm1 nothingTerm1 nothingTerm2 nothingTerm1 nothingTerm
-    (λ _ : init$char. nothingTerm) nothingTerm2.
+    (λ c : init$char. charTerm c) nothingTerm2.
 
 -- assuming no unknowns in f and no recursive unknowns in app, infer
 -- unknowns in app and return the applied term

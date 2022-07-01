@@ -1,9 +1,9 @@
 module Category.
 
 -- Temporary workaround to make all the names that `data` needs available
-import test/Datatypes/ModuleCompatibility.
+import Datatypes/ModuleCompatibility.
 
-import test/Eq.
+import Eq.
 
 record Category (obj : *) (hom : Π _, _ : obj. *) where
 | identity      : Π a : obj. hom a a
