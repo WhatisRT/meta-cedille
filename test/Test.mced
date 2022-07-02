@@ -2,6 +2,7 @@ import bootstrap/Bootstrap.
 
 set PWD "test/".
 import BootstrapTest.
+import ErrorMonad.
 
 import LambdaCalc.
 import LambdaCalcExample.

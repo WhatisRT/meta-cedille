@@ -13,9 +13,10 @@ b-let runEcho (t : Term) : init$newStmt := runMetaCommand θ{echoStmt γ{t}}.
 
 b-let reloadMEnv : init$newStmt := evalUnitToNewStmt (modifyEval (λ e : EvalState. e)).
 
-b-let showTypeStmt (t : Term) : init$newStmt :=
-  bindEval ?Term ?metaResult (inferType t) (λ x : Term.
-    echoStmt (stringConcat [String|showTerm t, " : ", showTerm x])).
+b-let showTypeStmt (tel : Telescope) (t : Term) : init$newStmt :=
+  inContext ?metaResult (map ?Param ?PreParam (pr2 ?Bool ?PreParam) tel)
+    (bindEval ?String ?metaResult (bindEval ?Term ?String (inferType t) showTermE) (λ x : String.
+      echoStmtL [String|showTerm t, " : ", x])).
 
 -- Syntax
 
@@ -46,7 +47,8 @@ b-let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : init$newStmt :=
 b-let init$newStmt'$runMeta^space^_multiTerm_=dot= (t : Term) : init$newStmt := runMetaCommand t.
 b-let init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
   bindEval ?Term ?metaResult (modifyTermMod t) runEcho.
-b-let init$newStmt'$showType^space^_multiTerm_=dot= (t : Term) : init$newStmt := showTypeStmt t.
+b-let init$newStmt'$showType^space^_telescope__multiTerm_=dot= (tel : Telescope) (t : Term) : init$newStmt :=
+  showTypeStmt tel t.
 b-let init$newStmt'$normalize^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
   seqEval ?Term ?metaResult (normalize t) (pureEval ?metaResult emptyMetaResult).
 b-let init$newStmt'$headNormalize^space^_multiTerm_=dot= (t : Term) : init$newStmt :=

@@ -126,3 +126,6 @@ b-let showNatBinary (n : Nat) : String :=
   showListOfDigitsBased ?Bool (λ b : Bool. ifthenelse ?String b "1" "0") (natToBoolList n).
 b-let showNatDecimal (n : Nat) : String :=
   showListOfDigitsBased ?Dec showDec (natToDecList n).
+
+b-let quoteNat (n : Nat) : Term :=
+  recursionNat ?Term θ{zero} (λ _ : Nat. λ rec : Term. θ{suc γ{rec}}) n.

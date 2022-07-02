@@ -1,0 +1,23 @@
+import bootstrap/Stage-1/Comment.
+import bootstrap/Stage-1/Parens.
+
+seteval eval init stmt.
+
+-- Define some standard datatypes and functions now
+
+import bootstrap/Stage-1/String.
+
+import bootstrap/Stage-1/MetaAliases.
+import bootstrap/Stage-1/Quote.
+
+import bootstrap/Stage-1/DSum.
+import bootstrap/Stage-1/Product.
+import bootstrap/Stage-1/Sum.
+
+import bootstrap/Stage-1/Void.
+import bootstrap/Stage-1/Unit.
+
+import bootstrap/Stage-1/Nat.
+import bootstrap/Stage-1/Bool.
+import bootstrap/Stage-1/List.
+import bootstrap/Stage-1/Maybe.

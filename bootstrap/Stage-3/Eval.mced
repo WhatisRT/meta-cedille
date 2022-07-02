@@ -1,9 +1,9 @@
 --------------------------------------------------------------------------------
--- We define functions for the new evaluator here
+-- The Eval monad
+--
+-- Computations that interact with the typechecker and carry state and
+-- an environment.
 --------------------------------------------------------------------------------
-
-b-let quoteNat (n : Nat) : Term :=
-  recursionNat ?Term θ{zero} (λ _ : Nat. λ rec : Term. θ{suc γ{rec}}) n.
 
 --------------------------------------------------------------------------------
 -- State: flags, module & some magic
@@ -16,7 +16,7 @@ b-let quoteNat (n : Nat) : Term :=
 -- need a term, we need a function that quotes s.
 --------------------------------------------------------------------------------
 
--- Flags that can be used to control the evaluator (currently only one)
+-- Flags that can be used to control the evaluator
 b-let EvalOpts : * := Product Bool String.
 b-let defaultFlags : EvalOpts := prodPair ?Bool ?String false "".
 b-let quoteEvalOpts : EvalOpts -> Term :=
@@ -24,7 +24,7 @@ b-let quoteEvalOpts : EvalOpts -> Term :=
     θ{prodPair ?Bool ?String γ{quoteBool annReq} γ{quote$String workingDir}}).
 
 -- Controls whether `let` has to have a type annotation at the end to be accepted
-b-let getAnnReq               : EvalOpts -> Bool := pr1 ?Bool ?String.
+b-let getAnnReq            : EvalOpts -> Bool := pr1 ?Bool ?String.
 b-let setAnnReq (b : Bool) : EvalOpts -> EvalOpts :=
   productMap1 ?Bool ?String ?Bool (λ _ : Bool. b).
 
@@ -90,7 +90,11 @@ b-let emptyEvalState : EvalState := mkEvalState defaultFlags emptyModState empty
 -- beginning of a computation.
 --------------------------------------------------------------------------------
 
-b-let EvalEnv : * := List (Product String Term).
+b-let Context : * := List (Product String Term).
+b-let EvalEnv : * := Context.
+
+b-let getContext (e : EvalEnv) : List (Product String Term) := e.
+b-let appendContext (ctx : Context) (e : EvalEnv) : EvalEnv := app ?PreParam e ctx.
 
 b-let initEvalEnv (s : EvalState) : EvalEnv :=
   nil ?(Product String Term).
@@ -151,6 +155,14 @@ b-let modifyOtherState (f : OtherState -> OtherState) : Eval Unit :=
 -- Reader monad functions
 b-let askEval : Eval EvalEnv := λ e : EvalEnv. λ s : EvalState.
   returnMeta ?(Product EvalEnv EvalState) (prodPair ?EvalEnv ?EvalState e s).
+b-let readerEval [T : *] (p : EvalEnv -> T) : Eval T :=
+  mapEval ?EvalEnv ?T p askEval.
+b-let localEval [T : *] (f : EvalEnv -> EvalEnv) (x : Eval T) : Eval T :=
+  λ e : EvalEnv. x (f e).
+
+b-let askContext : Eval Context := readerEval ?Context getContext.
+b-let inContext [T : *] (ctx : Context) : Eval T -> Eval T :=
+  localEval ?T (appendContext ctx).
 
 --------------------------------------------------------------------------------
 -- Lift the primitives into Eval
@@ -172,7 +184,9 @@ b-let normalize (t : Term) : Eval Term :=
   liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm (primNormalize (TermToInitTerm t))).
 b-let headNormalize (t : Term) : Eval Term :=
   liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm (primHeadNormalize (TermToInitTerm t))).
-b-let inferType (t : Term) : Eval Term :=
+
+-- inferType should also respect the context, use inferType below
+b-let inferTypeBasic (t : Term) : Eval Term :=
   liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm (primInferType (TermToInitTerm t))).
 
 -- Importing is special, see below
@@ -214,6 +228,11 @@ b-let updateMEnv : init$newStmt :=
 b-let echoStmt (s : String) : init$newStmt :=
   mapEval ?String ?metaResult strToMetaResult (shellCmd "echo" [String | s]).
 
+b-let echoStmtL (l : List String) : init$newStmt := echoStmt (stringConcat l).
+
+b-let echoStmtE (s : Eval String) : init$newStmt :=
+  bindEval ?String ?metaResult s echoStmt.
+
 b-let readFile (filename : String) : Eval String := shellCmd "cat" [String| filename].
 
 b-let getPWD : Eval String := shellCmd "pwd" [String|].
@@ -224,13 +243,21 @@ b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
       (stmtToNewStmt (convertLetInfo i))
       (echoStmt "The provided command has no type annotation!")).
 
+b-let throwEval [T : *] (s : String) : Eval T :=
+  seqEval ?metaResult ?T (echoStmt s) (checkTerm T θ{□}).
+
+b-let showTermE (t : Term) : Eval String :=
+  mapEval ?Context ?String
+    (λ ctx : Context. showTermWithContext t (reverse ?String (map ?PreParam ?String (pr1 ?String ?Term) ctx)))
+    askContext.
+
 --------------------------------------------------------------------------------
--- Importing is special
+-- Importing
 --
 -- We need to make sure the state in the meta environment is tracked
 -- correctly accross imports. We could either have some mechanism to
 -- get the state from the import primitive, or we can just make our
--- own.
+-- own. Also, importing needs to respect the working directory.
 --------------------------------------------------------------------------------
 
 b-let Evaluator : * := init$newStmt -> M (Product metaResult EvalState).
@@ -243,6 +270,36 @@ b-let import (filename : String) : init$newStmt :=
           (liftMtoEval ?EvalState (mapMeta ?(Product metaResult EvalState) ?EvalState
                                            (pr2 ?metaResult ?EvalState) (ev emptyStmt)))
           (λ s : EvalState. evalUnitToNewStmt (setEval s))))).
+
+--------------------------------------------------------------------------------
+-- inferType
+--
+-- inferType should respect the current environment. This is done by
+-- wrapping the term in lambdas, infering the type and then throwing
+-- away the pi's.
+--------------------------------------------------------------------------------
+
+b-let stripPi : Term -> Maybe Term :=
+  recursionTerm ?(Maybe Term)
+    (λ _ : init$var. nothing ?Term)
+    (λ _ : init$sort. nothing ?Term)
+    (λ b : Binder. λ _ : String. λ T, t : Term. λ _, _ : Maybe Term.
+      b ?(Maybe Term) (nothing ?Term) (nothing ?Term) (just ?Term t) (nothing ?Term))
+    (λ _ : Term. λ _ : List App. λ _ : Maybe Term. λ _ : List (Product Bool (Maybe Term)). nothing ?Term)
+    (λ _ : init$char. nothing ?Term)
+    (nothing ?Term)
+    (λ _ : Term. λ _ : Maybe Term. nothing ?Term).
+
+b-let stripPis : Nat -> Term -> Maybe Term :=
+  recursionNat ?(Term -> Maybe Term)
+    (just ?Term)
+    (λ _ : Nat. λ rec : Term -> Maybe Term. λ t : Term. bindMaybe ?Term ?Term (stripPi t) rec).
+
+b-let inferType (t : Term) : Eval Term :=
+  bindEval ?Context ?Term askContext
+    (λ ctx : Context. bindEval ?Term ?Term (inferTypeBasic (applyMultiBinder lambdaBinder ctx t))
+      (λ T : Term. maybe ?Term ?(Eval Term) (throwEval ?Term "inferType': BUG!") (pureEval ?Term)
+                         (stripPis (length ?PreParam ctx) T))).
 
 --------------------------------------------------------------------------------
 -- Invoking Eval computations.
