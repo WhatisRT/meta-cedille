@@ -113,33 +113,35 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   {-# NON_TERMINATING #-}
   -- Execute a term of type M t for some t
-  executeTerm : PureTerm → M (MetaResult × PureTerm)
+  executeTerm executeTerm' : PureTerm → M (MetaResult × PureTerm)
   executeBootstrapStmt : BootstrapStmt → M (MetaResult × AnnTerm)
   executePrimitive : (m : PrimMeta) → primMetaArgs PureTerm m → M (MetaResult × AnnTerm)
   -- Parse and execute a string
   parseAndExecute' parseAndExecuteBootstrap : String → M (MetaResult × String)
   parseAndExecute : String → M MetaResult
 
-  executeTerm (Mu-P t t₁) = do
+  executeTerm t = do
     Γ ← getContext
-    (res , t') ← executeTerm (hnfNormPure Γ t)
-    (res' , resTerm) ← executeTerm (hnfNormPure Γ (t₁ ⟪$⟫ t'))
+    executeTerm' (hnfNormPure Γ t)
+
+  executeTerm' (Mu-P t t₁) = do
+    (res , t') ← executeTerm t
+    (res' , resTerm) ← executeTerm (t₁ ⟪$⟫ t')
     return (res + res' , resTerm)
 
-  executeTerm (Epsilon-P t) = return (([] , []) , t)
+  executeTerm' (Epsilon-P t) = return (([] , []) , t)
 
-  executeTerm (Gamma-P t t') =
-    catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm s))
+  executeTerm' (Gamma-P t t') = catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm s))
 
-  executeTerm (Ev-P m t) = do
+  executeTerm' (Ev-P m t) = do
     (res , t') ← executePrimitive m t
     appendIfError (checkTypePure t' $ primMetaT m t)
                   ("Bug: Result type mismatch in ζ" + show m)
     return (res , Erase t')
 
   {-# CATCHALL #-}
-  executeTerm t =
-    throwError ("Error: " + show t + " is not a term that can be evaluated!")
+  executeTerm' t =
+    throwError ("Error: " + shortenString 2000 (show t) + " is not a term that can be evaluated!")
 
   executePrimitive Let (n , t) = do
     n ← unquoteFromTerm n
@@ -161,7 +163,6 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     executeBootstrapStmt (SetEval t n start)
 
   executePrimitive ShellCmd (t , t') = do
-    Γ ← getContext
     cmd ← unquoteFromTerm t
     args ← unquoteFromTerm t'
     res ← liftIO $ runShellCmd cmd args
@@ -246,8 +247,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
         < strResult , quoteToAnnTerm ∘ strResult > <$> return "Successfully set the evaluator"
       _       → throwError "The evaluator needs to return a M type"
 
-  executeBootstrapStmt Empty = do
-    < strResult , quoteToAnnTerm > <$> return ""
+  executeBootstrapStmt Empty = < strResult , quoteToAnnTerm > <$> return ""
 
   parseAndExecuteBootstrap s = do
     record { grammar = G } ← getMeta
@@ -266,8 +266,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
                       + (shortenString 10000 (show fst))
                       + "\nWhile parsing: " + (shortenString 10000 s))
       where _ → throwError "Trying to execute something that isn't of type M t. This should never happen!"
-    let execHnf = hnfNormPure Γ $ Erase exec
-    (res , _) ← appendIfError (executeTerm execHnf) ("\n\nError while executing input:" <+> s + "\n")
+    (res , _) ← appendIfError (executeTerm $ Erase exec) ("\n\nError while executing input:" <+> s + "\n")
     return (res , snd)
 
   parseAndExecute s = do

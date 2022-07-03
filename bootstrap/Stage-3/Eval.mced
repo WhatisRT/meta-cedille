@@ -243,6 +243,10 @@ b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
       (stmtToNewStmt (convertLetInfo i))
       (echoStmt "The provided command has no type annotation!")).
 
+b-let catchEval [T : *] (x : Eval T) (f : metaResult -> Eval T) : Eval T :=
+  λ e : EvalEnv. λ s : EvalState.
+    catchErr ?(Product T EvalState) (x e s) (λ res : metaResult. f res e s).
+
 b-let throwEval [T : *] (s : String) : Eval T :=
   seqEval ?metaResult ?T (echoStmt s) (checkTerm T θ{□}).
 
