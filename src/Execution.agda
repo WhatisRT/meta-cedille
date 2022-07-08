@@ -21,6 +21,7 @@ open import Parse.Generate
 
 open import Prelude
 open import Prelude.Strings
+open import Prelude.Nat
 
 record MetaEnv : Set where
   field
@@ -131,7 +132,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executeTerm' (Epsilon-P t) = return (([] , []) , t)
 
-  executeTerm' (Gamma-P t t') = catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm s))
+  executeTerm' (Gamma-P t t') = catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm (strResult s)))
 
   executeTerm' (Ev-P m t) = do
     (res , t') ← executePrimitive m t
@@ -229,6 +230,11 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   executePrimitive GetEval t = do
     ev ← MetaEnv.evaluator <$> getMeta
     return (strResult "" , quoteToAnnTerm ev)
+
+  executePrimitive Print t = do
+    s ← unquoteFromTerm t
+    liftIO $ putStr s
+    return (strResult "" , LamE-A "X" ⋆ (Lam-A "_" (BoundVar 0) (BoundVar 0)))
 
   executeBootstrapStmt (Let n t T) = do
     T ← case T of λ where

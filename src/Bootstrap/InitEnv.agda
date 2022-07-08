@@ -83,6 +83,7 @@ private
     "term$=zeta=CatchErr^space^_term_^space^_term_" ∷ -- this is not actually in PrimMeta
     "term$=zeta=Import^space^_term_" ∷
     "term$=zeta=GetEval" ∷
+    "term$=zeta=Print^space^_term_" ∷
     "term$=kappa=_char_" ∷ -- this constructs a Char
     "term$=gamma=^space^_term_^space^_term_" ∷ -- charEq
 

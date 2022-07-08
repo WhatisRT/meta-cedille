@@ -29,6 +29,7 @@ data PrimMeta : Set where
   InferType     : PrimMeta
   Import        : PrimMeta
   GetEval       : PrimMeta
+  Print         : PrimMeta
 
 private
   variable
@@ -38,7 +39,7 @@ instance
   PrimMeta-Eq : Eq PrimMeta
   PrimMeta-Eq = Listable.Listable→Eq record
     { listing =
-        Let ∷ AnnLet ∷ SetEval ∷ ShellCmd ∷ CheckTerm ∷ Parse ∷ Normalize ∷ HeadNormalize ∷ InferType ∷ Import ∷ GetEval ∷ []
+        Let ∷ AnnLet ∷ SetEval ∷ ShellCmd ∷ CheckTerm ∷ Parse ∷ Normalize ∷ HeadNormalize ∷ InferType ∷ Import ∷ GetEval ∷ Print ∷ []
     ; complete = λ where
         Let           → here refl
         AnnLet        → there (here refl)
@@ -51,6 +52,7 @@ instance
         InferType     → there (there (there (there (there (there (there (there (here refl))))))))
         Import        → there (there (there (there (there (there (there (there (there (here refl)))))))))
         GetEval       → there (there (there (there (there (there (there (there (there (there (here refl))))))))))
+        Print         → there (there (there (there (there (there (there (there (there (there (there (here refl)))))))))))
     }
 
   PrimMeta-EqB : EqB PrimMeta
@@ -68,6 +70,7 @@ instance
   PrimMeta-Show .show InferType     = "InferType"
   PrimMeta-Show .show Import        = "Import"
   PrimMeta-Show .show GetEval       = "GetEval"
+  PrimMeta-Show .show Print         = "Print"
 
 primMetaArity : PrimMeta → ℕ
 primMetaArity Let           = 2
@@ -81,6 +84,7 @@ primMetaArity HeadNormalize = 1
 primMetaArity InferType     = 1
 primMetaArity Import        = 1
 primMetaArity GetEval       = 0
+primMetaArity Print         = 1
 
 primMetaArgs : Set → PrimMeta → Set
 primMetaArgs A m = A Data.Vec.Recursive.^ (primMetaArity m)
@@ -115,6 +119,7 @@ module _ {T} ⦃ _ : TermLike T ⦄ where
     tTerm       = FreeVar "init$term"
     tMetaResult = FreeVar "init$metaResult"
     tProduct    = FreeVar "init$product"
+    tUnit       = FreeVar "Unit"
 
   primMetaS : (m : PrimMeta) → primMetaArgs T m
   primMetaS Let               = (tString , tTerm)
@@ -128,6 +133,7 @@ module _ {T} ⦃ _ : TermLike T ⦄ where
   primMetaS InferType         = tTerm
   primMetaS Import            = tString
   primMetaS GetEval           = _
+  primMetaS Print             = tString
 
   primMetaT : (m : PrimMeta) → primMetaArgs T m → T
   primMetaT Let _             = tMetaResult
@@ -141,3 +147,4 @@ module _ {T} ⦃ _ : TermLike T ⦄ where
   primMetaT InferType     _   = tTerm
   primMetaT Import _          = tMetaResult
   primMetaT GetEval _         = tTerm
+  primMetaT Print   _         = tUnit

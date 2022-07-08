@@ -196,6 +196,9 @@ b-let inferTypeBasic (t : Term) : Eval Term :=
 b-let getEval' : Eval Term :=
   liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm primGetEval).
 
+b-let printEval (s : String) : Eval Unit :=
+  liftMtoEval ?Unit (primPrint s).
+
 --------------------------------------------------------------------------------
 -- Statements are just special Eval computations that run at the top level
 --------------------------------------------------------------------------------
@@ -248,7 +251,7 @@ b-let catchEval [T : *] (x : Eval T) (f : metaResult -> Eval T) : Eval T :=
     catchErr ?(Product T EvalState) (x e s) (λ res : metaResult. f res e s).
 
 b-let throwEval [T : *] (s : String) : Eval T :=
-  seqEval ?metaResult ?T (echoStmt s) (checkTerm T θ{□}).
+  seqEval ?Unit ?T (printEval s) (checkTerm T θ{□}).
 
 b-let showTermE (t : Term) : Eval String :=
   mapEval ?Context ?String
