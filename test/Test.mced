@@ -2,6 +2,11 @@ import bootstrap/Bootstrap.
 
 set PWD "test/".
 import BootstrapTest.
+
+import TermRecDiagonal.
+import TermHelpers.
+import Inference.
+
 import ErrorMonad.
 
 import LambdaCalc.
@@ -13,3 +18,5 @@ import Datatypes.
 import DatatypesTest.
 
 import COC.
+
+set PWD "".

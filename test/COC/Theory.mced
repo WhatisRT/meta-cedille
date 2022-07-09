@@ -165,7 +165,6 @@ let showErrorTerm (e : Error Term) : String :=
     e.
 
 let showMaybeTerm (x : Maybe Term) := maybe ?Term ?String "nothing" showTerm x.
-let showBool (b : Bool) := ifthenelse ?String b "true" "false".
 
 let CompareErrorTerm (t : Term) (e : Error Term) : Bool :=
   ErrorFold Term Bool

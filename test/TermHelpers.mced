@@ -1,0 +1,81 @@
+--------------------------------------------------------------------------------
+-- Generating indices from Nats
+--------------------------------------------------------------------------------
+
+let consDecToIndex' (i : init$index') (d : Dec) : init$index' :=
+  (d ?(Π _ : init$index'. init$index')
+    init$index'$0_index'_ init$index'$1_index'_ init$index'$2_index'_ init$index'$3_index'_ init$index'$4_index'_
+    init$index'$5_index'_ init$index'$6_index'_ init$index'$7_index'_ init$index'$8_index'_ init$index'$9_index'_) i.
+
+let consDecToIndex (i : init$index') (d : Dec) : init$index :=
+  (d ?(Π _ : init$index'. init$index)
+    init$index$0_index'_ init$index$1_index'_ init$index$2_index'_ init$index$3_index'_ init$index$4_index'_
+    init$index$5_index'_ init$index$6_index'_ init$index$7_index'_ init$index$8_index'_ init$index$9_index'_) i.
+
+let indexToIndex' (i : init$index) : init$index' :=
+  i ?init$index'
+    init$index'$0_index'_ init$index'$1_index'_ init$index'$2_index'_ init$index'$3_index'_ init$index'$4_index'_
+    init$index'$5_index'_ init$index'$6_index'_ init$index'$7_index'_ init$index'$8_index'_ init$index'$9_index'_.
+
+let digitListToIndex' (l : List Dec) : init$index' := foldl ?Dec ?init$index' consDecToIndex' l init$index'$.
+let digitListToIndex : Π _ : List Dec. init$index :=
+  recursionList ?Dec ?init$index
+    (init$index$0_index'_ init$index'$)
+    (λ d : Dec. λ ds : List Dec. λ _ : init$index. consDecToIndex (digitListToIndex' ds) d).
+
+let natToIndex (n : Nat) : init$index := digitListToIndex $ natToDecList n.
+let natToVar (n : Nat) : Term := varTerm $ init$var$_index_ $ natToIndex n.
+
+--------------------------------------------------------------------------------
+-- Equality checks
+--------------------------------------------------------------------------------
+
+let indexEq (i1, i2 : init$index) : Bool :=
+  natEq (indexToNat i1) (indexToNat i2).
+
+let varEq (v1, v2 : init$var) : Bool :=
+  v1 ?Bool
+    (λ n1 : String. v2 ?Bool
+      (λ n2 : String. stringEq n1 n2)
+      (λ _ : init$index. false))
+    (λ i1 : init$index. v2 ?Bool
+      (λ _ : String. false)
+      (λ i2 : init$index. indexEq i1 i2)).
+
+let sortEq (s1, s2 : init$sort) : Bool :=
+  s1 ?Bool
+    (s2 ?Bool true false)
+    (s2 ?Bool false true).
+
+let binderEq (b1, b2 : Binder) : Bool :=
+  b1 ?Bool
+    (b2 ?Bool true false false false)
+    (b2 ?Bool false true false false)
+    (b2 ?Bool false false true false)
+    (b2 ?Bool false false false true).
+
+--------------------------------------------------------------------------------
+-- Context modification
+--------------------------------------------------------------------------------
+
+let substContextVars (s : Nat -> Nat) (t : Term) : Term :=
+  recursionTerm ?(Nat -> Term)
+    (λ v : init$var. λ k : Nat. v ?Term
+      (λ n : String. sVarTerm n)
+      (λ i : init$index. ifthenelse ?Term (natLeq k $ indexToNat i)
+        (iVarTerm $ natToIndex $ add (s $ sub (indexToNat i) k) k)
+        (iVarTerm i)))
+    (λ s : init$sort. λ k : Nat. sortTerm s)
+    (λ b : Binder. λ n : String. λ T, t : Term. λ recT, rect : Nat -> Term. λ k : Nat.
+      binderTerm b n (recT k) (rect $ suc k))
+    (λ t : Term. λ app : List App. λ rect : Nat -> Term. λ recApp : List (Bool × (Nat -> Term)).
+      λ k : Nat. appLTerm (rect k) (map ?(Bool × (Nat -> Term)) ?(Bool × Term)
+        (productMap2 ?Bool ?(Nat -> Term) ?Term (λ f : Nat -> Term. f k)) recApp))
+    (λ c : init$char. λ _ : Nat. charTerm c)
+    (λ _ : Nat. unknownTerm)
+    (λ t : Term. λ rect : Nat -> Term. λ k : Nat. rect k)
+    t 0.
+
+let strengthen : Term -> Term := substContextVars pred.
+let strengthenBy (k : Nat) : Term -> Term := substContextVars (λ n : Nat. sub n k).
+let weakenBy (k : Nat) : Term -> Term := substContextVars (add k).

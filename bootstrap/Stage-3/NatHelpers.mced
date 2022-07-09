@@ -26,6 +26,12 @@ b-let natEq : Nat -> Nat -> Bool :=
     isZero
     (λ _ : Nat. λ rec : Nat -> Bool. recursionNat ?Bool false (λ n : Nat. λ _ : Bool. rec n)).
 
+b-let natLeq : Nat -> Nat -> Bool :=
+  recursionNat ?(Nat -> Bool)
+    (λ _ : Nat. true)
+    (λ _ : Nat. λ rec : Nat -> Bool. recursionNat ?Bool false (λ n : Nat. λ _ : Bool. rec n)).
+b-let natLt (m, n : Nat) : Bool := natLeq (suc m) n.
+
 --------------------------------------------------------------------------------
 -- Decimal digits
 --------------------------------------------------------------------------------

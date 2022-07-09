@@ -199,6 +199,9 @@ b-let getEval' : Eval Term :=
 b-let printEval (s : String) : Eval Unit :=
   liftMtoEval ?Unit (primPrint s).
 
+b-let printLineEval (s : String) : Eval Unit :=
+  printEval (stringApp s newline).
+
 --------------------------------------------------------------------------------
 -- Statements are just special Eval computations that run at the top level
 --------------------------------------------------------------------------------

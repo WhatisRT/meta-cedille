@@ -3,7 +3,6 @@ import Datatypes/Functors.
 import Datatypes/Church.
 import Datatypes/Match.
 import Datatypes/ConstrFunctor.
-import Datatypes/NatToVar.
 import Datatypes/Constructor.
 import Datatypes/ConvertData.
 import Datatypes/Parser.

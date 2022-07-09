@@ -53,3 +53,7 @@ b-let zipWith4 [A, B, C, D, E : *] (f : A -> B -> C -> D -> E)
   zipWith ?A ?(TripleProduct B C D) ?E
     (λ a : A. λ bcd : TripleProduct B C D.
       f a (pr31 ?B ?C ?D bcd) (pr32 ?B ?C ?D bcd) (pr33 ?B ?C ?D bcd)) l (zip3 ?B ?C ?D l' l'' l''').
+
+b-let concat [A : *] : List (List A) -> List A :=
+  recursionList ?(List A) ?(List A) [A|]
+    (λ l : List A. λ _ : List (List A). λ rec : List A. app ?A l rec).

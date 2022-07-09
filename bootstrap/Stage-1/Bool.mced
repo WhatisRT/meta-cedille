@@ -22,3 +22,5 @@ let ifthenelse := Λ X : * λ b : Bool λ ift : X λ iff : X [[[<recursionBool X
 let and := λ b : Bool λ b' : Bool [[[<ifthenelse Bool> b] b'] false].
 let or := λ b : Bool λ b' : Bool [[[<ifthenelse Bool> b] b] b'].
 let not := λ b : Bool [[[<ifthenelse Bool> b] false] true].
+
+let boolEq := λ b : Bool λ b' : Bool [[[<ifthenelse Bool> b] b'] [not b']].
