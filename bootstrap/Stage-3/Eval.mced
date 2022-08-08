@@ -262,6 +262,33 @@ b-let showTermE (t : Term) : Eval String :=
     askContext.
 
 --------------------------------------------------------------------------------
+-- Elaborate let
+--
+-- To elaborate a let, we chain Eval computations that modify it.
+--------------------------------------------------------------------------------
+
+b-let ElabLet : * := LetInfo -> Eval LetInfo.
+
+b-let runEvalLets' : List ElabLet -> ElabLet :=
+  recursionList ?ElabLet ?ElabLet
+    (pureEval ?LetInfo)
+    (λ el : ElabLet. λ _ : List ElabLet. λ rec : ElabLet.
+      λ i : LetInfo. bindEval ?LetInfo ?LetInfo (el i) rec).
+
+b-let runEvalLets (els : List ElabLet) (i : LetInfo) : init$newStmt :=
+  bindEval ?LetInfo ?metaResult (runEvalLets' els i) letInfoToNewStmt.
+
+-- Run a computation without modifying the LetInfo
+b-let liftElabLet (x : LetInfo -> Eval Unit) : ElabLet :=
+  λ i : LetInfo. seqEval ?Unit ?LetInfo (x i) (pureEval ?LetInfo i).
+
+b-let checkTypeAnn : ElabLet :=
+  liftElabLet (λ i : LetInfo. bindEval ?EvalState ?Unit getEval (λ s : EvalState.
+    ifthenelse ?(Eval Unit) (or (not (getAnnReq (getEvalOpts s))) (letInfoHasAnn i))
+      (pureEval ?Unit tt)
+      (throwEval ?Unit "The provided command has no type annotation!"))).
+
+--------------------------------------------------------------------------------
 -- Importing
 --
 -- We need to make sure the state in the meta environment is tracked

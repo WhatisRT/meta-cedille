@@ -81,16 +81,20 @@ b-let modifyLetInfo (i : LetInfo) (m : Module) : LetInfo :=
       (nothing ?Term) (λ t : Term. just ?Term (modifyTerm (foldWithPi (ModuleTelescope m) t) m))
       (letInfoType i)).
 
-b-let letInModule (i : LetInfo) (m : Module) : init$newStmt :=
-  seqNewStmt
-    (stmtToNewStmt (convertLetInfo (modifyLetInfo i m)))
-    (updateTempModule (letInfoName i) m).
+b-let letInModule (i : LetInfo) (m : Module) : Eval LetInfo :=
+  seqEval ?metaResult ?LetInfo
+    (updateTempModule (letInfoName i) m)
+    (pureEval ?LetInfo (modifyLetInfo i m)).
 
-b-let letInMaybeModule (i : LetInfo) (x : Maybe Module) : init$newStmt :=
-  maybe ?Module ?init$newStmt
-    (stmtToNewStmt (convertLetInfo i))
+b-let letInMaybeModule (i : LetInfo) (x : Maybe Module) : Eval LetInfo :=
+  maybe ?Module ?(Eval LetInfo)
+    (pureEval ?LetInfo i)
     (letInModule i)
     x.
+
+b-let moduleElab : ElabLet :=
+  λ i : LetInfo. bindEval ?EvalState ?LetInfo getEval
+    (λ s : EvalState. letInMaybeModule i (ModuleStateModule (getModuleState s))).
 
 b-let importExternalStmt (name : String) : init$newStmt :=
   bindEval ?EvalState ?metaResult getEval (λ s : EvalState.
@@ -98,12 +102,6 @@ b-let importExternalStmt (name : String) : init$newStmt :=
       (echoStmt "External imports are only possible in modules!")
       (λ m : Module. stmtToNewStmt (convertLetInfo (importExternalLetInfo name m)))
       (ModuleStateModule (getModuleState s))).
-
-b-let letInfoToNewStmtMod (i : LetInfo) : init$newStmt :=
-  bindEval ?EvalState ?metaResult getEval (λ s : EvalState.
-    ifthenelse ?init$newStmt (or (not (getAnnReq (getEvalOpts s))) (letInfoHasAnn i))
-      (letInMaybeModule i (ModuleStateModule (getModuleState s)))
-      (echoStmt "The provided command has no type annotation!")).
 
 b-let updateModuleDict (m : Module) (d : ModuleDict) : init$newStmt :=
   letInfoToNewStmt (mkLetInfo

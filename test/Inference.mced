@@ -209,7 +209,7 @@ let elabLetInfo (doDebugPrinting : Bool) (i : LetInfo) : Eval LetInfo :=
 -- let that uses this elaborator
 -- this will be added to the regular let, once it works a little better
 let init$newStmt'$elet^space^_betterLet_ (i : LetInfo) : init$newStmt :=
-  bindEval ?LetInfo ?metaResult (elabLetInfo false i) letInfoToNewStmtMod.
+  runEvalLets [ElabLet| checkTypeAnn, moduleElab, elabLetInfo false] i.
 
 updateEval.
 

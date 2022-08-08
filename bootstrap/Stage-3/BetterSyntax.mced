@@ -7,6 +7,11 @@
 b-let letInfoTermToQuoted (i : LetInfo) : LetInfo :=
   mkLetInfo (stringApp "qTerm" (letInfoName i)) (quoteTerm (letInfoTerm i)) (just ?Term θ{Term}).
 
+b-let addQuotedLetInfo : ElabLet :=
+  liftElabLet (λ i : LetInfo. voidEval ?metaResult (letInfoToNewStmt (letInfoTermToQuoted i))).
+
+b-let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn, moduleElab].
+
 b-let runMetaCommand (t : Term) : init$newStmt := joinEval ?metaResult (checkTerm init$newStmt t).
 
 b-let runEcho (t : Term) : init$newStmt := runMetaCommand θ{echoStmt γ{t}}.
@@ -41,9 +46,10 @@ b-let init$setStmt$PWD^space^_term_ (dirT : Term) :=
 
 -- "native" statements in the new syntax
 b-let init$newStmt'$set^space^_setStmt_=dot= (s : init$newStmt) := s.
-b-let init$newStmt'$let^space^_betterLet_ (i : LetInfo) : init$newStmt := letInfoToNewStmtMod i.
+b-let init$newStmt'$let^space^_betterLet_ (i : LetInfo) : init$newStmt :=
+  letInfoToNewStmtMod i.
 b-let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : init$newStmt :=
-  seqNewStmt (letInfoToNewStmt i) (letInfoToNewStmt (letInfoTermToQuoted i)).
+  runEvalLets [ElabLet| checkTypeAnn, moduleElab, addQuotedLetInfo] i.
 b-let init$newStmt'$runMeta^space^_multiTerm_=dot= (t : Term) : init$newStmt := runMetaCommand t.
 b-let init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
   bindEval ?Term ?metaResult (modifyTermMod t) runEcho.

@@ -7,12 +7,12 @@ data Maybe (A : *) where
 | nothing : Maybe A
 | just    : A -> Maybe A.
 
-let maybe [A, B : *] (default : B) (f : A -> B) (x : Maybe A) : B := MaybeFold A B default f x.
+elet maybe [A, B : *] (default : B) (f : A -> B) (x : Maybe A) : B := MaybeFold _ _ default f x.
 
-let bindMaybe (A, B : *) (x : Maybe A) (f : A -> Maybe B) : Maybe B :=
-  maybe ?A ?(Maybe B) (nothing B) f x.
+elet bindMaybe (A, B : *) (x : Maybe A) (f : A -> Maybe B) : Maybe B :=
+  maybe ?_ ?_ (nothing B) f x.
 
-let mapMaybe [A, B : *] (f : A -> B) (x : Maybe A) : Maybe B :=
-  maybe ?A ?(Maybe B) (nothing B) (λ a : A. just B $ f a) x.
+elet mapMaybe [A, B : *] (f : A -> B) (x : Maybe A) : Maybe B :=
+  maybe ?_ ?_ (nothing B) (λ a : A. just B $ f a) x.
 
 endModule.
