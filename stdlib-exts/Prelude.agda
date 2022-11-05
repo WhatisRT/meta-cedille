@@ -33,7 +33,7 @@ open import Data.Sum using (_⊎_; inj₁; inj₂; from-inj₁; from-inj₂) pub
 open import Data.Sum.Instance public
 open import Data.Unit.Instance public
 open import Data.Unit.Polymorphic using (⊤; tt) public
-open import IO using (IO; putStr) public
+open import IO using (IO; putStr; writeFile) public
 open import IO.Finite using (getLine) public
 open import IO.Exts public
 open import IO.Instance public

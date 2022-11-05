@@ -12,6 +12,12 @@ b-let lookupDefault [A : *] (n : Nat) (d : A) (l : List A) : A :=
       recursionNat ?A a (λ k : Nat. λ _ : A. rec k))
     l n.
 
+b-let head [A : *] (l : List A) : Maybe A :=
+  recursionList ?A ?(Maybe A) (nothing ?A) (λ a : A. λ _ : List A. λ _ : Maybe A. just ?A a) l.
+
+b-let findMaybe [A : *] (P : A -> Bool) (l : List A) : Maybe A :=
+    head ?A (filter ?A P l).
+
 b-let initsNonEmpty [A : *] (l : List A) : List (Product A (List A)) :=
   recursionList ?A ?(List (Product A (List A)))
     [Product A (List A)|]

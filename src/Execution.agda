@@ -236,6 +236,16 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     liftIO $ putStr s
     return (strResult "" , LamE-A "X" ⋆ (Lam-A "_" (BoundVar 0) (BoundVar 0)))
 
+  executePrimitive WriteFile (t , t') = do
+    fName ← unquoteFromTerm t
+    contents ← unquoteFromTerm t'
+    liftIO $ writeFile fName contents
+    return (strResult "" , LamE-A "X" ⋆ (Lam-A "_" (BoundVar 0) (BoundVar 0)))
+
+  executePrimitive CommandLine _ = do
+    args ← liftIO getArgs
+    return (strResult "" , quoteToAnnTerm args)
+
   executeBootstrapStmt (Let n t T) = do
     T ← case T of λ where
       (just T) → checkType t T >> return T

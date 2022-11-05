@@ -1,0 +1,11 @@
+--------------------------------------------------------------------------------
+-- Quotation functions
+--------------------------------------------------------------------------------
+
+b-let quoteProduct [A, B : *] (quotedA, quotedB : Term) (quoteA : A -> Term) (quoteB : B -> Term)
+  : Product A B -> Term :=
+  λ x : Product A B. θ{prodPair ?γ{quotedA} ?γ{quotedB} γ{quoteA (pr1 ?A ?B x)} γ{quoteB (pr2 ?A ?B x)}}.
+
+b-let quoteList [X : *] (quotedX : Term) (quoteX : X -> Term) : List X -> Term :=
+  recursionList ?X ?Term θ{nil ?γ{quotedX}}
+    (λ x : X. λ _ : List X. λ rec : Term. θ{cons ?γ{quotedX} γ{quoteX x} γ{rec}}).

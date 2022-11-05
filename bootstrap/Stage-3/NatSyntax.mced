@@ -31,10 +31,6 @@ let quoteDec (d : Dec) : Term :=
 
 --
 
-let quoteList [X : *] (quotedX : Term) (quoteX : X -> Term) : List X -> Term :=
-  recursionList ?X ?Term θ{nil ?γ{quotedX}}
-    (λ x : X. λ _ : List X. λ rec : Term. θ{cons ?γ{quotedX} γ{quoteX x} γ{rec}}).
-
 let quoteListBool := quoteList ?Bool θ{Bool} quoteBool.
 let quoteListDec := quoteList ?Dec θ{Dec} quoteDec.
 

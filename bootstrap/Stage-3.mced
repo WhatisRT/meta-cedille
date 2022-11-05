@@ -4,6 +4,7 @@ import bootstrap/Stage-3/TermRec.
 import bootstrap/Stage-3/StringNotation.
 import bootstrap/Stage-3/ListNotation.
 import bootstrap/Stage-3/QuoteTerm.
+import bootstrap/Stage-3/Quoters.
 
 import bootstrap/Stage-3/ListExt.
 import bootstrap/Stage-3/NatHelpers.

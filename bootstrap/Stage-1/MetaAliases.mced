@@ -21,5 +21,7 @@ let primInferType := λ t : iTerm ζInferType t.
 let primImport := λ s : String ζImport s.
 let primGetEval := ζGetEval.
 let primPrint := λ s : String ζPrint s.
+let primWriteFile := λ fName : String λ s : String ζWriteFile fName s.
+let primCommandLine := ζCommandLine.
 
 let catchErr := Λ X : * λ run : [M X] λ catch : Π _ : init$err [M X] ζCatchErr run catch : ∀ X : * Π _ : [M X] Π _ : Π _ : init$err [M X] [M X].

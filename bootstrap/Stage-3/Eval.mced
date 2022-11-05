@@ -51,36 +51,73 @@ b-let quoteDict (d : ModuleDict) : Term := sVarTerm (mkModuleDictName d).
 b-let quoteModuleState (s : ModuleState) : Term :=
   θ{mkModuleState γ{quoteMaybeModule (ModuleStateModule s)} γ{quoteDict (ModuleStateDict s)}}.
 
+-- TermInfoState is a map of names to meta information about that name.
+
+-- File, line and column
+b-let SourceLocation : * := TripleProduct String Nat Nat.
+b-let mkSourceLocation := mkTripleProduct ?String ?Nat ?Nat.
+b-let getFileName := pr31 ?String ?Nat ?Nat.
+b-let getLine := pr32 ?String ?Nat ?Nat.
+b-let getColumn := pr33 ?String ?Nat ?Nat.
+
+b-let quoteSourceLocation (l : SourceLocation) : Term :=
+  θ{mkSourceLocation γ{quote$String (getFileName l)} γ{quoteNat (getLine l)} γ{quoteNat (getColumn l)}}.
+
+-- Location of the definition and the actual definition
+b-let TermInfo : * := Product SourceLocation Term.
+b-let mkTermInfo := prodPair ?SourceLocation ?Term.
+b-let getLocation : TermInfo -> SourceLocation := pr1 ?SourceLocation ?Term.
+b-let getDefinition : TermInfo -> Term := pr2 ?SourceLocation ?Term.
+
+b-let quoteTermInfo (i : TermInfo) : Term :=
+  θ{mkTermInfo γ{quoteSourceLocation (getLocation i)} γ{quoteTerm (getDefinition i)}}.
+
+b-let TermInfoState : * := List (Product String TermInfo).
+b-let addTermInfo (n : String) (i : TermInfo) : TermInfoState -> TermInfoState :=
+  cons ?(Product String TermInfo) (prodPair ?String ?TermInfo n i).
+b-let lookupTermInfo (st : TermInfoState) (n : String) : Maybe TermInfo :=
+  mapMaybe ?(Product String TermInfo) ?TermInfo (pr2 ?String ?TermInfo)
+    (findMaybe ?(Product String TermInfo)
+      (λ p : Product String TermInfo. stringEq (pr1 ?String ?TermInfo p) n) st).
+
+b-let quoteTermInfoState (st : TermInfoState) : Term := quoteList ?(Product String TermInfo) θ{Product String TermInfo} (quoteProduct ?String ?TermInfo θ{String} θ{TermInfo} quote$String quoteTermInfo) st.
+b-let emptyTermInfoState : TermInfoState := [Product String TermInfo|].
+
 -- OtherState is a trick/hack for storing arbitrary things in the state
 b-let OtherState := Nat. -- used for counting
 b-let quoteOtherState (s : OtherState) := quoteNat s.
 b-let emptyOtherState := zero.
 
 -- The additional state in the evaluator contains the ModuleState as well as the flags
-b-let EvalState : * := TripleProduct EvalOpts ModuleState OtherState.
-b-let mkEvalState (f : EvalOpts) (s : ModuleState) (o : OtherState) : EvalState :=
-  mkTripleProduct ?EvalOpts ?ModuleState ?OtherState f s o.
-b-let getEvalOpts := pr31 ?EvalOpts ?ModuleState ?OtherState.
-b-let getModuleState := pr32 ?EvalOpts ?ModuleState ?OtherState.
-b-let getOtherState := pr33 ?EvalOpts ?ModuleState ?OtherState.
+b-let EvalState : * := TripleProduct EvalOpts ModuleState (Product TermInfoState OtherState).
+b-let mkEvalState (f : EvalOpts) (s : ModuleState) (i : TermInfoState) (o : OtherState) : EvalState :=
+  mkTripleProduct ?EvalOpts ?ModuleState ?(Product TermInfoState OtherState) f s
+    (prodPair ?TermInfoState ?OtherState i o).
+b-let getEvalOpts := pr31 ?EvalOpts ?ModuleState ?(Product TermInfoState OtherState).
+b-let getModuleState := pr32 ?EvalOpts ?ModuleState ?(Product TermInfoState OtherState).
+b-let getTermInfoState (s : EvalState) := pr1 ?TermInfoState ?OtherState (pr33 ?EvalOpts ?ModuleState ?(Product TermInfoState OtherState) s).
+b-let getOtherState (s : EvalState) := pr2 ?TermInfoState ?OtherState (pr33 ?EvalOpts ?ModuleState ?(Product TermInfoState OtherState) s).
+
+b-let quoteEvalState (s : EvalState) : Term :=
+  θ{mkEvalState γ{quoteEvalOpts (getEvalOpts s)} γ{quoteModuleState (getModuleState s)} γ{quoteTermInfoState (getTermInfoState s)} γ{quoteOtherState (getOtherState s)}}.
+
+b-let emptyEvalState : EvalState :=
+  mkEvalState defaultFlags emptyModState emptyTermInfoState emptyOtherState.
 
 b-let modifyModuleInState (f : Maybe Module -> Maybe Module) (s : EvalState) : EvalState :=
   mkEvalState (getEvalOpts s)
-                   (mkModuleState (f (ModuleStateModule (getModuleState s))) (ModuleStateDict (getModuleState s)))
-                   (getOtherState s).
+              (mkModuleState (f (ModuleStateModule (getModuleState s))) (ModuleStateDict (getModuleState s)))
+              (getTermInfoState s)
+              (getOtherState s).
 
 b-let modifyModuleDictInState (f : ModuleDict -> ModuleDict) (s : EvalState) : EvalState :=
   mkEvalState (getEvalOpts s)
-                   (mkModuleState (ModuleStateModule (getModuleState s)) (f (ModuleStateDict (getModuleState s))))
-                   (getOtherState s).
+              (mkModuleState (ModuleStateModule (getModuleState s)) (f (ModuleStateDict (getModuleState s))))
+              (getTermInfoState s)
+              (getOtherState s).
 
 b-let incrementStateCounter (s : EvalState) : EvalState :=
-  mkEvalState (getEvalOpts s) (getModuleState s) (suc (getOtherState s)).
-
-b-let quoteEvalState (s : EvalState) : Term :=
-  θ{mkEvalState γ{quoteEvalOpts (getEvalOpts s)} γ{quoteModuleState (getModuleState s)} γ{quoteOtherState (getOtherState s)}}.
-
-b-let emptyEvalState : EvalState := mkEvalState defaultFlags emptyModState emptyOtherState.
+  mkEvalState (getEvalOpts s) (getModuleState s) (getTermInfoState s) (suc (getOtherState s)).
 
 --------------------------------------------------------------------------------
 -- Environment: local context
@@ -140,17 +177,17 @@ b-let modifyEval (f : EvalState -> EvalState) : Eval Unit :=
 
 b-let getModuleState' : Eval ModuleState := mapEval ?EvalState ?ModuleState getModuleState getEval.
 b-let modifyModuleState (f : ModuleState -> ModuleState) : Eval Unit :=
-  modifyEval (λ s : EvalState. mkEvalState (getEvalOpts s) (f (getModuleState s)) (getOtherState s)).
+  modifyEval (λ s : EvalState. mkEvalState (getEvalOpts s) (f (getModuleState s)) (getTermInfoState s) (getOtherState s)).
 b-let setModuleState (s : ModuleState) : Eval Unit :=
   bindEval ?EvalState ?Unit getEval
-    (λ s' : EvalState. setEval (mkEvalState (getEvalOpts s') s (getOtherState s'))).
+    (λ s' : EvalState. setEval (mkEvalState (getEvalOpts s') s (getTermInfoState s') (getOtherState s'))).
 
 b-let getEvalOpts' : Eval EvalOpts :=
   mapEval ?EvalState ?EvalOpts getEvalOpts getEval.
 b-let modifyEvalOpts (f : EvalOpts -> EvalOpts) : Eval Unit :=
-  modifyEval (λ s : EvalState. mkEvalState (f (getEvalOpts s)) (getModuleState s) (getOtherState s)).
+  modifyEval (λ s : EvalState. mkEvalState (f (getEvalOpts s)) (getModuleState s) (getTermInfoState s) (getOtherState s)).
 b-let modifyOtherState (f : OtherState -> OtherState) : Eval Unit :=
-  modifyEval (λ s : EvalState. mkEvalState (getEvalOpts s) (getModuleState s) (f (getOtherState s))).
+  modifyEval (λ s : EvalState. mkEvalState (getEvalOpts s) (getModuleState s) (getTermInfoState s) (f (getOtherState s))).
 
 -- Reader monad functions
 b-let askEval : Eval EvalEnv := λ e : EvalEnv. λ s : EvalState.
@@ -198,6 +235,12 @@ b-let getEval' : Eval Term :=
 
 b-let printEval (s : String) : Eval Unit :=
   liftMtoEval ?Unit (primPrint s).
+
+b-let writeFile (fName, s : String) : Eval Unit :=
+  liftMtoEval ?Unit (primWriteFile fName s).
+
+b-let commandLine : Eval (List String) :=
+  liftMtoEval ?(List String) primCommandLine.
 
 b-let printLineEval (s : String) : Eval Unit :=
   printEval (stringApp s newline).

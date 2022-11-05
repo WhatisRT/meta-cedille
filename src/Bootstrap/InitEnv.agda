@@ -84,6 +84,8 @@ private
     "term$=zeta=Import^space^_term_" ∷
     "term$=zeta=GetEval" ∷
     "term$=zeta=Print^space^_term_" ∷
+    "term$=zeta=WriteFile^space^_term_^space^_term_" ∷
+    "term$=zeta=CommandLine" ∷
     "term$=kappa=_char_" ∷ -- this constructs a Char
     "term$=gamma=^space^_term_^space^_term_" ∷ -- charEq
 

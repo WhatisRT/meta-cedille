@@ -191,6 +191,8 @@ toTerm = helper []
         ("ζImport^space^_term_"                            , 1F , conv1ʰ (Ev-A Import)) ∷
         ("ζGetEval"                                        , 0F , conv0ʰ (Ev-A GetEval)) ∷
         ("ζPrint^space^_term_"                             , 1F , conv1ʰ (Ev-A Print)) ∷
+        ("ζWriteFile^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev-A WriteFile)) ∷
+        ("ζCommandLine"                                    , 0F , conv0ʰ (Ev-A CommandLine)) ∷
 
         ("Κ_const_" , 1F , (λ z → Const-A <$> toConst z)) ∷
         ("κ_char_" , 1F , (λ z → Char-A <$> toChar z <∣> toChar' z)) ∷
