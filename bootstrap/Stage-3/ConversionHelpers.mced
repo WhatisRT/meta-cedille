@@ -4,10 +4,6 @@
 -- Maybe this should be moved elsewhere?
 --------------------------------------------------------------------------------
 
-b-let metaResult : * := Product (List String) (List init$term).
-b-let mkMetaResult (l : List String) (l' : List init$term) := prodPair ?(List String) ?(List init$term) l l'.
-b-let emptyMetaResult : metaResult := mkMetaResult [String|] [init$term|].
-
 b-let stringListToList (l : init$stringList) : List String :=
   l ?(List String) (nil ?String)
     (λ s : String. λ rec : List String. cons ?String s rec).
@@ -20,11 +16,6 @@ b-let listToStringList : List String -> init$stringList :=
 b-let termListToList (l : init$termList) : List init$term :=
   l ?(List init$term) (nil ?init$term)
     (λ s : init$term. λ rec : List init$term. cons ?init$term s rec).
-
-b-let strToMetaResult (s : String) : metaResult := mkMetaResult [String | s] [init$term |].
-
-b-let metaResultToLists (res : init$metaResult) : metaResult :=
-  res ?metaResult (λ l : init$stringList. λ l' : init$termList. mkMetaResult (stringListToList l) (termListToList l')).
 
 b-let nothingTerm := θ{□}.
 b-let nothingTerm1 (_ : Term) := nothingTerm.

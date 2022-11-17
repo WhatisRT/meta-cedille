@@ -7,8 +7,6 @@ let bindMeta := Λ X : * Λ Y : * λ x : [M X] λ f : Π _ : X [M Y] μ x f : �
 let mapMeta := Λ X : * Λ Y : * λ f : Π _ : X Y λ x : [M X] [[<<bindMeta X> Y> x] λ x' : X [<returnMeta Y> [f x']]] : ∀ X : * ∀ Y : * Π f : Π _ : X Y Π _ : [M X] [M Y].
 let joinMeta := Λ X : * λ x : [M [M X]] [[<<bindMeta [M X]> X> x] λ a : [M X] a] : ∀ X : * Π x : [M [M X]] [M X].
 
-let init$err := init$metaResult.
-
 let primLet := λ s : String λ t : iTerm ζLet s t.
 let primAnnLet := λ s : String λ t : iTerm λ T : iTerm ζAnnLet s t T.
 let primSetEval := λ eval : iTerm λ NT : String λ ns : String ζSetEval eval NT ns.
@@ -24,4 +22,4 @@ let primPrint := λ s : String ζPrint s.
 let primWriteFile := λ fName : String λ s : String ζWriteFile fName s.
 let primCommandLine := ζCommandLine.
 
-let catchErr := Λ X : * λ run : [M X] λ catch : Π _ : init$err [M X] ζCatchErr run catch : ∀ X : * Π _ : [M X] Π _ : Π _ : init$err [M X] [M X].
+let catchErr := Λ X : * λ run : [M X] λ catch : Π _ : String [M X] ζCatchErr run catch : ∀ X : * Π _ : [M X] Π _ : Π _ : init$err [M X] [M X].

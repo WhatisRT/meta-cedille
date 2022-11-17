@@ -86,6 +86,9 @@ record Quotable (A : Set) : Set₁ where
 open Quotable {{...}} public
 
 instance
+  Quotable-Unit : Quotable ⊤
+  Quotable-Unit .quoteToAnnTerm _ = FreeVar "init$tt"
+
   Quotable-ListChar : Quotable (List Char)
   Quotable-ListChar .quoteToAnnTerm [] = FreeVar "init$string$nil"
   Quotable-ListChar .quoteToAnnTerm (c ∷ cs) = FreeVar "init$string$cons" ⟪$⟫ Char-T c ⟪$⟫ quoteToAnnTerm cs
@@ -192,10 +195,6 @@ record ProductData (L R : Set) : Set where
 MetaResult = List String × List AnnTerm
 
 instance
-  Quotable-MetaResult : Quotable MetaResult
-  Quotable-MetaResult .quoteToAnnTerm (fst , snd) =
-    FreeVar "init$metaResult$pair" ⟪$⟫ quoteToAnnTerm fst ⟪$⟫ quoteToAnnTerm snd
-
   Quotable-ProductData : ∀ {L R} ⦃ _ : Quotable L ⦄ ⦃ _ : Quotable R ⦄ → Quotable (ProductData L R)
   Quotable-ProductData .quoteToAnnTerm pDat = let open ProductData pDat in
     FreeVar "init$pair" ⟪$⟫ lType ⟪$⟫ rType ⟪$⟫ quoteToAnnTerm l ⟪$⟫ quoteToAnnTerm r

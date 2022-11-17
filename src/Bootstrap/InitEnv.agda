@@ -120,11 +120,6 @@ private
     ("init$termList"
     , ("init$termList$nil" , []) ∷ ("init$termList$cons" , (Other "init$term" ∷ Self ∷ [])) ∷ [])
 
-  metaResultData : InductiveData
-  metaResultData =
-    ("init$metaResult"
-    , ("init$metaResult$pair" , (Other "init$stringList" ∷ Other "init$termList" ∷ [])) ∷ [])
-
   charDataConstructor : Char → String → String
   charDataConstructor c prefix =
     "let " + prefix + fromList (escapeChar c) + " := κ" + show c + "."
@@ -144,24 +139,28 @@ private
     ∷ ("string'$_nameTailChar__string'_" , "init$string$cons")
     ∷ ("string'$" , "init$string$nil")
 
+    ∷ ("err" , "init$string")
+
     ∷ ("stmt'$let^space^_string_^space'^=colon==equal=^space'^_term_^space'^_lettail_"
         , "λ s : init$string λ t : init$term λ lt : init$lettail
-           [[<lt ω init$metaResult> ζLet s t] λ T : init$term ζAnnLet s t T]")
+           [[<lt ω init$unit> ζLet s t] λ T : init$term ζAnnLet s t T]")
     ∷ ("stmt'$seteval^space^_term_^space^_string_^space^_string_^space'^=dot="
         , "λ ev : init$term λ NT : init$string λ namespace : init$string ζSetEval ev NT namespace")
-    ∷ ("stmt'$runMeta^space^_term_^space'^=dot=" , "λ x : ω init$metaResult x")
+    ∷ ("stmt'$runMeta^space^_term_^space'^=dot=" , "λ x : ω init$unit x")
     ∷ ("stmt'$import^space^_string_^space'^=dot=" , "λ s : init$string ζImport s")
-    ∷ ("stmt'$" , "ε [[init$metaResult$pair init$stringList$nil] init$termList$nil]")
-    ∷ ("stmt$^space'^_stmt'_" , "λ x : ω init$metaResult x")
+    ∷ ("stmt'$" , "ε init$tt")
+    ∷ ("stmt$^space'^_stmt'_" , "λ x : ω init$unit x")
     ∷ []
 
   otherInit : List String
   otherInit =
-    map simpleInductive (stringListData ∷ termListData ∷ metaResultData ∷ [])
+    "let init$unit := ∀ X : * Π _ : X X."
+    ∷ "let init$tt := Λ X : * λ x : X x."
+    ∷ map simpleInductive (stringListData ∷ termListData ∷ [])
     ++ map (λ where (n , d) → "let init$" + n + " := " + d + ".") definedGrammar
     ++ "let init$product := λ A : * λ B : * ∀ X : * Π _ : Π _ : A Π _ : B X X."
     ∷ "let init$pair := λ A : * λ B : * λ a : A λ b : B Λ X : * λ p : Π _ : A Π _ : B X [[p a] b]."
-    ∷ "let eval := λ x : ω init$metaResult x." ∷ "seteval eval init stmt." ∷ []
+    ∷ "let eval := λ x : ω init$unit x." ∷ "seteval eval init stmt." ∷ []
 
   grammarWithChars : List String
   grammarWithChars = grammar ++

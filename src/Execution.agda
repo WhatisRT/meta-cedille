@@ -133,7 +133,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executeTerm' (Epsilon t) = return (([] , []) , t)
 
-  executeTerm' (Gamma t t') = catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm (strResult s)))
+  executeTerm' (Gamma t t') = catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm s))
 
   executeTerm' (Ev m t) = do
     (res , t') ← executePrimitive m t
@@ -226,7 +226,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     res ← liftIO $ readFileError (x + ".mced")
     case res of λ where
       (inj₁ x) → throwError x
-      (inj₂ y) → parseAndExecute y >>= λ res → return (res , quoteToAnnTerm res)
+      (inj₂ y) → parseAndExecute y >>= λ res → return (res , quoteToAnnTerm tt)
 
   executePrimitive GetEval t = do
     ev ← MetaEnv.evaluator <$> getMeta
@@ -235,13 +235,13 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   executePrimitive Print t = do
     s ← unquoteFromTerm t
     liftIO $ putStr s
-    return (strResult "" , LamE "X" ⋆ (Lam-A "_" (BoundVar 0) (BoundVar 0)))
+    return (strResult "" , quoteToAnnTerm tt)
 
   executePrimitive WriteFile (t , t') = do
     fName ← unquoteFromTerm t
     contents ← unquoteFromTerm t'
     liftIO $ writeFile fName contents
-    return (strResult "" , LamE "X" ⋆ (Lam-A "_" (BoundVar 0) (BoundVar 0)))
+    return (strResult "" , quoteToAnnTerm tt)
 
   executePrimitive CommandLine _ = do
     args ← liftIO getArgs
@@ -251,7 +251,8 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     T ← case T of λ where
       (just T) → checkType t T >> return T
       nothing  → inferType t
-    < strResult , quoteToAnnTerm ∘ strResult > <$> addDef n (record { def = just t ; type = T; extra = nothing })
+    res ← addDef n (record { def = just t ; type = T; extra = nothing })
+    return (strResult res , quoteToAnnTerm tt)
 
   executeBootstrapStmt (SetEval t n start) = do
     Γ ← getContext
@@ -266,10 +267,10 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
         t' ∷ _ ← return $ boolFilter (λ t → isLocallyClosed (Erase t) Γ) (t ∷ hnfNorm Γ t ∷ [])
           where _ → throwError "The evaluator needs to normalize to a term without local variables!"
         setMeta record { grammar = y ; namespace = n ; evaluator = t' ; evaluatorArgType = u }
-        < strResult , quoteToAnnTerm ∘ strResult > <$> return "Successfully set the evaluator"
+        return (strResult "Successfully set the evaluator" , quoteToAnnTerm tt)
       _       → throwError "The evaluator needs to return a M type"
 
-  executeBootstrapStmt Empty = < strResult , quoteToAnnTerm > <$> return ""
+  executeBootstrapStmt Empty = return (strResult "" , quoteToAnnTerm tt)
 
   parseAndExecuteBootstrap s = do
     record { grammar = G } ← getMeta

@@ -175,12 +175,12 @@ let solveAppWithErr (f : Term) (app : List App) (s : List (Nat × Term)) : Eval 
 
 let debugPrintElabStep (l : List InferenceInfo) : Eval Unit :=
   ifthenelse ?(Eval Unit) (isNil ?InferenceInfo l) (pureEval ?Unit tt) $
-  seqEval ?Unit ?Unit
+  seqNewStmt
     (printLineEval $ showList ?InferenceInfo showEquation l)
     (printLineEval $ showList ?(Nat × Term) showSolution $ allEqns l).
 
 let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term :=
-  bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ _ : metaResult.
+  bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ _ : String.
     throwEval ?Term $ stringConcat
       [String|"Elaboration failure: Failed to infer the type of ", showTerm f, "!", newline]))
     (λ T : Term.
@@ -225,11 +225,11 @@ elet inferenceTest1 := λ x : Nat × Term. pr1 ?_ ?_ x.
 --elet inferenceTest1'' := λ x : Nat × Term. (pr1 ?_ ?_) x.
 
 elet inferenceTest2 (t : Term) : init$newStmt :=
-  bindEval ?_ ?metaResult (elabLocalInference false t) (λ t' : Term.
+  bindEval ?_ ?Unit (elabLocalInference false t) (λ t' : Term.
     seqNewStmt (echoStmt $ showTerm t') emptyStmt).
 
 elet inferenceTest3 (i : LetInfo) : init$newStmt :=
-  bindEval ?_ ?_ (elabLocalInference false $ letInfoTerm i) (λ t : Term. pureEval ?_ emptyMetaResult).
+  bindEval ?_ ?_ (elabLocalInference false $ letInfoTerm i) (λ t : Term. pureEval ?_ tt).
 
 elet inferenceTest4 [A, B : *] (f : Nat -> A -> B) (l : List A) : List B :=
   zipWith ?_ ?_ ?_ f (upTo (length ?_ l)) l.

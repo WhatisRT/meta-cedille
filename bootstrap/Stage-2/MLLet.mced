@@ -47,7 +47,7 @@ let appendTelToLetInfo := λ tel : Telescope λ i : LetInfo
 
 let convertLetInfo :=
   λ i : LetInfo
-    [[[<<maybe Term> [M init$metaResult]>
+    [[[<<maybe Term> [M Unit]>
       [[primLet [letInfoName i]] [TermToInitTerm [letInfoTerm i]]]]
       λ type : Term [[[primAnnLet [letInfoName i]] [TermToInitTerm [letInfoTerm i]]] [TermToInitTerm type]]]
       [letInfoType i]].

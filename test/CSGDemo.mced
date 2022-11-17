@@ -21,6 +21,6 @@ let csgdemo$str$ := <nil init$char>.
 b-let csgdemoeval (l : [List init$char]) : ω Nat :=
   γ[ifthenelse ?(ω Nat) [abcEqual l]
     ε γ[countOccurencesChar quote$a l]
-    μ [eval triggerError] λ _ : init$metaResult ε zero].
+    μ [eval triggerError] λ _ : Unit ε zero].
 
 seteval csgdemoeval csgdemo str.

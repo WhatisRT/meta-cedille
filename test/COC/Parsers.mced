@@ -39,13 +39,13 @@ let updateLetInfoType (i : LetInfo) (T : Term) :=
   mkLetInfo (letInfoName i) (letInfoTerm i) (just ?Term T).
 
 let init$COCStmt$let^space^_betterLet_ (i : LetInfo) : init$newStmt :=
-  bindEval ?Env ?metaResult getEnv
+  bindEval ?Env ?Unit getEnv
     (λ e : Env.
       ifthenelse ?init$newStmt (isDefined e (letInfoName i))
         (echoStmt "Name already defined!")
         (ErrorFold Term init$newStmt
           (λ T : Term.
-            bindEval ?Nat ?metaResult getEnvVersion
+            bindEval ?Nat ?Unit getEnvVersion
               (λ n : Nat.
                 seqNewStmt
                   (letInfoToNewStmt (mkLetInfo
@@ -53,7 +53,7 @@ let init$COCStmt$let^space^_betterLet_ (i : LetInfo) : init$newStmt :=
                     θ{convertAndAddToEnv γ{sVarTerm (natToEnv n)} γ{quoteLetInfo (updateLetInfoType i T)}}
                     (just ?Term θ{Env})))
                   (seqNewStmt
-                    (evalUnitToNewStmt (modifyOtherState suc))
+                    (modifyOtherState suc)
                     (echoStmt (stringConcat [String |"Defined: ", letInfoName i, " : ", showTerm T])))))
           (λ s : String. echoStmt s)
           (convertAndCheckLetInfo e i))).

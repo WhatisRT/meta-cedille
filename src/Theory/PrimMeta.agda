@@ -126,13 +126,12 @@ primMetaArgsMax = Data.Vec.Recursive.foldr {P = const 𝕀} 0 id (const _⊔𝕀
 module Types {T} (tl : TermLike T) where
   open TermLike tl
   private
-    tString tTerm tStringList tMetaResult tProduct : T
+    tString tTerm tStringList tProduct : T
     tString     = FreeVar "init$string"
     tStringList = FreeVar "init$stringList"
     tTerm       = FreeVar "init$term"
-    tMetaResult = FreeVar "init$metaResult"
     tProduct    = FreeVar "init$product"
-    tUnit       = FreeVar "Unit"
+    tUnit       = FreeVar "init$unit"
 
   primMetaS : (m : PrimMeta) → primMetaArgs T m
   primMetaS Let           = (tString , tTerm)
@@ -151,16 +150,16 @@ module Types {T} (tl : TermLike T) where
   primMetaS CommandLine   = _
 
   primMetaT : (m : PrimMeta) → primMetaArgs T m → T
-  primMetaT Let _             = tMetaResult
-  primMetaT AnnLet _          = tMetaResult
-  primMetaT SetEval _         = tMetaResult
+  primMetaT Let _             = tUnit
+  primMetaT AnnLet _          = tUnit
+  primMetaT SetEval _         = tUnit
   primMetaT ShellCmd _        = tString
   primMetaT CheckTerm (t , _) = t
   primMetaT Parse (_ , t , _) = tProduct ⟪$⟫ t ⟪$⟫ tString
   primMetaT Normalize _       = tTerm
   primMetaT HeadNormalize _   = tTerm
   primMetaT InferType     _   = tTerm
-  primMetaT Import _          = tMetaResult
+  primMetaT Import _          = tUnit
   primMetaT GetEval _         = tTerm
   primMetaT Print   _         = tUnit
   primMetaT WriteFile _       = tUnit
