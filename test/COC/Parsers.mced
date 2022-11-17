@@ -28,12 +28,11 @@ runMeta stmtToNewStmt (convertLetInfo (mkLetInfo "COCEnv|0" (sVarTerm "modPrefix
 let envPrefix := "COCEnv|".
 let natToEnv (n : Nat) := stringApp envPrefix (showNatDecimal n).
 
-let getEnvVersion : Eval Nat :=
-  bindEval ?EvalState ?Nat getEval (λ s : EvalState. pureEval ?Nat (getOtherState s)).
+elet getEnvVersion : Eval Nat :=
+  getEval >>= (λ s : EvalState. pureEval ?Nat (getOtherState s)).
 
-let getEnv : Eval Env :=
-  bindEval ?Nat ?Env getEnvVersion
-    (λ n : Nat. checkTerm Env $ sVarTerm $ natToEnv n).
+elet getEnv : Eval Env :=
+  getEnvVersion >>= (λ n : Nat. checkTerm Env $ sVarTerm $ natToEnv n).
 
 let updateLetInfoType (i : LetInfo) (T : Term) :=
   mkLetInfo (letInfoName i) (letInfoTerm i) (just ?Term T).

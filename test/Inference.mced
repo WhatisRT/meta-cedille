@@ -229,7 +229,7 @@ elet inferenceTest2 (t : Term) : init$newStmt :=
     seqNewStmt (echoStmt $ showTerm t') emptyStmt).
 
 elet inferenceTest3 (i : LetInfo) : init$newStmt :=
-  bindEval ?_ ?_ (elabLocalInference false $ letInfoTerm i) (λ t : Term. pureEval ?_ tt).
+  elabLocalInference false (letInfoTerm i) >>= λ t : Term. pureEval ?_ tt.
 
 elet inferenceTest4 [A, B : *] (f : Nat -> A -> B) (l : List A) : List B :=
   zipWith ?_ ?_ ?_ f (upTo (length ?_ l)) l.
