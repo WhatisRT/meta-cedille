@@ -56,6 +56,8 @@ b-let quoteModuleState (s : ModuleState) : Term :=
 -- File, line and column
 b-let SourceLocation : * := TripleProduct String Nat Nat.
 b-let mkSourceLocation := mkTripleProduct ?String ?Nat ?Nat.
+b-let unknownSourceLocation := mkSourceLocation "" zero zero.
+
 b-let getFileName := pr31 ?String ?Nat ?Nat.
 b-let getLine := pr32 ?String ?Nat ?Nat.
 b-let getColumn := pr33 ?String ?Nat ?Nat.
@@ -114,6 +116,12 @@ b-let modifyModuleDictInState (f : ModuleDict -> ModuleDict) (s : EvalState) : E
   mkEvalState (getEvalOpts s)
               (mkModuleState (ModuleStateModule (getModuleState s)) (f (ModuleStateDict (getModuleState s))))
               (getTermInfoState s)
+              (getOtherState s).
+
+b-let modifyTermInfoState (f : TermInfoState -> TermInfoState) (s : EvalState) : EvalState :=
+  mkEvalState (getEvalOpts s)
+              (getModuleState s)
+              (f (getTermInfoState s))
               (getOtherState s).
 
 b-let incrementStateCounter (s : EvalState) : EvalState :=
@@ -201,6 +209,11 @@ b-let askContext : Eval Context := readerEval ?Context getContext.
 b-let inContext [T : *] (ctx : Context) : Eval T -> Eval T :=
   localEval ?T (appendContext ctx).
 
+b-let showTermE (t : Term) : Eval String :=
+  mapEval ?Context ?String
+    (λ ctx : Context. showTermWithContext t (reverse ?String (map ?PreParam ?String (pr1 ?String ?Term) ctx)))
+    askContext.
+
 --------------------------------------------------------------------------------
 -- Lift the primitives into Eval
 --------------------------------------------------------------------------------
@@ -208,8 +221,8 @@ b-let let (n : String) (t : Term) : Eval Unit :=
   liftMtoEval ?Unit (primLet n (TermToInitTerm t)).
 b-let annLet (n : String) (t, T : Term) : Eval Unit :=
   liftMtoEval ?Unit (primAnnLet n (TermToInitTerm t) (TermToInitTerm T)).
-b-let setMEnv (eval : Term) (NT, ns : String) : Eval Unit :=
-  liftMtoEval ?Unit (primSetEval (TermToInitTerm eval) NT ns).
+b-let setMEnv (evT : *) (eval : evT) (NT, ns : String) : Eval Unit :=
+  liftMtoEval ?Unit (primSetEval (mkAny evT eval) NT ns).
 b-let shellCmd (cmd : String) (args : List String) : Eval String :=
   liftMtoEval ?String (primShellCmd cmd args).
 b-let checkTerm (T : *) (t : Term) : Eval T :=
@@ -230,8 +243,8 @@ b-let inferTypeBasic (t : Term) : Eval Term :=
 -- b-let import (s : String) : Eval Unit :=
 --   liftMtoEval ?Unit (primImport s).
 
-b-let getEval' : Eval Term :=
-  liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm primGetEval).
+b-let getEval' (X : *) : Eval X :=
+  liftMtoEval ?X (primGetEval X).
 
 b-let printEval (s : String) : Eval Unit :=
   liftMtoEval ?Unit (primPrint s).
@@ -244,6 +257,14 @@ b-let commandLine : Eval (List String) :=
 
 b-let printLineEval (s : String) : Eval Unit :=
   printEval (stringApp s newline).
+
+b-let getTermInfo (s : String) : Eval (Maybe TermInfo) :=
+  mapEval ?EvalState ?(Maybe TermInfo) (λ st : EvalState. lookupTermInfo (getTermInfoState st) s) getEval.
+
+b-let printDefinition (s : String) : Eval Unit :=
+  bindEval ?(Maybe TermInfo) ?Unit (getTermInfo s)
+    (maybe ?TermInfo ?(Eval Unit) (pureEval ?Unit tt)
+      (λ t : TermInfo. bindEval ?String ?Unit (showTermE (getDefinition t)) printLineEval)).
 
 --------------------------------------------------------------------------------
 -- Statements are just special Eval computations that run at the top level
@@ -263,9 +284,23 @@ b-let seqNewStmts (l : List init$newStmt) : init$newStmt :=
 b-let stmtToNewStmt (stmt : M Unit) : init$newStmt :=
   liftMtoEval ?Unit stmt.
 
-b-let updateMEnv : init$newStmt :=
+b-let getEvalHNF : Eval EvalState :=
+  bindEval ?EvalState ?EvalState getEval (λ s : EvalState.
+    bindEval ?Term ?EvalState (headNormalize θ{s}) (checkTerm EvalState)).
+
+b-let updateMEnv : Eval Unit :=
   bindEval ?EvalState ?Unit getEval (λ s : EvalState.
-    setMEnv (appSingle θ{evalNewStmt} (quoteEvalState s)) "init" "newStmt").
+    bindEval ?(EvalState -> init$newStmt -> M (Product Unit EvalState)) ?Unit
+      (checkTerm (EvalState -> init$newStmt -> M (Product Unit EvalState)) θ{evalNewStmt})
+      (λ evNS : EvalState -> init$newStmt -> M (Product Unit EvalState).
+        voidEval ?Unit (setMEnv (init$newStmt -> M (Product Unit EvalState)) (evNS s) "init" "newStmt"))).
+
+b-let updateMEnv' (s : EvalState) : Eval Unit :=
+  bindEval ?(EvalState -> init$newStmt -> M (Product Unit EvalState)) ?Unit
+    (checkTerm (EvalState -> init$newStmt -> M (Product Unit EvalState)) θ{evalNewStmt})
+    (λ evNS : EvalState -> init$newStmt -> M (Product Unit EvalState).
+      voidEval ?Unit (setMEnv (init$newStmt -> M (Product Unit EvalState)) (evNS s) "init" "newStmt")).
+    --γ{iVarTerm (init$index$0_index'_ init$index'$)}
 
 b-let echoStmt (s : String) : init$newStmt :=
   mapEval ?String ?Unit (λ _ : String. tt) (shellCmd "echo" [String | s]).
@@ -279,6 +314,8 @@ b-let readFile (filename : String) : Eval String := shellCmd "cat" [String| file
 
 b-let getPWD : Eval String := shellCmd "pwd" [String|].
 
+b-let getTime : Eval Unit := bindEval ?String ?Unit (shellCmd "date" [String|]) printLineEval. -- [String|"'+%s'"].
+
 b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
   bindEval ?EvalOpts ?Unit getEvalOpts' (λ f : EvalOpts.
     ifthenelse ?init$newStmt (or (not (getAnnReq f)) (letInfoHasAnn i))
@@ -291,11 +328,6 @@ b-let catchEval [T : *] (x : Eval T) (f : String -> Eval T) : Eval T :=
 
 b-let throwEval [T : *] (s : String) : Eval T :=
   seqEval ?Unit ?T (printEval s) (checkTerm T θ{□}).
-
-b-let showTermE (t : Term) : Eval String :=
-  mapEval ?Context ?String
-    (λ ctx : Context. showTermWithContext t (reverse ?String (map ?PreParam ?String (pr1 ?String ?Term) ctx)))
-    askContext.
 
 --------------------------------------------------------------------------------
 -- Elaborate let
@@ -324,6 +356,10 @@ b-let checkTypeAnn : ElabLet :=
       (pureEval ?Unit tt)
       (throwEval ?Unit "The provided command has no type annotation!"))).
 
+b-let recordMetaInState : ElabLet := liftElabLet (λ i : LetInfo. modifyEval
+  (modifyTermInfoState (addTermInfo (letInfoName i)
+                       (mkTermInfo unknownSourceLocation (letInfoTerm i))))).
+
 --------------------------------------------------------------------------------
 -- Importing
 --
@@ -338,7 +374,7 @@ b-let import (filename : String) : init$newStmt :=
   bindEval ?String ?Unit (mapEval ?EvalOpts ?String getWorkingDir getEvalOpts')
     (λ workingDir : String. seqNewStmt
       (liftMtoEval ?Unit (primImport (stringConcat [String| workingDir, filename])))
-      (bindEval ?Evaluator ?Unit (bindEval ?Term ?Evaluator getEval' (checkTerm Evaluator))
+      (bindEval ?Evaluator ?Unit (getEval' Evaluator)
         (λ ev : Evaluator. bindEval ?EvalState ?Unit
           (liftMtoEval ?EvalState (mapMeta ?(Product Unit EvalState) ?EvalState
                                            (pr2 ?Unit ?EvalState) (ev emptyStmt)))
@@ -378,5 +414,18 @@ b-let inferType (t : Term) : Eval Term :=
 -- Invoking Eval computations.
 --------------------------------------------------------------------------------
 
-b-let runEval [T : *] (eval : Eval T) (s : EvalState) : M (Product T EvalState) :=
-  (bindEval ?T ?T eval (λ t : T. seqEval ?Unit ?T updateMEnv (pureEval ?T t))) (initEvalEnv s) s.
+-- b-let runEval [T : *] (eval : Eval T) (s : EvalState) : M (Product T EvalState) :=
+--   (bindEval ?T ?T eval (λ t : T. seqEval ?Unit ?T updateMEnv (pureEval ?T t))) (initEvalEnv s) s.
+
+-- -- new evaluator
+-- b-let evalNewStmt' (s : EvalState) (stmt : init$newStmt) : M (Product Unit EvalState) :=
+--   runEval ?Unit stmt s.
+
+-- new evaluator
+b-let evalNewStmt (s : EvalState) (stmt : init$newStmt) : M (Product Unit EvalState) :=
+  (seqEval ?Unit ?Unit stmt updateMEnv) (initEvalEnv s) s.
+
+-- update the meta environment to use the new evaluator with initial state
+b-let initEval : M Unit :=
+  mapMeta ?(Product Unit EvalState) ?Unit (λ _ : Product Unit EvalState. tt)
+    (evalNewStmt emptyEvalState emptyStmt).

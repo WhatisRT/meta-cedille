@@ -189,7 +189,7 @@ toTerm = helper []
         ("ζHeadNormalize^space^_term_"                     , 1F , conv1ʰ (Ev HeadNormalize)) ∷
         ("ζInferType^space^_term_"                         , 1F , conv1ʰ (Ev InferType)) ∷
         ("ζImport^space^_term_"                            , 1F , conv1ʰ (Ev Import)) ∷
-        ("ζGetEval"                                        , 0F , conv0ʰ (Ev GetEval)) ∷
+        ("ζGetEval^space^_term_"                           , 1F , conv1ʰ (Ev GetEval)) ∷
         ("ζPrint^space^_term_"                             , 1F , conv1ʰ (Ev Print)) ∷
         ("ζWriteFile^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev WriteFile)) ∷
         ("ζCommandLine"                                    , 0F , conv0ʰ (Ev CommandLine)) ∷
@@ -199,9 +199,13 @@ toTerm = helper []
 
         ("γ^space^_term_^space^_term_" , 2F , conv2ʰ CharEq) ∷ [])
 
+fromAny : PTree → Maybe AnnTerm
+fromAny (Node _ (x ∷ [])) = toTerm x
+fromAny (Node _ _) = nothing
+
 data BootstrapStmt : Set where
   Let           : GlobalName → AnnTerm → Maybe AnnTerm → BootstrapStmt
-  SetEval       : AnnTerm → String → String → BootstrapStmt
+  SetEval       : AnnTerm → Maybe AnnTerm → String → String → BootstrapStmt
   Empty         : BootstrapStmt
 
 instance
@@ -211,7 +215,7 @@ instance
       helper : BootstrapStmt → String
       helper (Let x x₁ (just x₂)) = "let " + x + " := " + show x₁ + " : " + show x₂
       helper (Let x x₁ nothing)   = "let " + x + " := " + show x₁
-      helper (SetEval x n n')     = "seteval " + show x + " " + n + " " + n'
+      helper (SetEval x _ n n')     = "seteval " + show x + " " + n + " " + n'
       helper Empty                = "Empty"
 
 private
@@ -222,7 +226,7 @@ private
         (("let^space^_string_^space'^:=^space'^_term_^space'^_lettail_" , 3F , λ y y' y'' →
           do y ← toName y; y' ← toTerm y'; y'' ← toLetTail y''; return $ Let y y' y'') ∷
         ("seteval^space^_term_^space^_string_^space^_string_^space'^." , 3F , λ y y' y'' →
-          do y ← toTerm y; y' ← toName y'; y'' ← toName y''; return $ SetEval y y' y'') ∷ [])
+          do y ← toTerm y; y' ← toName y'; y'' ← toName y''; return $ SetEval y nothing y' y'') ∷ [])
       else nothing
     where
       toLetTail : PTree → Maybe (Maybe AnnTerm)

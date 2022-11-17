@@ -144,7 +144,7 @@ module _ where
     convDef : Def → Maybe (Term false true)
     convDef record { extra = extra } = extra
 
-    open Lookup (convDef {false})
+    open Lookup convDef
 
     {-# NON_TERMINATING #-}
     dbnf : Context' false → PureTerm true → PureTerm true

@@ -1,5 +1,7 @@
 let iTerm := init$term.
 
+let mkAny := λ A : * λ a : A λ p : Π a : * Π _ : a * [[p A] a].
+
 let M := λ X : * ω X : Π _ : * *.
 
 let returnMeta := Λ X : * λ x : X ε x : ∀ X : * Π _ : X [M X].
@@ -9,7 +11,7 @@ let joinMeta := Λ X : * λ x : [M [M X]] [[<<bindMeta [M X]> X> x] λ a : [M X]
 
 let primLet := λ s : String λ t : iTerm ζLet s t.
 let primAnnLet := λ s : String λ t : iTerm λ T : iTerm ζAnnLet s t T.
-let primSetEval := λ eval : iTerm λ NT : String λ ns : String ζSetEval eval NT ns.
+let primSetEval := λ eval : init$any λ NT : String λ ns : String ζSetEval eval NT ns.
 let primShellCmd := λ s : String λ args : init$stringList ζShellCmd s args : Π _ : String Π _ : init$stringList [M String].
 let primCheckTerm := λ X : * λ t : iTerm ζCheckTerm X t : Π X : * Π _ : iTerm [M X].
 let primParse := λ nt : String λ T : * λ text : String ζParse nt T text.
@@ -17,9 +19,12 @@ let primNormalize := λ t : iTerm ζNormalize t.
 let primHeadNormalize := λ t : iTerm ζHeadNormalize t.
 let primInferType := λ t : iTerm ζInferType t.
 let primImport := λ s : String ζImport s.
-let primGetEval := ζGetEval.
+let primGetEval := λ X : * ζGetEval X.
 let primPrint := λ s : String ζPrint s.
 let primWriteFile := λ fName : String λ s : String ζWriteFile fName s.
 let primCommandLine := ζCommandLine.
 
 let catchErr := Λ X : * λ run : [M X] λ catch : Π _ : String [M X] ζCatchErr run catch : ∀ X : * Π _ : [M X] Π _ : Π _ : init$err [M X] [M X].
+
+let init$stmt'$runMeta^space^_term_^space'^=dot= :=
+  λ t : iTerm μ ζCheckTerm ω init$unit t λ x : ω init$unit x.

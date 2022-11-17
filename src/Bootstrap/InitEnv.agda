@@ -82,7 +82,7 @@ private
     "term$=zeta=InferType^space^_term_" ∷
     "term$=zeta=CatchErr^space^_term_^space^_term_" ∷ -- this is not actually in PrimMeta
     "term$=zeta=Import^space^_term_" ∷
-    "term$=zeta=GetEval" ∷
+    "term$=zeta=GetEval^space^_term_" ∷
     "term$=zeta=Print^space^_term_" ∷
     "term$=zeta=WriteFile^space^_term_^space^_term_" ∷
     "term$=zeta=CommandLine" ∷
@@ -138,6 +138,8 @@ private
       ("string$_nameInitChar__string'_" , "init$string$cons")
     ∷ ("string'$_nameTailChar__string'_" , "init$string$cons")
     ∷ ("string'$" , "init$string$nil")
+    ∷ ("any" , "Π _ : Π A : * Π _ : A * *")
+    ∷ ("mkAny" , "λ A : * λ a : A λ p : Π a : * Π _ : a * [[p A] a]")
 
     ∷ ("err" , "init$string")
 
@@ -145,8 +147,7 @@ private
         , "λ s : init$string λ t : init$term λ lt : init$lettail
            [[<lt ω init$unit> ζLet s t] λ T : init$term ζAnnLet s t T]")
     ∷ ("stmt'$seteval^space^_term_^space^_string_^space^_string_^space'^=dot="
-        , "λ ev : init$term λ NT : init$string λ namespace : init$string ζSetEval ev NT namespace")
-    ∷ ("stmt'$runMeta^space^_term_^space'^=dot=" , "λ x : ω init$unit x")
+        , "λ ev : init$term λ NT : init$string λ namespace : init$string μ ζCheckTerm Π _ : ω init$unit ω init$unit ev λ ev' : Π _ : ω init$unit ω init$unit ζSetEval [[init$mkAny Π _ : ω init$unit ω init$unit] ev'] NT namespace")
     ∷ ("stmt'$import^space^_string_^space'^=dot=" , "λ s : init$string ζImport s")
     ∷ ("stmt'$" , "ε init$tt")
     ∷ ("stmt$^space'^_stmt'_" , "λ x : ω init$unit x")

@@ -10,7 +10,7 @@ b-let letInfoTermToQuoted (i : LetInfo) : LetInfo :=
 b-let addQuotedLetInfo : ElabLet :=
   liftElabLet (λ i : LetInfo. voidEval ?Unit (letInfoToNewStmt (letInfoTermToQuoted i))).
 
-b-let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn, moduleElab].
+b-let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn, moduleElab]. --, recordMetaInState.
 
 b-let runMetaCommand (t : Term) : init$newStmt := joinEval ?Unit (checkTerm init$newStmt t).
 
@@ -36,7 +36,7 @@ b-let init$flag$false := false.
 -- set statements
 
 b-let modifyAndUpdateEvalOpts (f : EvalOpts -> EvalOpts) : init$newStmt :=
-  seqNewStmt (modifyEvalOpts f) updateMEnv.
+  modifyEvalOpts f.
 
 b-let init$setStmt$RequireTypeAnnotations^space^_flag_ (b : Bool) :=
   modifyAndUpdateEvalOpts (setAnnReq b).
@@ -65,14 +65,12 @@ b-let init$newStmt'$ : init$newStmt := emptyStmt.
 
 b-let init$newStmt$^space'^_newStmt'_ (stmt : init$newStmt) : init$newStmt := stmt.
 
--- new evaluator
-b-let evalNewStmt (s : EvalState) (stmt : init$newStmt) : M (Product Unit EvalState) :=
-  runEval ?Unit stmt s.
+runMeta initEval.
 
-seteval [evalNewStmt emptyEvalState] init newStmt.
+--seteval [evalNewStmt emptyEvalState] init newStmt.
 
 -- this defines the initial dictionary
-runMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDict) θ{emptyModuleDict} (just ?Term θ{ModuleDict}))).
+--runMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDict) θ{emptyModuleDict} (just ?Term θ{ModuleDict}))).
 
 -- Test parse:
 --runMeta bindEval ?Term ?Unit (inferType' θ{evalNewStmt}) (λ x : Term. echoStmt (showTerm x)).

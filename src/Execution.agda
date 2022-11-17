@@ -16,7 +16,7 @@ open import Data.HSTrie
 open import Conversion
 open import Theory.TypeChecking
 
-open import Parse.TreeConvert using (parseBootstrap; parse; BootstrapStmt; Let; SetEval; Empty)
+open import Parse.TreeConvert using (parseBootstrap; parse; BootstrapStmt; Let; SetEval; Empty; fromAny)
 open import Parse.Generate
 
 open import Prelude
@@ -29,6 +29,7 @@ record MetaEnv : Set where
     namespace : String  -- we need to remember the current namespace
                         -- because the rule string in the grammar doesn't
     evaluator : AnnTerm
+    evaluatorType : AnnTerm -- type of the evaluator
     evaluatorArgType : AnnTerm -- type of arguments to the evaluator
 
 -- The full state of the interpreter: the context of defined values plus parsing
@@ -81,6 +82,9 @@ module _ {M : Set → Set} {{_ : Monad M}}
     catchError (unquoteConstrs Γ $ normalizePure Γ t)
                (λ e → throwError $ "Error while unquoting" <+> show t + ":\n" + e)
 
+  unquoteFromAnnTerm : ∀ {A} ⦃ _ : Unquote A ⦄ → AnnTerm → M A
+  unquoteFromAnnTerm = unquoteFromTerm ∘ Erase
+
   -- Typecheck a term and return its type
   inferType : AnnTerm → M AnnTerm
   inferType t = do
@@ -115,66 +119,68 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   {-# NON_TERMINATING #-}
   -- Execute a term of type M t for some t
-  executeTerm executeTerm' : PureTerm → M (MetaResult × PureTerm)
+  executeTerm executeTerm' : AnnTerm → M (MetaResult × AnnTerm)
   executeBootstrapStmt : BootstrapStmt → M (MetaResult × AnnTerm)
-  executePrimitive : (m : PrimMeta) → primMetaArgs PureTerm m → M (MetaResult × AnnTerm)
+  executePrimitive : (m : PrimMeta) → primMetaArgs AnnTerm m → M (MetaResult × AnnTerm)
   -- Parse and execute a string
   parseAndExecute' parseAndExecuteBootstrap : String → M (MetaResult × String)
   parseAndExecute : String → M MetaResult
 
   executeTerm t = do
     Γ ← getContext
-    executeTerm' (hnfNormPure Γ t)
+    executeTerm' (hnfNorm Γ t)
 
   executeTerm' (Mu t t₁) = do
     (res , t') ← executeTerm t
+    --timeRes ← (λ time → strResult ("DEBUG" <+> time + "\n")) <$> (liftIO $ runShellCmd "date" [ "+%s" ])
     (res' , resTerm) ← executeTerm (t₁ ⟪$⟫ t')
     return (res + res' , resTerm)
 
   executeTerm' (Epsilon t) = return (([] , []) , t)
 
-  executeTerm' (Gamma t t') = catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm s))
+  executeTerm' (Gamma t t') = catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToAnnTerm s))
 
   executeTerm' (Ev m t) = do
     (res , t') ← executePrimitive m t
-    appendIfError (checkTypePure t' $ primMetaT m t)
-                  ("Bug: Result type mismatch in ζ" + show m)
-    return (res , Erase t')
+    appendIfError (checkType t' $ primMetaT m t) ("Bug: Result type mismatch in ζ" + show m)
+    return (res , t')
 
   {-# CATCHALL #-}
   executeTerm' t =
     throwError ("Error: " + shortenString 2000 (show t) + " is not a term that can be evaluated!")
 
   executePrimitive Let (n , t) = do
-    n ← unquoteFromTerm n
-    t ← unquoteFromTerm t
+    n ← unquoteFromAnnTerm n
+    t ← unquoteFromAnnTerm t
     appendIfError (executeBootstrapStmt (Let n t nothing))
                   ("Couldn't define" <+> n <+> ":=" <+> show t)
 
   executePrimitive AnnLet (n , t , T) = do
-    n ← unquoteFromTerm n
-    t ← unquoteFromTerm t
-    T ← unquoteFromTerm T
+    n ← unquoteFromAnnTerm n
+    t ← unquoteFromAnnTerm t
+    T ← unquoteFromAnnTerm T
     appendIfError (executeBootstrapStmt (Let n t (just T)))
                   ("Couldn't define" <+> n <+> ":=" <+> show t <+> ":" <+> show T)
 
   executePrimitive SetEval (ev , NT , namespace) = do
-    t ← unquoteFromTerm ev
-    n ← unquoteFromTerm NT
-    start ← unquoteFromTerm namespace
-    executeBootstrapStmt (SetEval t n start)
+    Γ ← getContext
+    (Lam-A _ _ (App (App _ T) t)) ← return $ hnfNorm Γ ev
+      where _ → throwError "Error: incorrect any in SetEval!"
+    n ← unquoteFromAnnTerm NT
+    start ← unquoteFromAnnTerm namespace
+    executeBootstrapStmt (SetEval t (just T) n start)
 
   executePrimitive ShellCmd (t , t') = do
-    cmd ← unquoteFromTerm t
-    args ← unquoteFromTerm t'
+    cmd ← unquoteFromAnnTerm t
+    args ← unquoteFromAnnTerm t'
     res ← liftIO $ runShellCmd cmd args
     return (strResult res , quoteToAnnTerm res)
 
   executePrimitive CheckTerm (t , t') = do
     Γ ← getContext
-    u ← unquoteFromTerm t'
+    u ← unquoteFromAnnTerm t'
     T' ← inferType u
-    catchError (checkβηPure Γ t $ Erase T')
+    catchError (checkβη Γ t T')
       (λ e → throwError $
         "Type mismatch with the provided type!\nProvided: " + show t +
         "\nSynthesized: " + show T')
@@ -182,8 +188,8 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executePrimitive Parse (t , type , t') = do
     Γ ← getContext
-    nonTerminal ← M String ∋ (unquoteFromTerm t)
-    text ← M String ∋ (unquoteFromTerm t')
+    nonTerminal ← M String ∋ (unquoteFromAnnTerm t)
+    text ← M String ∋ (unquoteFromAnnTerm t')
     record { grammar = G ; namespace = namespace } ← getMeta
     NT ← maybeToError (findNT G nonTerminal)
                       ("Non-terminal" <+> nonTerminal <+> "does not exist in the current grammar!")
@@ -192,7 +198,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
                       ("\n\nError while interpreting input: "
                         + (shortenString 10000 (show res))
                         + "\nWhile parsing: " + (shortenString 10000 text))
-    appendIfError (checkβηPure Γ type $ Erase T)
+    appendIfError (checkβη Γ type T)
       ("Type mismatch with the provided type!\nProvided: " + show type +
         "\nSynthesized: " + show T)
     -- need to spell out instance manually, since we don't want to quote 'res'
@@ -201,7 +207,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executePrimitive Normalize t = do
     Γ ← getContext
-    u ← unquoteFromTerm t
+    u ← unquoteFromAnnTerm t
     T ← synthType Γ u
     return (strResult
       (show u + " : " + show T + " normalizes to: " +
@@ -209,7 +215,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executePrimitive HeadNormalize t = do
     Γ ← getContext
-    u ← unquoteFromTerm t
+    u ← unquoteFromAnnTerm t
     T ← synthType Γ u
     return (strResult
       (show t + " : " + show T + " head-normalizes to: " +
@@ -217,29 +223,34 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executePrimitive InferType t = do
     Γ ← getContext
-    u ← unquoteFromTerm t
+    u ← unquoteFromAnnTerm t
     T ← synthType Γ u
     return (strResult "" , (quoteToAnnTerm T))
 
   executePrimitive Import t = do
-    x ← M String ∋ (unquoteFromTerm t)
+    x ← M String ∋ (unquoteFromAnnTerm t)
     res ← liftIO $ readFileError (x + ".mced")
     case res of λ where
       (inj₁ x) → throwError x
       (inj₂ y) → parseAndExecute y >>= λ res → return (res , quoteToAnnTerm tt)
 
   executePrimitive GetEval t = do
-    ev ← MetaEnv.evaluator <$> getMeta
-    return (strResult "" , quoteToAnnTerm ev)
+    record { evaluator = ev ; evaluatorType = T } ← getMeta
+    Γ ← getContext
+    catchError (checkβη Γ t T)
+      (λ e → throwError $
+        "Type mismatch with the provided type!\nProvided: " + show t +
+        "\nSynthesized: " + show T)
+    return (strResult "" , ev)
 
   executePrimitive Print t = do
-    s ← unquoteFromTerm t
+    s ← unquoteFromAnnTerm t
     liftIO $ putStr s
     return (strResult "" , quoteToAnnTerm tt)
 
   executePrimitive WriteFile (t , t') = do
-    fName ← unquoteFromTerm t
-    contents ← unquoteFromTerm t'
+    fName ← unquoteFromAnnTerm t
+    contents ← unquoteFromAnnTerm t'
     liftIO $ writeFile fName contents
     return (strResult "" , quoteToAnnTerm tt)
 
@@ -254,20 +265,25 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     res ← addDef n (record { def = just t ; type = T; extra = nothing })
     return (strResult res , quoteToAnnTerm tt)
 
-  executeBootstrapStmt (SetEval t n start) = do
+  executeBootstrapStmt (SetEval t T n start) = do
+    --timeRes1 ← (λ time → strResult ("DEBUG1" <+> time + "\n")) <$> (liftIO $ runShellCmd "date" [ "+%s" ])
     Γ ← getContext
     y ← generateCFG start $ getParserNamespace Γ n
-    (Pi _ u u₁) ← hnfNorm Γ <$> synthType Γ t
+    --timeRes2 ← (λ time → strResult ("DEBUG2" <+> time + "\n" + show t + "\nNormalized:" <+> show (normalizePure Γ $ Erase t))) <$> (liftIO $ runShellCmd "date" [ "+%s" ])
+    T' ← maybe return (inferType t) T
+    (Pi _ u u₁) ← return $ hnfNorm Γ T'
       where _ → throwError "The evaluator needs to have a pi type"
+    --timeRes3 ← (λ time → strResult ("DEBUG3" <+> time + "\n")) <$> (liftIO $ runShellCmd "date" [ "+%s" ])
     true ← return $ isLocallyClosed (Erase u) Γ
       where false → throwError "The argument type to the evaluator cannot contain local variables!"
+    --timeRes4 ← (λ time → strResult ("DEBUG4" <+> time + "\n")) <$> (liftIO $ runShellCmd "date" [ "+%s" ])
     case (hnfNorm Γ u₁) of λ where
       (M-T _) → do
         -- take the least normalized term that's locally free
-        t' ∷ _ ← return $ boolFilter (λ t → isLocallyClosed (Erase t) Γ) (t ∷ hnfNorm Γ t ∷ [])
-          where _ → throwError "The evaluator needs to normalize to a term without local variables!"
-        setMeta record { grammar = y ; namespace = n ; evaluator = t' ; evaluatorArgType = u }
-        return (strResult "Successfully set the evaluator" , quoteToAnnTerm tt)
+        -- t' ∷ _ ← return $ boolFilter (λ t → isLocallyClosed (Erase t) Γ) (t ∷ hnfNorm Γ t ∷ [])
+        --   where _ → throwError "The evaluator needs to normalize to a term without local variables!"
+        setMeta record { grammar = y ; namespace = n ; evaluator = t ; evaluatorType = T' ; evaluatorArgType = u }
+        return (strResult {-timeRes1 + timeRes2 + timeRes3 + timeRes4 +-} "Successfully set the evaluator" , quoteToAnnTerm tt)
       _       → throwError "The evaluator needs to return a M type"
 
   executeBootstrapStmt Empty = return (strResult "" , quoteToAnnTerm tt)
@@ -281,10 +297,10 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   parseAndExecute' s = do
     Γ ← getContext
     m@record { evaluator = ev ; evaluatorArgType = evT } ← getMeta
-    (fst , snd) ← parseMeta m s
+    (fst , snd) ← appendIfError (parseMeta m s) ("\nError while parsing: " + (shortenString 10000 s))
     appendIfError (checkType fst evT) ("\n\nError while interpreting input: " + (shortenString 10000 (show fst))
                                         + "\nWhile parsing: " + (shortenString 10000 s))
-    (res , _) ← appendIfError (executeTerm (Erase (ev ⟪$⟫ fst))) ("\n\nError while executing input:" <+> s + "\n")
+    (res , _) ← appendIfError (executeTerm (ev ⟪$⟫ fst)) ("\n\nError while executing input:" <+> show fst <+> "\n\n" + (shortenString 10000 s) + "\n")
     return (res , snd)
 
   parseAndExecute s = do

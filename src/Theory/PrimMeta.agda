@@ -93,7 +93,7 @@ primMetaArity Normalize     = 1
 primMetaArity HeadNormalize = 1
 primMetaArity InferType     = 1
 primMetaArity Import        = 1
-primMetaArity GetEval       = 0
+primMetaArity GetEval       = 1
 primMetaArity Print         = 1
 primMetaArity WriteFile     = 2
 primMetaArity CommandLine   = 0
@@ -132,11 +132,12 @@ module Types {T} (tl : TermLike T) where
     tTerm       = FreeVar "init$term"
     tProduct    = FreeVar "init$product"
     tUnit       = FreeVar "init$unit"
+    tAny        = FreeVar "init$any"
 
   primMetaS : (m : PrimMeta) → primMetaArgs T m
   primMetaS Let           = (tString , tTerm)
   primMetaS AnnLet        = (tString , tTerm , tTerm)
-  primMetaS SetEval       = (tTerm , tString , tString)
+  primMetaS SetEval       = (tAny , tString , tString)
   primMetaS ShellCmd      = (tString , tStringList)
   primMetaS CheckTerm     = (⋆ , tTerm)
   primMetaS Parse         = (tString , ⋆ , tString)
@@ -144,7 +145,7 @@ module Types {T} (tl : TermLike T) where
   primMetaS HeadNormalize = tTerm
   primMetaS InferType     = tTerm
   primMetaS Import        = tString
-  primMetaS GetEval       = _
+  primMetaS GetEval       = ⋆
   primMetaS Print         = tString
   primMetaS WriteFile     = (tString , tString)
   primMetaS CommandLine   = _
@@ -160,7 +161,7 @@ module Types {T} (tl : TermLike T) where
   primMetaT HeadNormalize _   = tTerm
   primMetaT InferType     _   = tTerm
   primMetaT Import _          = tUnit
-  primMetaT GetEval _         = tTerm
+  primMetaT GetEval t         = t
   primMetaT Print   _         = tUnit
   primMetaT WriteFile _       = tUnit
   primMetaT CommandLine _     = tStringList
