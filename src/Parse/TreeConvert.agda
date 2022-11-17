@@ -142,62 +142,62 @@ toTerm = helper []
 
         ("_sort_" , 1F , toSort) ∷
 
-        ("π^space^_term_" , 1F , conv1ʰ Pr1-A) ∷
-        ("ψ^space^_term_" , 1F , conv1ʰ Pr2-A) ∷
+        ("π^space^_term_" , 1F , conv1ʰ Pr1) ∷
+        ("ψ^space^_term_" , 1F , conv1ʰ Pr2) ∷
 
-        ("β^space^_term_^space^_term_" , 2F , conv2ʰ Beta-A) ∷
-        ("δ^space^_term_^space^_term_" , 2F , conv2ʰ Delta-A) ∷
-        ("σ^space^_term_"              , 1F , conv1ʰ Sigma-A) ∷
+        ("β^space^_term_^space^_term_" , 2F , conv2ʰ Beta) ∷
+        ("δ^space^_term_^space^_term_" , 2F , conv2ʰ Delta) ∷
+        ("σ^space^_term_"              , 1F , conv1ʰ Sigma) ∷
 
-        ("[^space'^_term_^space^_term_^space'^]" , 2F , conv2ʰ App-A) ∷
-        ("<^space'^_term_^space^_term_^space'^>" , 2F , conv2ʰ AppE-A) ∷
+        ("[^space'^_term_^space^_term_^space'^]" , 2F , conv2ʰ App) ∷
+        ("<^space'^_term_^space^_term_^space'^>" , 2F , conv2ʰ AppE) ∷
 
         ("ρ^space^_term_^space^_string_^space^" , 4F , (λ y n' y' y'' → do
           t ← helper accu y
           n ← toName n'
           t' ← helper (n ∷ accu) y'
           t'' ← helper accu y''
-          return $ Rho-A t t' t'')) ∷
+          return $ Rho t t' t'')) ∷
 
-        ("∀^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ All-A) ∷
-        ("Π^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ Pi-A) ∷
-        ("ι^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ Iota-A) ∷
+        ("∀^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ All) ∷
+        ("Π^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ Pi) ∷
+        ("ι^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ Iota) ∷
         ("λ^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ Lam-A) ∷
-        ("Λ^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ LamE-A) ∷
+        ("Λ^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ LamE) ∷
 
         ("{^space'^_term_^space'^,^space'^_term_^space^_string_^space'^.^space'^_term_^space'^}" , 4F , (λ y y' n y'' → do
           t ← helper accu y
           t' ← helper accu y'
           n ← toName n
           t'' ← helper (n ∷ accu) y''
-          return $ Rho-A t t' t'')) ∷
+          return $ Rho t t' t'')) ∷
 
-        ("φ^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰ Phi-A) ∷
-        ("=^space^_term_^space^_term_"              , 2F , conv2ʰ Eq-A) ∷
-        ("ω^space^_term_"                           , 1F , conv1ʰ M-A) ∷
-        ("μ^space^_term_^space^_term_"              , 2F , conv2ʰ Mu-A) ∷
-        ("ε^space^_term_"                           , 1F , conv1ʰ Epsilon-A) ∷
+        ("φ^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰ Phi) ∷
+        ("=^space^_term_^space^_term_"              , 2F , conv2ʰ Eq-T) ∷
+        ("ω^space^_term_"                           , 1F , conv1ʰ M-T) ∷
+        ("μ^space^_term_^space^_term_"              , 2F , conv2ʰ Mu) ∷
+        ("ε^space^_term_"                           , 1F , conv1ʰ Epsilon) ∷
 
-        ("ζLet^space^_term_^space^_term_"                  , 2F , conv2ʰᶜ (Ev-A Let)) ∷
-        ("ζAnnLet^space^_term_^space^_term_^space^_term_"  , 3F , conv3ʰᶜ (Ev-A AnnLet)) ∷
-        ("ζSetEval^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰᶜ (Ev-A SetEval)) ∷
-        ("ζShellCmd^space^_term_^space^_term_"             , 2F , conv2ʰᶜ (Ev-A ShellCmd)) ∷
-        ("ζCheckTerm^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev-A CheckTerm)) ∷
-        ("ζParse^space^_term_^space^_term_^space^_term_"   , 3F , conv3ʰᶜ (Ev-A Parse)) ∷
-        ("ζCatchErr^space^_term_^space^_term_"             , 2F , conv2ʰ Gamma-A) ∷
-        ("ζNormalize^space^_term_"                         , 1F , conv1ʰ (Ev-A Normalize)) ∷
-        ("ζHeadNormalize^space^_term_"                     , 1F , conv1ʰ (Ev-A HeadNormalize)) ∷
-        ("ζInferType^space^_term_"                         , 1F , conv1ʰ (Ev-A InferType)) ∷
-        ("ζImport^space^_term_"                            , 1F , conv1ʰ (Ev-A Import)) ∷
-        ("ζGetEval"                                        , 0F , conv0ʰ (Ev-A GetEval)) ∷
-        ("ζPrint^space^_term_"                             , 1F , conv1ʰ (Ev-A Print)) ∷
-        ("ζWriteFile^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev-A WriteFile)) ∷
-        ("ζCommandLine"                                    , 0F , conv0ʰ (Ev-A CommandLine)) ∷
+        ("ζLet^space^_term_^space^_term_"                  , 2F , conv2ʰᶜ (Ev Let)) ∷
+        ("ζAnnLet^space^_term_^space^_term_^space^_term_"  , 3F , conv3ʰᶜ (Ev AnnLet)) ∷
+        ("ζSetEval^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰᶜ (Ev SetEval)) ∷
+        ("ζShellCmd^space^_term_^space^_term_"             , 2F , conv2ʰᶜ (Ev ShellCmd)) ∷
+        ("ζCheckTerm^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev CheckTerm)) ∷
+        ("ζParse^space^_term_^space^_term_^space^_term_"   , 3F , conv3ʰᶜ (Ev Parse)) ∷
+        ("ζCatchErr^space^_term_^space^_term_"             , 2F , conv2ʰ Gamma) ∷
+        ("ζNormalize^space^_term_"                         , 1F , conv1ʰ (Ev Normalize)) ∷
+        ("ζHeadNormalize^space^_term_"                     , 1F , conv1ʰ (Ev HeadNormalize)) ∷
+        ("ζInferType^space^_term_"                         , 1F , conv1ʰ (Ev InferType)) ∷
+        ("ζImport^space^_term_"                            , 1F , conv1ʰ (Ev Import)) ∷
+        ("ζGetEval"                                        , 0F , conv0ʰ (Ev GetEval)) ∷
+        ("ζPrint^space^_term_"                             , 1F , conv1ʰ (Ev Print)) ∷
+        ("ζWriteFile^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev WriteFile)) ∷
+        ("ζCommandLine"                                    , 0F , conv0ʰ (Ev CommandLine)) ∷
 
-        ("Κ_const_" , 1F , (λ z → Const-A <$> toConst z)) ∷
-        ("κ_char_" , 1F , (λ z → Char-A <$> toChar z <∣> toChar' z)) ∷
+        ("Κ_const_" , 1F , (λ z → Const-T <$> toConst z)) ∷
+        ("κ_char_" , 1F , (λ z → Char-T <$> toChar z <∣> toChar' z)) ∷
 
-        ("γ^space^_term_^space^_term_" , 2F , conv2ʰ CharEq-A) ∷ [])
+        ("γ^space^_term_^space^_term_" , 2F , conv2ʰ CharEq) ∷ [])
 
 data BootstrapStmt : Set where
   Let           : GlobalName → AnnTerm → Maybe AnnTerm → BootstrapStmt
@@ -257,7 +257,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
           where
             ruleToTerm : String ⊎ Char → AnnTerm
             ruleToTerm (inj₁ x) = FreeVar (namespace + "$" + ruleToConstr x)
-            ruleToTerm (inj₂ y) = Char-A y
+            ruleToTerm (inj₂ y) = Char-T y
 
   -- Used for bootstrapping
   {-# TERMINATING #-} -- cannot just use sequence in synTreetoℕtree because of the char special case

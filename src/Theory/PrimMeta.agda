@@ -9,7 +9,7 @@ open import Relation.Binary.PropositionalEquality
 
 open import Prelude
 open import Prelude.Nat
-open import Theory.TermLike hiding (subst)
+open import Theory.TermLike
 open import Theory.Names
 
 module Theory.PrimMeta where
@@ -123,7 +123,8 @@ primMetaArgsAnd = Data.Vec.Recursive.foldr {P = const Bool} true id (const _∧_
 primMetaArgsMax : primMetaArgs 𝕀 m → 𝕀
 primMetaArgsMax = Data.Vec.Recursive.foldr {P = const 𝕀} 0 id (const _⊔𝕀_) _
 
-module _ {T} ⦃ _ : TermLike T ⦄ where
+module Types {T} (tl : TermLike T) where
+  open TermLike tl
   private
     tString tTerm tStringList tMetaResult tProduct : T
     tString     = FreeVar "init$string"

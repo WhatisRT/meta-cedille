@@ -13,11 +13,11 @@ open import Theory.Context
 -- something in is head normal form, if its outermost constructor is not one of the following: Var-A (if the lookup fails), App-A, AppE-A
 {-# TERMINATING #-}
 hnfNorm : Context → AnnTerm → AnnTerm
-hnfNorm Γ v@(Var-A x) with lookupInContext x Γ
+hnfNorm Γ v@(Var-T x) with lookupInContext x Γ
 ... | just record { def = just x }        = hnfNorm Γ x
 ... | just _            = v -- we cannot reduce axioms
 ... | nothing           = v -- in case the lookup fails, we cannot reduce
-hnfNorm Γ (App-A t t₁)  = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (t ⟪$⟫ t₁) $ stripBinder (hnfNorm Γ t)
-hnfNorm Γ (AppE-A t t₁) = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (t ⟪$⟫ t₁) $ stripBinder (hnfNorm Γ t)
+hnfNorm Γ (App t t₁)    = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (t ⟪$⟫ t₁) $ stripBinder (hnfNorm Γ t)
+hnfNorm Γ (AppE t t₁)   = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (t ⟪$⟫ t₁) $ stripBinder (hnfNorm Γ t)
 {-# CATCHALL #-}
 hnfNorm Γ v             = v

@@ -29,6 +29,7 @@ record MetaEnv : Set where
     namespace : String  -- we need to remember the current namespace
                         -- because the rule string in the grammar doesn't
     evaluator : AnnTerm
+    evaluatorArgType : AnnTerm -- type of arguments to the evaluator
 
 -- The full state of the interpreter: the context of defined values plus parsing
 -- and semantics for generating code
@@ -125,16 +126,16 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     Γ ← getContext
     executeTerm' (hnfNormPure Γ t)
 
-  executeTerm' (Mu-P t t₁) = do
+  executeTerm' (Mu t t₁) = do
     (res , t') ← executeTerm t
     (res' , resTerm) ← executeTerm (t₁ ⟪$⟫ t')
     return (res + res' , resTerm)
 
-  executeTerm' (Epsilon-P t) = return (([] , []) , t)
+  executeTerm' (Epsilon t) = return (([] , []) , t)
 
-  executeTerm' (Gamma-P t t') = catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm (strResult s)))
+  executeTerm' (Gamma t t') = catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm (strResult s)))
 
-  executeTerm' (Ev-P m t) = do
+  executeTerm' (Ev m t) = do
     (res , t') ← executePrimitive m t
     appendIfError (checkTypePure t' $ primMetaT m t)
                   ("Bug: Result type mismatch in ζ" + show m)
@@ -234,13 +235,13 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   executePrimitive Print t = do
     s ← unquoteFromTerm t
     liftIO $ putStr s
-    return (strResult "" , LamE-A "X" ⋆ (Lam-A "_" (BoundVar 0) (BoundVar 0)))
+    return (strResult "" , LamE "X" ⋆ (Lam-A "_" (BoundVar 0) (BoundVar 0)))
 
   executePrimitive WriteFile (t , t') = do
     fName ← unquoteFromTerm t
     contents ← unquoteFromTerm t'
     liftIO $ writeFile fName contents
-    return (strResult "" , LamE-A "X" ⋆ (Lam-A "_" (BoundVar 0) (BoundVar 0)))
+    return (strResult "" , LamE "X" ⋆ (Lam-A "_" (BoundVar 0) (BoundVar 0)))
 
   executePrimitive CommandLine _ = do
     args ← liftIO getArgs
@@ -255,11 +256,16 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   executeBootstrapStmt (SetEval t n start) = do
     Γ ← getContext
     y ← generateCFG start $ getParserNamespace Γ n
-    (Pi-A _ u u₁) ← hnfNorm Γ <$> synthType Γ t
+    (Pi _ u u₁) ← hnfNorm Γ <$> synthType Γ t
       where _ → throwError "The evaluator needs to have a pi type"
+    true ← return $ isLocallyClosed (Erase u) Γ
+      where false → throwError "The argument type to the evaluator cannot contain local variables!"
     case (hnfNorm Γ u₁) of λ where
-      (M-A _) → do
-        setMeta record { grammar = y ; namespace = n ; evaluator = t }
+      (M-T _) → do
+        -- take the least normalized term that's locally free
+        t' ∷ _ ← return $ boolFilter (λ t → isLocallyClosed (Erase t) Γ) (t ∷ hnfNorm Γ t ∷ [])
+          where _ → throwError "The evaluator needs to normalize to a term without local variables!"
+        setMeta record { grammar = y ; namespace = n ; evaluator = t' ; evaluatorArgType = u }
         < strResult , quoteToAnnTerm ∘ strResult > <$> return "Successfully set the evaluator"
       _       → throwError "The evaluator needs to return a M type"
 
@@ -273,22 +279,17 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   parseAndExecute' s = do
     Γ ← getContext
-    m ← getMeta
+    m@record { evaluator = ev ; evaluatorArgType = evT } ← getMeta
     (fst , snd) ← parseMeta m s
-    let exec = MetaEnv.evaluator m ⟪$⟫ fst
-    (M-A _) ← hnfNorm Γ <$>
-      appendIfError (synthType Γ exec)
-                    ("\n\nError while interpreting input: "
-                      + (shortenString 10000 (show fst))
-                      + "\nWhile parsing: " + (shortenString 10000 s))
-      where _ → throwError "Trying to execute something that isn't of type M t. This should never happen!"
-    (res , _) ← appendIfError (executeTerm $ Erase exec) ("\n\nError while executing input:" <+> s + "\n")
+    appendIfError (checkType fst evT) ("\n\nError while interpreting input: " + (shortenString 10000 (show fst))
+                                        + "\nWhile parsing: " + (shortenString 10000 s))
+    (res , _) ← appendIfError (executeTerm (Erase (ev ⟪$⟫ fst))) ("\n\nError while executing input:" <+> s + "\n")
     return (res , snd)
 
   parseAndExecute s = do
     record { evaluator = evaluator } ← getMeta
     (res , rest) ← case evaluator of λ where
-      (Sort-A □) → parseAndExecuteBootstrap s
+      (Sort-T □) → parseAndExecuteBootstrap s
       _          → parseAndExecute' s
     res' ← if strNull rest then return mzero else parseAndExecute rest
     return (res + res')

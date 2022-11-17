@@ -55,10 +55,6 @@ record TermLike (T : Set) : Set where
   □ : T
   □ = SortC Sq
 
-open TermLike ⦃...⦄ public
-
-module _ {T : Set} ⦃ _ : TermLike T ⦄ where
-  {-# TERMINATING #-}
   modifyIndices : 𝕀 → T → T
   modifyIndices n = byUniformFold λ k x → BoundVar $ if x <𝕀 k then x else pred𝕀 (x +𝕀 n)
 
@@ -69,7 +65,6 @@ module _ {T : Set} ⦃ _ : TermLike T ⦄ where
   strengthen = modifyIndices 0
 
   -- substitute the first unbound variable in t with t'
-  {-# TERMINATING #-}
   subst : T → T → T
   subst t t' = strengthen $ byUniformFold
     (λ k x → if k ≣ x then weakenBy (suc𝕀 k) t' else BoundVar x) t
