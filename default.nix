@@ -1,14 +1,15 @@
 { nixpkgs ? import <nixpkgs> {} }:
 let fetchFromGitHub = nixpkgs.fetchFromGitHub;
+    nixpkgsArgs = (if nixpkgs.system == "aarch64-darwin" then { system = "x86_64-darwin"; } else { });
     pinnedPkgs = import (fetchFromGitHub {
       owner = "NixOS";
       repo = "nixpkgs";
       rev = "aec48af439d69dbde35e3141d5980bc8804d518d";
       sha256 = "NDAflAkWdSLQcER8/S0FAQUr9m5pbdqKtif2N79/h/c=";
-    }) {};
+    }) nixpkgsArgs;
     ghcpkgs = nixpkgs; # in case we need a different GHC
 
-    profiledHaskellPackages = (import <nixpkgs> {}).haskellPackages.override {
+    profiledHaskellPackages = (import <nixpkgs> nixpkgsArgs).haskellPackages.override {
       overrides = hself: hsuper: rec {
         mkDerivation = args: hsuper.mkDerivation (args // {
           enableLibraryProfiling = true;
@@ -24,7 +25,7 @@ let fetchFromGitHub = nixpkgs.fetchFromGitHub;
       buildInputs = [ standard-library ];
       everythingFile = "src/meta-cedille.agda";
       buildPhase = "cd src; agda -c --ghc-dont-call-ghc --compile-dir $out meta-cedille.agda; cd ..";
-      installPhase = "cp -r src stdlib-exts test $out";
+      installPhase = "cp -r src stdlib-exts test bootstrap $out";
       extraExtensions = [ "hs" "mced" ];
     };
 
@@ -41,7 +42,11 @@ let fetchFromGitHub = nixpkgs.fetchFromGitHub;
         cd src
         agda --ghc --ghc-flag=-O2 --ghc-flag=-j$NIX_BUILD_CORES meta-cedille.agda
         cd ..'';
-      installPhase = "mkdir $out && mkdir $out/bin && cp src/meta-cedille $out/bin && cp -r test $out/";
+      installPhase = ''
+        mkdir $out && mkdir $out/bin && mkdir $out/share
+        cp src/meta-cedille $out/bin
+        cp -r bootstrap $out/share
+      '';
     };
 
     self = with pinnedPkgs; {
