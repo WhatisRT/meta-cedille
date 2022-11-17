@@ -34,7 +34,7 @@ let termToNameList (t : Term) : Maybe (List String) :=
     t.
 
 -- returns true iff t is of the form n n1 ... nk and the list of names equals `match`
-let matchTerm (t : Term) (match : List String) : Bool :=
+let matchTermWithNames (t : Term) (match : List String) : Bool :=
   maybe ?(List String) ?Bool false (λ ns : List String. listEq ?String stringEq match ns) $ termToNameList t.
 
 -- this function is used to get the data to match against from a definition

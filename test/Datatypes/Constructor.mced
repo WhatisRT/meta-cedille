@@ -27,7 +27,7 @@ let toConstrData (term : Term) : ConstrData :=
     (reduceTerm term).
 
 let constrArgToFunctor (t : Term) (match : List String) : Error ConstrFunctor :=
-  ifthenelse ?(Error ConstrFunctor) (matchTerm t match) (pureError ?ConstrFunctor idConstrFunctor) $
+  ifthenelse ?(Error ConstrFunctor) (matchTermWithNames t match) (pureError ?ConstrFunctor idConstrFunctor) $
     recursionTerm ?(Error ConstrFunctor)
       (λ v : init$var. pureError ?ConstrFunctor $ constConstrFunctor t)
       (λ s : init$sort. error ?ConstrFunctor "Cannot turn sort into functor")
@@ -45,7 +45,7 @@ let constrArgToFunctor (t : Term) (match : List String) : Error ConstrFunctor :=
       t.
 
 let constrToFunctorData (d : ConstrData) (match : List String) : Error ConstrFunctorData :=
-  ifthenelse ?(Error ConstrFunctorData) (matchTerm (reduceTerm $ ConstrDataTerm d) match)
+  ifthenelse ?(Error ConstrFunctorData) (matchTermWithNames (reduceTerm $ ConstrDataTerm d) match)
     (traverseErrorList ?Param ?(String × ConstrFunctor)
       (λ p : Param. mapError ?ConstrFunctor ?(String × ConstrFunctor)
         (prodPair ?String ?ConstrFunctor (paramName p)) (constrArgToFunctor (paramType p) match))
