@@ -10,7 +10,7 @@ let defineInfix (symbol, n1, n2 : String) (macro : Term) : init$newStmt :=
   seqNewStmt
     (letInfoToNewStmt (mkLetInfo
       (stringApp "init$infix$" symbol)
-      θ{mkInfixData γ{quote$String symbol}
+      θ{mkInfixData γ{quoteString symbol}
           γ{lambdaTerm n1 θ{Term} (lambdaTerm n2 θ{Term} macro)}}
       (just ?Term θ{InfixData})))
     reloadMEnv.
@@ -19,7 +19,7 @@ let defineInfix' (symbol, macro : String) : init$newStmt :=
   seqNewStmt
     (letInfoToNewStmt (mkLetInfo
       (stringApp "init$infix$" symbol)
-      θ{mkInfixData' γ{quote$String symbol} γ{quote$String macro}}
+      θ{mkInfixData' γ{quoteString symbol} γ{quoteString macro}}
       (just ?Term θ{InfixData})))
     reloadMEnv.
 

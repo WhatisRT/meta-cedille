@@ -9,7 +9,7 @@ b-let modulePrefix := "modPrefix|".
 b-let ModuleName := List String.
 b-let moduleNameEq (n, n' : ModuleName) : Bool := listEq ?String stringEq n n'.
 b-let ModuleNameToName (n : ModuleName) : String := stringConcat n.
-b-let quoteModuleName (n : ModuleName) : Term := quoteTermList θ{String} (map ?String ?Term quote$String n).
+b-let quoteModuleName (n : ModuleName) : Term := quoteTermList θ{String} (map ?String ?Term quoteString n).
 
 -- ModuleInfo contains all the global data about the module
 b-let ModuleInfo := TripleProduct ModuleName Nat Telescope.

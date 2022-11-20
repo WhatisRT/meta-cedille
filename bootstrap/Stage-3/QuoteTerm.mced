@@ -40,13 +40,13 @@ b-let quoteSq : Term := sortTerm init$sort$=sq=.
 
 b-let quoteVar (v : init$var) : Term :=
   v ?Term
-    (λ n : String. appSingle (sVarTerm "sVarTerm") (quote$String n))
+    (λ n : String. appSingle (sVarTerm "sVarTerm") (quoteString n))
     (λ i : init$index. appSingle (sVarTerm "iVarTerm") (quoteIndex i)).
 
-b-let quoteChar (c : init$char) : Term :=
+b-let quoteCharTerm (c : init$char) : Term :=
   appSingle
     (sVarTerm "charTerm")
-    (quote$char c).
+    (quoteChar c).
 
 b-let quoteBinder (b : Binder) : Term :=
   b ?Term (sVarTerm "lambdaBinder") (sVarTerm "LambdaBinder") (sVarTerm "piBinder") (sVarTerm "forallBinder").
@@ -61,10 +61,10 @@ b-let quoteTerm (t : Term) : Term :=
     (λ v : init$var. quoteVar v)
     (λ s : init$sort. s ?Term (sVarTerm "quoteAst") (sVarTerm "quoteSq"))
     (λ b : Binder. λ n : String. λ T : Term. λ t : Term. λ recT : Term. λ rect : Term.
-      appLTerm (sVarTerm "binderTerm") (toAppU [Term| quoteBinder b, quote$String n, recT, rect]))
+      appLTerm (sVarTerm "binderTerm") (toAppU [Term| quoteBinder b, quoteString n, recT, rect]))
     (λ t : Term. λ l : List App. λ rect : Term. λ recl : List App.
       appDouble (sVarTerm "appLTerm") rect (quoteTermList (sVarTerm "App") (map ?App ?Term quoteAppLeft recl)))
-    (λ c : Char. quoteChar c)
+    (λ c : Char. quoteCharTerm c)
     (sVarTerm "unknownTerm")
     (λ u : Term. λ recuf : Term. u)
     t.
@@ -79,6 +79,6 @@ seteval eval init stmt.
 
 b-let quoteLetInfo (i : LetInfo) : Term :=
   θ{mkLetInfo
-    γ{quote$String (letInfoName i)}
+    γ{quoteString (letInfoName i)}
     γ{quoteTerm (letInfoTerm i)}
     γ{maybe ?Term ?Term θ{nothing ?Term} (λ T : Term. θ{just ?Term γ{quoteTerm T}}) (letInfoType i)}}.

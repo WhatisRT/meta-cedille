@@ -21,7 +21,7 @@ b-let EvalOpts : * := Product Bool String.
 b-let defaultFlags : EvalOpts := prodPair ?Bool ?String false "".
 b-let quoteEvalOpts : EvalOpts -> Term :=
   recursionProduct ?Bool ?String ?Term (λ annReq : Bool. λ workingDir : String.
-    θ{prodPair ?Bool ?String γ{quoteBool annReq} γ{quote$String workingDir}}).
+    θ{prodPair ?Bool ?String γ{quoteBool annReq} γ{quoteString workingDir}}).
 
 -- Controls whether `let` has to have a type annotation at the end to be accepted
 b-let getAnnReq            : EvalOpts -> Bool := pr1 ?Bool ?String.
@@ -61,7 +61,7 @@ b-let getLine := pr32 ?String ?Nat ?Nat.
 b-let getColumn := pr33 ?String ?Nat ?Nat.
 
 b-let quoteSourceLocation (l : SourceLocation) : Term :=
-  θ{mkSourceLocation γ{quote$String (getFileName l)} γ{quoteNat (getLine l)} γ{quoteNat (getColumn l)}}.
+  θ{mkSourceLocation γ{quoteString (getFileName l)} γ{quoteNat (getLine l)} γ{quoteNat (getColumn l)}}.
 
 -- Location of the definition and the actual definition
 b-let TermInfo : * := Product SourceLocation Term.
@@ -80,7 +80,7 @@ b-let lookupTermInfo (st : TermInfoState) (n : String) : Maybe TermInfo :=
     (findMaybe ?(Product String TermInfo)
       (λ p : Product String TermInfo. stringEq (pr1 ?String ?TermInfo p) n) st).
 
-b-let quoteTermInfoState (st : TermInfoState) : Term := quoteList ?(Product String TermInfo) θ{Product String TermInfo} (quoteProduct ?String ?TermInfo θ{String} θ{TermInfo} quote$String quoteTermInfo) st.
+b-let quoteTermInfoState (st : TermInfoState) : Term := quoteList ?(Product String TermInfo) θ{Product String TermInfo} (quoteProduct ?String ?TermInfo θ{String} θ{TermInfo} quoteString quoteTermInfo) st.
 b-let emptyTermInfoState : TermInfoState := [Product String TermInfo|].
 
 -- OtherState is a trick/hack for storing arbitrary things in the state

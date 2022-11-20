@@ -14,7 +14,7 @@ b-let prefixNamesInTerm (p : String) (t : Term) : Term :=
     (λ u : Term. unquoteTerm u).
 
 b-let quoteParam (p : Param) : Term :=
-  θ{mkParam γ{quoteBool (paramErased p)} (mkPreParam γ{quote$String (paramName p)} γ{quoteTerm (paramType p)})}.
+  θ{mkParam γ{quoteBool (paramErased p)} (mkPreParam γ{quoteString (paramName p)} γ{quoteTerm (paramType p)})}.
 
 b-let quoteTelescope (t : Telescope) : Term := quoteTermList θ{Param} (map ?Param ?Term quoteParam t).
 
@@ -55,7 +55,7 @@ b-let updateTempModule (n : String) (m : Module) : init$newStmt :=
   seqNewStmt
     (letInfoToNewStmt
       (mkLetInfo (mkTempModuleNameSuc m)
-        θ{consModule γ{quote$String n} γ{sVarTerm (mkTempModuleName m)}}
+        θ{consModule γ{quoteString n} γ{sVarTerm (mkTempModuleName m)}}
         (just ?Term θ{Module})))
     (setModule (just ?Module (consModule n m))).
 
