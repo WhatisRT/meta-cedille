@@ -205,7 +205,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     T ← synthType Γ u
     return (strResult
       (show u + " : " + show T + " normalizes to: " +
-      (show $ normalizePure Γ $ Erase u)) , quoteToAnnTerm u)
+      (show $ normalize Γ u)) , quoteToAnnTerm (normalize Γ u))
 
   executePrimitive HeadNormalize t = do
     Γ ← getContext

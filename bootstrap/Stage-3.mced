@@ -14,7 +14,7 @@ import bootstrap/Stage-3/ConversionHelpers.
 import bootstrap/Stage-3/ModuleDefinitions.
 import bootstrap/Stage-3/Eval.
 import bootstrap/Stage-3/ModuleFunction.
-import bootstrap/Stage-3/BetterSyntax.
+import bootstrap/Stage-3/Syntax.
 
 import bootstrap/Stage-3/InfixNotations.
 

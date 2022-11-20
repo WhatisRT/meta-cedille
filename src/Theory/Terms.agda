@@ -13,7 +13,7 @@ open import Theory.PrimMeta public
 
 private variable a b : Bool
 
--- the bool decides whether to have the NBE constructors
+-- the second bool decides whether to have the NBE constructors
 data Term : @0 Bool → @0 Bool → Set where
   Var-T   : Name → Term a b
   FDB     : 𝕀 → Term a true
@@ -168,3 +168,7 @@ Erase (Gamma t t₁)   = Gamma (Erase t) (Erase t₁)
 Erase (Ev m args)    = Ev m (mapPrimMetaArgs Erase args)
 Erase (Char-T c)     = Char-T c
 Erase (CharEq x x₁)  = CharEq (Erase x) (Erase x₁)
+
+condErase : AnnTerm → Term a false
+condErase {false} t = Erase t
+condErase {true}  t = t

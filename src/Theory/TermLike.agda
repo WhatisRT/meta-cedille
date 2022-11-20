@@ -68,6 +68,3 @@ record TermLike (T : Set) : Set where
   subst : T → T → T
   subst t t' = strengthen $ byUniformFold
     (λ k x → if k ≣ x then weakenBy (suc𝕀 k) t' else BoundVar x) t
-
-  evalCharEq : Char → Char → T
-  evalCharEq c c' = FreeVar $ show (c ≣ c')

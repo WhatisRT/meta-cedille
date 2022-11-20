@@ -216,7 +216,6 @@ b-let checkTerm (T : *) (t : Term) : Eval T :=
   liftMtoEval ?T (primCheckTerm T (TermToInitTerm t)).
 b-let parse (nt : String) (T : *) (text : String) : Eval (Product T String) :=
   liftMtoEval ?(Product T String) (primParse nt T text).
--- normalize is currently broken
 b-let normalize (t : Term) : Eval Term :=
   liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm (primNormalize (TermToInitTerm t))).
 b-let headNormalize (t : Term) : Eval Term :=

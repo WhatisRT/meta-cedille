@@ -23,6 +23,14 @@ b-let showTypeStmt (tel : Telescope) (t : Term) : init$newStmt :=
     (bindEval ?String ?Unit (bindEval ?Term ?String (inferType t) showTermE) (λ x : String.
       echoStmtL [String|showTerm t, " : ", x])).
 
+b-let normalizeStmt (t : Term) : Eval Unit :=
+  bindEval ?Term ?Unit (normalize t) (λ t' : Term.
+    echoStmtL [String|showTerm t, " normalizes to: ", showTerm t']).
+
+b-let hnfStmt (t : Term) : Eval Unit :=
+  bindEval ?Term ?Unit (headNormalize t) (λ t' : Term.
+    echoStmtL [String|showTerm t, " head-normalizes to: ", showTerm t']).
+
 -- Syntax
 
 -- statements from the old syntax
@@ -46,20 +54,16 @@ b-let init$setStmt$PWD^space^_term_ (dirT : Term) :=
 
 -- "native" statements in the new syntax
 b-let init$newStmt'$set^space^_setStmt_=dot= (s : init$newStmt) := s.
-b-let init$newStmt'$let^space^_betterLet_ (i : LetInfo) : init$newStmt :=
-  letInfoToNewStmtMod i.
+b-let init$newStmt'$let^space^_betterLet_ : LetInfo -> init$newStmt := letInfoToNewStmtMod.
 b-let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : init$newStmt :=
   runEvalLets [ElabLet| checkTypeAnn, moduleElab, addQuotedLetInfo] i.
-b-let init$newStmt'$runMeta^space^_multiTerm_=dot= (t : Term) : init$newStmt := runMetaCommand t.
+b-let init$newStmt'$runMeta^space^_multiTerm_=dot= : Term -> init$newStmt := runMetaCommand.
 b-let init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
   bindEval ?Term ?Unit (modifyTermMod t) runEcho.
-b-let init$newStmt'$showType^space^_telescope__multiTerm_=dot= (tel : Telescope) (t : Term) : init$newStmt :=
-  showTypeStmt tel t.
-b-let init$newStmt'$normalize^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
-  voidEval ?Term (normalize t).
-b-let init$newStmt'$headNormalize^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
-  voidEval ?Term (headNormalize t).
-b-let init$newStmt'$import^space^_string_=dot= (n : String) : init$newStmt := import n.
+b-let init$newStmt'$showType^space^_telescope__multiTerm_=dot= : Telescope -> Term -> init$newStmt := showTypeStmt.
+b-let init$newStmt'$normalize^space^_multiTerm_=dot= : Term -> init$newStmt := normalizeStmt.
+b-let init$newStmt'$headNormalize^space^_multiTerm_=dot= : Term -> init$newStmt := hnfStmt.
+b-let init$newStmt'$import^space^_string_=dot= : String -> init$newStmt := import.
 b-let init$newStmt'$updateEval=dot= : init$newStmt := updateMEnv.
 b-let init$newStmt'$ : init$newStmt := emptyStmt.
 
