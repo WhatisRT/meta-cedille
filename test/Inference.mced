@@ -236,3 +236,7 @@ elet inferenceTest4 [A, B : *] (f : Nat -> A -> B) (l : List A) : List B :=
 
 elet inferenceTest5 [A, B : *] (f : A -> Maybe B) (l : List A) : List B :=
   foldl ?_ ?_ (λ acc : List B. λ a : A. maybe ?_ ?_ acc (λ b : B. cons ?_ b acc) (f a)) l [B|].
+
+-- FIXME: This infers A instead of Unit in the middle if x is applied at the end!
+elet inferenceTest6 [A, B : *] (default : B) (f : A -> B) (x : Maybe A) :=
+  recursionSum ?_ ?Unit ?_ (λ a : A. f a) (λ _ : Unit. default) x.

@@ -6,12 +6,14 @@ let List := λ A : * ∀ X : *
 let nil := Λ A : * Λ X : *
   λ n : X
   λ c : (Π _ : A Π _ : X X)
-    n.
+    n
+  : ∀ A : * [List A].
 
 let cons := Λ A : * λ x : A λ xs : [List A] Λ X : *
   λ n : X
   λ c : (Π _ : A Π _ : X X)
-    [[c x] [[<xs X> n] c]].
+    [[c x] [[<xs X> n] c]]
+  : ∀ A : * Π _ : A Π _ : [List A] [List A].
 
 let recursionList := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : [List A] Π _ : X X λ l : [List A]
   [<<pr2 [List A]> X>

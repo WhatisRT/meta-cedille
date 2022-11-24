@@ -1,0 +1,4 @@
+elet bootstrap/Unit : * := ∀ X : *. X -> X.
+elet bootstrap/tt : Unit := Λ X : *. λ x : X. x.
+
+runMeta compileNames "Unit.mced" [String|"Unit", "tt"].

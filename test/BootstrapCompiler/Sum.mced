@@ -1,0 +1,8 @@
+elet bootstrap/Sum (A, B : *) : * := ∀ X : *. (A -> X) -> (B -> X) -> X.
+
+elet bootstrap/inl [A, B : *] (a : A) : Sum A B := Λ X : *. λ l : A -> X. λ r : B -> X. l a.
+elet bootstrap/inr [A, B : *] (b : B) : Sum A B := Λ X : *. λ l : A -> X. λ r : B -> X. r b.
+
+elet bootstrap/recursionSum [A, B, X : *] (l : A -> X) (r : B -> X) (x : Sum A B) : X := x ?X l r.
+
+runMeta compileNames "Sum.mced" [String|"Sum", "inl", "inr", "recursionSum"].

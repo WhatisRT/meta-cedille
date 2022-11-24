@@ -1,0 +1,9 @@
+elet bootstrap/DSum (A : *) (B : A -> *) : * := ∀ X : *. (Π a : A. B a -> X) -> X.
+
+elet bootstrap/pair [A : *] [B : A -> *] (a : A) (b : B a) : DSum A B :=
+  Λ X : *. λ p : Π a : A. B a -> X. p a b.
+
+elet bootstrap/recursionDSum [A : *] [B : A -> *] [X : *] (ppair : Π a : A. B a -> X) (x : DSum A B)
+  : X := x ?X ppair.
+
+runMeta compileNames "DSum.mced" [String|"DSum", "pair", "recursionDSum"].

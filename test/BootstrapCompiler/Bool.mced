@@ -1,0 +1,16 @@
+let bootstrap/Bool : * := ∀ X : *. X -> X -> X.
+
+let bootstrap/true  : Bool := Λ X : *. λ t, f : X. t.
+let bootstrap/false : Bool := Λ X : *. λ t, f : X. f.
+
+elet bootstrap/recursionBool [X : *] (t, f : X) (b : Bool) : X := b ?X t f.
+
+elet bootstrap/ifthenelse [X : *] (b : Bool) (ift, iff : X) : X := recursionBool ?_ ift iff b.
+
+elet bootstrap/and (b, b' : Bool) : Bool := ifthenelse ?_ b b' false.
+elet bootstrap/or  (b, b' : Bool) : Bool := ifthenelse ?_ b b b'.
+elet bootstrap/not (b : Bool)     : Bool := ifthenelse ?_ b false true.
+
+elet bootstrap/boolEq (b, b' : Bool) : Bool := ifthenelse ?_ b b' $ not b'.
+
+runMeta compileNames "Bool.mced" [String|"Bool", "true", "false", "recursionBool", "ifthenelse", "and", "or", "not", "boolEq"].

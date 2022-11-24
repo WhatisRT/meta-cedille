@@ -1,0 +1,20 @@
+-- TODO: don't fail if the directory already exists
+runMeta voidEval ?String $ shellCmd "mkdir" [String|bootstrapCompileDir].
+
+set RequireTypeAnnotations true.
+
+import BootstrapCompiler/DSum.
+import BootstrapCompiler/Product.
+import BootstrapCompiler/Sum.
+
+import BootstrapCompiler/Void.
+import BootstrapCompiler/Unit.
+
+import BootstrapCompiler/Nat.
+import BootstrapCompiler/Bool.
+import BootstrapCompiler/List.
+import BootstrapCompiler/Maybe.
+
+set RequireTypeAnnotations false.
+
+import BootstrapCompiler/Term.

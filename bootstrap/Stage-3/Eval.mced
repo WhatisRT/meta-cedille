@@ -244,6 +244,9 @@ b-let commandLine : Eval (List String) :=
 b-let printLineEval (s : String) : Eval Unit :=
   printEval (stringApp s newline).
 
+-- NOTE: this doesn't currently return the actual definition, just something equivalent
+b-let getDef (n : String) : Eval Term := headNormalize (sVarTerm n).
+
 --------------------------------------------------------------------------------
 -- Statements are just special Eval computations that run at the top level
 --------------------------------------------------------------------------------

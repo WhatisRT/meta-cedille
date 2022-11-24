@@ -1,0 +1,273 @@
+--------------------------------------------------------------------------------
+-- A more convenient term datatype and corresponding syntax
+--
+-- Application: use f x1 ... xn where erased arguments are prefixed with a '?'
+-- Others: use *, □, "...", (...), {Π ∀ λ Λ} x1, ..., xn : T. t,
+--------------------------------------------------------------------------------
+
+elet bootstrap/Binder : * := ∀ X : *. X -> X -> X -> X -> X.
+elet bootstrap/lambdaBinder : Binder := Λ X : *. λ lambda, Lambda, pi, forall : X. lambda.
+elet bootstrap/LambdaBinder : Binder := Λ X : *. λ lambda, Lambda, pi, forall : X. Lambda.
+elet bootstrap/piBinder     : Binder := Λ X : *. λ lambda, Lambda, pi, forall : X. pi.
+elet bootstrap/forallBinder : Binder := Λ X : *. λ lambda, Lambda, pi, forall : X. forall.
+
+elet bootstrap/Term : * := ∀ X : *.
+  (init$var -> X) -> (init$sort -> X) -> (Binder -> String -> X -> X -> X) ->
+  (X -> List (Bool × X) -> X) -> (init$char -> X) -> X -> (X -> X) -> X.
+
+elet bootstrap/varTerm (var : init$var) : Term := Λ X : *.
+  λ v : init$var -> X.
+  λ s : init$sort -> X.
+  λ b : Binder -> String -> X -> X -> X.
+  λ a : X -> List (Bool × X) -> X.
+  λ k : init$char -> X.
+  λ x : X.
+  λ u : X -> X. v var.
+
+elet bootstrap/sortTerm (sort : init$sort) : Term := Λ X : *.
+  λ v : init$var -> X.
+  λ s : init$sort -> X.
+  λ b : Binder -> String -> X -> X -> X.
+  λ a : X -> List (Bool × X) -> X.
+  λ k : init$char -> X.
+  λ x : X.
+  λ u : X -> X. s sort.
+
+elet bootstrap/binderTerm (binder : Binder) (name : String) (T, t : Term) : Term := Λ X : *.
+  λ v : init$var -> X.
+  λ s : init$sort -> X.
+  λ b : Binder -> String -> X -> X -> X.
+  λ a : X -> List (Bool × X) -> X.
+  λ k : init$char -> X.
+  λ x : X.
+  λ u : X -> X. b binder name (T ?X v s b a k x u) (t ?X v s b a k x u).
+
+elet bootstrap/appLTerm (t : Term) (l : List (Bool × Term)) : Term := Λ X : *.
+  λ v : init$var -> X.
+  λ s : init$sort -> X.
+  λ b : Binder -> String -> X -> X -> X.
+  λ a : X -> List (Bool × X) -> X.
+  λ k : init$char -> X.
+  λ x : X.
+  λ u : X -> X. a (t ?X v s b a k x u) (map ?(Bool × Term) ?(Bool × X) (productMap2 ?Bool ?Term ?X (λ t : Term. t ?X v s b a k x u)) l).
+
+elet bootstrap/charTerm (c : Char) : Term := Λ X : *.
+  λ v : init$var -> X.
+  λ s : init$sort -> X.
+  λ b : Binder -> String -> X -> X -> X.
+  λ a : X -> List (Bool × X) -> X.
+  λ k : init$char -> X.
+  λ x : X.
+  λ u : X -> X. k c.
+
+elet bootstrap/unknownTerm : Term := Λ X : *.
+  λ v : init$var -> X.
+  λ s : init$sort -> X.
+  λ b : Binder -> String -> X -> X -> X.
+  λ a : X -> List (Bool × X) -> X.
+  λ k : init$char -> X.
+  λ x : X.
+  λ u : X -> X. x.
+
+elet bootstrap/unquoteTerm (t : Term) : Term := Λ X : *.
+  λ v : init$var -> X.
+  λ s : init$sort -> X.
+  λ b : Binder -> String -> X -> X -> X.
+  λ a : X -> List (Bool × X) -> X.
+  λ k : init$char -> X.
+  λ x : X.
+  λ u : X -> X. u $ t ?X v s b a k x u.
+
+elet bootstrap/sVarTerm (s : String) : Term := varTerm (init$var$_string_ s).
+elet bootstrap/iVarTerm (i : init$index) : Term := varTerm (init$var$_index_ i).
+elet bootstrap/lambdaTerm := binderTerm lambdaBinder.
+elet bootstrap/LambdaTerm := binderTerm LambdaBinder.
+elet bootstrap/piTerm := binderTerm piBinder.
+elet bootstrap/forallTerm := binderTerm forallBinder.
+
+elet bootstrap/App' := Bool × init$term.
+elet bootstrap/appErased' := pr1 ?Bool ?init$term.
+elet bootstrap/appTerm' := pr2 ?Bool ?init$term.
+
+elet bootstrap/appToQuotedApp (t : init$term) (a : App') :=
+  ifthenelse ?(init$term -> init$term -> init$term) (appErased' a) quote$angle quote$square
+    t (appTerm' a).
+
+elet bootstrap/foldWithApp : List App' -> init$term -> init$term := foldl ?App' ?init$term appToQuotedApp.
+
+elet bootstrap/TermToInitTerm (t : Term) : init$term :=
+  t ?init$term
+    (λ v : init$var. init$term$_var_ v)
+    (λ s : init$sort. init$term$_sort_ s)
+    (λ b : Binder. λ n : String. λ T, t : init$term.
+      b ?(String -> init$term -> init$term -> init$term)
+        quote$lambda quote$Lambda quote$Pi quote$forall n T t)
+    (λ t : init$term. λ l : List App'. foldWithApp (reverse ?App' l) t)
+    (λ c : init$char. quote$kappa c)
+    quote$sq
+    (λ u : init$term. quote$sq).
+
+elet bootstrap/App := Bool × Term.
+elet bootstrap/mkApp := prodPair ?Bool ?Term.
+elet bootstrap/mkAppU := prodPair ?Bool ?Term false.
+elet bootstrap/mkAppE := prodPair ?Bool ?Term true.
+elet bootstrap/appErased := pr1 ?Bool ?Term.
+elet bootstrap/appTerm := pr2 ?Bool ?Term.
+
+elet bootstrap/appSingle (t, t' : Term) : Term := appLTerm t $ pureList ?App $ mkAppU t'.
+elet bootstrap/appSingleE (t, t' : Term) : Term := appLTerm t $ pureList ?App $ mkAppE t'.
+
+elet bootstrap/toAppU := map ?Term ?App mkAppU.
+
+--------------------------------------------------------------------------------
+-- Parameters and telescopes
+--------------------------------------------------------------------------------
+
+-- A parameter without erasure information
+elet bootstrap/PreParam := String × Term.
+elet bootstrap/mkPreParam := prodPair ?String ?Term.
+
+elet bootstrap/preParamName (p : PreParam) : String := pr1 ?String ?Term p.
+elet bootstrap/preParamType (p : PreParam) : Term   := pr2 ?String ?Term p.
+
+-- If the first entry in the product is `true` the argument is erased
+elet bootstrap/Param := Bool × PreParam.
+elet bootstrap/mkParam := prodPair ?Bool ?PreParam.
+
+elet bootstrap/paramErased : Param -> Bool := pr1 ?Bool ?PreParam.
+elet bootstrap/paramName (p : Param) : String := pr1 ?String ?Term $ pr2 ?Bool ?PreParam p.
+elet bootstrap/paramType (p : Param) : Term   := pr2 ?String ?Term $ pr2 ?Bool ?PreParam p.
+
+-- Constructs a `List PreParam` from some names and a type
+elet bootstrap/namesToPreParams (ns : List String) (t : Term) :=
+  map ?String ?PreParam (λ n : String. mkPreParam n t) ns.
+
+elet bootstrap/Telescope := List Param.
+elet bootstrap/telApp  (p : List PreParam) := app ?Param $ map ?PreParam ?Param (mkParam false) p.
+elet bootstrap/telAppE (p : List PreParam) := app ?Param $ map ?PreParam ?Param (mkParam true)  p.
+elet bootstrap/telNil := nil ?Param.
+
+elet bootstrap/preParamToBinder (b : Binder) (t : Term) (p : PreParam) : Term :=
+  binderTerm b (preParamName p) (preParamType p) t.
+
+elet bootstrap/applyMultiBinder (b : Binder) := foldl ?PreParam ?Term (preParamToBinder b).
+
+elet bootstrap/telescopeToApp (tel : Telescope) :=
+  map ?Param ?App (λ p : Param. mkApp (paramErased p) (sVarTerm $ paramName p)) tel.
+
+--------------------------------------------------------------------------------
+-- Parsing rules for telescopes
+--------------------------------------------------------------------------------
+
+elet bootstrap/init$nameparams'$ := nil ?String.
+elet bootstrap/init$nameparams'$=comma=^space'^_string__nameparams'_ := cons ?String.
+
+elet bootstrap/init$nameparams$_string__nameparams'_ := cons ?String.
+
+elet bootstrap/init$params$_nameparams_^space^=colon=^space^_multiTerm_ :=
+  λ ns : List String. λ t : Term. namesToPreParams ns t.
+
+elet bootstrap/init$telescope'$ := telNil.
+elet bootstrap/init$telescope'$^space^_telescope_ := λ t : Telescope. t.
+
+elet bootstrap/init$telescope$=lparen=_params_=rparen=_telescope'_ := λ p : List PreParam. telApp p.
+elet bootstrap/init$telescope$=lsquare=_params_=rsquare=_telescope'_ := λ p : List PreParam. telAppE p.
+elet bootstrap/init$telescope$ := telNil.
+
+--------------------------------------------------------------------------------
+-- Multi-terms (Terms with infix notations)
+--------------------------------------------------------------------------------
+
+elet bootstrap/InfixData := String × (Term -> Term -> Term). -- add assoc and binding later
+elet bootstrap/mkInfixData : String -> (Term -> Term -> Term) -> InfixData :=
+  prodPair ?String ?(Term -> Term -> Term).
+
+elet bootstrap/appInfixData : InfixData -> (Term -> Term -> Term) := pr2 ?String ?(Term -> Term -> Term).
+
+elet bootstrap/appToTerm (i : Term × InfixData) (t : Term) : Term :=
+  appInfixData (pr2 ?Term ?InfixData i) t (pr1 ?Term ?InfixData i).
+
+-- The single term is the leftmost, and every cons adds a term at the right
+elet bootstrap/MultiTerm : * := Term × List (Term × InfixData).
+
+elet bootstrap/singleMultiTerm (t : Term) : MultiTerm :=
+  prodPair ?Term ?(List (Term × InfixData)) t (nil ?(Term × InfixData)).
+
+elet bootstrap/consMultiTerm (t : Term) (i : InfixData) : MultiTerm -> MultiTerm :=
+  productMap2 ?Term ?(List (Term × InfixData)) ?(List (Term × InfixData)) $
+    cons ?(Term × InfixData) $ prodPair ?Term ?InfixData t i.
+
+elet bootstrap/multiTermSingle : MultiTerm -> Term := pr1 ?Term ?(List (Term × InfixData)).
+
+elet bootstrap/multiTermRest : MultiTerm -> List (Term × InfixData) :=
+  pr2 ?Term ?(List (Term × InfixData)).
+
+-- elet bootstrap/multiTermToTermLeft := λ m : MultiTerm
+--   [<m Term> λ t : Term λ l : List [[Product Term] InfixData]
+--     [[[<<foldl [[Product Term] InfixData]> Term> λ t' : Term λ p : [[Product Term] InfixData]
+--       ]
+--       t] l]]
+--   [[<m Term> λ t : Term t] λ t : Term λ i : InfixData λ t' : Term [[i t'] t]]
+--     : Π _ : MultiTerm Term.
+
+elet bootstrap/multiTermToTermRight (m : MultiTerm) :=
+  recursionList ?(Term × InfixData) ?Term
+    (multiTermSingle m)
+    (λ h : Term × InfixData. λ t : List (Term × InfixData). λ _ : Term. appToTerm
+      (foldr ?(Term × InfixData) ?(Term × InfixData) (λ acc : Term × InfixData. λ x : Term × InfixData.
+        prodPair ?Term ?InfixData (appToTerm acc $ pr1 ?Term ?InfixData x) (pr2 ?Term ?InfixData x)) t h)
+      (multiTermSingle m))
+    (multiTermRest m).
+
+-- Currently, all infix symbols associate to the right
+elet bootstrap/multiTermToTerm := multiTermToTermRight.
+
+--------------------------------------------------------------------------------
+-- Syntax for new terms
+--------------------------------------------------------------------------------
+
+-- Syntax for application
+
+elet bootstrap/init$app$_singleTerm_ := mkAppU.
+elet bootstrap/init$app$=question=_singleTerm_ := mkAppE.
+
+elet bootstrap/init$applist$ : List App := nil ?App.
+elet bootstrap/init$applist$_app__maybeApplist_ (a : App) (as : List App) : List App := cons ?App a as.
+
+elet bootstrap/init$maybeApplist$ : List App := nil ?App.
+elet bootstrap/init$maybeApplist$^space^_applist_ (l : List App) : List App := l.
+
+-- A term applied to some arguments
+elet bootstrap/init$appTerm$_singleTerm__maybeApplist_ := appLTerm.
+
+-- Syntax for terms in general
+-- multiTerm is a potential application of multiple terms and infix notations
+-- singleTerm is for anything else
+
+-- We need one infix definition to please the parser generation
+elet bootstrap/init$infix$=minus==rangle= := mkInfixData init$string$nil (piTerm init$string$nil).
+
+elet bootstrap/init$multiTerm'$ (m : MultiTerm) : MultiTerm := m.
+elet bootstrap/init$multiTerm'$_infix_^space^_appTerm_^space'^_multiTerm'_ :=
+  λ inf : InfixData. λ t : Term. λ trans : MultiTerm -> MultiTerm. λ m : MultiTerm.
+    trans $ consMultiTerm t inf m.
+
+elet bootstrap/init$multiTerm$_appTerm_^space'^_multiTerm'_ :=
+  λ t : Term. λ trans : MultiTerm -> MultiTerm. multiTermToTerm $ trans $ singleMultiTerm t.
+
+elet bootstrap/init$singleTerm$=ast= := sortTerm init$sort$=ast=.
+elet bootstrap/init$singleTerm$=sq= := sortTerm init$sort$=sq=.
+elet bootstrap/init$singleTerm$=underscore= := unknownTerm.
+
+elet bootstrap/init$singleTerm$_string_ := λ n : String. varTerm $ init$var$_string_ n.
+elet bootstrap/init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : Term. t.
+
+elet bootstrap/init$binder$=lambda= := lambdaBinder.
+elet bootstrap/init$binder$=Lambda= := LambdaBinder.
+elet bootstrap/init$binder$=Pi=     := piBinder.
+elet bootstrap/init$binder$=forall= := forallBinder.
+
+elet bootstrap/init$singleTerm$_binder_^space^_params_=dot=^space^_multiTerm_ :=
+  λ b : Binder. λ p : List PreParam. λ t : Term. applyMultiBinder b p t.
+
+runMeta compileNames "Term.mced" [String|"Binder", "lambdaBinder", "LambdaBinder", "piBinder", "forallBinder", "Term", "varTerm", "sortTerm", "binderTerm", "appLTerm", "charTerm", "unknownTerm", "unquoteTerm", "sVarTerm", "iVarTerm", "lambdaTerm", "LambdaTerm", "piTerm", "forallTerm", "App'", "appErased'", "appTerm'", "appToQuotedApp", "foldWithApp", "TermToInitTerm", "App", "mkApp", "mkAppU", "mkAppE", "appErased", "appTerm", "appSingle", "appSingleE", "toAppU", "PreParam", "mkPreParam", "preParamName", "preParamType", "Param", "mkParam", "paramErased", "paramName", "paramType", "namesToPreParams", "Telescope", "telApp", "telAppE", "telNil", "preParamToBinder", "applyMultiBinder", "telescopeToApp", "init$nameparams'$", "init$nameparams'$=comma=^space'^_string__nameparams'_", "init$nameparams$_string__nameparams'_", "init$params$_nameparams_^space^=colon=^space^_multiTerm_", "init$telescope'$", "init$telescope'$^space^_telescope_", "init$telescope$=lparen=_params_=rparen=_telescope'_", "init$telescope$=lsquare=_params_=rsquare=_telescope'_", "init$telescope$", "InfixData", "mkInfixData", "appInfixData", "appToTerm", "MultiTerm", "singleMultiTerm", "consMultiTerm", "multiTermSingle", "multiTermRest", "multiTermToTermRight", "multiTermToTerm", "init$app$_singleTerm_", "init$app$=question=_singleTerm_", "init$applist$", "init$applist$_app__maybeApplist_", "init$maybeApplist$", "init$maybeApplist$^space^_applist_", "init$appTerm$_singleTerm__maybeApplist_", "init$infix$=minus==rangle=", "init$multiTerm'$", "init$multiTerm'$_infix_^space^_appTerm_^space'^_multiTerm'_", "init$multiTerm$_appTerm_^space'^_multiTerm'_", "init$singleTerm$=ast=", "init$singleTerm$=sq=", "init$singleTerm$=underscore=", "init$singleTerm$_string_", "init$singleTerm$=lparen=_multiTerm_=rparen=", "init$binder$=lambda=", "init$binder$=Lambda=", "init$binder$=Pi=", "init$binder$=forall=", "init$singleTerm$_binder_^space^_params_=dot=^space^_multiTerm_"].

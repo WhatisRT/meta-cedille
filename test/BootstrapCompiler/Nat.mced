@@ -1,0 +1,11 @@
+elet bootstrap/Nat : * := ∀ X : *. X -> (X -> X) -> X.
+
+elet bootstrap/zero : Nat := Λ X : *. λ z : X. λ s : X -> X. z.
+elet bootstrap/suc (n : Nat) : Nat := Λ X : *. λ z : X. λ s : X -> X. s $ n ?X z s.
+
+elet bootstrap/recursionNat [X : *] (rz : X) (rs : Nat -> X -> X) (n : Nat) : X :=
+  pr2 ?Nat ?X $ n ?(Nat × X)
+    (prodPair ?_ ?_ zero rz)
+    (λ r : Nat × X. prodPair ?_ ?_ (suc $ pr1 ?_ ?_ r) (rs (pr1 ?_ ?_ r) (pr2 ?_ ?_ r))).
+
+runMeta compileNames "Nat.mced" [String|"Nat", "zero", "suc", "recursionNat"].
