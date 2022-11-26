@@ -1,1 +1,27 @@
-let a := b.
+import bootstrap/Bootstrap.
+
+set PWD "test/".
+import BootstrapTest.
+
+import Binary.
+import Output.
+
+import TermRecDiagonal.
+import TermHelpers.
+import Inference.
+
+elet isFailing [A : *] (x : Eval A) : Eval Bool :=
+  catchEval ?Bool (x >>= (λ _ : A. pureEval ?Bool false)) (λ _ : String. pureEval ?Bool true).
+
+elet expectFail [A : *] (x : Eval A) : Eval Unit :=
+  isFailing ?A x >>= (λ b : Bool. ifthenelse ?_ b
+    (printLineEval "Failed as expected!")
+    (throwEval ?Unit "Success while failure was expected!")).
+
+let init$newStmt'$fail=minus=let^space^_betterLet_ (i : LetInfo) : init$newStmt :=
+  expectFail ?Unit (letInfoToNewStmtMod i).
+
+updateEval.
+
+fail-let test := pr1 ?Nat ?Nat 0.
+fail-let a := a.
