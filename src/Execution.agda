@@ -23,6 +23,8 @@ open import Prelude
 open import Prelude.Strings
 open import Prelude.Nat
 
+open StringErr
+
 record MetaEnv : Set where
   field
     grammar   : Grammar
@@ -106,7 +108,7 @@ module _ {M : Set → Set} {{_ : Monad M}}
         "checkTypePure: Type mismatch with the provided type!\n" + e + "\nProvided:    " + show T +
         "\nSynthesized:" <+> show t')
 
-  parseMeta : MetaEnv → String → M (AnnTerm × String)
+  parseMeta : MetaEnv → String → M (AnnTerm × String × String)
   parseMeta menv s = let open MetaEnv menv in parse grammar (initNT grammar) namespace s
 
 module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
@@ -187,11 +189,11 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     record { grammar = G ; namespace = namespace } ← getMeta
     NT ← maybeToError (findNT G nonTerminal)
                       ("Non-terminal" <+> nonTerminal <+> "does not exist in the current grammar!")
-    (res , rest) ← parse G NT namespace text
+    (res , parsed , rest) ← parse G NT namespace text
     T ← appendIfError (synthType Γ res)
                       ("\n\nError while interpreting input: "
                         + (shortenString 10000 (show res))
-                        + "\nWhile parsing: " + (shortenString 10000 text))
+                        + "\nWhile parsing: " + (shortenString 10000 parsed))
     appendIfError (checkβηPure Γ type $ Erase T)
       ("Type mismatch with the provided type!\nProvided: " + show type +
         "\nSynthesized: " + show T)
@@ -274,17 +276,17 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   parseAndExecuteBootstrap s = do
     record { grammar = G } ← getMeta
-    (fst , snd) ← parseBootstrap G s
+    (fst , parsed , snd) ← parseBootstrap G s
     res ← appendIfError (proj₁ <$> executeBootstrapStmt fst) ("\n\nError while executing term" <+> show fst)
     return (res , snd)
 
   parseAndExecute' s = do
     Γ ← getContext
     m@record { evaluator = ev ; evaluatorArgType = evT } ← getMeta
-    (fst , snd) ← parseMeta m s
+    (fst , parsed , snd) ← parseMeta m s
     appendIfError (checkType fst evT) ("\n\nError while interpreting input: " + (shortenString 10000 (show fst))
                                         + "\nWhile parsing: " + (shortenString 10000 s))
-    (res , _) ← appendIfError (executeTerm (Erase (ev ⟪$⟫ fst))) ("\n\nError while executing input:" <+> s + "\n")
+    (res , _) ← appendIfError (executeTerm (Erase (ev ⟪$⟫ fst))) ("\n\nError while executing input:" <+> parsed + "\n")
     return (res , snd)
 
   parseAndExecute s = do

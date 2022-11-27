@@ -12,7 +12,7 @@ open import Class.Map
 open import Class.Monad.Except
 open import Data.SimpleMap
 open import Data.Map.String
-open import Data.String using (fromList; toList; fromChar; uncons)
+open import Data.String as S using (fromList; toList; fromChar; uncons)
 open import Data.Tree
 open import Data.Tree.Instance
 open import Data.Word using (fromℕ)
@@ -237,16 +237,17 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
   preCoreGrammar = generateCFGNonEscaped "stmt" coreGrammarGenerator
 
   private
-    parseToConstrTree : (G : Grammar) → NonTerminal G → String → M (Tree (String ⊎ Char) × String)
+    parseToConstrTree : (G : Grammar) → NonTerminal G → String → M (Tree (String ⊎ Char) × String × String)
     parseToConstrTree (_ , G , (showRule , showNT)) S s = do
       (t , rest) ← parseWithInitNT showNT matchMulti show G M S s
-      return (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ showRule) t , rest)
+      return (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ showRule) t
+             , strTake (S.length s ∸ S.length rest) s , rest)
 
   -- Parse the next top-level non-terminal symbol from a string, and return a
   -- term representing the result of the parse, as well as the unparsed rest of
   -- the string
   {-# TERMINATING #-}
-  parse : (G : Grammar) → NonTerminal G → String → String → M (AnnTerm × String)
+  parse : (G : Grammar) → NonTerminal G → String → String → M (AnnTerm × String × String)
   parse G S namespace s = map₁ (foldConstrTree namespace) <$> parseToConstrTree G S s
     where
       -- Folds a tree of constructors back into a term by properly applying the
@@ -261,7 +262,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
   -- Used for bootstrapping
   {-# TERMINATING #-} -- cannot just use sequence in synTreetoℕtree because of the char special case
-  parseBootstrap : Grammar → String → M (BootstrapStmt × String)
+  parseBootstrap : Grammar → String → M (BootstrapStmt × String × String)
   parseBootstrap G s = do
     (y' , rest) ← parseToConstrTree G (initNT G) s
     y ← synTreeToℕTree y'

@@ -31,23 +31,44 @@ b-let showBinder (b : Binder) : String := b ?String "λ" "Λ" "Π" "∀".
 b-let isArrow (b : Binder) : Bool := b ?Bool false false true true.
 b-let showBinderArrow (b : Binder) : String := b ?String "λ is not an arrow!" "Λ is not an arrow!" "->" "=>".
 
-b-let showTermWithContext (t : Term) : List String -> String :=
-  t ?(List String -> String)
-    (λ v : init$var. λ con : List String. showVar con v)
-    (λ s : init$sort. λ _ : List String. showSort s)
-    (λ b : Binder. λ n : String. λ T, t : List String -> String. λ con : List String.
-      ifthenelse ?String (and (stringEq n "_") (isArrow b))
-        (stringConcat [String| T con, " ", showBinderArrow b, " ", t (cons ?String n con)])
-        (stringConcat [String| showBinder b, " ", n, " : ", T con, ". ", t (cons ?String n con)]))
-    (λ t : List String -> String. λ l : List (Product Bool (List String -> String)). λ con : List String.
-      stringConcat (cons ?String (t con)
-                          (map ?(Product Bool (List String -> String)) ?String
-                               (λ bs : Product Bool (List String -> String).
-                                 stringConcat [String|
-                                   ifthenelse ?String (pr1 ?Bool ?(List String -> String) bs) " ?" " ",
-                                   "(", pr2 ?Bool ?(List String -> String) bs con, ")"]) l)))
-    (λ c : Char. λ _ : List String. stringConcat [String| "κ", stringCons c stringNil])
-    (λ _ : List String. "_")
-    (λ t : List String -> String. λ con : List String. stringConcat [String| "γ{", t con, "}"]).
+b-let needsParens (t : Term) : Bool :=
+  t ?Bool
+    (λ _ : init$var. false)
+    (λ _ : init$sort. false)
+    (λ _ : Binder. λ _ : String. λ _, _ : Bool. true)
+    (λ _ : Bool. λ _ : List (Product Bool Bool). true)
+    (λ _ : Char. false)
+    false
+    (λ _ : Bool. false).
+
+b-let wrapWithParens (s : String) : String := stringConcat [String|"(", s, ")"].
+
+b-let showTermWithContext (t : Term) : List String -> String := recursionTerm ?(List String -> String)
+  (λ v : init$var. λ con : List String. showVar con v)
+  (λ s : init$sort. λ _ : List String. showSort s)
+  (λ b : Binder. λ n : String. λ _, _ : Term. λ T, t : List String -> String. λ con : List String.
+    ifthenelse ?String (and (stringEq n "_") (isArrow b))
+      (stringConcat [String| T con, " ", showBinderArrow b, " ", t (cons ?String n con)])
+      (stringConcat [String| showBinder b, " ", n, " : ", T con, ". ", t (cons ?String n con)]))
+  (λ _ : Term. λ la : List App. λ t : List String -> String.
+   λ l : List (Product Bool (List String -> String)). λ con : List String. stringConcat
+     (cons ?String (t con)
+           (map ?(TripleProduct Bool (List String -> String) Term) ?String
+                (recursionTripleProduct ?Bool ?(List String -> String) ?Term ?String
+                  (λ b : Bool. λ s : List String -> String. λ t' : Term. stringConcat [String|
+                    ifthenelse ?String b " ?" " ",
+                    ifthenelse ?String (needsParens t') (wrapWithParens (s con)) (s con)]))
+                (zipWith ?(Product Bool (List String -> String)) ?App
+                         ?(TripleProduct Bool (List String -> String) Term)
+                         (λ bs : Product Bool (List String -> String). λ a : App.
+                           mkTripleProduct ?Bool ?(List String -> String) ?Term
+                             (pr1 ?Bool ?(List String -> String) bs)
+                             (pr2 ?Bool ?(List String -> String) bs)
+                             (appTerm a))
+                         l la))))
+  (λ c : Char. λ _ : List String. stringConcat [String| "κ", stringCons c stringNil])
+  (λ _ : List String. "_")
+  (λ _ : Term. λ t : List String -> String. λ con : List String. stringConcat [String|"γ{", t con, "}"])
+  t.
 
 b-let showTerm (t : Term) : String := showTermWithContext t (nil ?String).

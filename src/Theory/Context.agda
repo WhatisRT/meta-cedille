@@ -33,7 +33,7 @@ Context = GlobalContext × List (String × Def)
 
 instance
   Context-Show : Show Context
-  Context-Show .show (fst , snd) = (show $ length snd) <+> "local variables:" + show snd
+  Context-Show .show (fst , snd) = (show $ length snd) <+> "local variables:" <+> show snd
 
 globalToContext : GlobalContext → Context
 globalToContext Γ = Γ , []

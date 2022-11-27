@@ -1,0 +1,47 @@
+--------------------------------------------------------------------------------
+-- Functions for printing to the terminal
+--------------------------------------------------------------------------------
+
+let ANSI8Color : * := ∀ X : *. X -> X -> X -> X -> X -> X -> X -> X -> X.
+
+let ANSI8Black   := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. black.
+let ANSI8Red     := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. red.
+let ANSI8Green   := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. green.
+let ANSI8Yellow  := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. yellow.
+let ANSI8Blue    := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. blue.
+let ANSI8Magenta := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. magenta.
+let ANSI8Cyan    := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. cyan.
+let ANSI8White   := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. white.
+
+let genEscapeCode (s : String) : String :=
+  stringConcat [String|"[", s, "m"].
+
+let resetCode : String :=
+  genEscapeCode "0".
+
+let toColorCode8 (c : ANSI8Color) : String :=
+  genEscapeCode (c ?String "30" "31" "32" "33" "34" "35" "36" "37").
+
+let toBrightColorCode8 (c : ANSI8Color) : String :=
+  genEscapeCode (stringApp (c ?String "30" "31" "32" "33" "34" "35" "36" "37") ";1").
+
+let toBGColorCode8 (c : ANSI8Color) : String :=
+  genEscapeCode (c ?String "40" "41" "42" "43" "44" "45" "46" "47").
+
+let withColor8 (c : ANSI8Color) (s : String) : String :=
+  stringConcat [String|toBrightColorCode8 c, s, resetCode].
+
+let withColors8 (fg, bg : ANSI8Color) (s : String) : String :=
+  stringConcat [String|toColorCode8 fg, toBGColorCode8 bg, s, resetCode].
+
+let toColorCode256 (c : Byte) : String :=
+  genEscapeCode (stringApp "38;5;" $ showByte c).
+
+let toBGColorCode256 (c : Byte) : String :=
+  genEscapeCode (stringApp "48;5;" $ showByte c).
+
+let withColor256 (c : Byte) (s : String) : String :=
+  stringConcat [String|toColorCode256 c, s, resetCode].
+
+let withColors256 (fg, bg : Byte) (s : String) : String :=
+  stringConcat [String|toColorCode256 fg, toBGColorCode256 bg, s, resetCode].

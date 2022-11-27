@@ -87,9 +87,12 @@ let applyToApp (f : Term -> List App -> Eval Term) : Term -> Eval Term :=
     (λ u : Term. λ _ : Eval Term. pureEval ?Term $ unquoteTerm u).
 
 let showEquation (i : InferenceInfo) : String :=
-  stringConcat [String|
-    inferenceInfoName i, " := ", showTerm $ inferenceInfoTerm i, " : ",
-    showTerm $ inferenceInfoType1 i, " = ", maybe ?Term ?String "_" showTerm $ inferenceInfoType2 i].
+  (λ withColor : String -> String.
+    stringConcat [String|
+      inferenceInfoName i, withColor " := ", showTerm $ inferenceInfoTerm i,
+      withColor " : ", showTerm $ inferenceInfoType1 i, withColor " = ",
+      maybe ?Term ?String "_" showTerm $ inferenceInfoType2 i])
+  (withColor256 $ mkByte false true false true false false true false).
 
 let inferTypeIfNotUnknown (t : Term) : Eval (Maybe Term) :=
   ifthenelse ?(Eval (Maybe Term)) (isUnknown t)
@@ -167,17 +170,17 @@ let solveApp (app : List App) (s : List (Nat × Term)) : List App :=
             (mkApp (appErased a) (pr2 ?Nat ?Term x))
             a) s a) a) app.
 
-let solveAppWithErr (f : Term) (app : List App) (s : List (Nat × Term)) : Eval Term :=
+let debugPrintElabStep (l : List InferenceInfo) : Eval Unit :=
+  ifthenelse ?(Eval Unit) (isNil ?InferenceInfo l) (pureEval ?Unit tt) $
+    printLineEval $ stringConcat
+      [String|"Equations: ", showList ?InferenceInfo showEquation l, newline,
+              "Solutions: ", showList ?(Nat × Term) showSolution $ allEqns l, newline].
+
+let solveAppWithErr (f : Term) (app : List App) (s : List InferenceInfo) : Eval Term :=
   (λ l : List App. ifthenelse ?(Eval Term)
     (isNil ?App (filter ?App (λ a : App. isUnknown $ appTerm a) l))
       (pureEval ?Term (appLTerm f l))
-      (throwEval ?Term $ stringConcat [String|"Could not infer all holes in ", showTerm (appLTerm f l), "!", newline])) $ solveApp app s.
-
-let debugPrintElabStep (l : List InferenceInfo) : Eval Unit :=
-  ifthenelse ?(Eval Unit) (isNil ?InferenceInfo l) (pureEval ?Unit tt) $
-  seqNewStmt
-    (printLineEval $ showList ?InferenceInfo showEquation l)
-    (printLineEval $ showList ?(Nat × Term) showSolution $ allEqns l).
+      (seqEval ?Unit ?Term (debugPrintElabStep s) (throwEval ?Term $ stringConcat [String|"Could not infer all holes in: ", showTerm (appLTerm f l), "!", newline]))) $ solveApp app $ allEqns s.
 
 let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term :=
   bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ _ : String.
@@ -189,7 +192,7 @@ let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term
           (ifthenelse ?(Eval Unit) doDebugPrinting
             (debugPrintElabStep $ genInferenceInfo T app')
             (pureEval ?Unit tt)) $
-          solveAppWithErr f app $ allEqns $ genInferenceInfo T app')).
+          solveAppWithErr f app $ genInferenceInfo T app')).
 
 let elabLocalInference (doDebugPrinting : Bool) (t : Term) : Eval Term :=
   seqEval ?Unit ?Term

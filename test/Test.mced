@@ -3,6 +3,9 @@ import bootstrap/Bootstrap.
 set PWD "test/".
 import BootstrapTest.
 
+import Binary.
+import Output.
+
 import TermRecDiagonal.
 import TermHelpers.
 import Inference.

@@ -56,7 +56,7 @@ b-let showDec (d : Dec) : String := d ?String "0" "1" "2" "3" "4" "5" "6" "7" "8
 
 b-let baseListToNat [B : *] (digitToNat : B -> Nat) (ds : List B) (base : Nat) : Nat :=
   recursionList ?B ?Nat zero
-    (λ d : B. λ _ : List B. λ rec : Nat. add (mul rec ten) (digitToNat d))
+    (λ d : B. λ _ : List B. λ rec : Nat. add (mul rec base) (digitToNat d))
     (reverse ?B ds).
 
 b-let boolToNat (b : Bool) : Nat := ifthenelse ?Nat b one zero.

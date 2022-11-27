@@ -104,41 +104,41 @@ module _ where
 module _ {a b : Bool} where
   open TermLike (Term-TermLike {a} {b}) public
 
+{-# TERMINATING #-}
+showTermCtx : List String → Term a b → String
+showTermCtx l (Var-T x)      = showVar l x
+showTermCtx l (FDB x)        = "FDB" <+> show x
+showTermCtx l (Sort-T x)     = show x
+showTermCtx l (Const-T x)    = show x
+showTermCtx l (Pr1 t)        = "π1" <+> showTermCtx l t
+showTermCtx l (Pr2 t)        = "π2" <+> showTermCtx l t
+showTermCtx l (Beta t t₁)    = "β" <+> showTermCtx l t <+> showTermCtx l t₁
+showTermCtx l (Delta t t₁)   = "Delta" + showTermCtx l t <+> showTermCtx l t₁
+showTermCtx l (Sigma t)      = "ς" + showTermCtx l t
+showTermCtx l (App t t₁)     = "[" + showTermCtx l t <+> showTermCtx l t₁ + "]"
+showTermCtx l (AppE t t₁)    = "<" + showTermCtx l t <+> showTermCtx l t₁ + ">"
+showTermCtx l (Lam-P n t)    = "λ" <+> n + "." <+> showTermCtx (n ∷ l) t
+showTermCtx l (Cont n _ t)   = "Cont" <+> n + "." <+> showTermCtx (n ∷ l) t
+showTermCtx l (Rho t t₁ t₂)  = "ρ" <+> showTermCtx l t <+> ":" <+> showTermCtx l t₁ <+> showTermCtx l t₂
+showTermCtx l (All n t t₁)   = "∀" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
+showTermCtx l (Pi n t t₁)    = "Π" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
+showTermCtx l (Iota n t t₁)  = "ι" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
+showTermCtx l (Lam-A n t t₁) = "λ" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
+showTermCtx l (LamE n t t₁)  = "Λ" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
+showTermCtx l (Pair t t₁ t₂) = "{" + showTermCtx l t + "," + showTermCtx l t₁ <+> "." <+> showTermCtx l t₂ + "}"
+showTermCtx l (Phi t t₁ t₂)  = "φ" <+> showTermCtx l t <+> showTermCtx l t₁ <+> showTermCtx l t₂
+showTermCtx l (Eq-T t t₁)    = "(=" <+> showTermCtx l t <+> showTermCtx l t₁ + ")"
+showTermCtx l (M-T t)        = "M" <+> showTermCtx l t
+showTermCtx l (Mu t t₁)      = "μ" <+> showTermCtx l t <+> showTermCtx l t₁
+showTermCtx l (Epsilon t)    = "ε" <+> showTermCtx l t
+showTermCtx l (Gamma t t₁)   = "Γ" <+> showTermCtx l t <+> showTermCtx l t₁
+showTermCtx l (Ev m args)    = "Ev" <+> show m <+> primMetaArgs-Show (showTermCtx l) args
+showTermCtx l (Char-T c)     = "'" + show c + "'"
+showTermCtx l (CharEq t t')  = "CharEq" <+> showTermCtx l t <+> showTermCtx l t'
+
 instance
-  {-# TERMINATING #-}
   Term-Show : Show (Term a b)
-  Term-Show {a} {b} = record { show = helper [] }
-    where
-      helper : List String → Term a b → String
-      helper l (Var-T x)      = showVar l x
-      helper l (FDB x)        = "FDB" <+> show x
-      helper l (Sort-T x)     = show x
-      helper l (Const-T x)    = show x
-      helper l (Pr1 t)        = "π1" <+> helper l t
-      helper l (Pr2 t)        = "π2" <+> helper l t
-      helper l (Beta t t₁)    = "β" <+> helper l t <+> helper l t₁
-      helper l (Delta t t₁)   = "Delta" + helper l t <+> helper l t₁
-      helper l (Sigma t)      = "ς" + helper l t
-      helper l (App t t₁)     = "[" + helper l t <+> helper l t₁ + "]"
-      helper l (AppE t t₁)    = "<" + helper l t <+> helper l t₁ + ">"
-      helper l (Lam-P n t)    = "λ" <+> n + "." <+> helper (n ∷ l) t
-      helper l (Cont n _ t)   = "Cont" <+> n + "." <+> helper (n ∷ l) t
-      helper l (Rho t t₁ t₂)  = "ρ" <+> helper l t <+> ":" <+> helper l t₁ <+> helper l t₂
-      helper l (All n t t₁)   = "∀" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
-      helper l (Pi n t t₁)    = "Π" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
-      helper l (Iota n t t₁)  = "ι" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
-      helper l (Lam-A n t t₁) = "λ" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
-      helper l (LamE n t t₁)  = "Λ" <+> n <+> ":" <+> helper l t + "." <+> helper (n ∷ l) t₁
-      helper l (Pair t t₁ t₂) = "{" + helper l t + "," + helper l t₁ <+> "." <+> helper l t₂ + "}"
-      helper l (Phi t t₁ t₂)  = "φ" <+> helper l t <+> helper l t₁ <+> helper l t₂
-      helper l (Eq-T t t₁)    = "(=" <+> helper l t <+> helper l t₁ + ")"
-      helper l (M-T t)        = "M" <+> helper l t
-      helper l (Mu t t₁)      = "μ" <+> helper l t <+> helper l t₁
-      helper l (Epsilon t)    = "ε" <+> helper l t
-      helper l (Gamma t t₁)   = "Γ" <+> helper l t <+> helper l t₁
-      helper l (Ev m args)    = "Ev" <+> show m <+> primMetaArgs-Show (helper l) args
-      helper l (Char-T c)     = "'" + show c + "'"
-      helper l (CharEq t t')  = "CharEq" <+> helper l t <+> helper l t'
+  Term-Show {a} {b} = record { show = showTermCtx [] }
 
 {-# TERMINATING #-}
 Erase : AnnTerm → PureTerm b

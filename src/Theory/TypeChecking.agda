@@ -11,11 +11,14 @@ import Data.Product
 
 open import Data.HSTrie
 open import Class.Map
+open import Class.Monad.Reader
 open import Class.Monad.Except
 open import Data.Word using (toℕ; fromℕ)
+open import Data.Sum using (map₁)
 open import Monads.Except
+open import Monads.ExceptT
 
-open import Prelude
+open import Prelude hiding (map₁)
 open import Prelude.Nat
 
 open import Theory.Names public
@@ -29,6 +32,10 @@ open import Theory.NBE using (genExtra)
 
 module _ {a b : Bool} where
   open Types (Term-TermLike {a} {b}) public
+
+-- instance
+--   _ = ExceptT-Monad
+--   _ = ExceptT-MonadExcept
 
 PureTerm : Set
 PureTerm = Theory.Terms.PureTerm false
@@ -65,6 +72,35 @@ private
       helper k n (Char-T c) = false
       helper k n (CharEq t t₁) = helper k n t ∧ helper k n t₁
 
+TCErrorMsg : Set
+TCErrorMsg = List (String ⊎ AnnTerm)
+
+TCError : Set
+TCError = AnnTerm × Context × TCErrorMsg
+
+record IsTCErrorMsg (A : Set) : Set where
+  field toTCErrorMsg : A → String ⊎ AnnTerm
+
+open IsTCErrorMsg ⦃...⦄
+
+instance
+  IsTCErrorMsg-String : IsTCErrorMsg String
+  IsTCErrorMsg-String .toTCErrorMsg = inj₁
+
+  IsTCErrorMsg-AnnTerm : IsTCErrorMsg AnnTerm
+  IsTCErrorMsg-AnnTerm .toTCErrorMsg = inj₂
+
+infixr 0 _∷ᵗ_
+_∷ᵗ_ : A → ⦃ IsTCErrorMsg A ⦄ → TCErrorMsg → TCErrorMsg
+a ∷ᵗ es = toTCErrorMsg a ∷ es
+
+instance
+  Show-TCError : Show TCError
+  Show-TCError .show (tm , Γ@(_ , Γ') , msg) = let showTerm = showTermCtx (map proj₁ Γ') in
+    foldl _<+>_ "" (map Data.Sum.[ id , showTerm ] msg)
+    + "\n\nWhile synthesizing type for" <+> showTerm tm
+    <+> "in context:\n" + show {{Context-Show}} Γ + "\n\n"
+
 insertInGlobalContext : GlobalName → Def → GlobalContext → String ⊎ GlobalContext
 insertInGlobalContext n d Γ =
   if is-just $ lookup n Γ
@@ -75,17 +111,16 @@ insertInGlobalContext n d Γ =
     toEfficientDef d@(≔ x) Γ = record d { extra = just $ genExtra (globalToContext Γ) $ Erase x }
     toEfficientDef d Γ = d
 
-private
-  beqMonadHelper : {{_ : EqB A}} {{_ : Show A}} {{_ : Monad M}} {{_ : MonadExcept M String}}
-                → A → A → String → M ⊤
+module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
+
+  beqMonadHelper : ⦃ _ : EqB A ⦄ ⦃ _ : Show A ⦄ → A → A → String → M ⊤
   beqMonadHelper a a' s =
     if a ≣ a'
       then return tt
       else throwError (s <+> show a <+> "isn't equal to" <+> s <+> show a')
 
   {-# TERMINATING #-}
-  pureTermBeq : {{_ : Monad M}} {{_ : MonadExcept M String}}
-    → PureTerm → PureTerm → M ⊤
+  pureTermBeq : PureTerm → PureTerm → M ⊤
   pureTermBeq (Var-T x) (Var-T x₁) = beqMonadHelper x x₁ "Name"
   pureTermBeq (Sort-T x) (Sort-T x₁) = beqMonadHelper x x₁ "Sort"
   pureTermBeq (Const-T x) (Const-T x₁) = beqMonadHelper x x₁ "Const"
@@ -108,298 +143,330 @@ private
   pureTermBeq t t' =
     throwError $ "The terms" <+> show t <+> "and" <+> show t' <+> "aren't equal!"
 
-module _ {{_ : Monad M}} {{_ : MonadExcept M String}} (Γ : Context) where
-  compareNames : PureTerm → PureTerm → M ⊤
-  compareNames (Var-T x) (Var-T x₁) =
-    if x ≣ x₁
-      then return tt
-      else throwError "Names not equal! If you see this message, this is a bug!"
-  {-# CATCHALL #-}
-  compareNames _ _ = throwError "Terms are not names! If you see this message, this is a bug!"
+  module _ (Γ : Context) where
+    compareNames : PureTerm → PureTerm → M ⊤
+    compareNames (Var-T x) (Var-T x₁) =
+      if x ≣ x₁
+        then return tt
+        else throwError "Names not equal! If you see this message, this is a bug!"
+    {-# CATCHALL #-}
+    compareNames _ _ = throwError "Terms are not names! If you see this message, this is a bug!"
 
-  {-# NON_TERMINATING #-}
-  checkβηPure : PureTerm → PureTerm → M ⊤
-  checkβηPure t t' =
-    tryElse (compareNames t t') $
-    compareHnfs (hnfNormPure Γ t) (hnfNormPure Γ t')
-    -- tryElse (compareHnfs (hnfNormPure Γ t) (hnfNormPure Γ t')) $
-    -- pureTermBeq t t'
-    where
-      hnfError : PureTerm → PureTerm → M ⊤
-      hnfError t t' =
-        throwError $ "The terms" <+> show t <+> "and" <+> show t' <+> "aren't equal!"
+    {-# NON_TERMINATING #-}
+    checkβηPure : PureTerm → PureTerm → M ⊤
+    checkβηPure t t' =
+      tryElse (compareNames t t') $
+      compareHnfs (hnfNormPure Γ t) (hnfNormPure Γ t')
+      -- tryElse (compareHnfs (hnfNormPure Γ t) (hnfNormPure Γ t')) $
+      -- pureTermBeq t t'
+      where
+        hnfError : PureTerm → PureTerm → M ⊤
+        hnfError t t' =
+          throwError $ "The terms" <+> show t <+> "and" <+> show t' <+> "aren't equal!"
 
-      compareHnfs : PureTerm → PureTerm → M ⊤
-      compareHnfs (Var-T x) (Var-T x₁) = beqMonadHelper x x₁ "Name"
-      compareHnfs (Sort-T x) (Sort-T x₁) = beqMonadHelper x x₁ "Sort-T"
-      compareHnfs (Const-T x) (Const-T x₁) = beqMonadHelper x x₁ "Const"
-      compareHnfs (App t t₁) (App x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
-      compareHnfs (Lam-P _ t) (Lam-P _ t₁) = checkβηPure t t₁
-      compareHnfs (Pi _ t t₁) (Pi _ x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
-      compareHnfs (All _ t t₁) (All _ x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
-      compareHnfs (Iota _ t t₁) (Iota _ x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
-      compareHnfs (Eq-T t t₁) (Eq-T x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
-      compareHnfs (M-T t) (M-T x) = checkβηPure x t
-      compareHnfs (Mu t t₁) (Mu x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
-      compareHnfs (Epsilon t) (Epsilon x) = checkβηPure t x
-      compareHnfs (Gamma t t₁) (Gamma x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
-      compareHnfs t@(Ev m x) t'@(Ev m' x') with m ≟ m'
-      ... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith checkβηPure x x'
-      ... | no  _    = hnfError t t'
-      compareHnfs (Char-T c) (Char-T c') = beqMonadHelper c c' "Char"
-      compareHnfs (CharEq t t₁) (CharEq x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
-      compareHnfs (Lam-P _ t) t₁ = case normalizePure Γ t of λ where
-        t''@(App t' (Var-T (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
-          then (compareHnfs (strengthen t') t₁) else hnfError t'' t₁
-        t'' → hnfError t'' t₁
-      compareHnfs t (Lam-P _ t₁) = case normalizePure Γ t₁ of λ where
-        t''@(App t' (Var-T (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
-          then (compareHnfs t (strengthen t')) else hnfError t t''
-        t'' → hnfError t t''
-      {-# CATCHALL #-}
-      compareHnfs t t' = hnfError t t'
+        compareHnfs : PureTerm → PureTerm → M ⊤
+        compareHnfs (Var-T x) (Var-T x₁) = beqMonadHelper x x₁ "Name"
+        compareHnfs (Sort-T x) (Sort-T x₁) = beqMonadHelper x x₁ "Sort-T"
+        compareHnfs (Const-T x) (Const-T x₁) = beqMonadHelper x x₁ "Const"
+        compareHnfs (App t t₁) (App x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
+        compareHnfs (Lam-P _ t) (Lam-P _ t₁) = checkβηPure t t₁
+        compareHnfs (Pi _ t t₁) (Pi _ x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
+        compareHnfs (All _ t t₁) (All _ x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
+        compareHnfs (Iota _ t t₁) (Iota _ x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
+        compareHnfs (Eq-T t t₁) (Eq-T x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
+        compareHnfs (M-T t) (M-T x) = checkβηPure x t
+        compareHnfs (Mu t t₁) (Mu x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
+        compareHnfs (Epsilon t) (Epsilon x) = checkβηPure t x
+        compareHnfs (Gamma t t₁) (Gamma x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
+        compareHnfs t@(Ev m x) t'@(Ev m' x') with m ≟ m'
+        ... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith checkβηPure x x'
+        ... | no  _    = hnfError t t'
+        compareHnfs (Char-T c) (Char-T c') = beqMonadHelper c c' "Char"
+        compareHnfs (CharEq t t₁) (CharEq x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
+        compareHnfs (Lam-P _ t) t₁ = case normalizePure Γ t of λ where
+          t''@(App t' (Var-T (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
+            then (compareHnfs (strengthen t') t₁) else hnfError t'' t₁
+          t'' → hnfError t'' t₁
+        compareHnfs t (Lam-P _ t₁) = case normalizePure Γ t₁ of λ where
+          t''@(App t' (Var-T (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
+            then (compareHnfs t (strengthen t')) else hnfError t t''
+          t'' → hnfError t t''
+        {-# CATCHALL #-}
+        compareHnfs t t' = hnfError t t'
 
-  checkβη : AnnTerm → AnnTerm → M ⊤
-  checkβη t t' = checkβηPure (Erase t) (Erase t')
+    checkβη : AnnTerm → AnnTerm → M ⊤
+    checkβη t t' = checkβηPure (Erase t) (Erase t')
 
-{-# TERMINATING #-}
-synthType synthType' :
-  {{_ : Monad M}} {{_ : MonadExcept M String}} → Context → AnnTerm → M AnnTerm
+module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExcept M TCError ⦄ where
 
-synthType Γ t =
-  appendIfError (synthType' Γ t) $
-    "\n\nWhile synthesizing type for" <+> shortenString 1000 (show t) <+> "in context:\n" + show {{Context-Show}} Γ
+  open StringErr {M = ExceptT M String} ⦃ ExceptT-Monad ⦄ ⦃ ExceptT-MonadExcept ⦄
 
-synthType' Γ (Var-T x) =
-  maybeToError
-    (lookupTypeInContext x Γ)
-    ("Lookup failed:" <+> show x <+> "in context" <+> show {{Context-Show}} Γ)
-synthType' Γ (Sort-T Ast) = return □
-synthType' Γ (Sort-T Sq) = throwError "Cannot synthesize type for the superkind"
+  throwErrorCtx : AnnTerm → TCErrorMsg → M A
+  throwErrorCtx tm msg = do
+    Γ ← ask
+    throwError (tm , Γ , msg)
 
-synthType' Γ (Const-T CharT) = return ⋆
+  appendIfError' : M (String ⊎ A) → AnnTerm → TCErrorMsg → M A
+  appendIfError' x tm msg = do
+    (inj₁ e) ← x
+      where (inj₂ a) → return a
+    throwErrorCtx tm (msg + ("\nReason:" ∷ᵗ e ∷ᵗ []))
 
-synthType' Γ (Pr1 t) = do
-  T ← synthType Γ t
-  case (hnfNorm Γ T) of λ
-    { (Iota _ u u₁) → return u
-    ; _ → throwError "Term does not normalize to an iota term" }
+  throwError1 : AnnTerm → String → M A
+  throwError1 tm s = throwErrorCtx tm (s ∷ᵗ [])
 
-synthType' Γ (Pr2 t) = do
-  T ← synthType Γ t
-  case (hnfNorm Γ T) of λ
-    { (Iota _ u u₁) → return $ subst u₁ (Pr1 t)
-    ; _ → throwError "Term does not normalize to an iota term" }
+  hnfNormM : AnnTerm → M AnnTerm
+  hnfNormM t = do
+    Γ ← ask
+    return $ hnfNorm Γ t
 
-synthType' Γ (Beta t t₁) = do
-  T ← synthType Γ (Eq-T t t)
-  case (hnfNorm Γ T) of λ
-    { (Sort-T Ast) → return $ Eq-T t t
-    ; _ → throwError "Equality type does not have the right type. Is this a bug?" }
+  {-# TERMINATING #-}
+  synthType' : AnnTerm → M AnnTerm
 
-synthType' Γ (Delta t t₁) = do
-  T ← synthType Γ t₁
-  case (hnfNorm Γ T) of λ
-    { (Eq-T u u₁) → do
-      catchError
-        (pureTermBeq (normalizePure Γ $ Erase u) (Lam-P "" $ Lam-P "" $ BoundVar 1) >>
-         pureTermBeq (normalizePure Γ $ Erase u₁) (Lam-P "" $ Lam-P "" $ BoundVar 0))
-        (λ e → throwError $
-          "This equality cannot be used for the delta term:" <+> show u
-          <+> "=" <+> show u₁ + "\nError:" <+> e)
-      return t
-    ; _ → throwError "The second argument of a delta needs to be of an eq type" }
+  synthType' tm@(Var-T x) = do
+    Γ ← ask
+    case (lookupTypeInContext x Γ) of λ
+      { (just T) → return T
+      ; nothing → throwErrorCtx tm
+        (("Lookup failed:" <+> show x + "\nIn context:" <+> show {{Context-Show}} Γ) ∷ᵗ []) }
 
-synthType' Γ (Sigma t) = do
-  T ← synthType Γ t
-  case (hnfNorm Γ T) of λ
-    { (Eq-T u u₁) → return $ Eq-T u₁ u
-    ; _ → throwError "Sigma needs an inhabitant of an eq type as argument" }
+  synthType' tm@(Sort-T Ast) = return □
+  synthType' tm@(Sort-T Sq) = throwError1 tm "Cannot synthesize type for the kind □"
 
-synthType' Γ (App t t₁) = do
-  T ← synthType Γ t
-  T₁ ← synthType Γ t₁
-  case (hnfNorm Γ T) of λ
-    { (Pi _ u u₁) → do
-      catchError
-        (checkβη Γ T₁ u)
-        (λ e → throwError ("Type mismatch in application, the type of" <+> show t₁
-          <+> ":" <+> show T₁ +  " is not βη-equivalent to" <+> show u + "\nError:" <+> e))
-      return $ subst u₁ t₁
-    ; v → throwError $
-      "The left term in an application needs to have a pi type, while it has type" <+> show v }
+  synthType' tm@(Const-T CharT) = return ⋆
 
-synthType' Γ (AppE t t₁) = do
-  T ← synthType Γ t
-  T₁ ← synthType Γ t₁
-  case (hnfNorm Γ T) of λ
-    { (All _ u u₁) → do
-      catchError (checkβη Γ u T₁)
-        (λ e → throwError
-          ("Type mismatch in erased application, the following types are not βη-equivalent:\n"
-            + show u + "\n" + show T₁ + "\nError:\n" + e))
-      return $ subst u₁ t₁
-    ; v → throwError $
-      "The left term in an erased application needs to have a forall type, while it has type "
-        + show v + "\nTest:" <+> show T }
+  synthType' tm@(Pr1 t) = do
+    T ← synthType' t
+    (Iota _ u u₁) ← hnfNormM T
+      where _ → throwError1 tm "Term does not normalize to an iota term"
+    return u
 
-synthType' Γ (Rho t t₁ t₂) = do
-  T ← synthType Γ t
-  T₁ ← synthType Γ t₂
-  case (hnfNorm Γ T) of λ
-    { (Eq-T u u₁) → do
-      catchError (checkβη Γ (subst t₁ u₁) T₁)
-        (λ e → throwError $ "Type mismatch in rho:" <+> show (subst t₁ u₁)
-          <+> "should be βη-equivalent to the synthesized type of" <+> show t₂ <+> ": "
-          + show T₁ + "\nError:\n" + e)
-      return $ subst t₁ u
-    ; _ → throwError "The type of the first argument of a rho needs to be an equality" }
+  synthType' tm@(Pr2 t) = do
+    T ← synthType' t
+    (Iota _ u u₁) ← hnfNormM T
+      where _ → throwError1 tm "Term does not normalize to an iota term"
+    return $ subst u₁ (Pr1 t)
 
-synthType' Γ (All n t t₁) = do
-  u ← synthType Γ t
-  case (hnfNorm Γ u) of λ
-    { (Sort-T s) → do
-      let Γ' = pushType Γ (n , t)
-      u₁ ← synthType Γ' t₁
-      case (hnfNorm Γ' u₁) of λ
-        { (Sort-T Ast) → return ⋆
-        ; v → throwError $
-          "The type family in forall should have type star, while it has type "
-          + show v <+> "(" + show t₁ + ")\nContext:" <+> show {{Context-Show}} Γ' }
-    ; _ → throwError "The type of the parameter type in forall should be star or square" }
+  synthType' tm@(Beta t t₁) = do
+    T ← synthType' (Eq-T t t)
+    (Sort-T Ast) ← hnfNormM T
+      where _ → throwError1 tm "Equality type does not have the right type. Is this a bug?"
+    return $ Eq-T t t
 
-synthType' Γ (Pi n t t₁) = do
-  u ← synthType Γ t
-  case (hnfNorm Γ u) of λ
-    { (Sort-T s) → do
-      let Γ' = pushType Γ (n , t)
-      u₁ ← synthType Γ' t₁
-      case (hnfNorm Γ u₁) of λ
-        { (Sort-T s') → return $ Sort-T s'
-        ; v → throwError $
-          "The type family in pi should have type star or square, while it has type" <+> show v }
-    ; _ → throwError "The type of the parameter type in pi should be star or square" }
+  synthType' tm@(Delta t t₁) = do
+    Γ ← ask
+    T ← synthType' t₁
+    (Eq-T u u₁) ← hnfNormM T
+      where _ → throwError1 tm "The second argument of a delta needs to be of an eq type"
+    appendIfError'
+      (pureTermBeq (normalizePure Γ $ Erase u) (Lam-P "" $ Lam-P "" $ BoundVar 1) >>
+       pureTermBeq (normalizePure Γ $ Erase u₁) (Lam-P "" $ Lam-P "" $ BoundVar 0))
+      tm ("This equality cannot be used for the delta term:" ∷ᵗ u ∷ᵗ "=" ∷ᵗ u₁ ∷ᵗ [])
+    return t
 
-synthType' Γ (Iota n t t₁) = do
-  u ← synthType Γ t
-  case (hnfNorm Γ u) of λ
-    { (Sort-T Ast) → do
-      let Γ' = pushType Γ (n , t)
-      u₁ ← synthType Γ' t₁
-      case (hnfNorm Γ' u₁) of λ
-        { (Sort-T Ast) → return ⋆
-        ; _ → throwError "The type family in iota should have type star"}
-    ; _ → throwError "The type of the parameter type in iota should be star" }
+  synthType' tm@(Sigma t) = do
+    T ← synthType' t
+    (Eq-T u u₁) ← hnfNormM T
+      where _ → throwError1 tm "Sigma needs an inhabitant of an eq type as argument"
+    return $ Eq-T u₁ u
 
-synthType' Γ (Lam-A n t t₁) = do
-  synthType Γ t
-  u ← synthType (pushType Γ (n , t)) t₁
-  return (Pi n t u)
+  synthType' tm@(App t t₁) = do
+    Γ ← ask
+    T ← synthType' t
+    T₁ ← synthType' t₁
+    (Pi _ u u₁) ← hnfNormM T
+      where v → throwErrorCtx tm $
+             "The left term in an application needs to have a pi type, while it has type" ∷ᵗ v ∷ᵗ []
+    appendIfError' (checkβη Γ T₁ u) tm
+      ("Type mismatch in application:" ∷ᵗ App t t₁ ∷ᵗ "\nThe type of RHS," ∷ᵗ
+       T₁ ∷ᵗ "is not βη-equivalent to" ∷ᵗ u ∷ᵗ [])
+    return $ subst u₁ t₁
 
-synthType' Γ (LamE n t t₁) =
-  if checkFree (Bound 0) (Erase t₁)
-    then throwError "Erased arguments cannot appear bound in a term"
-    else do
-      synthType Γ t
-      u ← synthType (pushType Γ (n , t)) t₁
-      return $ All n t u
+  synthType' tm@(AppE t t₁) = do
+    Γ ← ask
+    T ← synthType' t
+    T₁ ← synthType' t₁
+    (All _ u u₁) ← hnfNormM T
+      where v → throwErrorCtx tm $
+             "The left term in an erased application needs to have a forall type, while it has type" ∷ᵗ v ∷ᵗ []
+    appendIfError' (checkβη Γ u T₁) tm
+      ("Type mismatch in application:" ∷ᵗ AppE t t₁ ∷ᵗ "\nThe type of RHS," ∷ᵗ
+       T₁ ∷ᵗ "is not βη-equivalent to" ∷ᵗ u ∷ᵗ [])
+    return $ subst u₁ t₁
 
-synthType' Γ (Pair t t₁ t₂) = do
-  catchError (checkβη Γ t t₁)
-    (λ e → throwError $
-      "The terms in dependent intersection introduction have to be βη-equivalent. They normalize to:\n"
-        + show (normalizePure Γ $ Erase t) + "\n"
-        + show (normalizePure Γ $ Erase t₁) + "\nError:\n" + e)
-  u ← synthType Γ t
-  u₁ ← synthType Γ t₁
-  catchError
-    (checkβη Γ (subst t₂ t) u₁)
-    (λ e → throwError
-      ("Type mismatch in the second argument of the dependent intersection: "
-        + show (subst t₂ t) <+> "should be βη-equivalent to the synthesized type "
-        + show u₁ + "\n" + e))
-  let res = Iota "" u t₂
-  u₂ ← synthType Γ res
-  case (hnfNorm Γ u₂) of λ
-    { (Sort-T Ast) → return res
-    ; _ → throwError
-      "The resulting iota type of the dependent intersection doesn't have type star. Is this a Bug?" }
+  synthType' tm@(Rho t t₁ t₂) = do
+    Γ ← ask
+    T ← synthType' t
+    T₁ ← synthType' t₂
+    (Eq-T u u₁) ← hnfNormM T
+      where _ → throwError1 tm "The type of the first argument of a rho needs to be an equality"
+    appendIfError' (checkβη Γ (subst t₁ u₁) T₁) tm
+      ("Type mismatch in rho:" ∷ᵗ subst t₁ u₁ ∷ᵗ "should be βη-equivalent to the type of" ∷ᵗ
+       t₂ ∷ᵗ ":" ∷ᵗ T₁ ∷ᵗ [])
+    return $ subst t₁ u
 
-synthType' Γ (Phi t t₁ t₂) = do
-  T ← synthType Γ t
-  case (hnfNorm Γ T) of λ
-    { (Eq-T u u₁) → do
-      catchError
-        (checkβη Γ t₁ u >> checkβη Γ t₂ u₁)
-        (λ e → throwError $
-          "The arguments to phi are not equivalent to the sides of the equality. Error:\n" + e)
-      synthType Γ t₁
-    ; _ → throwError "The first argument to phi should be of an equality type" }
+  synthType' tm@(All n t t₁) = do
+    Γ ← ask
+    u ← synthType' t
+    (Sort-T s) ← hnfNormM u
+      where v → throwErrorCtx tm $
+             "The type of the parameter type in forall should be a sort, but it has type" ∷ᵗ v ∷ᵗ []
+    let Γ' = pushType Γ (n , t)
+    u₁ ← local (λ _ → Γ') $ synthType' t₁
+    case (hnfNorm Γ' u₁) of λ
+      { (Sort-T Ast) → return ⋆
+      ; v → throwErrorCtx tm $
+        "The type family in forall should have type ⋆, but it has type"
+        ∷ᵗ v ∷ᵗ "\nContext:" <+> show {{Context-Show}} Γ' ∷ᵗ [] }
 
-synthType' Γ (Eq-T x x₁) =
-  if validInContext (Erase x) Γ
-    then if validInContext (Erase x₁) Γ
-      then return ⋆
-      else throwError
-        ("The right term in the equality type needs to be valid in the context:" <+> show x₁)
-    else throwError
-      ("The left term in the equality type needs to be valid in the context:" <+> show x)
+  synthType' tm@(Pi n t t₁) = do
+    Γ ← ask
+    u ← synthType' t
+    (Sort-T s) ← hnfNormM u
+      where v → throwErrorCtx tm $
+             "The type of the parameter type in pi should be a sort, but it has type" ∷ᵗ v ∷ᵗ []
+    let Γ' = pushType Γ (n , t)
+    u₁ ← local (λ _ → Γ') $ synthType' t₁
+    (Sort-T s') ← hnfNormM u₁
+      where v → throwErrorCtx tm $
+             "The type family in pi should be a sort, but it has type"
+             ∷ᵗ v ∷ᵗ "\nContext:" <+> show {{Context-Show}} Γ' ∷ᵗ []
+    return $ Sort-T s'
 
-synthType' Γ (M-T t) = do
-  T ← synthType Γ t
-  case (hnfNorm Γ T) of λ
-    { (Sort-T Ast) → return ⋆
-    ; _ → throwError "The term M is applied to should have type ∗"}
+  synthType' tm@(Iota n t t₁) = do
+    Γ ← ask
+    u ← synthType' t
+    (Sort-T Ast) ← hnfNormM u
+      where v → throwErrorCtx tm $
+             "The type of the parameter type in iota should be ⋆, but it has type" ∷ᵗ v ∷ᵗ []
+    let Γ' = pushType Γ (n , t)
+    u₁ ← local (λ _ → Γ') $ synthType' t₁
+    case (hnfNorm Γ' u₁) of λ
+      { (Sort-T Ast) → return ⋆
+      ; v → throwErrorCtx tm $
+        "The type family in iota should have type ⋆, but it has type"
+        ∷ᵗ v ∷ᵗ "\nContext:" <+> show {{Context-Show}} Γ' ∷ᵗ [] }
 
-synthType' Γ (Mu t t₁) = do
-  T ← synthType Γ t
-  T' ← synthType Γ t₁
-  case (hnfNorm Γ T) of λ
-    { (M-T u) →
-      case (hnfNorm Γ T') of λ
-        { (Pi _ v v₁) → do
-          T'' ← if checkFree (Bound 0) (Erase v₁)
-            then throwError ("Index 0 is not allowed to appear in" <+> show v₁)
-            else synthType (pushType Γ ("_" , v)) v₁
-          case (hnfNorm Γ T'') of λ
-            { (Sort-T ∗) →
-              case (hnfNorm Γ v₁) of λ
-                { (M-T v₂) →
-                  appendIfError
-                    (checkβη Γ u v)
-                    "The types in μ need to be compatible" >> return (M-T $ strengthen v₂)
-                ; _ → throwError
-                  "The second term in a μ needs to have a Pi type that maps to 'M t' for some 't'" }
-            ; _ → throwError "The second term in a μ needs to have a non-dependent Pi type" }
-        ; _ → throwError "The second term in a μ needs to have a Pi type" }
-    ; t → throwError ("The first term in a μ needs to have type 'M t' for some 't'. It has type " <+> show t) }
+  synthType' tm@(Lam-A n t t₁) = do
+    synthType' t
+    u ← local (flip pushType (n , t)) $ synthType' t₁
+    return (Pi n t u)
 
-synthType' Γ (Epsilon t) = M-T <$> synthType Γ t
+  synthType' tm@(LamE n t t₁) =
+    if checkFree (Bound 0) (Erase t₁)
+      then throwErrorCtx tm $ "Erased argument" ∷ᵗ (BoundVar 0) ∷ᵗ "cannot appear in a relevant position" ∷ᵗ []
+      else do
+        synthType' t
+        u ← local (flip pushType (n , t)) $ synthType' t₁
+        return $ All n t u
 
-synthType' Γ (Ev m t) = do
-  T ← traversePrimMetaArgs (synthType Γ) t
-  appendIfError
-    (primMetaArgsSequence $ primMetaArgsZipWith (checkβη Γ) T $ primMetaS m)
-    ("The arguments for primitive" <+> show m <+> "have incorrect types!")
-  return $ M-T $ primMetaT m t
+  synthType' tm@(Pair t t₁ t₂) = do
+    Γ ← ask
+    appendIfError' (checkβη Γ t t₁) tm
+      ("The terms in dependent intersection introduction have to be βη-equivalent!" ∷ᵗ [])
+    u ← synthType' t
+    u₁ ← synthType' t₁
+    appendIfError'
+      (checkβη Γ (subst t₂ t) u₁) tm
+      ("Type mismatch in the second argument of dependent intersection:" ∷ᵗ
+       (subst t₂ t) ∷ᵗ "should be βη-equivalent to the type" ∷ᵗ u₁ ∷ᵗ [])
+    let res = Iota "" u t₂
+    u₂ ← synthType' res
+    (Sort-T Ast) ← hnfNormM u₂
+      where _ → throwError1 tm
+             "The resulting iota type of the dependent intersection doesn't have type star. Is this a Bug?"
+    return res
 
-synthType' Γ (Gamma t t₁) = do
-  T ← synthType Γ t
-  T₁ ← synthType Γ t₁
-  case (hnfNorm Γ T) of λ
-    { (M-T u) → do
-      appendIfError (checkβη Γ T₁ (Pi "" (FreeVar "init$err") (weakenBy 1 $ M-T u)))
-        ("The second term supplied to CatchErr has type" <+> show T₁ +
-         ", while it should have type 'init$err → M" <+> show u)
-      return $ M-T u
-    ; _ → throwError "The first term in CatchErr needs to have type 'M t' for some 't'" }
+  synthType' tm@(Phi t t₁ t₂) = do
+    Γ ← ask
+    T ← synthType' t
+    (Eq-T u u₁) ← hnfNormM T
+      where v → throwErrorCtx tm $
+             "The first argument to phi should be of an equality type, but it has type" ∷ᵗ v ∷ᵗ []
+    appendIfError' (checkβη Γ t₁ u >> checkβη Γ t₂ u₁) tm
+      ("The arguments to phi are not equivalent to the sides of the equality." ∷ᵗ [])
+    synthType' t₁
 
-synthType' Γ (Char-T c) = return (Const-T CharT)
-synthType' Γ (CharEq t t') = do
-  T ← synthType Γ t
-  T' ← synthType Γ t'
-  case (hnfNorm Γ T) of λ
-    { (Const-T CharT) → case (hnfNorm Γ T') of λ
-      { (Const-T CharT) → return $ FreeVar "Bool"
-      ; _ → throwError "The second term in CharEq needs to have type Char" }
-    ; _ → throwError "The first term in CharEq needs to have type Char" }
+  synthType' tm@(Eq-T x x₁) = do
+    Γ ← ask
+    if validInContext (Erase x) Γ
+      then if validInContext (Erase x₁) Γ
+        then return ⋆
+        else throwErrorCtx tm
+          ("The right term in the equality type needs to be valid in the context:" ∷ᵗ x₁ ∷ᵗ [])
+      else throwErrorCtx tm
+        ("The left term in the equality type needs to be valid in the context:" ∷ᵗ x ∷ᵗ [])
+
+  synthType' tm@(M-T t) = do
+    T ← synthType' t
+    (Sort-T Ast) ← hnfNormM T
+      where v → throwErrorCtx tm $
+             "M can only be applied to terms of type ∗, but it was applied to a term of type" ∷ᵗ v ∷ᵗ []
+    return ⋆
+
+  synthType' tm@(Mu t t₁) = do
+    Γ ← ask
+    T ← synthType' t
+    T' ← synthType' t₁
+    (M-T u) ← hnfNormM T
+      where t → throwErrorCtx tm $
+             "The first term in a μ needs to have type 'M t' for some 't'. It has type" ∷ᵗ t ∷ᵗ []
+    (Pi _ v v₁) ← hnfNormM T'
+      where t → throwErrorCtx tm $
+             "The second term in a μ needs to have a Pi type, but it has type" ∷ᵗ t ∷ᵗ []
+    if checkFree (Bound 0) (Erase v₁)
+      then throwErrorCtx tm
+        ("The type of the second argument to μ needs to be non-dependent, but it had type"
+        ∷ᵗ T' ∷ᵗ [])
+      else (local (flip pushType ("_" , v)) $ synthType' v₁)
+    (M-T v₂) ← hnfNormM v₁
+      where t → throwErrorCtx tm $
+             "The second term in a μ needs to have a Pi type that maps to 'M t' for some 't'."
+             ∷ᵗ "It has type" ∷ᵗ t ∷ᵗ []
+    appendIfError' (checkβη Γ u v) tm
+      ("The types in μ need to be compatible" ∷ᵗ [])
+    return (M-T $ strengthen v₂)
+
+  synthType' tm@(Epsilon t) = M-T <$> synthType' t
+
+  synthType' tm@(Ev m t) = do
+    Γ ← ask
+    T ← traversePrimMetaArgs synthType' t
+    primMetaArgsSequence $ primMetaArgsZipWith (λ t₁ t₂ → appendIfError' (checkβη Γ t₁ t₂) tm
+        ("The arguments for primitive" <+> show m <+> "have incorrect types!" ∷ᵗ []))
+      T (primMetaS m)
+    return $ M-T $ primMetaT m t
+
+  synthType' tm@(Gamma t t₁) = do
+    Γ ← ask
+    T ← synthType' t
+    T₁ ← synthType' t₁
+    (M-T u) ← hnfNormM T
+      where t → throwErrorCtx tm $
+             "The first term in CatchErr needs to have type 'M t' for some 't', but it has type" ∷ᵗ t ∷ᵗ []
+    appendIfError' (checkβη Γ T₁ (Pi "" (FreeVar "init$err") (weakenBy 1 $ M-T u))) tm
+      ("The second term supplied to CatchErr has type" ∷ᵗ T₁ ∷ᵗ
+       ", while it should have type 'init$err → M" ∷ᵗ u ∷ᵗ [])
+    return $ M-T u
+
+  synthType' tm@(Char-T c) = return (Const-T CharT)
+  synthType' tm@(CharEq t t') = do
+    T ← synthType' t
+    T' ← synthType' t'
+    (Const-T CharT) ← hnfNormM T
+      where v → throwErrorCtx tm $
+             "The first term in CharEq needs to have type Char, but it has type" ∷ᵗ v ∷ᵗ []
+    (Const-T CharT) ← hnfNormM T'
+      where v → throwErrorCtx tm $
+             "The second term in CharEq needs to have type Char, but it has type" ∷ᵗ v ∷ᵗ []
+    return $ FreeVar "Bool"
+
+synthType : ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ → Context → AnnTerm → M AnnTerm
+synthType Γ t = do
+  (inj₂ t) ← map₁ (show ⦃ Show-TCError ⦄) <$>
+    synthType' ⦃ ExceptT-Monad ⦃ Monad-ReaderT ⦄ ⦄
+               ⦃ ExceptT-MonadReader ⦃ Monad-ReaderT ⦄ ⦃ MonadReader-ReaderT ⦄ ⦄
+               ⦃ ExceptT-MonadExcept ⦃ Monad-ReaderT ⦄ ⦄
+               t Γ
+    where (inj₁ msg) → throwError msg
+  return t
