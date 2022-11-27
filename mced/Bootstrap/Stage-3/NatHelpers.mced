@@ -135,3 +135,12 @@ b-let showNatDecimal (n : Nat) : String :=
 
 b-let quoteNat (n : Nat) : Term :=
   recursionNat ?Term θ{zero} (λ _ : Nat. λ rec : Term. θ{suc γ{rec}}) n.
+
+--------------------------------------------------------------------------------
+-- Parse functions
+--------------------------------------------------------------------------------
+
+-- b-let parseCharToDecimal (c : Char) : Maybe Dec :=
+
+-- b-let parseNatFromString (s : String) : Maybe Nat :=
+--   decListToNat (map ?Char ?(Maybe Dec) ? (stringToList s)).

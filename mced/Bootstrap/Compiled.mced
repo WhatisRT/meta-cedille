@@ -1,0 +1,35 @@
+import Bootstrap/Stage-1/Comment.
+import Bootstrap/Stage-1/Parens.
+
+seteval eval init stmt.
+
+import Bootstrap/Stage-1/String.
+
+import Bootstrap/Stage-1/MetaAliases.
+import Bootstrap/Stage-1/Quote.
+
+--------------------------------------------------------------------------------
+-- Variant of bootstrapping that uses the compiler. Should be
+-- equivalent to regular bootstrapping.
+--------------------------------------------------------------------------------
+
+import Bootstrap/Compiled/DSum.
+import Bootstrap/Compiled/Product.
+import Bootstrap/Compiled/Sum.
+
+import Bootstrap/Compiled/Void.
+import Bootstrap/Compiled/Unit.
+
+import Bootstrap/Compiled/Nat.
+import Bootstrap/Compiled/Bool.
+import Bootstrap/Compiled/List.
+import Bootstrap/Compiled/Maybe.
+
+import Bootstrap/Compiled/Term.
+import Bootstrap/Compiled/MLLet.
+
+seteval eval init stmt.
+
+-- Stage 3 isn't compiled yet
+
+import Bootstrap/Stage-3.

@@ -1,3 +1,0 @@
-import bootstrap/Stage-1. -- some very basic syntax, datatypes and functions
-import bootstrap/Stage-2. -- terms and ML-style let, used for stage 3
-import bootstrap/Stage-3. -- modules, improved top-level and term syntax and Eval monad

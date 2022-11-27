@@ -1,5 +1,5 @@
 -- TODO: don't fail if the directory already exists
-runMeta voidEval ?String $ shellCmd "mkdir" [String|bootstrapCompileDir].
+runMeta voidEval ?String $ shellCmd "mkdir" [String|"-p", bootstrapCompileDir].
 
 set RequireTypeAnnotations true.
 

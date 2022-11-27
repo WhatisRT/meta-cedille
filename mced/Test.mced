@@ -1,10 +1,8 @@
-import bootstrap/Bootstrap.
+import Bootstrap.
+import Base.
 
-set PWD "test/".
+set PWD "Test/".
 import BootstrapTest.
-
-import Binary.
-import Output.
 
 import TermRecDiagonal.
 import TermHelpers.
@@ -14,8 +12,6 @@ import ErrorMonad.
 
 import LambdaCalc.
 import LambdaCalcExample.
-
-import Eq.
 
 import Datatypes.
 import DatatypesTest.

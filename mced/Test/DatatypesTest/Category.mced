@@ -3,7 +3,7 @@ module Category.
 -- Temporary workaround to make all the names that `data` needs available
 import Datatypes/ModuleCompatibility.
 
-import Eq.
+Given Eq.
 
 record Category (obj : *) (hom : Π _, _ : obj. *) where
 | identity      : Π a : obj. hom a a

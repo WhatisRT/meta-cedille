@@ -92,6 +92,7 @@ let showEquation (i : InferenceInfo) : String :=
       inferenceInfoName i, withColor " := ", showTerm $ inferenceInfoTerm i,
       withColor " : ", showTerm $ inferenceInfoType1 i, withColor " = ",
       maybe ?Term ?String "_" showTerm $ inferenceInfoType2 i])
+--  (withColor8 ANSI8Cyan).
   (withColor256 $ mkByte false true false true false false true false).
 
 let inferTypeIfNotUnknown (t : Term) : Eval (Maybe Term) :=

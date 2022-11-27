@@ -1,10 +1,7 @@
-import bootstrap/Bootstrap.
+import Bootstrap.
+import Base.
 
-set PWD "test/".
-import BootstrapTest.
-
-import Binary.
-import Output.
+set PWD "Test/".
 
 import TermRecDiagonal.
 import TermHelpers.
