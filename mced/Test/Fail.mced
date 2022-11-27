@@ -7,16 +7,18 @@ import TermRecDiagonal.
 import TermHelpers.
 import Inference.
 
-elet isFailing [A : *] (x : Eval A) : Eval Bool :=
-  catchEval ?Bool (x >>= (λ _ : A. pureEval ?Bool false)) (λ _ : String. pureEval ?Bool true).
+-- if the program is failing, return the error
+elet isFailing [A : *] (x : Eval A) : Eval (Maybe String) :=
+  catchEval ?(Maybe String) (x >>= (λ _ : A. pureEval ?(Maybe String) (nothing ?String)))
+                            (λ s : String. pureEval ?(Maybe String) (just ?String s)).
 
 elet expectFail [A : *] (x : Eval A) : Eval Unit :=
-  isFailing ?A x >>= (λ b : Bool. ifthenelse ?_ b
-    (printLineEval "Failed as expected!")
-    (throwEval ?Unit "Success while failure was expected!")).
+  isFailing ?A x >>= maybe ?_ ?_
+    (throwEval ?Unit (withColor8 ANSI8Red "Success while failure was expected!"))
+    (λ e : String. printLineEval $ stringConcat
+      [String|newline, withColor8 ANSI8Green "Failed as expected with error:", newline, e]).
 
-let init$newStmt'$fail=minus=let^space^_betterLet_ (i : LetInfo) : init$newStmt :=
-  expectFail ?Unit (letInfoToNewStmtMod i).
+elet init$newStmt'$fail=minus=_newStmt'_ (x : Eval Unit) : Eval Unit := expectFail ?_ x.
 
 updateEval.
 
