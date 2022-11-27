@@ -5,6 +5,7 @@ set PWD "Test/".
 
 import TermRecDiagonal.
 import TermHelpers.
+import ReduceMultiApp.
 import Inference.
 
 -- if the program is failing, return the error

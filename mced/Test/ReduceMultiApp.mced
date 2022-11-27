@@ -1,0 +1,27 @@
+let fueledFix [A : *] (n : Nat) (a : A) (f : A -> A) : A := n ?A a f.
+
+-- recursively rewrite: (f x1 ... xn) y1 ... yk -> f x1 ... xn y1 ... yk
+let reduceMultiApp : Term -> Term :=
+  fueledFix ?(Term -> Term) 10 (λ t : Term. t) λ reduceMultiApp : Term -> Term.
+    matchTerm ?Term
+      varTerm
+      sortTerm
+      (λ b : Binder. λ n : String. λ T, t : Term.
+        binderTerm b n (reduceMultiApp T) (reduceMultiApp t))
+      (λ t1 : Term. λ app1 : List App. (λ reduceAppL : List App -> List App.
+        (λ t : Term. matchTerm ?Term
+          (λ _ : init$var. t)
+          (λ _ : init$sort. t)
+          (λ _ : Binder. λ _ : String. λ _, _ : Term. t)
+          (λ t2 : Term. λ app2 : List App.
+            reduceMultiApp $ appLTerm t2 (reduceAppL $ app ?App app2 app1))
+          (λ _ : Char. t)
+          t
+          (λ _ : Term. t)
+          t1) (appLTerm (reduceMultiApp t1) (reduceAppL app1)))
+              (map ?App ?App $ productMap2 ?Bool ?Term ?Term reduceMultiApp))
+      charTerm
+      unknownTerm
+      (λ t : Term. unquoteTerm (reduceMultiApp t)).
+
+-- assertEq θ{a b c (d e f g h)} = reduceMultiApp θ{(a b c) ((d e f) g h)} : Term.

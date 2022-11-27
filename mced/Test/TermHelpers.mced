@@ -54,6 +54,19 @@ let binderEq (b1, b2 : Binder) : Bool :=
     (b2 ?Bool false false true false)
     (b2 ?Bool false false false true).
 
+let termEq : Term -> Term -> Bool :=
+  recursionTermsDiag ?Bool
+    varEq
+    sortEq
+    (λ b1 : Binder. λ n1 : String. λ _, _ : Term. λ b2 : Binder. λ n2 : String. λ _, _ : Term.
+     λ rec1, rec2 : Bool. and (binderEq b1 b2) $ and (stringEq n1 n2) $ and rec1 rec2)
+    (λ _ : Term. λ l1 : List App. λ _ : Term. λ l2 : List App. λ rect : Bool. λ recapp : List Bool.
+     and rect $ and (natEq (length ?App l1) (length ?App l2)) (foldl ?Bool ?Bool and recapp true))
+    charEq
+    true
+    (λ _, _ : Term. λ rec : Bool. rec)
+    (λ _, _ : Term. false).
+
 --------------------------------------------------------------------------------
 -- Context modification
 --------------------------------------------------------------------------------

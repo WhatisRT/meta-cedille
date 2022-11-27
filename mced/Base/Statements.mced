@@ -1,0 +1,8 @@
+--------------------------------------------------------------------------------
+-- Assert
+---------------------------------------------------------------------------------
+
+let init$newStmt'$assertEq^space^_multiTerm_^space^=equal=^space^_multiTerm_^space^=colon=^space^_multiTerm_=dot=
+  (t, t', T : Term) : init$newStmt :=
+  seqNewStmt (checkTerm Unit θ{(λ _ : Eq γ{T} γ{t} γ{t'}. tt) (refl γ{T} γ{t})})
+             (printLineEval $ stringConcat [String|"Assertion: ", showTerm t, " = ", showTerm t']).

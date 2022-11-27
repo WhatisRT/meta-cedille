@@ -6,6 +6,7 @@ import BootstrapTest.
 
 import TermRecDiagonal.
 import TermHelpers.
+import ReduceMultiApp.
 import Inference.
 
 import ErrorMonad.

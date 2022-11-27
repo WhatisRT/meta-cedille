@@ -86,7 +86,7 @@ let applyToApp (f : Term -> List App -> Eval Term) : Term -> Eval Term :=
     (pureEval ?Term unknownTerm)
     (λ u : Term. λ _ : Eval Term. pureEval ?Term $ unquoteTerm u).
 
-let showEquation (i : InferenceInfo) : String :=
+let showInferenceInfo (i : InferenceInfo) : String :=
   (λ withColor : String -> String.
     stringConcat [String|
       inferenceInfoName i, withColor " := ", showTerm $ inferenceInfoTerm i,
@@ -106,67 +106,97 @@ let inferAppTypes (app : List App) : Eval (List (App × Maybe Term)) :=
       pureEval ?(App × Maybe Term) $ prodPair ?App ?(Maybe Term) a T))
     app.
 
-let deriveEqnsHelper (n : Nat) (t1, t2 : Term) : Nat × Term × Term :=
-  prodPair ?Nat ?(Term × Term) n $ prodPair ?Term ?Term t1 t2.
+-- Unsolved equations of terms behind some number of binders
+let UnsEqn : * := Nat × Term × Term.
 
-let deriveEqnsHelperInc : List (Nat × Term × Term) -> List (Nat × Term × Term) :=
-  map ?(Nat × Term × Term) ?(Nat × Term × Term) (productMap1 ?Nat ?(Term × Term) ?Nat suc).
+let mkUnsEqn (t1, t2 : Term) : UnsEqn :=
+  prodPair ?Nat ?(Term × Term) 0 $ prodPair ?Term ?Term t1 t2.
 
-let deriveEqns : Term -> Term -> List (Nat × Term × Term) :=
+let deriveEqnsHelperSuc : List UnsEqn -> List UnsEqn :=
+  map ?UnsEqn ?UnsEqn (productMap1 ?Nat ?(Term × Term) ?Nat suc).
+
+-- given two terms, return equations by matching on their structure
+-- doesn't do any reductions
+let deriveEqns' : Term -> Term -> List UnsEqn :=
   -- Note: we treat α-equivalent terms as equial
-  recursionTermsDiag ?(List (Nat × Term × Term))
-    (λ v1, v2 : init$var. varEq v1 v2 ?(List (Nat × Term × Term))
-      [Nat × Term × Term|]
-      [Nat × Term × Term| deriveEqnsHelper 0 (varTerm v1) (varTerm v2)])
-    (λ s1, s2 : init$sort. sortEq s1 s2 ?(List (Nat × Term × Term))
-      [Nat × Term × Term|]
-      [Nat × Term × Term| deriveEqnsHelper 0 (sortTerm s1) (sortTerm s2)])
+  recursionTermsDiag ?(List UnsEqn)
+    (λ v1, v2 : init$var. varEq v1 v2 ?(List UnsEqn)
+      [UnsEqn|]
+      [UnsEqn| mkUnsEqn (varTerm v1) (varTerm v2)])
+    (λ s1, s2 : init$sort. sortEq s1 s2 ?(List UnsEqn)
+      [UnsEqn|]
+      [UnsEqn| mkUnsEqn (sortTerm s1) (sortTerm s2)])
     (λ b1 : Binder. λ n1 : String. λ T1, t1 : Term. λ b2 : Binder. λ n2 : String. λ T2, t2 : Term.
-     λ rec1, rec2 : List (Nat × Term × Term). binderEq b1 b2 ?(List (Nat × Term × Term))
-      (app ?(Nat × Term × Term) rec1 (deriveEqnsHelperInc rec2))
-      [Nat × Term × Term| deriveEqnsHelper 0 (binderTerm b1 n1 T1 t1) (binderTerm b2 n2 T2 t2)])
+     λ rec1, rec2 : List (UnsEqn). binderEq b1 b2 ?(List UnsEqn)
+      (app ?UnsEqn rec1 (deriveEqnsHelperSuc rec2))
+      [UnsEqn| mkUnsEqn (binderTerm b1 n1 T1 t1) (binderTerm b2 n2 T2 t2)])
     (λ t1 : Term. λ app1 : List App. λ t2 : Term. λ app2 : List App.
-     λ rect : List (Nat × Term × Term). λ recapp : List (List (Nat × Term × Term)).
-     listEq ?(Bool × Term) (λ p1, p2 : Bool × Term. boolEq (pr1 ?Bool ?Term p1) (pr1 ?Bool ?Term p2))
-        app1 app2 ?(List (Nat × Term × Term))
-      (app ?(Nat × Term × Term) rect $ concat ?(Nat × Term × Term) recapp)
-      [Nat × Term × Term| deriveEqnsHelper 0 (appLTerm t1 app1) (appLTerm t2 app2)])
-    (λ c1, c2 : init$char. charEq c1 c2 ?(List (Nat × Term × Term))
-      [Nat × Term × Term|]
-      [Nat × Term × Term| deriveEqnsHelper 0 (charTerm c1) (charTerm c2)])
-    [Nat × Term × Term|]
-    (λ t1, t2 : Term. λ rec : List (Nat × Term × Term). rec)
-    (λ t1, t2 : Term. [Nat × Term × Term| deriveEqnsHelper 0 t1 t2]).
+     λ rect : List UnsEqn. λ recapp : List (List UnsEqn).
+     and (termEq t1 t2)
+         (listEq ?(Bool × Term)
+                 (λ p1, p2 : Bool × Term. boolEq (pr1 ?Bool ?Term p1) (pr1 ?Bool ?Term p2)) app1 app2)
+        ?(List (UnsEqn))
+      (app ?UnsEqn rect $ concat ?UnsEqn recapp)
+      [UnsEqn| mkUnsEqn (appLTerm t1 app1) (appLTerm t2 app2)])
+    (λ c1, c2 : init$char. charEq c1 c2 ?(List UnsEqn)
+      [UnsEqn|]
+      [UnsEqn| mkUnsEqn (charTerm c1) (charTerm c2)])
+    [UnsEqn|]
+    (λ t1, t2 : Term. λ rec : List UnsEqn. rec)
+    (λ t1, t2 : Term. [UnsEqn| mkUnsEqn t1 t2]).
 
-let transformEqn (ctx : Nat) (eqn : Nat × Term × Term) : Maybe (Nat × Term) :=
-  pr32 ?Nat ?Term ?Term eqn ?(Maybe (Nat × Term))
-    (λ v : init$var. v ?(Maybe (Nat × Term))
-      (λ _ : String. nothing ?(Nat × Term))
-      (λ i : init$index. just ?(Nat × Term) $
+-- TODO: deal with the binder level
+let deriveEqns (eq : UnsEqn) : List UnsEqn :=
+  deriveEqns' (reduceMultiApp $ pr32 ?Nat ?Term ?Term eq) (reduceMultiApp $ pr33 ?Nat ?Term ?Term eq).
+
+-- Solved equation
+let SEqn : * := Nat × Term.
+
+-- if LHS is an index, return that index together with the appropriate RHS
+let solveEqn (ctx : Nat) (eqn : UnsEqn) : Maybe SEqn :=
+  pr32 ?Nat ?Term ?Term eqn ?(Maybe SEqn)
+    (λ v : init$var. v ?(Maybe SEqn)
+      (λ _ : String. nothing ?SEqn)
+      (λ i : init$index. just ?SEqn $
         prodPair ?Nat ?Term (sub (add ctx $ pr31 ?Nat ?Term ?Term eqn) (suc $ indexToNat i))
           (strengthenBy (pr31 ?Nat ?Term ?Term eqn) $ pr33 ?Nat ?Term ?Term eqn)))
-    (λ _ : init$sort. nothing ?(Nat × Term))
-    (λ _ : Binder. λ _ : String. λ _, _ : Maybe (Nat × Term). nothing ?(Nat × Term))
-    (λ _ : Maybe (Nat × Term). λ _ : List (Bool × (Maybe (Nat × Term))). nothing ?(Nat × Term))
-    (λ _ : init$char. nothing ?(Nat × Term))
-    (nothing ?(Nat × Term))
-    (λ _ : Maybe (Nat × Term). nothing ?(Nat × Term)).
+    (λ _ : init$sort. nothing ?SEqn)
+    (λ _ : Binder. λ _ : String. λ _, _ : Maybe SEqn. nothing ?SEqn)
+    (λ _ : Maybe SEqn. λ _ : List (Bool × (Maybe SEqn)). nothing ?SEqn)
+    (λ _ : init$char. nothing ?SEqn)
+    (nothing ?SEqn)
+    (λ _ : Maybe SEqn. nothing ?SEqn).
 
-let allEqns (l : List InferenceInfo) : List (Nat × Term) :=
-  concat ?(Nat × Term) $ zipWithIndex ?InferenceInfo ?(List (Nat × Term))
-    (λ ctx : Nat. λ i : InferenceInfo. maybe ?Term ?(List (Nat × Term))
-      [Nat × Term|]
-      (λ T : Term. collectMapMaybe ?(Nat × Term × Term) ?(Nat × Term) (transformEqn ctx) $
-                     deriveEqns (inferenceInfoType1 i) T) (inferenceInfoType2 i)) l.
+-- if possible, return a starting equation
+let toUnsEqn (i : InferenceInfo) : Maybe UnsEqn :=
+  mapMaybe ?Term ?UnsEqn
+    (λ T : Term. mkUnsEqn (inferenceInfoType1 i) T)
+    (inferenceInfoType2 i).
 
-let showSolution (s : Nat × Term) : String :=
+let allUnsEqns (l : List InferenceInfo) : List UnsEqn :=
+  concat ?UnsEqn $ zipWithIndex ?InferenceInfo ?(List UnsEqn)
+    (λ ctx : Nat. λ i : InferenceInfo.
+      maybe ?UnsEqn ?(List UnsEqn) [UnsEqn|] (deriveEqns) (toUnsEqn i)) l.
+
+let allEqns (l : List InferenceInfo) : List SEqn :=
+  concat ?SEqn $ zipWithIndex ?InferenceInfo ?(List SEqn)
+    (λ ctx : Nat. λ i : InferenceInfo. maybe ?UnsEqn ?(List SEqn)
+      [SEqn|]
+      (λ eq : UnsEqn. collectMapMaybe ?UnsEqn ?SEqn (solveEqn ctx) $ deriveEqns eq)
+      (toUnsEqn i)) l.
+
+let showUnsEqn : UnsEqn -> String :=
+  recursionTripleProduct ?Nat ?Term ?Term ?String (λ n : Nat. λ t, t' : Term.
+    stringConcat [String|showTerm t, " = ", showTerm t', " in ctx: ", showNatDecimal n]).
+
+let showSolution (s : SEqn) : String :=
   stringConcat [String| showNatDecimal $ pr1 ?Nat ?Term s, " = ", showTerm $ pr2 ?Nat ?Term s].
 
-let solveApp (app : List App) (s : List (Nat × Term)) : List App :=
+let solveApp (app : List App) (s : List SEqn) : List App :=
   zipWithIndex ?App ?App
     (λ i : Nat. λ a : App. ifthenelse ?App (isUnknown $ appTerm a)
-      (foldl ?(Nat × Term) ?App
-        (λ a : App. λ x : Nat × Term. ifthenelse ?App
+      (foldl ?SEqn ?App
+        (λ a : App. λ x : SEqn. ifthenelse ?App
           (and (isUnknown $ appTerm a) (natEq i (pr1 ?Nat ?Term x)))
             (mkApp (appErased a) (pr2 ?Nat ?Term x))
             a) s a) a) app.
@@ -174,14 +204,19 @@ let solveApp (app : List App) (s : List (Nat × Term)) : List App :=
 let debugPrintElabStep (l : List InferenceInfo) : Eval Unit :=
   ifthenelse ?(Eval Unit) (isNil ?InferenceInfo l) (pureEval ?Unit tt) $
     printLineEval $ stringConcat
-      [String|"Equations: ", showList ?InferenceInfo showEquation l, newline,
-              "Solutions: ", showList ?(Nat × Term) showSolution $ allEqns l, newline].
+      [String|"  Equations: ", showList ?InferenceInfo showInferenceInfo l, newline,
+              "  Derived 1: ", showList ?UnsEqn showUnsEqn $
+                               collectMapMaybe ?InferenceInfo ?UnsEqn toUnsEqn l, newline,
+              "  Derived 2: ", showList ?UnsEqn showUnsEqn $ allUnsEqns l, newline,
+              "  Solutions: ", showList ?(Nat × Term) showSolution $ allEqns l, newline].
 
-let solveAppWithErr (f : Term) (app : List App) (s : List InferenceInfo) : Eval Term :=
+let solveAppWithErr (f : Term) (app : List App) (s : List SEqn) : Eval Term :=
   (λ l : List App. ifthenelse ?(Eval Term)
     (isNil ?App (filter ?App (λ a : App. isUnknown $ appTerm a) l))
       (pureEval ?Term (appLTerm f l))
-      (seqEval ?Unit ?Term (debugPrintElabStep s) (throwEval ?Term $ stringConcat [String|"Could not infer all holes in: ", showTerm (appLTerm f l), "!", newline]))) $ solveApp app $ allEqns s.
+      (throwEval ?Term $ stringConcat
+        [String|"Could not infer all holes in: ", showTerm (appLTerm f l), "!", newline]))
+  (solveApp app s).
 
 let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term :=
   bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ _ : String.
@@ -193,21 +228,21 @@ let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term
           (ifthenelse ?(Eval Unit) doDebugPrinting
             (debugPrintElabStep $ genInferenceInfo T app')
             (pureEval ?Unit tt)) $
-          solveAppWithErr f app $ genInferenceInfo T app')).
+          solveAppWithErr f app $ allEqns $ genInferenceInfo T app')).
 
 let elabLocalInference (doDebugPrinting : Bool) (t : Term) : Eval Term :=
   seqEval ?Unit ?Term
     (ifthenelse ?(Eval Unit) doDebugPrinting
-      (printLineEval $ stringConcat [String|newline, "Elaborating ", showTerm t])
+      (printLineEval $ stringConcat [String|newline, "Elaborating: ", showTerm t, newline])
       (pureEval ?Unit tt))
     (applyToApp (elabLocally doDebugPrinting) t).
 
 let elabLetInfo (doDebugPrinting : Bool) (i : LetInfo) : Eval LetInfo :=
-  bindEval ?Term ?LetInfo (elabLocalInference doDebugPrinting $ letInfoTerm i) (λ t : Term.
+  bindEval ?Term ?LetInfo (elabLocalInference doDebugPrinting $ reduceMultiApp $ letInfoTerm i) (λ t : Term.
     mapEval ?(Maybe Term) ?LetInfo
       (mkLetInfo (letInfoName i) t)
       (maybe ?Term ?(Eval (Maybe Term)) (pureEval ?(Maybe Term) $ nothing ?Term)
-        (λ T : Term. mapEval ?Term ?(Maybe Term) (just ?Term) $ elabLocalInference doDebugPrinting T)
+        (λ T : Term. mapEval ?Term ?(Maybe Term) (just ?Term) $ elabLocalInference doDebugPrinting $ reduceMultiApp T)
         (letInfoType i))).
 
 -- let that uses this elaborator
@@ -219,14 +254,13 @@ updateEval.
 
 -- Issues:
 --
--- inference doesn't interact nicely with $ or applications that use parentheses like (f a) b
--- The fix is to look for those kinds of applications and simplify them before running inference
---
 -- there's no reduction
+--
+-- don't do anything on terms that don't contain holes
 
 elet inferenceTest1 := λ x : Nat × Term. pr1 ?_ ?_ x.
---elet inferenceTest1' := λ x : Nat × Term. pr1 ?_ ?_ $ x.
---elet inferenceTest1'' := λ x : Nat × Term. (pr1 ?_ ?_) x.
+elet inferenceTest1' := λ x : Nat × Term. pr1 ?_ ?_ $ x.
+elet inferenceTest1'' := λ x : Nat × Term. (pr1 ?_ ?_) x.
 
 elet inferenceTest2 (t : Term) : init$newStmt :=
   bindEval ?_ ?Unit (elabLocalInference false t) (λ t' : Term.
@@ -241,6 +275,5 @@ elet inferenceTest4 [A, B : *] (f : Nat -> A -> B) (l : List A) : List B :=
 elet inferenceTest5 [A, B : *] (f : A -> Maybe B) (l : List A) : List B :=
   foldl ?_ ?_ (λ acc : List B. λ a : A. maybe ?_ ?_ acc (λ b : B. cons ?_ b acc) (f a)) l [B|].
 
--- FIXME: This infers A instead of Unit in the middle if x is applied at the end!
 elet inferenceTest6 [A, B : *] (default : B) (f : A -> B) (x : Maybe A) :=
-  recursionSum ?_ ?Unit ?_ (λ a : A. f a) (λ _ : Unit. default) x.
+  recursionSum ?_ ?_ ?_ (λ a : A. f a) (λ _ : Unit. default) x.
