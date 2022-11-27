@@ -13,11 +13,11 @@ elet bootstrap/productMap2 [A, B, C : *] (f : B -> C) (x : A × B) : A × C :=
 
 elet bootstrap/TripleProduct (A, B, C : *) : * := A × (B × C).
 elet bootstrap/mkTripleProduct [A, B, C : *] (a : A) (b : B) (c : C) : TripleProduct A B C :=
-  prodPair ?_ ?(B × C) a $ prodPair ?_ ?_ b c.
-let bootstrap/recursionTripleProduct [A, B, C, D : *] (f : A -> B -> C -> D) (x : TripleProduct A B C) :
+  prodPair ?_ ?_ a $ prodPair ?_ ?_ b c.
+elet bootstrap/recursionTripleProduct [A, B, C, D : *] (f : A -> B -> C -> D) (x : TripleProduct A B C) :
   D :=
-  recursionProduct ?A ?(B × C) ?D
-    (λ a : A. λ bc : B × C. recursionProduct ?B ?C ?D (λ b : B. λ c : C. f a b c) bc) x.
+  recursionProduct ?_ ?(B × C) ?_
+    (λ a : A. λ bc : B × C. recursionProduct ?_ ?C ?_ (λ b : B. λ c : C. f a b c) bc) x.
 
 elet bootstrap/pr31 [A, B, C : *] (x : TripleProduct A B C) : A := pr1 ?A ?(B × C) x.
 elet bootstrap/pr32 [A, B, C : *] (x : TripleProduct A B C) : B := pr1 ?B ?C $ pr2 ?A ?(B × C) x.

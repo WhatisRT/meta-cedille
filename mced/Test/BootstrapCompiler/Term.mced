@@ -49,7 +49,8 @@ elet bootstrap/appLTerm (t : Term) (l : List (Bool × Term)) : Term := Λ X : *.
   λ a : X -> List (Bool × X) -> X.
   λ k : init$char -> X.
   λ x : X.
-  λ u : X -> X. a (t ?X v s b a k x u) (map ?(Bool × Term) ?(Bool × X) (productMap2 ?Bool ?Term ?X (λ t : Term. t ?X v s b a k x u)) l).
+  λ u : X -> X. a (t ?X v s b a k x u)
+                  (map ?_ ?_ (productMap2 ?Bool ?_ ?_ (λ t : Term. t ?X v s b a k x u)) l).
 
 elet bootstrap/charTerm (c : Char) : Term := Λ X : *.
   λ v : init$var -> X.
@@ -85,39 +86,38 @@ elet bootstrap/LambdaTerm := binderTerm LambdaBinder.
 elet bootstrap/piTerm := binderTerm piBinder.
 elet bootstrap/forallTerm := binderTerm forallBinder.
 
-elet bootstrap/App' := Bool × init$term.
-elet bootstrap/appErased' := pr1 ?Bool ?init$term.
-elet bootstrap/appTerm' := pr2 ?Bool ?init$term.
+elet bootstrap/App' := Bool × iTerm.
+elet bootstrap/appErased' := pr1 ?Bool ?iTerm.
+elet bootstrap/appTerm' := pr2 ?Bool ?iTerm.
 
-elet bootstrap/appToQuotedApp (t : init$term) (a : App') :=
-  ifthenelse ?(init$term -> init$term -> init$term) (appErased' a) quote$angle quote$square
-    t (appTerm' a).
+elet bootstrap/appToQuotedApp (t : iTerm) (a : App') :=
+  (ifthenelse ?_ (appErased' a) quote$angle quote$square) t (appTerm' a).
 
-elet bootstrap/foldWithApp : List App' -> init$term -> init$term := foldl ?App' ?init$term appToQuotedApp.
+elet bootstrap/foldWithApp : List App' -> iTerm -> iTerm := foldl ?_ ?_ appToQuotedApp.
 
-elet bootstrap/TermToInitTerm (t : Term) : init$term :=
-  t ?init$term
+elet bootstrap/TermToInitTerm (t : Term) : iTerm :=
+  t ?iTerm
     (λ v : init$var. init$term$_var_ v)
     (λ s : init$sort. init$term$_sort_ s)
-    (λ b : Binder. λ n : String. λ T, t : init$term.
-      b ?(String -> init$term -> init$term -> init$term)
+    (λ b : Binder. λ n : String. λ T, t : iTerm.
+      b ?(String -> iTerm -> iTerm -> iTerm)
         quote$lambda quote$Lambda quote$Pi quote$forall n T t)
-    (λ t : init$term. λ l : List App'. foldWithApp (reverse ?App' l) t)
+    (λ t : iTerm. λ l : List App'. foldWithApp (reverse ?_ l) t)
     (λ c : init$char. quote$kappa c)
     quote$sq
-    (λ u : init$term. quote$sq).
+    (λ u : iTerm. quote$sq).
 
 elet bootstrap/App := Bool × Term.
 elet bootstrap/mkApp := prodPair ?Bool ?Term.
-elet bootstrap/mkAppU := prodPair ?Bool ?Term false.
-elet bootstrap/mkAppE := prodPair ?Bool ?Term true.
+elet bootstrap/mkAppU := prodPair ?_ ?Term false.
+elet bootstrap/mkAppE := prodPair ?_ ?Term true.
 elet bootstrap/appErased := pr1 ?Bool ?Term.
 elet bootstrap/appTerm := pr2 ?Bool ?Term.
 
-elet bootstrap/appSingle (t, t' : Term) : Term := appLTerm t $ pureList ?App $ mkAppU t'.
-elet bootstrap/appSingleE (t, t' : Term) : Term := appLTerm t $ pureList ?App $ mkAppE t'.
+elet bootstrap/appSingle (t, t' : Term) : Term := appLTerm t $ pureList ?_ $ mkAppU t'.
+elet bootstrap/appSingleE (t, t' : Term) : Term := appLTerm t $ pureList ?_ $ mkAppE t'.
 
-elet bootstrap/toAppU := map ?Term ?App mkAppU.
+elet bootstrap/toAppU := map ?_ ?_ mkAppU.
 
 --------------------------------------------------------------------------------
 -- Parameters and telescopes
@@ -140,20 +140,20 @@ elet bootstrap/paramType (p : Param) : Term   := pr2 ?String ?Term $ pr2 ?Bool ?
 
 -- Constructs a `List PreParam` from some names and a type
 elet bootstrap/namesToPreParams (ns : List String) (t : Term) :=
-  map ?String ?PreParam (λ n : String. mkPreParam n t) ns.
+  map ?_ ?_ (λ n : String. mkPreParam n t) ns.
 
 elet bootstrap/Telescope := List Param.
-elet bootstrap/telApp  (p : List PreParam) := app ?Param $ map ?PreParam ?Param (mkParam false) p.
-elet bootstrap/telAppE (p : List PreParam) := app ?Param $ map ?PreParam ?Param (mkParam true)  p.
+elet bootstrap/telApp  (p : List PreParam) := app ?_ $ map ?_ ?_ (mkParam false) p.
+elet bootstrap/telAppE (p : List PreParam) := app ?_ $ map ?_ ?_ (mkParam true)  p.
 elet bootstrap/telNil := nil ?Param.
 
 elet bootstrap/preParamToBinder (b : Binder) (t : Term) (p : PreParam) : Term :=
   binderTerm b (preParamName p) (preParamType p) t.
 
-elet bootstrap/applyMultiBinder (b : Binder) := foldl ?PreParam ?Term (preParamToBinder b).
+elet bootstrap/applyMultiBinder (b : Binder) := foldl ?_ ?_ (preParamToBinder b).
 
 elet bootstrap/telescopeToApp (tel : Telescope) :=
-  map ?Param ?App (λ p : Param. mkApp (paramErased p) (sVarTerm $ paramName p)) tel.
+  map ?_ ?_ (λ p : Param. mkApp (paramErased p) (sVarTerm $ paramName p)) tel.
 
 --------------------------------------------------------------------------------
 -- Parsing rules for telescopes
@@ -185,17 +185,16 @@ elet bootstrap/mkInfixData : String -> (Term -> Term -> Term) -> InfixData :=
 elet bootstrap/appInfixData : InfixData -> (Term -> Term -> Term) := pr2 ?String ?(Term -> Term -> Term).
 
 elet bootstrap/appToTerm (i : Term × InfixData) (t : Term) : Term :=
-  appInfixData (pr2 ?Term ?InfixData i) t (pr1 ?Term ?InfixData i).
+  appInfixData (pr2 ?_ ?_ i) t (pr1 ?_ ?_ i).
 
 -- The single term is the leftmost, and every cons adds a term at the right
 elet bootstrap/MultiTerm : * := Term × List (Term × InfixData).
 
 elet bootstrap/singleMultiTerm (t : Term) : MultiTerm :=
-  prodPair ?Term ?(List (Term × InfixData)) t (nil ?(Term × InfixData)).
+  prodPair ?_ ?_ t (nil ?(Term × InfixData)).
 
 elet bootstrap/consMultiTerm (t : Term) (i : InfixData) : MultiTerm -> MultiTerm :=
-  productMap2 ?Term ?(List (Term × InfixData)) ?(List (Term × InfixData)) $
-    cons ?(Term × InfixData) $ prodPair ?Term ?InfixData t i.
+  productMap2 ?Term ?_ ?_ $ cons ?(Term × InfixData) $ prodPair ?_ ?_ t i.
 
 elet bootstrap/multiTermSingle : MultiTerm -> Term := pr1 ?Term ?(List (Term × InfixData)).
 
@@ -211,11 +210,11 @@ elet bootstrap/multiTermRest : MultiTerm -> List (Term × InfixData) :=
 --     : Π _ : MultiTerm Term.
 
 elet bootstrap/multiTermToTermRight (m : MultiTerm) :=
-  recursionList ?(Term × InfixData) ?Term
+  recursionList ?_ ?_
     (multiTermSingle m)
     (λ h : Term × InfixData. λ t : List (Term × InfixData). λ _ : Term. appToTerm
-      (foldr ?(Term × InfixData) ?(Term × InfixData) (λ acc : Term × InfixData. λ x : Term × InfixData.
-        prodPair ?Term ?InfixData (appToTerm acc $ pr1 ?Term ?InfixData x) (pr2 ?Term ?InfixData x)) t h)
+      (foldr ?_ ?_ (λ acc : Term × InfixData. λ x : Term × InfixData.
+        prodPair ?_ ?_ (appToTerm acc $ pr1 ?_ ?_ x) (pr2 ?_ ?_ x)) t h)
       (multiTermSingle m))
     (multiTermRest m).
 
@@ -232,7 +231,7 @@ elet bootstrap/init$app$_singleTerm_ := mkAppU.
 elet bootstrap/init$app$=question=_singleTerm_ := mkAppE.
 
 elet bootstrap/init$applist$ : List App := nil ?App.
-elet bootstrap/init$applist$_app__maybeApplist_ (a : App) (as : List App) : List App := cons ?App a as.
+elet bootstrap/init$applist$_app__maybeApplist_ (a : App) (as : List App) : List App := cons ?_ a as.
 
 elet bootstrap/init$maybeApplist$ : List App := nil ?App.
 elet bootstrap/init$maybeApplist$^space^_applist_ (l : List App) : List App := l.

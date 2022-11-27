@@ -11,28 +11,28 @@ elet bootstrap/recursionList [A, X : *] (rn : X) (rc : A -> List A -> X -> X) (l
       prodPair ?_ ?_ (cons ?_ a $ pr1 ?_ ?_ p) (rc a (pr1 ?_ ?_ p) (pr2 ?_ ?_ p))).
 
 elet bootstrap/length [X : *] : List X -> Nat :=
-  recursionList ?X ?_ zero (λ x : X. λ xs : List X. λ n : Nat. suc n).
+  recursionList ?_ ?_ zero (λ x : X. λ xs : List X. λ n : Nat. suc n).
 
 elet bootstrap/isNil [X : *] : List X -> Bool :=
-  recursionList ?X ?_ true (λ _ : X. λ _ : List X. λ _ : Bool. false).
+  recursionList ?_ ?_ true (λ _ : X. λ _ : List X. λ _ : Bool. false).
 
 elet bootstrap/listEq [X : *] (eqX : X -> X -> Bool) : List X -> List X -> Bool :=
-  recursionList ?X ?_ (isNil ?X) $
+  recursionList ?_ ?_ (isNil ?X) $
     λ x : X. λ xs : List X. λ rec : List X -> Bool.
-      recursionList ?X ?_ false (λ y : X. λ ys : List X. λ _ : Bool. and (eqX x y) (rec ys)).
+      recursionList ?_ ?_ false (λ y : X. λ ys : List X. λ _ : Bool. and (eqX x y) (rec ys)).
 
 elet bootstrap/pureList [X : *] (x : X) : List X := cons ?_ x (nil ?X).
 
 elet bootstrap/app [X : *] (l1, l2 : List X) : List X :=
-  recursionList ?X ?_ l2 (λ x : X. λ _ : List X. λ rec : List X. cons ?_ x rec) l1.
+  recursionList ?_ ?_ l2 (λ x : X. λ _ : List X. λ rec : List X. cons ?_ x rec) l1.
 
 elet bootstrap/snoc [X : *] (x : X) (xs : List X) : List X := app ?_ xs (pureList ?_ x).
 
 elet bootstrap/reverse [X : *] : List X -> List X :=
-  recursionList ?X ?_ (nil ?X) (λ x : X. λ _ : List X. λ rec : List X. snoc ?_ x rec).
+  recursionList ?_ ?_ (nil ?X) (λ x : X. λ _ : List X. λ rec : List X. snoc ?_ x rec).
 
 elet bootstrap/filter [X : *] (f : X -> Bool) : List X -> List X :=
-  recursionList ?X ?_ (nil ?X)
+  recursionList ?_ ?_ (nil ?X)
     (λ x : X. λ _ : List X. λ rec : List X. ifthenelse ?_ (f x) (cons ?_ x rec) rec).
 
 elet bootstrap/foldl [A, B : *] (f : B -> A -> B) : List A -> B -> B :=
@@ -41,7 +41,7 @@ elet bootstrap/foldl [A, B : *] (f : B -> A -> B) : List A -> B -> B :=
 elet bootstrap/foldr [A, B : *] (f : B -> A -> B) (l : List A) : B -> B := foldl ?_ ?_ f $ reverse ?_ l.
 
 elet bootstrap/scanl [A, B : *] (f : B -> A -> B) (b : B) : List A -> List B :=
-  recursionList ?A ?_
+  recursionList ?_ ?_
     (pureList ?_ b)
     (λ a : A. λ as : List A. λ rec : List B. cons ?_ (foldl ?_ ?_ f (cons ?_ a as) b) rec).
 
@@ -49,7 +49,7 @@ elet bootstrap/map [X, Y : *] (f : X -> Y) : List X -> List Y :=
   recursionList ?X ?_ (nil ?Y) (λ x : X. λ _ : List X. λ rec : List Y. cons ?_ (f x) rec).
 
 elet bootstrap/intersperse [X : *] (x : X) (l : List X) : List X :=
-  recursionList ?X ?_ (nil ?X)
+  recursionList ?_ ?_ (nil ?X)
     (λ x' : X. λ l' : List X. λ rec : List X.
       ifthenelse ?_ (isNil ?_ l') (pureList ?_ x') (cons ?_ x' $ cons ?_ x rec)) l.
 

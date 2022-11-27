@@ -4,16 +4,16 @@ elet bootstrap/just [A : *] (a : A) : Maybe A := inl ?A ?Unit a.
 elet bootstrap/nothing [A : *] : Maybe A := inr ?A ?_ tt.
 
 elet bootstrap/maybe [A, B : *] (default : B) (f : A -> B) (x : Maybe A) : B :=
-  recursionSum ?_ ?Unit ?_ (λ a : A. f a) (λ _ : Unit. default) x.
+  recursionSum ?_ ?_ ?_ (λ a : A. f a) (λ _ : Unit. default) x.
 
 elet bootstrap/bindMaybe [A, B : *] (x : Maybe A) (f : A -> Maybe B) : Maybe B :=
   maybe ?_ ?_ (nothing ?B) f x.
 
 elet bootstrap/mapMaybe [A, B : *] (f : A -> B) (x : Maybe A) : Maybe B :=
-  maybe ?_ ?_ (inr ?B ?_ tt) (λ a : A. just ?B $ f a) x.
+  maybe ?_ ?_ (inr ?B ?_ tt) (λ a : A. just ?_ $ f a) x.
 
 elet bootstrap/liftMaybe2 [X, Y, Z : *] (f : X -> Y -> Z) (x : Maybe X) (y : Maybe Y) : Maybe Z :=
-  maybe ?X ?(Maybe Z) (nothing ?Z) (λ x' : X. mapMaybe ?Y ?Z (λ y' : Y. f x' y') y) x.
+  maybe ?_ ?(Maybe Z) (nothing ?Z) (λ x' : X. mapMaybe ?_ ?_ (λ y' : Y. f x' y') y) x.
 
 elet bootstrap/traverseMaybeList [X, Y : *] (f : X -> Maybe Y) : List X -> Maybe (List Y) :=
   recursionList ?X ?_
