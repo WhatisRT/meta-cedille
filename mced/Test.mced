@@ -4,11 +4,6 @@ import Base.
 set PWD "Test/".
 import BootstrapTest.
 
-import TermRecDiagonal.
-import TermHelpers.
-import ReduceMultiApp.
-import Inference.
-
 import ErrorMonad.
 
 import LambdaCalc.

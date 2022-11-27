@@ -3,11 +3,6 @@ import Base.
 
 set PWD "Test/".
 
-import TermRecDiagonal.
-import TermHelpers.
-import ReduceMultiApp.
-import Inference.
-
 -- if the program is failing, return the error
 elet isFailing [A : *] (x : Eval A) : Eval (Maybe String) :=
   catchEval ?(Maybe String) (x >>= (λ _ : A. pureEval ?(Maybe String) (nothing ?String)))
