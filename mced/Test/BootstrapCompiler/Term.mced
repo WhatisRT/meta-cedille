@@ -191,10 +191,10 @@ elet bootstrap/appToTerm (i : Term × InfixData) (t : Term) : Term :=
 elet bootstrap/MultiTerm : * := Term × List (Term × InfixData).
 
 elet bootstrap/singleMultiTerm (t : Term) : MultiTerm :=
-  prodPair ?_ ?_ t (nil ?(Term × InfixData)).
+  t ; nil ?(Term × InfixData).
 
 elet bootstrap/consMultiTerm (t : Term) (i : InfixData) : MultiTerm -> MultiTerm :=
-  productMap2 ?Term ?_ ?_ $ cons ?(Term × InfixData) $ prodPair ?_ ?_ t i.
+  productMap2 ?Term ?_ ?_ $ cons ?_ (t ; i).
 
 elet bootstrap/multiTermSingle : MultiTerm -> Term := pr1 ?Term ?(List (Term × InfixData)).
 
@@ -214,7 +214,7 @@ elet bootstrap/multiTermToTermRight (m : MultiTerm) :=
     (multiTermSingle m)
     (λ h : Term × InfixData. λ t : List (Term × InfixData). λ _ : Term. appToTerm
       (foldr ?_ ?_ (λ acc : Term × InfixData. λ x : Term × InfixData.
-        prodPair ?_ ?_ (appToTerm acc $ pr1 ?_ ?_ x) (pr2 ?_ ?_ x)) t h)
+        appToTerm acc (pr1 ?_ ?_ x) ; pr2 ?_ ?_ x) t h)
       (multiTermSingle m))
     (multiTermRest m).
 
@@ -231,7 +231,7 @@ elet bootstrap/init$app$_singleTerm_ := mkAppU.
 elet bootstrap/init$app$=question=_singleTerm_ := mkAppE.
 
 elet bootstrap/init$applist$ : List App := nil ?App.
-elet bootstrap/init$applist$_app__maybeApplist_ (a : App) (as : List App) : List App := cons ?_ a as.
+elet bootstrap/init$applist$_app__maybeApplist_ (a : App) (as : List App) : List App := a ∷ as.
 
 elet bootstrap/init$maybeApplist$ : List App := nil ?App.
 elet bootstrap/init$maybeApplist$^space^_applist_ (l : List App) : List App := l.

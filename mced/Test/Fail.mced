@@ -5,11 +5,11 @@ set PWD "Test/".
 
 -- if the program is failing, return the error
 elet isFailing [A : *] (x : Eval A) : Eval (Maybe String) :=
-  catchEval ?(Maybe String) (x >>= (λ _ : A. pureEval ?(Maybe String) (nothing ?String)))
-                            (λ s : String. pureEval ?(Maybe String) (just ?String s)).
+  catchEval ?_ (x >>= (λ _ : A. pureEval ?_ (nothing ?String)))
+               (λ s : String. pureEval ?_ (just ?_ s)).
 
 elet expectFail [A : *] (x : Eval A) : Eval Unit :=
-  isFailing ?A x >>= maybe ?_ ?_
+  isFailing ?_ x >>= maybe ?_ ?_
     (throwEval ?Unit (withColor8 ANSI8Red "Success while failure was expected!"))
     (λ e : String. printLineEval $ stringConcat
       [String|newline, withColor8 ANSI8Green "Failed as expected with error:", newline, e]).
@@ -25,4 +25,4 @@ fail-elet Inference/Test/foldl [A, B : *] (f : B -> A -> B) : List A -> B -> B :
   recursionList ?_ ?_ (λ b : B. b) (λ a : A. λ as : List A. λ rec : B -> B. λ b : B. f (rec b) a).
 
 fail-elet Inference/Test/map [X, Y : *] (f : X -> Y) : List X -> List Y :=
-  recursionList ?_ ?_ (nil ?Y) (λ x : X. λ _ : List X. λ rec : List Y. cons ?_ (f x) rec).
+  recursionList ?_ ?_ [Y|] (λ x : X. λ _ : List X. λ rec : List Y. f x ∷ rec).

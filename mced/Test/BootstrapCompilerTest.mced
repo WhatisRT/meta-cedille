@@ -18,3 +18,4 @@ import BootstrapCompiler/Maybe.
 set RequireTypeAnnotations false.
 
 import BootstrapCompiler/Term.
+import BootstrapCompiler/MLLet.

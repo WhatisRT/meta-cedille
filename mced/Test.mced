@@ -4,6 +4,9 @@ import Base.
 set PWD "Test/".
 import BootstrapTest.
 
+import BootstrapCompiler.
+import BootstrapCompilerTest.
+
 import ErrorMonad.
 
 import LambdaCalc.

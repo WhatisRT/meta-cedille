@@ -39,3 +39,5 @@ infixMacro f "=dollar=" x := γ{f} γ{x}.
 
 -- Note: this requires elet until the regular let supports elaboration
 infixMacro x "=rangle==rangle==equal=" y := bindEval ?_ ?_ γ{x} γ{y}.
+infixMacro x "=semicolon=" y := prodPair ?_ ?_ γ{x} γ{y}.
+infixMacro x "∷" y := cons ?_ γ{x} γ{y}.

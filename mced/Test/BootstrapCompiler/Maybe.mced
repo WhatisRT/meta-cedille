@@ -17,7 +17,7 @@ elet bootstrap/liftMaybe2 [X, Y, Z : *] (f : X -> Y -> Z) (x : Maybe X) (y : May
 
 elet bootstrap/traverseMaybeList [X, Y : *] (f : X -> Maybe Y) : List X -> Maybe (List Y) :=
   recursionList ?X ?_
-    (just ?_ (nil ?Y))
+    (just ?_ [Y|])
     (λ x : X. λ xs : List X. λ rec : Maybe (List Y). liftMaybe2 ?_ ?_ ?_ (cons ?Y) (f x) rec).
 
 runMeta compileNames "Maybe.mced" [String|"Maybe", "just", "nothing", "maybe", "bindMaybe", "mapMaybe", "liftMaybe2", "traverseMaybeList"].
