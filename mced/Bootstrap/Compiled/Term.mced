@@ -1,0 +1,92 @@
+let Binder := ∀ X : * Π _ : X Π _ : X Π _ : X Π _ : X X : *.
+let lambdaBinder := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X lambda : Binder.
+let LambdaBinder := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X Lambda : Binder.
+let piBinder := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X pi : Binder.
+let forallBinder := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X forall : Binder.
+let Term := ∀ X : * Π _ : Π _ : init$var X Π _ : Π _ : init$sort X Π _ : Π _ : Binder Π _ : String Π _ : X Π _ : X X Π _ : Π _ : X Π _ : [List [[Product Bool] X]] X Π _ : Π _ : init$char X Π _ : X Π _ : Π _ : X X X : *.
+let varTerm := λ var : init$var Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X [v var] : Π var : init$var Term.
+let sortTerm := λ sort : init$sort Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X [s sort] : Π sort : init$sort Term.
+let binderTerm := λ binder : Binder λ name : String λ T : Term λ t : Term Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X [[[[b binder] name] [[[[[[[<T X> v] s] b] a] k] x] u]] [[[[[[[<t X> v] s] b] a] k] x] u]] : Π binder : Binder Π name : String Π T : Term Π t : Term Term.
+let appLTerm := λ t : Term λ l : [List [[Product Bool] Term]] Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X [[a [[[[[[[<t X> v] s] b] a] k] x] u]] [[<<map [[Product Bool] Term]> [[Product Bool] X]> [<<<productMap2 Bool> Term> X> λ t : Term [[[[[[[<t X> v] s] b] a] k] x] u]]] l]] : Π t : Term Π l : [List [[Product Bool] Term]] Term.
+let charTerm := λ c : Char Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X [k c] : Π c : Char Term.
+let unknownTerm := Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X x : Term.
+let unquoteTerm := λ t : Term Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X [u [[[[[[[<t X> v] s] b] a] k] x] u]] : Π t : Term Term.
+let sVarTerm := λ s : String [varTerm [init$var$_string_ s]] : Π s : String Term.
+let iVarTerm := λ i : init$index [varTerm [init$var$_index_ i]] : Π i : init$index Term.
+let lambdaTerm := λ name : String λ T : Term λ t : Term Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X [[[[b lambdaBinder] name] [[[[[[[<T X> v] s] b] a] k] x] u]] [[[[[[[<t X> v] s] b] a] k] x] u]] : Π _ : String Π _ : Term Π _ : Term Term.
+let LambdaTerm := λ name : String λ T : Term λ t : Term Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X [[[[b LambdaBinder] name] [[[[[[[<T X> v] s] b] a] k] x] u]] [[[[[[[<t X> v] s] b] a] k] x] u]] : Π _ : String Π _ : Term Π _ : Term Term.
+let piTerm := λ name : String λ T : Term λ t : Term Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X [[[[b piBinder] name] [[[[[[[<T X> v] s] b] a] k] x] u]] [[[[[[[<t X> v] s] b] a] k] x] u]] : Π _ : String Π _ : Term Π _ : Term Term.
+let forallTerm := λ name : String λ T : Term λ t : Term Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X [[[[b forallBinder] name] [[[[[[[<T X> v] s] b] a] k] x] u]] [[[[[[[<t X> v] s] b] a] k] x] u]] : Π _ : String Π _ : Term Π _ : Term Term.
+let App' := ∀ X : * Π _ : Π a : Bool Π _ : [λ _ : Bool iTerm a] X X : *.
+let appErased' := λ x : [[DSum Bool] λ _ : Bool iTerm] [<x Bool> λ a : Bool λ _ : iTerm a] : Π _ : [[Product Bool] iTerm] Bool.
+let appTerm' := λ x : [[DSum Bool] λ _ : Bool iTerm] [<x iTerm> λ _ : Bool λ b : iTerm b] : Π _ : [[Product Bool] iTerm] iTerm.
+let appToQuotedApp := λ t : iTerm λ a : App' [[[[[<ifthenelse Π _ : iTerm Π _ : iTerm iTerm> [appErased' a]] quote$angle] quote$square] t] [appTerm' a]] : Π t : iTerm Π a : App' iTerm.
+let foldWithApp := λ l : [List App'] [<<pr2 [List App']> Π _ : init$term init$term> [[<l [[Product [List App']] Π _ : init$term init$term]> [[<<prodPair [List App']> Π _ : init$term init$term> <nil App'>] λ b : init$term b]] λ a : App' λ p : [[Product [List App']] Π _ : init$term init$term] [[<<prodPair [List App']> Π _ : init$term init$term> [[<cons App'> a] [<<pr1 [List App']> Π _ : init$term init$term> p]]] [[[λ a : App' λ as : [List App'] λ rec : Π _ : init$term init$term λ b : init$term [[appToQuotedApp [rec b]] a] a] [<<pr1 [List App']> Π _ : init$term init$term> p]] [<<pr2 [List App']> Π _ : init$term init$term> p]]]]] : Π _ : [List App'] Π _ : iTerm iTerm.
+let TermToInitTerm := λ t : Term [[[[[[[<t iTerm> λ v : init$var [init$term$_var_ v]] λ s : init$sort [init$term$_sort_ s]] λ b : Binder λ n : String λ T : iTerm λ t : iTerm [[[[[[[<b Π _ : String Π _ : iTerm Π _ : iTerm iTerm> quote$lambda] quote$Lambda] quote$Pi] quote$forall] n] T] t]] λ t : iTerm λ l : [List App'] [[foldWithApp [<reverse App'> l]] t]] λ c : init$char [quote$kappa c]] quote$sq] λ u : iTerm quote$sq] : Π t : Term iTerm.
+let App := ∀ X : * Π _ : Π a : Bool Π _ : [λ _ : Bool Term a] X X : *.
+let mkApp := λ a : Bool λ b : Term [[<<pair Bool> λ _ : Bool Term> a] b] : Π _ : Bool Π _ : Term [[Product Bool] Term].
+let mkAppU := λ b : Term [[<<pair Bool> λ _ : Bool Term> false] b] : Π _ : Term [[Product Bool] Term].
+let mkAppE := λ b : Term [[<<pair Bool> λ _ : Bool Term> true] b] : Π _ : Term [[Product Bool] Term].
+let appErased := λ x : [[DSum Bool] λ _ : Bool Term] [<x Bool> λ a : Bool λ _ : Term a] : Π _ : [[Product Bool] Term] Bool.
+let appTerm := λ x : [[DSum Bool] λ _ : Bool Term] [<x Term> λ _ : Bool λ b : Term b] : Π _ : [[Product Bool] Term] Term.
+let appSingle := λ t : Term λ t' : Term [[appLTerm t] [<pureList [[Product Bool] Term]> [mkAppU t']]] : Π t : Term Π t' : Term Term.
+let appSingleE := λ t : Term λ t' : Term [[appLTerm t] [<pureList [[Product Bool] Term]> [mkAppE t']]] : Π t : Term Π t' : Term Term.
+let toAppU := λ l : [List Term] [<<pr2 [List Term]> [List [[Product Bool] Term]]> [[<l [[Product [List Term]] [List [[Product Bool] Term]]]> [[<<prodPair [List Term]> [List [[Product Bool] Term]]> <nil Term>] <nil [[Product Bool] Term]>]] λ a : Term λ p : [[Product [List Term]] [List [[Product Bool] Term]]] [[<<prodPair [List Term]> [List [[Product Bool] Term]]> [[<cons Term> a] [<<pr1 [List Term]> [List [[Product Bool] Term]]> p]]] [[[λ x : Term λ _ : [List Term] λ rec : [List [[Product Bool] Term]] [[<cons [[Product Bool] Term]> [mkAppU x]] rec] a] [<<pr1 [List Term]> [List [[Product Bool] Term]]> p]] [<<pr2 [List Term]> [List [[Product Bool] Term]]> p]]]]] : Π l : [List Term] [List [[Product Bool] Term]].
+let PreParam := ∀ X : * Π _ : Π a : String Π _ : [λ _ : String Term a] X X : *.
+let mkPreParam := λ a : String λ b : Term [[<<pair String> λ _ : String Term> a] b] : Π _ : String Π _ : Term [[Product String] Term].
+let preParamName := λ p : PreParam [<<pr1 String> Term> p] : Π p : PreParam String.
+let preParamType := λ p : PreParam [<<pr2 String> Term> p] : Π p : PreParam Term.
+let Param := ∀ X : * Π _ : Π a : Bool Π _ : [λ _ : Bool PreParam a] X X : *.
+let mkParam := λ a : Bool λ b : PreParam [[<<pair Bool> λ _ : Bool PreParam> a] b] : Π _ : Bool Π _ : PreParam [[Product Bool] PreParam].
+let paramErased := λ x : [[DSum Bool] λ _ : Bool PreParam] [<x Bool> λ a : Bool λ _ : PreParam a] : Π _ : Param Bool.
+let paramName := λ p : Param [<<pr1 String> Term> [<<pr2 Bool> PreParam> p]] : Π p : Param String.
+let paramType := λ p : Param [<<pr2 String> Term> [<<pr2 Bool> PreParam> p]] : Π p : Param Term.
+let namesToPreParams := λ ns : [List String] λ t : Term [[<<map String> [[Product String] Term]> λ n : String [[mkPreParam n] t]] ns] : Π ns : [List String] Π t : Term [List [[Product String] Term]].
+let Telescope := ∀ X : * Π _ : X Π _ : Π _ : Param Π _ : X X X : *.
+let telApp := λ p : [List PreParam] [<app [[Product Bool] PreParam]> [[<<map PreParam> [[Product Bool] PreParam]> [mkParam false]] p]] : Π p : [List PreParam] Π _ : [List [[Product Bool] PreParam]] [List [[Product Bool] PreParam]].
+let telAppE := λ p : [List PreParam] [<app [[Product Bool] PreParam]> [[<<map PreParam> [[Product Bool] PreParam]> [mkParam true]] p]] : Π p : [List PreParam] Π _ : [List [[Product Bool] PreParam]] [List [[Product Bool] PreParam]].
+let telNil := Λ X : * λ n : X λ c : Π _ : Param Π _ : X X n : [List Param].
+let preParamToBinder := λ b : Binder λ t : Term λ p : PreParam [[[[binderTerm b] [preParamName p]] [preParamType p]] t] : Π b : Binder Π t : Term Π p : PreParam Term.
+let applyMultiBinder := λ b : Binder [<<foldl PreParam> Term> [preParamToBinder b]] : Π b : Binder Π l : [List PreParam] Π _ : Term Term.
+let telescopeToApp := λ tel : Telescope [[<<map Param> [[Product Bool] Term]> λ p : Param [[mkApp [paramErased p]] [sVarTerm [paramName p]]]] tel] : Π tel : Telescope [List [[Product Bool] Term]].
+let init$nameparams'$ := Λ X : * λ n : X λ c : Π _ : String Π _ : X X n : [List String].
+let init$nameparams'$=comma=^space'^_string__nameparams'_ := λ x : String λ xs : [List String] Λ X : * λ n : X λ c : Π _ : String Π _ : X X [[c x] [[<xs X> n] c]] : Π _ : String Π _ : [List String] [List String].
+let init$nameparams$_string__nameparams'_ := λ x : String λ xs : [List String] Λ X : * λ n : X λ c : Π _ : String Π _ : X X [[c x] [[<xs X> n] c]] : Π _ : String Π _ : [List String] [List String].
+let init$params$_nameparams_^space^=colon=^space^_multiTerm_ := λ ns : [List String] λ t : Term [[namesToPreParams ns] t] : Π ns : [List String] Π t : Term [List PreParam].
+let init$telescope'$ := Λ X : * λ n : X λ c : Π _ : Param Π _ : X X n : [List Param].
+let init$telescope'$^space^_telescope_ := λ t : Telescope t : Π t : Telescope Telescope.
+let init$telescope$=lparen=_params_=rparen=_telescope'_ := λ p : [List PreParam] [telApp p] : Π p : [List PreParam] Π _ : [List Param] [List Param].
+let init$telescope$=lsquare=_params_=rsquare=_telescope'_ := λ p : [List PreParam] [telAppE p] : Π p : [List PreParam] Π _ : [List Param] [List Param].
+let init$telescope$ := Λ X : * λ n : X λ c : Π _ : Param Π _ : X X n : [List Param].
+let InfixData := ∀ X : * Π _ : Π a : String Π _ : [λ _ : String Π _ : Term Π _ : Term Term a] X X : *.
+let mkInfixData := λ a : String λ b : Π _ : Term Π _ : Term Term [[<<pair String> λ _ : String Π _ : Term Π _ : Term Term> a] b] : Π _ : String Π _ : Π _ : Term Π _ : Term Term InfixData.
+let appInfixData := λ x : [[DSum String] λ _ : String Π _ : Term Π _ : Term Term] [<x Π _ : Term Π _ : Term Term> λ _ : String λ b : Π _ : Term Π _ : Term Term b] : Π _ : InfixData Π _ : Term Π _ : Term Term.
+let appToTerm := λ i : [[Product Term] InfixData] λ t : Term [[[appInfixData [<<pr2 Term> InfixData> i]] t] [<<pr1 Term> InfixData> i]] : Π i : [[Product Term] InfixData] Π t : Term Term.
+let MultiTerm := ∀ X : * Π _ : Π a : Term Π _ : [λ _ : Term [List [[Product Term] InfixData]] a] X X : *.
+let singleMultiTerm := λ t : Term [[<<prodPair Term> [List [[Product Term] InfixData]]> t] <nil [[Product Term] InfixData]>] : Π t : Term MultiTerm.
+let consMultiTerm := λ t : Term λ i : InfixData [<<<productMap2 Term> [List [[Product Term] InfixData]]> [List [[Product Term] InfixData]]> [<cons [[Product Term] InfixData]> [[<<prodPair Term> InfixData> t] i]]] : Π t : Term Π i : InfixData Π _ : MultiTerm MultiTerm.
+let multiTermSingle := λ x : [[DSum Term] λ _ : Term [List [[Product Term] InfixData]]] [<x Term> λ a : Term λ _ : [List [[Product Term] InfixData]] a] : Π _ : MultiTerm Term.
+let multiTermRest := λ x : [[DSum Term] λ _ : Term [List [[Product Term] InfixData]]] [<x [List [[Product Term] InfixData]]> λ _ : Term λ b : [List [[Product Term] InfixData]] b] : Π _ : MultiTerm [List [[Product Term] InfixData]].
+let multiTermToTermRight := λ m : MultiTerm [[[<<recursionList [[Product Term] InfixData]> Term> [multiTermSingle m]] λ h : [[Product Term] InfixData] λ t : [List [[Product Term] InfixData]] λ _ : Term [[appToTerm [[[<<foldr [[Product Term] InfixData]> [[Product Term] InfixData]> λ acc : [[Product Term] InfixData] λ x : [[Product Term] InfixData] [[<<prodPair Term> InfixData> [[appToTerm acc] [<<pr1 Term> InfixData> x]]] [<<pr2 Term> InfixData> x]]] t] h]] [multiTermSingle m]]] [multiTermRest m]] : Π m : MultiTerm Term.
+let multiTermToTerm := λ m : MultiTerm [[[<<recursionList [[Product Term] InfixData]> Term> [multiTermSingle m]] λ h : [[Product Term] InfixData] λ t : [List [[Product Term] InfixData]] λ _ : Term [[appToTerm [[[<<foldr [[Product Term] InfixData]> [[Product Term] InfixData]> λ acc : [[Product Term] InfixData] λ x : [[Product Term] InfixData] [[<<prodPair Term> InfixData> [[appToTerm acc] [<<pr1 Term> InfixData> x]]] [<<pr2 Term> InfixData> x]]] t] h]] [multiTermSingle m]]] [multiTermRest m]] : Π m : MultiTerm Term.
+let init$app$_singleTerm_ := λ b : Term [[<<pair Bool> λ _ : Bool Term> false] b] : Π _ : Term [[Product Bool] Term].
+let init$app$=question=_singleTerm_ := λ b : Term [[<<pair Bool> λ _ : Bool Term> true] b] : Π _ : Term [[Product Bool] Term].
+let init$applist$ := Λ X : * λ n : X λ c : Π _ : App Π _ : X X n : [List App].
+let init$applist$_app__maybeApplist_ := λ a : App λ as : [List App] [[<cons App> a] as] : Π a : App Π as : [List App] [List App].
+let init$maybeApplist$ := Λ X : * λ n : X λ c : Π _ : App Π _ : X X n : [List App].
+let init$maybeApplist$^space^_applist_ := λ l : [List App] l : Π l : [List App] [List App].
+let init$appTerm$_singleTerm__maybeApplist_ := λ t : Term λ l : [List [[Product Bool] Term]] Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X [[a [[[[[[[<t X> v] s] b] a] k] x] u]] [[<<map [[Product Bool] Term]> [[Product Bool] X]> λ bt : [[Product Bool] Term] [[<<prodPair Bool> X> [<<pr1 Bool> Term> bt]] [[[[[[[<[<<pr2 Bool> Term> bt] X> v] s] b] a] k] x] u]]] l]] : Π _ : Term Π _ : [List [[Product Bool] Term]] Term.
+let init$infix$=minus==rangle= := Λ X : * λ p : Π a : String Π _ : [λ _ : String Π _ : Term Π _ : Term Term a] X [[p init$string$nil] [piTerm init$string$nil]] : InfixData.
+let init$multiTerm'$ := λ m : MultiTerm m : Π m : MultiTerm MultiTerm.
+let init$multiTerm'$_infix_^space^_appTerm_^space'^_multiTerm'_ := λ inf : InfixData λ t : Term λ trans : Π _ : MultiTerm MultiTerm λ m : MultiTerm [trans [[[consMultiTerm t] inf] m]] : Π inf : InfixData Π t : Term Π trans : Π _ : MultiTerm MultiTerm Π m : MultiTerm MultiTerm.
+let init$multiTerm$_appTerm_^space'^_multiTerm'_ := λ t : Term λ trans : Π _ : MultiTerm MultiTerm [multiTermToTerm [trans [singleMultiTerm t]]] : Π t : Term Π trans : Π _ : MultiTerm MultiTerm Term.
+let init$singleTerm$=ast= := Λ X : * λ _ : Π _ : init$var X λ s : Π _ : init$sort X λ _ : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ _ : Π _ : X Π _ : [List [[Product Bool] X]] X λ _ : Π _ : init$char X λ _ : X λ _ : Π _ : X X [s init$sort$=ast=] : Term.
+let init$singleTerm$=sq= := Λ X : * λ _ : Π _ : init$var X λ s : Π _ : init$sort X λ _ : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ _ : Π _ : X Π _ : [List [[Product Bool] X]] X λ _ : Π _ : init$char X λ _ : X λ _ : Π _ : X X [s init$sort$=sq=] : Term.
+let init$singleTerm$=underscore= := Λ X : * λ v : Π _ : init$var X λ s : Π _ : init$sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : init$char X λ x : X λ u : Π _ : X X x : Term.
+let init$singleTerm$_string_ := λ n : String [varTerm [init$var$_string_ n]] : Π n : String Term.
+let init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : Term t : Π t : Term Term.
+let init$binder$=lambda= := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X lambda : ∀ X : * Π lambda : X Π Lambda : X Π pi : X Π forall : X X.
+let init$binder$=Lambda= := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X Lambda : ∀ X : * Π lambda : X Π Lambda : X Π pi : X Π forall : X X.
+let init$binder$=Pi= := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X pi : ∀ X : * Π lambda : X Π Lambda : X Π pi : X Π forall : X X.
+let init$binder$=forall= := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X forall : ∀ X : * Π lambda : X Π Lambda : X Π pi : X Π forall : X X.
+let init$singleTerm$_binder_^space^_params_=dot=^space^_multiTerm_ := λ b : Binder λ p : [List PreParam] λ t : Term [[[applyMultiBinder b] p] t] : Π b : Binder Π p : [List PreParam] Π t : Term Term.

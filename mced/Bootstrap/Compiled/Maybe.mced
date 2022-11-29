@@ -1,0 +1,8 @@
+let Maybe := λ A : * [[Sum A] Unit] : Π A : * *.
+let just := Λ A : * λ a : A [<<inl A> Unit> a] : ∀ A : * Π a : A [Maybe A].
+let nothing := Λ A : * [<<inr A> ∀ X : * Π x : X X> tt] : ∀ A : * [Maybe A].
+let maybe := Λ A : * Λ B : * λ default : B λ f : Π _ : A B λ x : [Maybe A] [[[<<<recursionSum A> Unit> B> λ a : A [f a]] λ _ : Unit default] x] : ∀ A : * ∀ B : * Π default : B Π f : Π _ : A B Π x : [Maybe A] B.
+let bindMaybe := Λ A : * Λ B : * λ x : [Maybe A] λ f : Π _ : A [Maybe B] [[[<<maybe A> [Maybe B]> <nothing B>] f] x] : ∀ A : * ∀ B : * Π x : [Maybe A] Π f : Π _ : A [Maybe B] [Maybe B].
+let mapMaybe := Λ A : * Λ B : * λ f : Π _ : A B λ x : [Maybe A] [[[<<maybe A> ∀ X : * Π l : Π _ : B X Π r : Π _ : Unit X X> [<<inr B> ∀ X : * Π x : X X> tt]] λ a : A [<just B> [f a]]] x] : ∀ A : * ∀ B : * Π f : Π _ : A B Π x : [Maybe A] [Maybe B].
+let liftMaybe2 := Λ X : * Λ Y : * Λ Z : * λ f : Π _ : X Π _ : Y Z λ x : [Maybe X] λ y : [Maybe Y] [[[<<maybe X> [Maybe Z]> <nothing Z>] λ x' : X [[<<mapMaybe Y> Z> λ y' : Y [[f x'] y']] y]] x] : ∀ X : * ∀ Y : * ∀ Z : * Π f : Π _ : X Π _ : Y Z Π x : [Maybe X] Π y : [Maybe Y] [Maybe Z].
+let traverseMaybeList := Λ X : * Λ Y : * λ f : Π _ : X [Maybe Y] [[<<recursionList X> [Maybe [List Y]]> [<just [List Y]> <nil Y>]] λ x : X λ xs : [List X] λ rec : [Maybe [List Y]] [[[<<<liftMaybe2 Y> [List Y]> [List Y]> <cons Y>] [f x]] rec]] : ∀ X : * ∀ Y : * Π f : Π _ : X [Maybe Y] Π _ : [List X] [Maybe [List Y]].

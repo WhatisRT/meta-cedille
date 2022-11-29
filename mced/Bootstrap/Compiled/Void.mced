@@ -1,0 +1,2 @@
+let Void := ∀ X : * X : *.
+let voidElim := Λ X : * λ v : Void <v X> : ∀ X : * Π v : Void X.

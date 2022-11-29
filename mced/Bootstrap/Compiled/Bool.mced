@@ -1,0 +1,9 @@
+let Bool := ∀ X : * Π _ : X Π _ : X X : *.
+let true := Λ X : * λ t : X λ f : X t : Bool.
+let false := Λ X : * λ t : X λ f : X f : Bool.
+let recursionBool := Λ X : * λ t : X λ f : X λ b : Bool [[<b X> t] f] : ∀ X : * Π t : X Π f : X Π b : Bool X.
+let ifthenelse := Λ X : * λ b : Bool λ ift : X λ iff : X [[[<recursionBool X> ift] iff] b] : ∀ X : * Π b : Bool Π ift : X Π iff : X X.
+let and := λ b : Bool λ b' : Bool [[[<ifthenelse Bool> b] b'] false] : Π b : Bool Π b' : Bool Bool.
+let or := λ b : Bool λ b' : Bool [[[<ifthenelse Bool> b] b] b'] : Π b : Bool Π b' : Bool Bool.
+let not := λ b : Bool [[[<ifthenelse Bool> b] false] true] : Π b : Bool Bool.
+let boolEq := λ b : Bool λ b' : Bool [[[<ifthenelse Bool> b] b'] [not b']] : Π b : Bool Π b' : Bool Bool.

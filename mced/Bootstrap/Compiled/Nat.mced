@@ -1,0 +1,4 @@
+let Nat := ∀ X : * Π _ : X Π _ : Π _ : X X X : *.
+let zero := Λ X : * λ z : X λ s : Π _ : X X z : Nat.
+let suc := λ n : Nat Λ X : * λ z : X λ s : Π _ : X X [s [[<n X> z] s]] : Π n : Nat Nat.
+let recursionNat := Λ X : * λ rz : X λ rs : Π _ : Nat Π _ : X X λ n : Nat [<<pr2 Nat> X> [[<n [[Product Nat] X]> [[<<prodPair Nat> X> zero] rz]] λ r : [[Product Nat] X] [[<<prodPair Nat> X> [suc [<<pr1 Nat> X> r]]] [[rs [<<pr1 Nat> X> r]] [<<pr2 Nat> X> r]]]]] : ∀ X : * Π rz : X Π rs : Π _ : Nat Π _ : X X Π n : Nat X.
