@@ -1,7 +1,7 @@
--- TODO: don't fail if the directory already exists
 runMeta voidEval ?String $ shellCmd "mkdir" [String|"-p", bootstrapCompileDir].
 
-set RequireTypeAnnotations true.
+-- FIXME: this breaks importing
+--set RequireTypeAnnotations true.
 
 import BootstrapCompiler/DSum.
 import BootstrapCompiler/Product.

@@ -7,6 +7,7 @@ import Bootstrap/Stage-3/QuoteTerm.
 import Bootstrap/Stage-3/Quoters.
 
 import Bootstrap/Stage-3/ListExt.
+import Bootstrap/Stage-3/StringExt.
 import Bootstrap/Stage-3/NatHelpers.
 import Bootstrap/Stage-3/ShowTerm.
 import Bootstrap/Stage-3/ConversionHelpers.

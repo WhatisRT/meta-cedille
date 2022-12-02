@@ -1,23 +1,31 @@
-let bootstrap/Maybe (A : *) : * := Sum A Unit.
+module Maybe.
 
-elet bootstrap/just [A : *] (a : A) : Maybe A := inl ?A ?Unit a.
-elet bootstrap/nothing [A : *] : Maybe A := inr ?A ?_ tt.
+importModule List.
+importModule Sum.
+importModule Unit.
 
-elet bootstrap/maybe [A, B : *] (default : B) (f : A -> B) (x : Maybe A) : B :=
+let Maybe (A : *) : * := Sum A Unit.
+
+elet just [A : *] (a : A) : Maybe A := inl ?_ ?Unit a.
+elet nothing [A : *] : Maybe A := inr ?A ?_ tt.
+
+elet maybe [A, B : *] (default : B) (f : A -> B) (x : Maybe A) : B :=
   recursionSum ?_ ?_ ?_ (λ a : A. f a) (λ _ : Unit. default) x.
 
-elet bootstrap/bindMaybe [A, B : *] (x : Maybe A) (f : A -> Maybe B) : Maybe B :=
+elet bindMaybe [A, B : *] (x : Maybe A) (f : A -> Maybe B) : Maybe B :=
   maybe ?_ ?_ (nothing ?B) f x.
 
-elet bootstrap/mapMaybe [A, B : *] (f : A -> B) (x : Maybe A) : Maybe B :=
+elet mapMaybe [A, B : *] (f : A -> B) (x : Maybe A) : Maybe B :=
   maybe ?_ ?_ (inr ?B ?_ tt) (λ a : A. just ?_ $ f a) x.
 
-elet bootstrap/liftMaybe2 [X, Y, Z : *] (f : X -> Y -> Z) (x : Maybe X) (y : Maybe Y) : Maybe Z :=
+elet liftMaybe2 [X, Y, Z : *] (f : X -> Y -> Z) (x : Maybe X) (y : Maybe Y) : Maybe Z :=
   maybe ?_ ?(Maybe Z) (nothing ?Z) (λ x' : X. mapMaybe ?_ ?_ (λ y' : Y. f x' y') y) x.
 
-elet bootstrap/traverseMaybeList [X, Y : *] (f : X -> Maybe Y) : List X -> Maybe (List Y) :=
+elet traverseMaybeList [X, Y : *] (f : X -> Maybe Y) : List X -> Maybe (List Y) :=
   recursionList ?X ?_
     (just ?_ [Y|])
     (λ x : X. λ xs : List X. λ rec : Maybe (List Y). liftMaybe2 ?_ ?_ ?_ (cons ?Y) (f x) rec).
 
-runMeta compileNames "Maybe.mced" [String|"Maybe", "just", "nothing", "maybe", "bindMaybe", "mapMaybe", "liftMaybe2", "traverseMaybeList"].
+endModule.
+
+runMeta compileNames "Maybe".

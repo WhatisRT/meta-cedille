@@ -1,16 +1,20 @@
-let bootstrap/Bool : * := ∀ X : *. X -> X -> X.
+module Bool.
 
-let bootstrap/true  : Bool := Λ X : *. λ t, f : X. t.
-let bootstrap/false : Bool := Λ X : *. λ t, f : X. f.
+let Bool : * := ∀ X : *. X -> X -> X.
 
-elet bootstrap/recursionBool [X : *] (t, f : X) (b : Bool) : X := b ?X t f.
+let true  : Bool := Λ X : *. λ t, f : X. t.
+let false : Bool := Λ X : *. λ t, f : X. f.
 
-elet bootstrap/ifthenelse [X : *] (b : Bool) (ift, iff : X) : X := recursionBool ?_ ift iff b.
+elet recursionBool [X : *] (t, f : X) (b : Bool) : X := b ?X t f.
 
-elet bootstrap/and (b, b' : Bool) : Bool := ifthenelse ?_ b b' false.
-elet bootstrap/or  (b, b' : Bool) : Bool := ifthenelse ?_ b b b'.
-elet bootstrap/not (b : Bool)     : Bool := ifthenelse ?_ b false true.
+elet ifthenelse [X : *] (b : Bool) (ift, iff : X) : X := recursionBool ?_ ift iff b.
 
-elet bootstrap/boolEq (b, b' : Bool) : Bool := ifthenelse ?_ b b' $ not b'.
+elet and (b, b' : Bool) : Bool := ifthenelse ?_ b b' false.
+elet or  (b, b' : Bool) : Bool := ifthenelse ?_ b b b'.
+elet not (b : Bool)     : Bool := ifthenelse ?_ b false true.
 
-runMeta compileNames "Bool.mced" [String|"Bool", "true", "false", "recursionBool", "ifthenelse", "and", "or", "not", "boolEq"].
+elet boolEq (b, b' : Bool) : Bool := ifthenelse ?_ b b' $ not b'.
+
+endModule.
+
+runMeta compileNames "Bool".

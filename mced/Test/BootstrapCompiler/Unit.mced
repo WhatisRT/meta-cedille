@@ -1,4 +1,8 @@
-elet bootstrap/Unit : * := ∀ X : *. X -> X.
-elet bootstrap/tt : Unit := Λ X : *. λ x : X. x.
+module Unit.
 
-runMeta compileNames "Unit.mced" [String|"Unit", "tt"].
+elet Unit : * := ∀ X : *. X -> X.
+elet tt : Unit := Λ X : *. λ x : X. x.
+
+endModule.
+
+runMeta compileNames "Unit".

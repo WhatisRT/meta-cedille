@@ -1,13 +1,13 @@
-b-let prefixVar (p : String) (v : init$var) : init$var :=
+b-let renameVar (f : String -> String) (v : init$var) : init$var :=
   v ?init$var
-    (λ s : String. init$var$_string_ (stringApp p s))
+    (λ s : String. init$var$_string_ (f s))
     init$var$_index_.
 
-b-let prefixNamesInTerm (p : String) (t : Term) : Term :=
+b-let renameNamesInTerm (f : String -> String) (t : Term) : Term :=
   t ?Term
-    (λ v : init$var. varTerm (prefixVar p v))
+    (λ v : init$var. varTerm (renameVar f v))
     sortTerm
-    (λ b : Binder. λ n : String. λ T : Term. λ t : Term. binderTerm b (stringApp p n) T t)
+    (λ b : Binder. λ n : String. λ T : Term. λ t : Term. binderTerm b (f n) T t)
     (λ t : Term. λ l : List App. appLTerm t l)
     (λ c : Char. charTerm c)
     (unknownTerm)
@@ -67,7 +67,7 @@ b-let importExternalLetInfo (name : String) (m : Module) : LetInfo :=
   mkLetInfo (nameToModuleName m name) (sVarTerm name) (nothing ?Term).
 
 b-let modifyTerm (t : Term) (m : Module) : Term :=
-  prefixNamesInTerm (mkModuleContentPrefix (ModuleModuleInfo m)) t.
+  renameNamesInTerm (stringApp (mkModuleContentPrefix (ModuleModuleInfo m))) t.
 
 b-let modifyTermMod (t : Term) : Eval Term :=
   bindEval ?EvalState ?Term getEval (λ s : EvalState.

@@ -1,4 +1,8 @@
-elet bootstrap/Void : * := ∀ X : *. X.
-elet bootstrap/voidElim [X : *] (v : Void) : X := v ?X.
+module Void.
 
-runMeta compileNames "Void.mced" [String|"Void", "voidElim"].
+elet Void : * := ∀ X : *. X.
+elet voidElim [X : *] (v : Void) : X := v ?X.
+
+endModule.
+
+runMeta compileNames "Void".

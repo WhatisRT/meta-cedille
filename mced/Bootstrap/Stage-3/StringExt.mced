@@ -1,0 +1,19 @@
+-- String operations
+
+b-let stringLength (s : String) : Nat :=
+  length ?Char (stringToList s).
+
+b-let stringDrop (n : Nat) (s : String) : String :=
+  stringFromList (drop ?Char n (stringToList s)).
+
+b-let stringTake (n : Nat) (s : String) : String :=
+  stringFromList (take ?Char n (stringToList s)).
+
+-- Prefixes
+
+b-let isPrefix (prefix, s : String) : Bool :=
+  stringEq prefix (stringTake (stringLength prefix) s).
+
+-- remove the prefix, if present
+b-let dropPrefix (prefix, s : String) : String :=
+  ifthenelse ?String (isPrefix prefix s) (stringDrop (stringLength prefix) s) s.

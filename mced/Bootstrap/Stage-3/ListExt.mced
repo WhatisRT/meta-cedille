@@ -15,6 +15,9 @@ b-let lookupDefault [A : *] (n : Nat) (d : A) (l : List A) : A :=
 b-let head [A : *] (l : List A) : Maybe A :=
   recursionList ?A ?(Maybe A) (nothing ?A) (λ a : A. λ _ : List A. λ _ : Maybe A. just ?A a) l.
 
+b-let tail [A : *] (l : List A) : List A :=
+  recursionList ?A ?(List A) [A|] (λ a : A. λ l' : List A. λ _ : List A. l') l.
+
 b-let findMaybe [A : *] (P : A -> Bool) (l : List A) : Maybe A :=
     head ?A (filter ?A P l).
 
@@ -63,3 +66,13 @@ b-let zipWith4 [A, B, C, D, E : *] (f : A -> B -> C -> D -> E)
 b-let concat [A : *] : List (List A) -> List A :=
   recursionList ?(List A) ?(List A) [A|]
     (λ l : List A. λ _ : List (List A). λ rec : List A. app ?A l rec).
+
+b-let drop [A : *] (n : Nat) (l : List A) : List A :=
+  n ?(List A) l (tail ?A).
+
+b-let take [A : *] (n : Nat) (l : List A) : List A :=
+  zipWith ?A ?Nat ?A (λ a : A. λ _ : Nat. a) l (countToZeroExc n).
+
+b-let dropWhile [A : *] (P : A -> Bool) (l : List A) : List A :=
+  recursionList ?A ?(List A) [A|]
+    (λ a : A. λ as, rec : List A. ifthenelse ?(List A) (P a) rec (cons ?A a as)) l.

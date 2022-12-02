@@ -1,56 +1,64 @@
-elet bootstrap/List (A : *) : * := ∀ X : *. X -> (A -> X -> X) -> X.
+module List.
 
-elet bootstrap/nil [A : *] : List A := Λ X : *. λ n : X. λ c : A -> X -> X. n.
-elet bootstrap/cons [A : *] (a : A) (as : List A) : List A :=
+importModule Bool.
+importModule Nat.
+importModule Product.
+
+elet List (A : *) : * := ∀ X : *. X -> (A -> X -> X) -> X.
+
+elet nil [A : *] : List A := Λ X : *. λ n : X. λ c : A -> X -> X. n.
+elet cons [A : *] (a : A) (as : List A) : List A :=
   Λ X : *. λ n : X. λ c : A -> X -> X. c a (as ?X n c).
 
-elet bootstrap/recursionList [A, X : *] (rn : X) (rc : A -> List A -> X -> X) (l : List A) : X :=
+elet recursionList [A, X : *] (rn : X) (rc : A -> List A -> X -> X) (l : List A) : X :=
   pr2 ?(List A) ?X $ l ?(List A × X)
     (nil ?A ; rn)
     (λ a : A. λ p : List A × X.
-      (a ∷ pr1 ?_ ?_ p) ; rc a (pr1 ?_ ?_ p) (pr2 ?_ ?_ p)).
+      (a ∷ pr1 ?(List A) ?X p) ; rc a (pr1 ?(List A) ?X p) (pr2 ?(List A) ?X p)).
 
-elet bootstrap/length [X : *] : List X -> Nat :=
+elet length [X : *] : List X -> Nat :=
   recursionList ?_ ?_ zero (λ x : X. λ xs : List X. λ n : Nat. suc n).
 
-elet bootstrap/isNil [X : *] : List X -> Bool :=
+elet isNil [X : *] : List X -> Bool :=
   recursionList ?_ ?_ true (λ _ : X. λ _ : List X. λ _ : Bool. false).
 
-elet bootstrap/listEq [X : *] (eqX : X -> X -> Bool) : List X -> List X -> Bool :=
+elet listEq [X : *] (eqX : X -> X -> Bool) : List X -> List X -> Bool :=
   recursionList ?_ ?_ (isNil ?X) $
     λ x : X. λ xs : List X. λ rec : List X -> Bool.
       recursionList ?_ ?_ false (λ y : X. λ ys : List X. λ _ : Bool. and (eqX x y) (rec ys)).
 
-elet bootstrap/pureList [X : *] (x : X) : List X := [X|x].
+elet pureList [X : *] (x : X) : List X := [X|x].
 
-elet bootstrap/app [X : *] (l1, l2 : List X) : List X :=
+elet app [X : *] (l1, l2 : List X) : List X :=
   recursionList ?_ ?_ l2 (λ x : X. λ _ : List X. λ rec : List X. x ∷ rec) l1.
 
-elet bootstrap/snoc [X : *] (x : X) (xs : List X) : List X := app ?_ xs (pureList ?_ x).
+elet snoc [X : *] (x : X) (xs : List X) : List X := app ?_ xs (pureList ?_ x).
 
-elet bootstrap/reverse [X : *] : List X -> List X :=
+elet reverse [X : *] : List X -> List X :=
   recursionList ?_ ?_ [X|] (λ x : X. λ _ : List X. λ rec : List X. snoc ?_ x rec).
 
-elet bootstrap/filter [X : *] (f : X -> Bool) : List X -> List X :=
+elet filter [X : *] (f : X -> Bool) : List X -> List X :=
   recursionList ?_ ?_ [X|]
     (λ x : X. λ _ : List X. λ rec : List X. ifthenelse ?_ (f x) (x ∷ rec) rec).
 
-elet bootstrap/foldl [A, B : *] (f : B -> A -> B) : List A -> B -> B :=
+elet foldl [A, B : *] (f : B -> A -> B) : List A -> B -> B :=
   recursionList ?A ?_ (λ b : B. b) (λ a : A. λ as : List A. λ rec : B -> B. λ b : B. f (rec b) a).
 
-elet bootstrap/foldr [A, B : *] (f : B -> A -> B) (l : List A) : B -> B := foldl ?_ ?_ f $ reverse ?_ l.
+elet foldr [A, B : *] (f : B -> A -> B) (l : List A) : B -> B := foldl ?_ ?_ f $ reverse ?_ l.
 
-elet bootstrap/scanl [A, B : *] (f : B -> A -> B) (b : B) : List A -> List B :=
+elet scanl [A, B : *] (f : B -> A -> B) (b : B) : List A -> List B :=
   recursionList ?_ ?_
     (pureList ?_ b)
     (λ a : A. λ as : List A. λ rec : List B. foldl ?_ ?_ f (a ∷ as) b ∷ rec).
 
-elet bootstrap/map [X, Y : *] (f : X -> Y) : List X -> List Y :=
+elet map [X, Y : *] (f : X -> Y) : List X -> List Y :=
   recursionList ?X ?_ [Y|] (λ x : X. λ _ : List X. λ rec : List Y. f x ∷ rec).
 
-elet bootstrap/intersperse [X : *] (x : X) (l : List X) : List X :=
+elet intersperse [X : *] (x : X) (l : List X) : List X :=
   recursionList ?_ ?_ [X|]
     (λ x' : X. λ l' : List X. λ rec : List X.
       ifthenelse ?_ (isNil ?_ l') (pureList ?_ x') (x' ∷ x ∷ rec)) l.
 
-runMeta compileNames "List.mced" [String|"List", "nil", "cons", "recursionList", "length", "isNil", "listEq", "pureList", "app", "snoc", "reverse", "filter", "foldl", "foldr", "scanl", "map", "intersperse"].
+endModule.
+
+runMeta compileNames "List".
