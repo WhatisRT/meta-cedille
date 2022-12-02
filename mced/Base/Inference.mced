@@ -120,12 +120,8 @@ let deriveEqnsHelperSuc : List UnsEqn -> List UnsEqn :=
 let deriveEqns' : Term -> Term -> List UnsEqn :=
   -- Note: we treat α-equivalent terms as equial
   recursionTermsDiag ?(List UnsEqn)
-    (λ v1, v2 : init$var. varEq v1 v2 ?(List UnsEqn)
-      [UnsEqn|]
-      [UnsEqn| mkUnsEqn (varTerm v1) (varTerm v2)])
-    (λ s1, s2 : init$sort. sortEq s1 s2 ?(List UnsEqn)
-      [UnsEqn|]
-      [UnsEqn| mkUnsEqn (sortTerm s1) (sortTerm s2)])
+    (λ v1, v2 : init$var. [UnsEqn| mkUnsEqn (varTerm v1) (varTerm v2)])
+    (λ s1, s2 : init$sort. [UnsEqn| mkUnsEqn (sortTerm s1) (sortTerm s2)])
     (λ b1 : Binder. λ n1 : String. λ T1, t1 : Term. λ b2 : Binder. λ n2 : String. λ T2, t2 : Term.
      λ rec1, rec2 : List (UnsEqn). binderEq b1 b2 ?(List UnsEqn)
       (app ?UnsEqn rec1 (deriveEqnsHelperSuc rec2))
@@ -138,9 +134,7 @@ let deriveEqns' : Term -> Term -> List UnsEqn :=
         ?(List (UnsEqn))
       (app ?UnsEqn rect $ concat ?UnsEqn recapp)
       [UnsEqn| mkUnsEqn (appLTerm t1 app1) (appLTerm t2 app2)])
-    (λ c1, c2 : init$char. charEq c1 c2 ?(List UnsEqn)
-      [UnsEqn|]
-      [UnsEqn| mkUnsEqn (charTerm c1) (charTerm c2)])
+    (λ c1, c2 : init$char. [UnsEqn| mkUnsEqn (charTerm c1) (charTerm c2)])
     [UnsEqn|]
     (λ t1, t2 : Term. λ rec : List UnsEqn. rec)
     (λ t1, t2 : Term. [UnsEqn| mkUnsEqn t1 t2]).
@@ -210,13 +204,13 @@ let debugPrintElabStep (l : List InferenceInfo) : Eval Unit :=
               "  Derived 2: ", showList ?UnsEqn showUnsEqn $ allUnsEqns l, newline,
               "  Solutions: ", showList ?(Nat × Term) showSolution $ allEqns l, newline].
 
-let solveAppWithErr (f : Term) (app : List App) (s : List SEqn) : Eval Term :=
+let solveAppWithErr (f : Term) (app : List App) (s : List InferenceInfo) : Eval Term :=
   (λ l : List App. ifthenelse ?(Eval Term)
     (isNil ?App (filter ?App (λ a : App. isUnknown $ appTerm a) l))
       (pureEval ?Term (appLTerm f l))
-      (throwEval ?Term $ stringConcat
-        [String|"Could not infer all holes in: ", showTerm (appLTerm f l), "!", newline]))
-  (solveApp app s).
+      (seqEval ?Unit ?Term (debugPrintElabStep s) (throwEval ?Term $ stringConcat
+        [String|"Could not infer all holes in: ", showTerm (appLTerm f l), "!", newline])))
+  (solveApp app $ allEqns s).
 
 let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term :=
   bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ _ : String.
@@ -228,7 +222,7 @@ let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term
           (ifthenelse ?(Eval Unit) doDebugPrinting
             (debugPrintElabStep $ genInferenceInfo T app')
             (pureEval ?Unit tt)) $
-          solveAppWithErr f app $ allEqns $ genInferenceInfo T app')).
+          solveAppWithErr f app $ genInferenceInfo T app')).
 
 let elabLocalInference (doDebugPrinting : Bool) (t : Term) : Eval Term :=
   seqEval ?Unit ?Term
@@ -277,3 +271,5 @@ elet inferenceTest5 [A, B : *] (f : A -> Maybe B) (l : List A) : List B :=
 
 elet inferenceTest6 [A, B : *] (default : B) (f : A -> B) (x : Maybe A) :=
   recursionSum ?_ ?_ ?_ (λ a : A. f a) (λ _ : Unit. default) x.
+
+elet inferenceTest7 [A : *] (a : A) : Maybe A := inl ?_ ?Unit a.
