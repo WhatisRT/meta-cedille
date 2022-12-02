@@ -30,7 +30,9 @@
   "Start the REPL"
   (interactive)
   (let ((default-directory meta-cedille-directory))
-    (setq meta-cedille-process (make-comint "meta-cedille-repl" meta-cedille-command))))
+    (setq meta-cedille-process (make-comint "meta-cedille-repl" meta-cedille-command))
+    (if (not (get-buffer-window "*meta-cedille-repl*"))
+        (switch-to-buffer-other-window "*meta-cedille-repl*"))))
 
 (defun meta-cedille-send-string (s)
   "Send a string to the repl"
