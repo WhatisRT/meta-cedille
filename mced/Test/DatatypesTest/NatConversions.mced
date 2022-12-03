@@ -4,7 +4,7 @@ let Csucc := suc.
 
 module NatConversions.
 
-importModule Nat.
+importModule Nat'.
 
 Given CNat Czero Csucc.
 

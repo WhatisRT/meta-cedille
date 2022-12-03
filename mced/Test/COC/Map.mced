@@ -4,7 +4,7 @@
 
 module Map (V : *).
 
-importModule Maybe.
+importModule Maybe'.
 Given String stringEq ifthenelse.
 
 let Map := String -> Maybe V.

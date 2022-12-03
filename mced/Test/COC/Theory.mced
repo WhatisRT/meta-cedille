@@ -7,9 +7,9 @@ module Theory.
 -- Temporary workaround to make all the names that `data` needs available
 import Datatypes/ModuleCompatibility.
 
-importModule List.
-importModule Maybe.
-importModule Nat.
+importModule List'.
+importModule Maybe'.
+importModule Nat'.
 importModule Map.
 importModule NatConversions.
 

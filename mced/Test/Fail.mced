@@ -20,9 +20,3 @@ updateEval.
 
 fail-let test := pr1 ?Nat ?Nat 0.
 fail-let a := a.
-
-fail-elet Inference/Test/foldl [A, B : *] (f : B -> A -> B) : List A -> B -> B :=
-  recursionList ?_ ?_ (λ b : B. b) (λ a : A. λ as : List A. λ rec : B -> B. λ b : B. f (rec b) a).
-
-fail-elet Inference/Test/map [X, Y : *] (f : X -> Y) : List X -> List Y :=
-  recursionList ?_ ?_ [Y|] (λ x : X. λ _ : List X. λ rec : List Y. f x ∷ rec).

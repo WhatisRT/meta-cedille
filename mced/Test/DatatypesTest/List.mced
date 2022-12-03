@@ -1,12 +1,12 @@
-module List.
+module List'.
 
 -- Temporary workaround to make all the names that `data` needs available
 import Datatypes/ModuleCompatibility.
 
 Given Bool ifthenelse.
 
-importModule Maybe.
-importModule Nat.
+importModule Maybe'.
+importModule Nat'.
 
 data List (A : *) where
 | nil' : List A
