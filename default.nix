@@ -97,7 +97,7 @@ let fetchFromGitHub = nixpkgs.fetchFromGitHub;
         buildPhase = ''
           bench --output bench.html \
                 '${self.meta-cedille}/bin/meta-cedille --no-repl' \
-                '${self.meta-cedille}/bin/meta-cedille --no-repl --load Test'
+                '${self.meta-cedille}/bin/meta-cedille --no-repl --load Benchmark'
           '';
         installPhase = "mkdir $out && cp bench.html $out";
       };
