@@ -22,8 +22,8 @@ let adjustEmpty (s : String) : String := ifthenelse ?String (stringEq s "") "_" 
 -- show with the initial syntax
 let showInitTermWithContext (t : iTerm) : List String -> String :=
   t ?(List String -> String)
-    (λ v : init$var. λ con : List String. showVar con v)
-    (λ s : init$sort. λ _ : List String. showSort s)
+    (λ v : Var. λ con : List String. showVar con v)
+    (λ s : Sort. λ _ : List String. showSort s)
     (λ s : init$const. unreachableShowTerm0 "CONST")
     (unreachableShowTerm1 "PI") (unreachableShowTerm1 "PSI") (unreachableShowTerm2 "BETA")
     (unreachableShowTerm2 "DELTA") (unreachableShowTerm1 "SIGMA")
@@ -60,7 +60,7 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
     (unreachableShowTerm1 "Print")
     (unreachableShowTerm2 "WriteFile")
     (unreachableShowTerm0 "CommandLine")
-    (λ c : init$char. λ _ : List String. stringConcat [String|"'", stringCons c stringNil, "'"])
+    (λ c : Char. λ _ : List String. stringConcat [String|"'", stringCons c stringNil, "'"])
     (unreachableShowTerm2 "CHAREQ").
 
 let showInitTerm (t : iTerm) : String :=

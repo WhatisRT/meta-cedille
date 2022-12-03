@@ -356,12 +356,12 @@ b-let import (filename : String) : init$newStmt :=
 
 b-let stripPi : Term -> Maybe Term :=
   recursionTerm ?(Maybe Term)
-    (λ _ : init$var. nothing ?Term)
-    (λ _ : init$sort. nothing ?Term)
+    (λ _ : Var. nothing ?Term)
+    (λ _ : Sort. nothing ?Term)
     (λ b : Binder. λ _ : String. λ T, t : Term. λ _, _ : Maybe Term.
       b ?(Maybe Term) (nothing ?Term) (nothing ?Term) (just ?Term t) (nothing ?Term))
     (λ _ : Term. λ _ : List App. λ _ : Maybe Term. λ _ : List (Product Bool (Maybe Term)). nothing ?Term)
-    (λ _ : init$char. nothing ?Term)
+    (λ _ : Char. nothing ?Term)
     (nothing ?Term)
     (λ _ : Term. λ _ : Maybe Term. nothing ?Term).
 

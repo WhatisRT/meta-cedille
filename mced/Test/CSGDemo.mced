@@ -1,24 +1,24 @@
-b-let countOccurencesChar (c : init$char) (l : [List init$char]) : Nat :=
-  γ[length ?init$char γ[filter ?init$char [charEq c] l]].
+b-let countOccurencesChar (c : Char) (l : [List Char]) : Nat :=
+  γ[length ?Char γ[filter ?Char [charEq c] l]].
 
 b-let natEqTriple (l, m, n : Nat) : Bool := γ[and γ[natEq l m] γ[natEq m n]].
 
-b-let abcEqual (l : [List init$char]) : Bool :=
+b-let abcEqual (l : [List Char]) : Bool :=
   γ[natEqTriple
     γ[countOccurencesChar quote$a l] γ[countOccurencesChar quote$b l] γ[countOccurencesChar quote$c l]].
 
 let dummyName := γ[quote$stringToName quote$d "ummy"] : init$name.
 let triggerError := γ[quote$simpleLet dummyName [quote$var dummyName]].
 
-let csgdemo$char$a := quote$a : init$char.
-let csgdemo$char$b := quote$b : init$char.
-let csgdemo$char$c := quote$c : init$char.
+let csgdemo$char$a := quote$a : Char.
+let csgdemo$char$b := quote$b : Char.
+let csgdemo$char$c := quote$c : Char.
 
-let csgdemo$str := [List init$char].
-let csgdemo$str$_char__str_ := <cons init$char>.
-let csgdemo$str$ := <nil init$char>.
+let csgdemo$str := [List Char].
+let csgdemo$str$_char__str_ := <cons Char>.
+let csgdemo$str$ := <nil Char>.
 
-b-let csgdemoeval (l : [List init$char]) : ω Nat :=
+b-let csgdemoeval (l : [List Char]) : ω Nat :=
   γ[ifthenelse ?(ω Nat) [abcEqual l]
     ε γ[countOccurencesChar quote$a l]
     μ [eval triggerError] λ _ : Unit ε zero].

@@ -7,9 +7,9 @@
 
 module Term.
 
-Given init$var init$var$_string_ init$var$_index_ init$index init$sort init$char Char String iTerm.
-Given init$term$_var_ init$term$_sort_ init$string$nil init$sort$=ast= init$sort$=sq=.
-Given quote$sq quote$angle quote$square quote$lambda quote$Lambda quote$Pi quote$forall quote$kappa.
+Given Var init$var$_string_ init$var$_index_ init$index Sort Char String iTerm.
+Given init$term$_var_ init$term$_sort_ init$string$nil SortAst SortSq quote$sq.
+Given quote$angle quote$square quote$lambda quote$Lambda quote$Pi quote$forall quote$kappa.
 
 importModule Bool.
 importModule List.
@@ -22,70 +22,70 @@ elet piBinder     : Binder := Λ X : *. λ lambda, Lambda, pi, forall : X. pi.
 elet forallBinder : Binder := Λ X : *. λ lambda, Lambda, pi, forall : X. forall.
 
 elet Term : * := ∀ X : *.
-  (init$var -> X) -> (init$sort -> X) -> (Binder -> String -> X -> X -> X) ->
-  (X -> List (Bool × X) -> X) -> (init$char -> X) -> X -> (X -> X) -> X.
+  (Var -> X) -> (Sort -> X) -> (Binder -> String -> X -> X -> X) ->
+  (X -> List (Bool × X) -> X) -> (Char -> X) -> X -> (X -> X) -> X.
 
-elet varTerm (var : init$var) : Term := Λ X : *.
-  λ v : init$var -> X.
-  λ s : init$sort -> X.
+elet varTerm (var : Var) : Term := Λ X : *.
+  λ v : Var -> X.
+  λ s : Sort -> X.
   λ b : Binder -> String -> X -> X -> X.
   λ a : X -> List (Bool × X) -> X.
-  λ k : init$char -> X.
+  λ k : Char -> X.
   λ x : X.
   λ u : X -> X. v var.
 
-elet sortTerm (sort : init$sort) : Term := Λ X : *.
-  λ v : init$var -> X.
-  λ s : init$sort -> X.
+elet sortTerm (sort : Sort) : Term := Λ X : *.
+  λ v : Var -> X.
+  λ s : Sort -> X.
   λ b : Binder -> String -> X -> X -> X.
   λ a : X -> List (Bool × X) -> X.
-  λ k : init$char -> X.
+  λ k : Char -> X.
   λ x : X.
   λ u : X -> X. s sort.
 
 elet binderTerm (binder : Binder) (name : String) (T, t : Term) : Term := Λ X : *.
-  λ v : init$var -> X.
-  λ s : init$sort -> X.
+  λ v : Var -> X.
+  λ s : Sort -> X.
   λ b : Binder -> String -> X -> X -> X.
   λ a : X -> List (Bool × X) -> X.
-  λ k : init$char -> X.
+  λ k : Char -> X.
   λ x : X.
   λ u : X -> X. b binder name (T ?X v s b a k x u) (t ?X v s b a k x u).
 
 elet appLTerm (t : Term) (l : List (Bool × Term)) : Term := Λ X : *.
-  λ v : init$var -> X.
-  λ s : init$sort -> X.
+  λ v : Var -> X.
+  λ s : Sort -> X.
   λ b : Binder -> String -> X -> X -> X.
   λ a : X -> List (Bool × X) -> X.
-  λ k : init$char -> X.
+  λ k : Char -> X.
   λ x : X.
   λ u : X -> X. a (t ?X v s b a k x u)
                   (map ?_ ?_ (productMap2 ?Bool ?_ ?_ (λ t : Term. t ?X v s b a k x u)) l).
 
 elet charTerm (c : Char) : Term := Λ X : *.
-  λ v : init$var -> X.
-  λ s : init$sort -> X.
+  λ v : Var -> X.
+  λ s : Sort -> X.
   λ b : Binder -> String -> X -> X -> X.
   λ a : X -> List (Bool × X) -> X.
-  λ k : init$char -> X.
+  λ k : Char -> X.
   λ x : X.
   λ u : X -> X. k c.
 
 elet unknownTerm : Term := Λ X : *.
-  λ v : init$var -> X.
-  λ s : init$sort -> X.
+  λ v : Var -> X.
+  λ s : Sort -> X.
   λ b : Binder -> String -> X -> X -> X.
   λ a : X -> List (Bool × X) -> X.
-  λ k : init$char -> X.
+  λ k : Char -> X.
   λ x : X.
   λ u : X -> X. x.
 
 elet unquoteTerm (t : Term) : Term := Λ X : *.
-  λ v : init$var -> X.
-  λ s : init$sort -> X.
+  λ v : Var -> X.
+  λ s : Sort -> X.
   λ b : Binder -> String -> X -> X -> X.
   λ a : X -> List (Bool × X) -> X.
-  λ k : init$char -> X.
+  λ k : Char -> X.
   λ x : X.
   λ u : X -> X. u $ t ?X v s b a k x u.
 
@@ -107,13 +107,13 @@ elet foldWithApp : List App' -> iTerm -> iTerm := foldl ?_ ?_ appToQuotedApp.
 
 elet TermToInitTerm (t : Term) : iTerm :=
   t ?iTerm
-    (λ v : init$var. init$term$_var_ v)
-    (λ s : init$sort. init$term$_sort_ s)
+    (λ v : Var. init$term$_var_ v)
+    (λ s : Sort. init$term$_sort_ s)
     (λ b : Binder. λ n : String. λ T, t : iTerm.
       b ?(String -> iTerm -> iTerm -> iTerm)
         quote$lambda quote$Lambda quote$Pi quote$forall n T t)
     (λ t : iTerm. λ l : List App'. foldWithApp (reverse ?App' l) t)
-    (λ c : init$char. quote$kappa c)
+    (λ c : Char. quote$kappa c)
     quote$sq
     (λ u : iTerm. quote$sq).
 
@@ -264,8 +264,8 @@ elet init$multiTerm'$_infix_^space^_appTerm_^space'^_multiTerm'_ :=
 elet init$multiTerm$_appTerm_^space'^_multiTerm'_ :=
   λ t : Term. λ trans : MultiTerm -> MultiTerm. multiTermToTerm $ trans $ singleMultiTerm t.
 
-elet init$singleTerm$=ast= := sortTerm init$sort$=ast=.
-elet init$singleTerm$=sq= := sortTerm init$sort$=sq=.
+elet init$singleTerm$=ast= := sortTerm SortAst.
+elet init$singleTerm$=sq= := sortTerm SortSq.
 elet init$singleTerm$=underscore= := unknownTerm.
 
 elet init$singleTerm$_string_ := λ n : String. varTerm $ init$var$_string_ n.

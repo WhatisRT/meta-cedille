@@ -2,12 +2,12 @@
 -- Helper functions for strings
 --------------------------------------------------------------------------------
 
-b-let stringToList (s : String) : List init$char :=
-  s ?(List init$char) (λ c : init$char. λ rec : List init$char. cons ?init$char c rec) (nil ?init$char).
+b-let stringToList (s : String) : List Char :=
+  s ?(List Char) (λ c : Char. λ rec : List Char. cons ?Char c rec) (nil ?Char).
 
-b-let stringFromList (s : List init$char) : String :=
-  recursionList ?init$char ?String init$string$nil
-    (λ c : init$char. λ cs : List init$char. λ rec : String. init$string$cons c rec)
+b-let stringFromList (s : List Char) : String :=
+  recursionList ?Char ?String init$string$nil
+    (λ c : Char. λ cs : List Char. λ rec : String. init$string$cons c rec)
     s.
 
 b-let stringApp (s, s' : String) : String :=
@@ -22,4 +22,4 @@ b-let stringConcat (l : List String) : String :=
 -- Equality
 
 b-let stringEq (s, s' : String) : Bool :=
-  listEq ?init$char charEq (stringToList s) (stringToList s').
+  listEq ?Char charEq (stringToList s) (stringToList s').

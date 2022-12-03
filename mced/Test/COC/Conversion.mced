@@ -5,7 +5,7 @@
 module Conversion.
 
 Given MCTerm MCSVar MCAst MCSq MCLambda MCPi MCApp natToVar indexToNat init$index.
-Given init$var init$sort Binder String stringCons stringNil stringEq Char.
+Given MCVar MCSort Binder String stringCons stringNil stringEq Char.
 Given List cons nil reverse Product Bool true false ifthenelse pr1 pr2.
 Given TripleProduct mkTripleProduct pr31 pr32 pr33.
 Given LetInfo letInfoName letInfoTerm letInfoType.
@@ -25,8 +25,8 @@ let convertName (l : List String) (s : String) : Name :=
 
 let toCOCTerm (t : MCTerm) : Maybe Term :=
   t ?(List String -> Maybe Term)
-    (λ v : init$var. λ l : List String. just ?Term (Var (v ?Name (convertName l) (λ i : init$index. Local (fromChurchNat (indexToNat i))))))
-    (λ s : init$sort. λ _ : List String. just ?Term (SortT (s ?Sort Ast Sq)))
+    (λ v : MCVar. λ l : List String. just ?Term (Var (v ?Name (convertName l) (λ i : init$index. Local (fromChurchNat (indexToNat i))))))
+    (λ s : MCSort. λ _ : List String. just ?Term (SortT (s ?Sort Ast Sq)))
     (λ b : Binder. λ n : String. λ t, t' : List String -> Maybe Term. λ l : List String.
       maybe ?Term ?(Maybe Term) (nothing ?Term)
         (λ x : Term. maybe ?Term ?(Maybe Term) (nothing ?Term)

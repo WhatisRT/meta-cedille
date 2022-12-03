@@ -13,8 +13,8 @@ let ConstrDataTerm := pr2 ?Telescope ?Term.
 
 let toConstrData (term : Term) : ConstrData :=
   recursionTerm ?ConstrData
-    (λ v : init$var. noArgConstrData $ varTerm v)
-    (λ s : init$sort. noArgConstrData $ sortTerm s)
+    (λ v : Var. noArgConstrData $ varTerm v)
+    (λ s : Sort. noArgConstrData $ sortTerm s)
     (λ b : Binder. λ n : String. λ T, t : Term. λ recT, rect : ConstrData.
       b ?ConstrData
         (noArgConstrData $ binderTerm b n T t) (noArgConstrData $ binderTerm b n T t)
@@ -29,8 +29,8 @@ let toConstrData (term : Term) : ConstrData :=
 let constrArgToFunctor (t : Term) (match : List String) : Error ConstrFunctor :=
   ifthenelse ?(Error ConstrFunctor) (matchTermWithNames t match) (pureError ?ConstrFunctor idConstrFunctor) $
     recursionTerm ?(Error ConstrFunctor)
-      (λ v : init$var. pureError ?ConstrFunctor $ constConstrFunctor t)
-      (λ s : init$sort. error ?ConstrFunctor "Cannot turn sort into functor")
+      (λ v : Var. pureError ?ConstrFunctor $ constConstrFunctor t)
+      (λ s : Sort. error ?ConstrFunctor "Cannot turn sort into functor")
       (λ b : Binder. λ n : String. λ T : Term. λ _ : Term. λ _ : Error ConstrFunctor. λ rect : Error ConstrFunctor.
         b ?(Error ConstrFunctor)
           (error ?ConstrFunctor "Can only have pi binder in constructors")

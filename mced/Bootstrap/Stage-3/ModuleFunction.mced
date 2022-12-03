@@ -1,11 +1,11 @@
-b-let renameVar (f : String -> String) (v : init$var) : init$var :=
-  v ?init$var
+b-let renameVar (f : String -> String) (v : Var) : Var :=
+  v ?Var
     (λ s : String. init$var$_string_ (f s))
     init$var$_index_.
 
 b-let renameNamesInTerm (f : String -> String) (t : Term) : Term :=
   t ?Term
-    (λ v : init$var. varTerm (renameVar f v))
+    (λ v : Var. varTerm (renameVar f v))
     sortTerm
     (λ b : Binder. λ n : String. λ T : Term. λ t : Term. binderTerm b (f n) T t)
     (λ t : Term. λ l : List App. appLTerm t l)

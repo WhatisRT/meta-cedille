@@ -8,11 +8,11 @@ let stringCons := init$string$cons.
 b-let quote$stringNil : Term := sVarTerm (stringCons quote$s (stringCons quote$t (stringCons quote$r (stringCons quote$i (stringCons quote$n (stringCons quote$g (stringCons quote$N (stringCons quote$i (stringCons quote$l stringNil))))))))).
 b-let quote$stringCons : Term := sVarTerm (stringCons quote$s (stringCons quote$t (stringCons quote$r (stringCons quote$i (stringCons quote$n (stringCons quote$g (stringCons quote$C (stringCons quote$o (stringCons quote$n (stringCons quote$s stringNil)))))))))).
 
-b-let quoteChar (c : init$char) : Term := charTerm c.
+b-let quoteChar (c : Char) : Term := charTerm c.
 
 b-let quoteString (s : String) : Term :=
   s ?Term
-    (λ c : init$char. λ rec : Term. appSingle (appSingle quote$stringCons (quoteChar c)) rec)
+    (λ c : Char. λ rec : Term. appSingle (appSingle quote$stringCons (quoteChar c)) rec)
     quote$stringNil.
 
 -- Syntax
@@ -20,7 +20,7 @@ b-let quoteString (s : String) : Term :=
 b-let init$stringchar$!=doublequote=! (c : Char) : Char := c.
 
 let init$newstring$ := init$string$nil : String.
-let init$newstring$_stringchar__newstring_ := init$string$cons : Π _ : init$char Π _ : String String.
+let init$newstring$_stringchar__newstring_ := init$string$cons : Π _ : Char Π _ : String String.
 
 --let init$singleTerm$=quote=_stringchar_=quote= := quoteChar : Π _ : Char Term.
 let init$singleTerm$=doublequote=_newstring_=doublequote= := quoteString : Π _ : String Term.

@@ -23,9 +23,9 @@ b-let showIndex (i : init$index) : String :=
     (λ i' : init$index'. stringApp "8" (showIndex' i'))
     (λ i' : init$index'. stringApp "9" (showIndex' i')).
 
-b-let showVar (con : List String) (v : init$var) : String :=
+b-let showVar (con : List String) (v : Var) : String :=
   v ?String (λ s : String. s) (λ i : init$index. lookupDefault ?String (indexToNat i) (showIndex i) con).
-b-let showSort (s : init$sort) : String := s ?String "*" "□".
+b-let showSort (s : Sort) : String := s ?String "*" "□".
 b-let showBinder (b : Binder) : String := b ?String "λ" "Λ" "Π" "∀".
 
 b-let isArrow (b : Binder) : Bool := b ?Bool false false true true.
@@ -33,8 +33,8 @@ b-let showBinderArrow (b : Binder) : String := b ?String "λ is not an arrow!" "
 
 b-let needsParens (t : Term) : Bool :=
   t ?Bool
-    (λ _ : init$var. false)
-    (λ _ : init$sort. false)
+    (λ _ : Var. false)
+    (λ _ : Sort. false)
     (λ _ : Binder. λ _ : String. λ _, _ : Bool. true)
     (λ _ : Bool. λ _ : List (Product Bool Bool). true)
     (λ _ : Char. false)
@@ -44,8 +44,8 @@ b-let needsParens (t : Term) : Bool :=
 b-let wrapWithParens (s : String) : String := stringConcat [String|"(", s, ")"].
 
 b-let showTermWithContext (t : Term) : List String -> String := recursionTerm ?(List String -> String)
-  (λ v : init$var. λ con : List String. showVar con v)
-  (λ s : init$sort. λ _ : List String. showSort s)
+  (λ v : Var. λ con : List String. showVar con v)
+  (λ s : Sort. λ _ : List String. showSort s)
   (λ b : Binder. λ n : String. λ _, _ : Term. λ T, t : List String -> String. λ con : List String.
     ifthenelse ?String (and (stringEq n "_") (isArrow b))
       (stringConcat [String| T con, " ", showBinderArrow b, " ", t (cons ?String n con)])

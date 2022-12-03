@@ -4,14 +4,14 @@
 -- type appears in its own definition.
 --------------------------------------------------------------------------------
 
-let varToName (v : init$var) : Maybe String :=
+let varToName (v : Var) : Maybe String :=
   v ?(Maybe String) (just ?String) (λ _ : init$index. nothing ?String).
 
 -- if t is a name, returns that name
 let termToName (t : Term) : Maybe String :=
   t ?(Maybe String)
     varToName
-    (λ s : init$sort. nothing ?String)
+    (λ s : Sort. nothing ?String)
     (λ b : Binder. λ n : String. λ _ : Maybe String. λ _ : Maybe String. nothing ?String)
     (λ t : Maybe String. λ l : List (Bool × Maybe String). nothing ?String)
     (λ c : Char. nothing ?String)
@@ -21,8 +21,8 @@ let termToName (t : Term) : Maybe String :=
 -- if t is of the form n n1 ... nk, returns that list
 let termToNameList (t : Term) : Maybe (List String) :=
   recursionTerm ?(Maybe $ List String)
-    (λ v : init$var. mapMaybe ?String ?(List String) (pureList ?String) $ varToName v)
-    (λ s : init$sort. nothing ?(List String))
+    (λ v : Var. mapMaybe ?String ?(List String) (pureList ?String) $ varToName v)
+    (λ s : Sort. nothing ?(List String))
     (λ b : Binder. λ n : String. λ _ : Term. λ _ : Term. λ _ : Maybe (List String). λ _ : Maybe (List String).
       nothing ?(List String))
     (λ _ : Term. λ l : List App. λ ns : Maybe (List String). λ _ : List (Bool × Maybe (List String)).

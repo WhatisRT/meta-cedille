@@ -1,4 +1,9 @@
 let iTerm := init$term.
+let Var := init$var.
+let Sort := init$sort.
+
+let SortAst := init$sort$=ast=.
+let SortSq  := init$sort$=sq=.
 
 let M := λ X : * ω X : Π _ : * *.
 

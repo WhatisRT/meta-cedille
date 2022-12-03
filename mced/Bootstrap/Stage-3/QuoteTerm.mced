@@ -35,15 +35,15 @@ b-let quoteIndex (i : init$index) : Term :=
 
 b-let appDouble (t, t', t'' : Term) := appLTerm t [App| mkAppU t', mkAppU t''].
 
-b-let quoteAst : Term := sortTerm init$sort$=ast=.
-b-let quoteSq : Term := sortTerm init$sort$=sq=.
+b-let quoteAst : Term := sortTerm SortAst.
+b-let quoteSq : Term := sortTerm SortSq.
 
-b-let quoteVar (v : init$var) : Term :=
+b-let quoteVar (v : Var) : Term :=
   v ?Term
     (λ n : String. appSingle (sVarTerm "sVarTerm") (quoteString n))
     (λ i : init$index. appSingle (sVarTerm "iVarTerm") (quoteIndex i)).
 
-b-let quoteCharTerm (c : init$char) : Term :=
+b-let quoteCharTerm (c : Char) : Term :=
   appSingle
     (sVarTerm "charTerm")
     (quoteChar c).
@@ -58,8 +58,8 @@ b-let quoteAppLeft (a : App) : Term :=
 
 b-let quoteTerm (t : Term) : Term :=
   recursionTerm ?Term
-    (λ v : init$var. quoteVar v)
-    (λ s : init$sort. s ?Term (sVarTerm "quoteAst") (sVarTerm "quoteSq"))
+    (λ v : Var. quoteVar v)
+    (λ s : Sort. s ?Term (sVarTerm "quoteAst") (sVarTerm "quoteSq"))
     (λ b : Binder. λ n : String. λ T : Term. λ t : Term. λ recT : Term. λ rect : Term.
       appLTerm (sVarTerm "binderTerm") (toAppU [Term| quoteBinder b, quoteString n, recT, rect]))
     (λ t : Term. λ l : List App. λ rect : Term. λ recl : List App.

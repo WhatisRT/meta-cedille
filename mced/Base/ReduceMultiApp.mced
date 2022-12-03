@@ -10,8 +10,8 @@ let reduceMultiApp : Term -> Term :=
         binderTerm b n (reduceMultiApp T) (reduceMultiApp t))
       (λ t1 : Term. λ app1 : List App. (λ reduceAppL : List App -> List App.
         (λ t : Term. matchTerm ?Term
-          (λ _ : init$var. t)
-          (λ _ : init$sort. t)
+          (λ _ : Var. t)
+          (λ _ : Sort. t)
           (λ _ : Binder. λ _ : String. λ _, _ : Term. t)
           (λ t2 : Term. λ app2 : List App.
             reduceMultiApp $ appLTerm t2 (reduceAppL $ app ?App app2 app1))

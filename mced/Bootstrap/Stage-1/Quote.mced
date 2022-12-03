@@ -65,7 +65,7 @@ let quote$ZetaCatchErr := λ t : iTerm λ t' : iTerm [[init$term$=zeta=CatchErr^
 let quote$constChar := init$const$Char.
 let quote$Kappa := λ c : init$const init$term$=Kappa=_const_.
 
-let quote$kappa := λ c : init$char [init$term$=kappa=_char_ c].
+let quote$kappa := λ c : Char [init$term$=kappa=_char_ c].
 
 let quote$A := init$nameInitChar$A.
 let quote$B := init$nameInitChar$B.
