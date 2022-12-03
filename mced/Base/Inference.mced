@@ -213,9 +213,10 @@ let solveAppWithErr (f : Term) (app : List App) (s : List InferenceInfo) : Eval 
   (solveApp app $ allEqns s).
 
 let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term :=
-  bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ _ : String.
+  bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ e : String.
     throwEval ?Term $ stringConcat
-      [String|"Elaboration failure: Failed to infer the type of ", showTerm f, "!", newline]))
+      [String|"Elaboration failure: Failed to infer the type of ", showTerm f, "!", newline,
+              "Reason: ", e]))
     (λ T : Term.
       bindEval ?(List (App × Maybe Term)) ?Term (inferAppTypes app) (λ app' : List (App × Maybe Term).
         seqEval ?Unit ?Term
