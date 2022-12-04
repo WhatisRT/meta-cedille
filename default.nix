@@ -83,11 +83,11 @@ in with pinnedPkgs; rec {
     buildPhase = ''
           ${time}/bin/time -o test-time-1 ${meta-cedille}/bin/meta-cedille --no-repl &
           ${time}/bin/time -o test-time-2 ${meta-cedille}/bin/meta-cedille --no-repl --load Test &
-          ${time}/bin/time -o test-time-3 ${meta-cedille}/bin/meta-cedille --no-repl --load Test/Fail &
           wait
           '';
     installPhase = "mkdir $out && cp test-time-* $out";
   };
+  #        ${time}/bin/time -o test-time-3 ${meta-cedille}/bin/meta-cedille --no-repl --load Test/Fail &
 
   benchmarks = stdenv.mkDerivation {
     name = "meta-cedille-benchmarks";
