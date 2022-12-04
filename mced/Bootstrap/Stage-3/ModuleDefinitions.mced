@@ -8,7 +8,7 @@ b-let modulePrefix := "modPrefix|".
 -- ModuleName, each entry in the list represents a level of nesting
 b-let ModuleName := List String.
 b-let moduleNameEq (n, n' : ModuleName) : Bool := listEq ?String stringEq n n'.
-b-let ModuleNameToName (n : ModuleName) : String := stringConcat n.
+b-let ModuleNameToName (n : ModuleName) : String := stringConcat (intersperse ?String ":" n).
 b-let quoteModuleName (n : ModuleName) : Term := quoteTermList θ{String} (map ?String ?Term quoteString n).
 
 -- ModuleInfo contains all the global data about the module

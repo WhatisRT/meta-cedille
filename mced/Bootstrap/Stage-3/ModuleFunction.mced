@@ -35,7 +35,7 @@ b-let getNewModuleVersion (n : ModuleName) : Eval (Maybe Nat) :=
 b-let initModule (n : ModuleName) (t : Telescope) : init$newStmt :=
   bindEval ?(Maybe Nat) ?Unit (getNewModuleVersion n)
     (maybe ?Nat ?init$newStmt
-      (echoStmt (stringConcat [String| "The module ", ModuleNameToName n , " is already loaded!"]))
+      (throwEval ?Unit (stringConcat [String| "The module ", ModuleNameToName n , " is already loaded!"]))
       (λ v : Nat.
         (λ m : Module.
           seqNewStmt
@@ -99,7 +99,7 @@ b-let moduleElab : ElabLet :=
 b-let importExternalStmt (name : String) : init$newStmt :=
   bindEval ?EvalState ?Unit getEval (λ s : EvalState.
     maybe ?Module ?init$newStmt
-      (echoStmt "External imports are only possible in modules!")
+      (throwEval ?Unit "External imports are only possible in modules!")
       (λ m : Module. stmtToNewStmt (convertLetInfo (importExternalLetInfo name m)))
       (ModuleStateModule (getModuleState s))).
 
@@ -125,13 +125,14 @@ b-let finishModuleDef (m : Module) (d : ModuleDict) : init$newStmt :=
       (sVarTerm (mkTempModuleName m))
       (just ?Term θ{Module})),
     updateModuleDict m d,
-    setModuleState (mkModuleState (nothing ?Module) (insertModuleDict m d))].
+    setModuleState (mkModuleState (nothing ?Module) (insertModuleDict m d)),
+    debugPrint LogTypeDebug zero (stringConcat [String|"Loaded module: ", ModuleNameToName (ModuleModuleName m)])].
 
 b-let endModule : init$newStmt :=
   bindEval ?ModuleState ?Unit getModuleState'
     (λ s : ModuleState.
       maybe ?Module ?init$newStmt
-        (echoStmt "Currently not in a module!")
+        (throwEval ?Unit "Currently not in a module!")
         (λ m : Module. finishModuleDef m (ModuleStateDict s))
         (ModuleStateModule s)).
 
@@ -153,13 +154,13 @@ b-let importModuleOrStmt (n : ModuleName) (l : List App) (stmt : init$newStmt) :
       (λ m : Product Bool Module.
         ifthenelse ?init$newStmt (pr1 ?Bool ?Module m)
           (importModule (pr2 ?Bool ?Module m) l)
-          (echoStmt "Module currently not loaded!"))).
+          (throwEval ?Unit "Module currently not loaded!"))).
 
 b-let loadModule (n : ModuleName) (prefix : String) : init$newStmt :=
   importFile (moduleNameToPath n).
 
 b-let importModule' (n : ModuleName) (l : List App) : init$newStmt :=
-  importModuleOrStmt n l (echoStmt "Could not find module!").
+  importModuleOrStmt n l (throwEval ?Unit "Could not find module!").
 
 b-let init$moduleName'$=colon=_string__moduleName'_ (s : String) (n : ModuleName) := cons ?String s n.
 b-let init$moduleName'$ := nil ?String.

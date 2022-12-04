@@ -24,4 +24,4 @@ let reduceMultiApp : Term -> Term :=
       unknownTerm
       (λ t : Term. unquoteTerm (reduceMultiApp t)).
 
--- assertEq θ{a b c (d e f g h)} = reduceMultiApp θ{(a b c) ((d e f) g h)} : Term.
+assertEq θ{a b c (d e f g h)} = reduceMultiApp θ{(a b c) ((d e f) g h)} : Term.

@@ -17,21 +17,27 @@
 --------------------------------------------------------------------------------
 
 -- Flags that can be used to control the evaluator
-b-let EvalOpts : * := Product Bool String.
-b-let defaultFlags : EvalOpts := prodPair ?Bool ?String false "".
+b-let EvalOpts : * := TripleProduct Bool Bool String.
+b-let mkEvalOpts : Bool -> Bool -> String -> EvalOpts := mkTripleProduct ?Bool ?Bool ?String.
+b-let defaultFlags : EvalOpts := mkEvalOpts false false "".
 b-let quoteEvalOpts : EvalOpts -> Term :=
-  recursionProduct ?Bool ?String ?Term (λ annReq : Bool. λ workingDir : String.
-    θ{prodPair ?Bool ?String γ{quoteBool annReq} γ{quoteString workingDir}}).
+  recursionTripleProduct ?Bool ?Bool ?String ?Term (λ annReq, printInfo : Bool. λ workingDir : String.
+    θ{mkEvalOpts γ{quoteBool annReq} γ{quoteBool printInfo} γ{quoteString workingDir}}).
 
 -- Controls whether `let` has to have a type annotation at the end to be accepted
-b-let getAnnReq            : EvalOpts -> Bool := pr1 ?Bool ?String.
+b-let getAnnReq            : EvalOpts -> Bool := pr31 ?Bool ?Bool ?String.
 b-let setAnnReq (b : Bool) : EvalOpts -> EvalOpts :=
-  productMap1 ?Bool ?String ?Bool (λ _ : Bool. b).
+  productMap1 ?Bool ?(Product Bool String) ?Bool (λ _ : Bool. b).
+
+-- Controls whether to show `Info` messages
+b-let getPrintInfo            : EvalOpts -> Bool := pr32 ?Bool ?Bool ?String.
+b-let setPrintInfo (b : Bool) : EvalOpts -> EvalOpts :=
+  productMap2 ?Bool ?(Product Bool String) ?(Product Bool String) (productMap1 ?Bool ?String ?Bool (λ _ : Bool. b)).
 
 -- Working directory for imports
-b-let getWorkingDir                : EvalOpts -> String := pr2 ?Bool ?String.
+b-let getWorkingDir                : EvalOpts -> String := pr33 ?Bool ?Bool ?String.
 b-let setWorkingDir (dir : String) : EvalOpts -> EvalOpts :=
-  productMap2 ?Bool ?String ?String (λ _ : String. dir).
+  productMap2 ?Bool ?(Product Bool String) ?(Product Bool String) (productMap2 ?Bool ?String ?String (λ _ : String. dir)).
 
 -- ModuleState contains a module if we are in the process of defining one, as
 -- well as the module dictionary. Quoting ModuleState requires the Module and
@@ -244,6 +250,8 @@ b-let commandLine : Eval (List String) :=
 b-let printLineEval (s : String) : Eval Unit :=
   printEval (stringApp s newline).
 
+b-let printConcatEval (s : List String) : Eval Unit := printEval (stringConcat s).
+
 -- NOTE: this doesn't currently return the actual definition, just something equivalent
 b-let getDef (n : String) : Eval Term := headNormalize (sVarTerm n).
 
@@ -269,23 +277,9 @@ b-let updateMEnv : init$newStmt :=
   bindEval ?EvalState ?Unit getEval (λ s : EvalState.
     setMEnv (appSingle θ{evalNewStmt} (quoteEvalState s)) "init" "newStmt").
 
-b-let echoStmt (s : String) : init$newStmt :=
-  mapEval ?String ?Unit (λ _ : String. tt) (shellCmd "echo" [String | s]).
-
-b-let echoStmtL (l : List String) : init$newStmt := echoStmt (stringConcat l).
-
-b-let echoStmtE (s : Eval String) : init$newStmt :=
-  bindEval ?String ?Unit s echoStmt.
-
 b-let readFile (filename : String) : Eval String := shellCmd "cat" [String| filename].
 
 b-let getPWD : Eval String := shellCmd "pwd" [String|].
-
-b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
-  bindEval ?EvalOpts ?Unit getEvalOpts' (λ f : EvalOpts.
-    ifthenelse ?init$newStmt (or (not (getAnnReq f)) (letInfoHasAnn i))
-      (stmtToNewStmt (convertLetInfo i))
-      (echoStmt "The provided command has no type annotation!")).
 
 b-let catchEval [T : *] (x : Eval T) (f : String -> Eval T) : Eval T :=
   λ e : EvalEnv. λ s : EvalState.
@@ -298,6 +292,12 @@ b-let showTermE (t : Term) : Eval String :=
   mapEval ?Context ?String
     (λ ctx : Context. showTermWithContext t (reverse ?String (map ?PreParam ?String (pr1 ?String ?Term) ctx)))
     askContext.
+
+b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
+  bindEval ?EvalOpts ?Unit getEvalOpts' (λ f : EvalOpts.
+    ifthenelse ?init$newStmt (or (not (getAnnReq f)) (letInfoHasAnn i))
+      (stmtToNewStmt (convertLetInfo i))
+      (throwEval ?Unit "The provided command has no type annotation!")).
 
 --------------------------------------------------------------------------------
 -- Elaborate let

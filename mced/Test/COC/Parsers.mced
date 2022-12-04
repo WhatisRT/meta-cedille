@@ -41,7 +41,7 @@ let init$COCStmt$let^space^_betterLet_ (i : LetInfo) : init$newStmt :=
   bindEval ?Env ?Unit getEnv
     (λ e : Env.
       ifthenelse ?init$newStmt (isDefined e (letInfoName i))
-        (echoStmt "Name already defined!")
+        (throwEval ?Unit "Name already defined!")
         (ErrorFold Term init$newStmt
           (λ T : Term.
             bindEval ?Nat ?Unit getEnvVersion
@@ -53,8 +53,8 @@ let init$COCStmt$let^space^_betterLet_ (i : LetInfo) : init$newStmt :=
                     (just ?Term θ{Env})))
                   (seqNewStmt
                     (modifyOtherState suc)
-                    (echoStmt (stringConcat [String |"Defined: ", letInfoName i, " : ", showTerm T])))))
-          (λ s : String. echoStmt s)
+                    (debugPrint LogTypeInfo 100 (stringConcat [String |"Defined: ", letInfoName i, " : ", showTerm T])))))
+          (λ s : String. throwEval ?Unit s)
           (convertAndCheckLetInfo e i))).
 
 let init$newStmt'$c=minus=_COCStmt_ (s : init$newStmt) := s.

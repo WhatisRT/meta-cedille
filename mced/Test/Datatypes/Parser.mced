@@ -18,7 +18,7 @@ let toRecordDecl (d : DatatypeDecl) : DatatypeDecl :=
 let DatatypeDeclToStmt (d : DatatypeDecl) (m : String) : init$newStmt :=
   catchError ?DatatypeData ?init$newStmt
     (recursionTripleProduct ?String ?Telescope ?Entries ?(Error DatatypeData) mkDatatypeData d)
-    (λ e : String. echoStmt $ stringApp m e)
+    (λ e : String. throwEval ?Unit $ stringApp m e)
     datatypeToLet.
 
 let init$entry$_string_^space^=colon=^space^_multiTerm_

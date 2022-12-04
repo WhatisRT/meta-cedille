@@ -10,26 +10,26 @@ b-let letInfoTermToQuoted (i : LetInfo) : LetInfo :=
 b-let addQuotedLetInfo : ElabLet :=
   liftElabLet (λ i : LetInfo. voidEval ?Unit (letInfoToNewStmt (letInfoTermToQuoted i))).
 
-b-let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn, moduleElab].
+b-let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn, moduleElab, debugPrintLetInfo].
 
 b-let runMetaCommand (t : Term) : init$newStmt := joinEval ?Unit (checkTerm init$newStmt t).
 
-b-let runEcho (t : Term) : init$newStmt := runMetaCommand θ{echoStmt γ{t}}.
+b-let runEcho (t : Term) : init$newStmt := runMetaCommand θ{printLineEval γ{t}}.
 
 b-let reloadMEnv : init$newStmt := modifyEval (λ e : EvalState. e).
 
 b-let showTypeStmt (tel : Telescope) (t : Term) : init$newStmt :=
   inContext ?Unit (map ?Param ?PreParam (pr2 ?Bool ?PreParam) tel)
     (bindEval ?String ?Unit (bindEval ?Term ?String (inferType t) showTermE) (λ x : String.
-      echoStmtL [String|showTerm t, " : ", x])).
+      printConcatEval [String|showTerm t, " : ", x])).
 
 b-let normalizeStmt (t : Term) : Eval Unit :=
   bindEval ?Term ?Unit (normalize t) (λ t' : Term.
-    echoStmtL [String|showTerm t, " normalizes to: ", showTerm t']).
+    printConcatEval [String|showTerm t, " normalizes to: ", showTerm t']).
 
 b-let hnfStmt (t : Term) : Eval Unit :=
   bindEval ?Term ?Unit (headNormalize t) (λ t' : Term.
-    echoStmtL [String|showTerm t, " head-normalizes to: ", showTerm t']).
+    printConcatEval [String|showTerm t, " head-normalizes to: ", showTerm t']).
 
 -- Syntax
 
@@ -48,6 +48,8 @@ b-let modifyAndUpdateEvalOpts (f : EvalOpts -> EvalOpts) : init$newStmt :=
 
 b-let init$setStmt$RequireTypeAnnotations^space^_flag_ (b : Bool) :=
   modifyAndUpdateEvalOpts (setAnnReq b).
+b-let init$setStmt$PrintInfo^space^_flag_ (b : Bool) :=
+  modifyAndUpdateEvalOpts (setPrintInfo b).
 b-let init$setStmt$PWD^space^_term_ (dirT : Term) :=
   bindEval ?String ?Unit (checkTerm String dirT)
     (λ dir : String. modifyAndUpdateEvalOpts (setWorkingDir dir)).
@@ -79,5 +81,5 @@ seteval [evalNewStmt emptyEvalState] init newStmt.
 runMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDict) θ{emptyModuleDict} (just ?Term θ{ModuleDict}))).
 
 -- Test parse:
---runMeta bindEval ?Term ?Unit (inferType' θ{evalNewStmt}) (λ x : Term. echoStmt (showTerm x)).
+--runMeta bindEval ?Term ?Unit (inferType' θ{evalNewStmt}) (λ x : Term. printLineEval (showTerm x)).
 --showType filter.

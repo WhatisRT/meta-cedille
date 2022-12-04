@@ -205,17 +205,13 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     Γ ← getContext
     u ← unquoteFromTerm t
     T ← synthType Γ u
-    return (strResult
-      (show u + " : " + show T + " normalizes to: " +
-      (show $ normalize Γ u)) , quoteToAnnTerm (normalize Γ u))
+    return (strResult "" , quoteToAnnTerm (normalize Γ u))
 
   executePrimitive HeadNormalize t = do
     Γ ← getContext
     u ← unquoteFromTerm t
     T ← synthType Γ u
-    return (strResult
-      (show t + " : " + show T + " head-normalizes to: " +
-      (show $ hnfNorm Γ u)) , (quoteToAnnTerm $ hnfNorm Γ u))
+    return (strResult "" , (quoteToAnnTerm $ hnfNorm Γ u))
 
   executePrimitive InferType t = do
     Γ ← getContext
@@ -254,7 +250,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
       (just T) → checkType t T >> return T
       nothing  → inferType t
     res ← addDef n (record { def = just t ; type = T; extra = nothing })
-    return (strResult res , quoteToAnnTerm tt)
+    return (strResult "" , quoteToAnnTerm tt)
 
   executeBootstrapStmt (SetEval t n start) = do
     Γ ← getContext
@@ -269,7 +265,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
         t' ∷ _ ← return $ boolFilter (λ t → isLocallyClosed (Erase t) Γ) (t ∷ hnfNorm Γ t ∷ [])
           where _ → throwError "The evaluator needs to normalize to a term without local variables!"
         setMeta record { grammar = y ; namespace = n ; evaluator = t' ; evaluatorArgType = u }
-        return (strResult "Successfully set the evaluator" , quoteToAnnTerm tt)
+        return (strResult "" , quoteToAnnTerm tt)
       _       → throwError "The evaluator needs to return a M type"
 
   executeBootstrapStmt Empty = return (strResult "" , quoteToAnnTerm tt)

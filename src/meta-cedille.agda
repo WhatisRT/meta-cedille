@@ -42,7 +42,7 @@ eval Γ input flags = let open EvalFlags flags in do
   (s , (inj₂ (out , _))) ← execute (parseAndExecute input) Γ
     where (_ , (inj₁ err)) → putStrErr err >> return (Γ , false)
   if printAnything ∧ printInfo
-    then putStr $ unlines out
+    then putStr $ concat out
     else return tt
   return (contextFromState s , true)
 

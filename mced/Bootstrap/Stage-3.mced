@@ -14,6 +14,7 @@ import Bootstrap/Stage-3/ConversionHelpers.
 
 import Bootstrap/Stage-3/ModuleDefinitions.
 import Bootstrap/Stage-3/Eval.
+import Bootstrap/Stage-3/Output.
 import Bootstrap/Stage-3/ModuleFunction.
 import Bootstrap/Stage-3/Syntax.
 

@@ -243,7 +243,7 @@ let elabLetInfo (doDebugPrinting : Bool) (i : LetInfo) : Eval LetInfo :=
 -- let that uses this elaborator
 -- this will be added to the regular let, once it works a little better
 let init$newStmt'$elet^space^_betterLet_ (i : LetInfo) : init$newStmt :=
-  runEvalLets [ElabLet| checkTypeAnn, moduleElab, elabLetInfo false] i.
+  runEvalLets [ElabLet| checkTypeAnn, moduleElab, elabLetInfo false, debugPrintLetInfo] i.
 
 updateEval.
 
@@ -259,7 +259,7 @@ elet inferenceTest1'' := λ x : Nat × Term. (pr1 ?_ ?_) x.
 
 elet inferenceTest2 (t : Term) : init$newStmt :=
   bindEval ?_ ?Unit (elabLocalInference false t) (λ t' : Term.
-    seqNewStmt (echoStmt $ showTerm t') emptyStmt).
+    seqNewStmt (printEval $ showTerm t') emptyStmt).
 
 elet inferenceTest3 (i : LetInfo) : init$newStmt :=
   elabLocalInference false (letInfoTerm i) >>= λ t : Term. pureEval ?_ tt.
