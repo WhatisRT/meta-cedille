@@ -2,7 +2,7 @@
 -- Map strings to some values
 --------------------------------------------------------------------------------
 
-module Map (V : *).
+module COC:Map (V : *).
 
 importModule Maybe.
 Given String stringEq ifthenelse.

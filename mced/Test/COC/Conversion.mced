@@ -2,7 +2,7 @@
 -- Convert between COC and Meta Cedille terms
 --------------------------------------------------------------------------------
 
-module Conversion.
+module COC:Conversion.
 
 Given MCTerm MCSVar MCAst MCSq MCLambda MCPi MCApp natToVar indexToNat init$index.
 Given MCVar MCSort Binder String stringCons stringNil stringEq Char.
@@ -13,7 +13,7 @@ Given Maybe just nothing maybe bindMaybe mapMaybe.
 
 importModule Nat.
 importModule NatConversions.
-importModule Theory.
+importModule COC:Theory.
 
 let findMaybe [A : *] (pred : A -> Bool) (l : List A) : Maybe Nat :=
   l ?(Maybe Nat)

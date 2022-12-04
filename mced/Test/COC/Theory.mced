@@ -2,7 +2,7 @@
 -- Calculus of constructions with de-Bruijn indices
 --------------------------------------------------------------------------------
 
-module Theory.
+module COC:Theory.
 
 -- Temporary workaround to make all the names that `data` needs available
 import Datatypes/ModuleCompatibility.
@@ -10,8 +10,8 @@ import Datatypes/ModuleCompatibility.
 importModule List.
 importModule Maybe.
 importModule Nat.
-importModule Map.
 importModule NatConversions.
+importModule COC:Map.
 
 -- Strings and string notation
 Given String stringCons stringNil stringEq stringApp.
