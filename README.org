@@ -1,4 +1,4 @@
-#+HTML: <img src="https://github.com/WhatisRT/meta-cedille/workflows/Test/badge.svg">
+#+HTML: <img src="https://github.com/WhatisRT/meta-cedille/actions/workflows/test.yml/badge.svg">
 * Meta Cedille
 This is the reference implementation for a version of cedille that supports metaprogramming. The [[https://github.com/WhatisRT/meta-cedille/wiki][wiki]] and [[https://whatisrt.github.io/][blog]] contain some information and documentation.
 * Building
