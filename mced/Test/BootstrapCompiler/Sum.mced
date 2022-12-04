@@ -1,4 +1,4 @@
-module Sum.
+module Bootstrap:Sum.
 
 elet Sum (A, B : *) : * := ∀ X : *. (A -> X) -> (B -> X) -> X.
 

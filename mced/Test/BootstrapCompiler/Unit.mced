@@ -1,4 +1,4 @@
-module Unit.
+module Bootstrap:Unit.
 
 elet Unit : * := ∀ X : *. X -> X.
 elet tt : Unit := Λ X : *. λ x : X. x.

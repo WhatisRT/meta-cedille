@@ -1,4 +1,4 @@
-module Bool.
+module Bootstrap:Bool.
 
 let Bool : * := ∀ X : *. X -> X -> X.
 

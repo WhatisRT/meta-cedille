@@ -5,15 +5,15 @@
 -- Others: use *, □, "...", (...), {Π ∀ λ Λ} x1, ..., xn : T. t,
 --------------------------------------------------------------------------------
 
-module Term.
+module Bootstrap:Term.
 
 Given Var init$var$_string_ init$var$_index_ init$index Sort Char String iTerm.
 Given init$term$_var_ init$term$_sort_ init$string$nil SortAst SortSq quote$sq.
 Given quote$angle quote$square quote$lambda quote$Lambda quote$Pi quote$forall quote$kappa.
 
-importModule Bool.
-importModule List.
-importModule Product.
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:Product.
 
 elet Binder : * := ∀ X : *. X -> X -> X -> X -> X.
 elet lambdaBinder : Binder := Λ X : *. λ lambda, Lambda, pi, forall : X. lambda.

@@ -1,6 +1,6 @@
-module Nat.
+module Bootstrap:Nat.
 
-importModule Product.
+importModule Bootstrap:Product.
 
 elet Nat : * := ∀ X : *. X -> (X -> X) -> X.
 

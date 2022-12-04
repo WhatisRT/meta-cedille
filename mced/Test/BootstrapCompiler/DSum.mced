@@ -1,4 +1,4 @@
-module DSum.
+module Bootstrap:DSum.
 
 elet DSum (A : *) (B : A -> *) : * := ∀ X : *. (Π a : A. B a -> X) -> X.
 

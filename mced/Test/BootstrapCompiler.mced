@@ -103,7 +103,7 @@ elet getModule (modName : ModuleName) : Eval Module :=
     (λ m : Bool × Module. pureEval ?_ $ pr2 ?_ ?_ m).
 
 elet compileNames (modName : String) : Eval Unit :=
-  (getModule [String|modName] >>= moduleToLetInfos) >>=
+  (getModule [String|"Bootstrap", modName] >>= moduleToLetInfos) >>=
     writeDefinitionsToFile (stringConcat [String|bootstrapCompileDir, modName, ".mced"]).
 
 elet compileModules (modNames : List String) : Eval Unit :=

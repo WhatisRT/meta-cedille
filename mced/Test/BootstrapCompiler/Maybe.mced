@@ -1,8 +1,8 @@
-module Maybe.
+module Bootstrap:Maybe.
 
-importModule List.
-importModule Sum.
-importModule Unit.
+importModule Bootstrap:List.
+importModule Bootstrap:Sum.
+importModule Bootstrap:Unit.
 
 let Maybe (A : *) : * := Sum A Unit.
 

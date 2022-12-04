@@ -1,6 +1,6 @@
-module Product.
+module Bootstrap:Product.
 
-importModule DSum.
+importModule Bootstrap:DSum.
 
 elet Product (A, B : *) : * := DSum A (λ _ : A. B).
 elet prodPair [A, B : *] (a : A) (b : B) : A × B := pair ?_ ?(λ _ : A. B) a b.

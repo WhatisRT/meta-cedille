@@ -161,7 +161,7 @@ b-let loadModule (n : ModuleName) (prefix : String) : init$newStmt :=
 b-let importModule' (n : ModuleName) (l : List App) : init$newStmt :=
   importModuleOrStmt n l (echoStmt "Could not find module!").
 
-b-let init$moduleName'$=slash=_string__moduleName'_ (s : String) (n : ModuleName) := cons ?String s n.
+b-let init$moduleName'$=colon=_string__moduleName'_ (s : String) (n : ModuleName) := cons ?String s n.
 b-let init$moduleName'$ := nil ?String.
 
 b-let init$moduleName$_string__moduleName'_ (s : String) (n : ModuleName) := cons ?String s n.
@@ -171,9 +171,9 @@ b-let init$moduleName$_string__moduleName'_ (s : String) (n : ModuleName) := con
 b-let init$givenArgs$=dot= := [String|].
 b-let init$givenArgs$^space^_string__givenArgs_ (s : String) (l : List String) := cons ?String s l.
 
-b-let init$newStmt'$module^space^_string__telescope'_=dot=
-  (n : String) (t : Telescope) : init$newStmt :=
-  initModule [String|n] t.
+b-let init$newStmt'$module^space^_moduleName__telescope'_=dot=
+  (m : ModuleName) (t : Telescope) : init$newStmt :=
+  initModule m t.
 b-let init$newStmt'$endModule=dot= : init$newStmt := endModule.
 b-let init$newStmt'$loadModule^space^_moduleName_=dot= (n : ModuleName) : init$newStmt := loadModule n "test/".
 b-let init$newStmt'$importModule^space^_moduleName__maybeApplist_=dot= (n : ModuleName) (l : List App) : init$newStmt :=

@@ -11,7 +11,7 @@ Given TripleProduct mkTripleProduct pr31 pr32 pr33.
 Given LetInfo letInfoName letInfoTerm letInfoType.
 Given Maybe just nothing maybe bindMaybe mapMaybe.
 
-importModule Nat'.
+importModule Nat.
 importModule NatConversions.
 importModule Theory.
 

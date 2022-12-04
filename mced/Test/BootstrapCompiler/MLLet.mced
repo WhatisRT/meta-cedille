@@ -4,17 +4,17 @@
 -- Use `b-let f (x1, ..., xn : T1) ... (... : Tn) : T := t.` to define a term
 --------------------------------------------------------------------------------
 
-module MLLet.
+module Bootstrap:MLLet.
 
 Given String M primLet primAnnLet.
 
-importModule Bool.
-importModule List.
-importModule Maybe.
-importModule Product.
-importModule Sum.
-importModule Term.
-importModule Unit.
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:Maybe.
+importModule Bootstrap:Product.
+importModule Bootstrap:Sum.
+importModule Bootstrap:Term.
+importModule Bootstrap:Unit.
 
 -- Functions to turn a Telescope into an actual telescope that can be applied to
 -- a term.

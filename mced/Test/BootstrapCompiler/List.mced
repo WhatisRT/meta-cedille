@@ -1,8 +1,8 @@
-module List.
+module Bootstrap:List.
 
-importModule Bool.
-importModule Nat.
-importModule Product.
+importModule Bootstrap:Bool.
+importModule Bootstrap:Nat.
+importModule Bootstrap:Product.
 
 elet List (A : *) : * := ∀ X : *. X -> (A -> X -> X) -> X.
 
