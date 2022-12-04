@@ -13,5 +13,3 @@ elet recursionNat [X : *] (rz : X) (rs : Nat -> X -> X) (n : Nat) : X :=
     (λ r : Nat × X. suc (pr1 ?Nat ?X r) ; rs (pr1 ?Nat ?X r) (pr2 ?Nat ?X r)).
 
 endModule.
-
-runMeta compileNames "Nat".

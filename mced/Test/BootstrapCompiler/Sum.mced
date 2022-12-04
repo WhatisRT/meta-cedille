@@ -8,5 +8,3 @@ elet inr [A, B : *] (b : B) : Sum A B := Λ X : *. λ l : A -> X. λ r : B -> X.
 elet recursionSum [A, B, X : *] (l : A -> X) (r : B -> X) (x : Sum A B) : X := x ?X l r.
 
 endModule.
-
-runMeta compileNames "Sum".

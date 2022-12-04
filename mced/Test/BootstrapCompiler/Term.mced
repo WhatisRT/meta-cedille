@@ -280,5 +280,3 @@ elet init$singleTerm$_binder_^space^_params_=dot=^space^_multiTerm_ :=
   λ b : Binder. λ p : List PreParam. λ t : Term. applyMultiBinder b p t.
 
 endModule.
-
-runMeta compileNames "Term".

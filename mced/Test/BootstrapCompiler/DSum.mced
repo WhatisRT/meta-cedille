@@ -9,5 +9,3 @@ elet recursionDSum [A : *] [B : A -> *] [X : *] (ppair : Π a : A. B a -> X) (x 
   : X := x ?X ppair.
 
 endModule.
-
-runMeta compileNames "DSum".

@@ -26,5 +26,3 @@ elet pr32 [A, B, C : *] (x : TripleProduct A B C) : B := pr1 ?B ?C $ pr2 ?A ?(B 
 elet pr33 [A, B, C : *] (x : TripleProduct A B C) : C := pr2 ?B ?C $ pr2 ?A ?(B × C) x.
 
 endModule.
-
-runMeta compileNames "Product".

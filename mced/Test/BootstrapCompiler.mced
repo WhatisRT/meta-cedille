@@ -105,3 +105,6 @@ elet getModule (modName : ModuleName) : Eval Module :=
 elet compileNames (modName : String) : Eval Unit :=
   (getModule [String|modName] >>= moduleToLetInfos) >>=
     writeDefinitionsToFile (stringConcat [String|bootstrapCompileDir, modName, ".mced"]).
+
+elet compileModules (modNames : List String) : Eval Unit :=
+  voidEval ?_ $ sequenceEval ?_ $ map ?_ ?_ compileNames modNames.

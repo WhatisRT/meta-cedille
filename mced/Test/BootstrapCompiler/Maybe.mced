@@ -27,5 +27,3 @@ elet traverseMaybeList [X, Y : *] (f : X -> Maybe Y) : List X -> Maybe (List Y) 
     (λ x : X. λ xs : List X. λ rec : Maybe (List Y). liftMaybe2 ?_ ?_ ?_ (cons ?Y) (f x) rec).
 
 endModule.
-
-runMeta compileNames "Maybe".

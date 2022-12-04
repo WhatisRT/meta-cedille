@@ -16,5 +16,3 @@ elet not (b : Bool)     : Bool := ifthenelse ?_ b false true.
 elet boolEq (b, b' : Bool) : Bool := ifthenelse ?_ b b' $ not b'.
 
 endModule.
-
-runMeta compileNames "Bool".

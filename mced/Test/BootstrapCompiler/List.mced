@@ -60,5 +60,3 @@ elet intersperse [X : *] (x : X) (l : List X) : List X :=
       ifthenelse ?_ (isNil ?_ l') (pureList ?_ x') (x' ∷ x ∷ rec)) l.
 
 endModule.
-
-runMeta compileNames "List".

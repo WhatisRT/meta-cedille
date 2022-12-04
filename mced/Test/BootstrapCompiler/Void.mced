@@ -4,5 +4,3 @@ elet Void : * := ∀ X : *. X.
 elet voidElim [X : *] (v : Void) : X := v ?X.
 
 endModule.
-
-runMeta compileNames "Void".

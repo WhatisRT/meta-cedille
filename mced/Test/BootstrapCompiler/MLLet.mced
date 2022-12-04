@@ -65,5 +65,3 @@ elet init$betterLet$_string_^space^_telescope_=colon=_betterLetType_=equal=^spac
 elet init$stmt'$b=minus=let^space^_betterLet_ : LetInfo -> M Unit := convertLetInfo.
 
 endModule.
-
-runMeta compileNames "MLLet".
