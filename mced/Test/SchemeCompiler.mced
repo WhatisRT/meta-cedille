@@ -1,0 +1,50 @@
+--------------------------------------------------------------------------------
+-- Compiles modules into scheme
+--------------------------------------------------------------------------------
+
+let showTermWithContextScheme (t : Term) : List String -> String := recursionTerm
+  ?(List String -> String)
+  (λ v : Var. λ con : List String. showVar con v)
+  (λ s : Sort. λ _ : List String. "'SORT")
+  (λ b : Binder. λ n : String. λ _, _ : Term. λ T, t : List String -> String. λ con : List String.
+    b ?String (stringConcat [String|"(lambda (", n, ") ", t (cons ?String n con), ")"])
+              (stringConcat [String|"(lambda (", n, ") ", t (cons ?String n con), ")"])
+              "'PI" "'FORALL")
+  (λ _ : Term. λ la : List App. λ t : List String -> String.
+   λ l : List (Product Bool (List String -> String)). λ con : List String. stringConcat
+     [String|"(", t con, stringConcat (map ?(Bool × (List String -> String)) ?String
+              (recursionProduct ?Bool ?(List String -> String) ?String
+                      (λ _ : Bool. λ t' : List String -> String. stringApp " " (t' con))) l), ")"])
+  (λ c : Char. λ _ : List String. stringConcat [String|"'", stringCons c "'"])
+  (λ _ : List String. "_")
+  (λ _ : Term. λ t : List String -> String. λ con : List String. "'UNQUOTE")
+  t.
+
+let showTermScheme (t : Term) : String := showTermWithContextScheme t [String|].
+
+let printDefinitionScheme (def : LetInfo) : String :=
+  stringConcat [String|"(define ", letInfoName def, " ", showTermScheme (letInfoTerm def), ")"].
+
+elet writeDefinitionsToFileScheme (fname : String) (defs : List LetInfo) : Eval Unit :=
+  writeFile fname (stringConcat $ intersperse ?_ newline $ map ?_ ?_ printDefinitionScheme defs).
+
+let schemeCompileDir := "scheme/".
+
+elet compileNamesScheme (modName : ModuleName) : Eval Unit :=
+  (getModule modName >>= moduleToLetInfos) >>=
+    writeDefinitionsToFileScheme (stringConcat [String|schemeCompileDir, moduleNameToPath modName, ".ss"]).
+
+elet compileModulesScheme (modNames : List ModuleName) : Eval Unit :=
+  voidEval ?_ $ sequenceEval ?_ $ map ?_ ?_ compileNamesScheme modNames.
+
+runMeta voidEval ?String $ shellCmd "mkdir" [String|"-p", stringConcat [String|schemeCompileDir, "/Bootstrap/"]].
+
+runMeta compileNamesScheme [String|"Bootstrap", "DSum"].
+
+runMeta compileNamesScheme [String|"Bootstrap", "Product"].
+
+runMeta compileNamesScheme [String|"Bootstrap", "Nat"].
+
+runMeta voidEval ?String $ shellCmd "mkdir" [String|"-p", stringConcat [String|schemeCompileDir, "/SchemeCompiler/"]].
+
+runMeta compileNamesScheme [String|"SchemeCompiler", "Test"].

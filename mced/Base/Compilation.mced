@@ -1,0 +1,26 @@
+--------------------------------------------------------------------------------
+-- Helper functions for compiling
+--------------------------------------------------------------------------------
+
+-- FIXME: get a proper syntax for writing characters
+let modSeparator : Char := maybe ?Char ?Char quote$A (λ c : Char. c) $ head ?Char $ stringToList "|".
+
+elet stripModPrefix : Term -> Term := renameNamesInTerm (λ s : String.
+  ifthenelse ?_ (isPrefix modulePrefix s)
+    (stringFromList $ drop ?_ 1 $ dropWhile ?_ (λ c : Char. not $ charEq modSeparator c) $
+       drop ?_ (stringLength modulePrefix) $ stringToList s)
+    s).
+
+elet nameToLetInfo (prefix, n : String) : Eval LetInfo :=
+  getDef (stringApp prefix n) >>= λ t : Term.
+  inferType (sVarTerm (stringApp prefix n)) >>= λ T : Term.
+    pureEval ?LetInfo $ mkLetInfo n (stripModPrefix t) (just ?Term $ stripModPrefix T).
+
+elet moduleToLetInfos (m : Module) : Eval (List LetInfo) :=
+  sequenceEval ?_ $
+    map ?_ ?_ (nameToLetInfo $ mkModuleContentPrefix $ ModuleModuleInfo m)
+              (reverse ?_ $ ModuleContents m).
+
+elet getModule (modName : ModuleName) : Eval Module :=
+  findModule modName >>= maybe ?_ ?_ (throwEval ?Module "Module doesn't exist!")
+    (λ m : Bool × Module. pureEval ?_ $ pr2 ?_ ?_ m).

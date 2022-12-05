@@ -1,0 +1,15 @@
+module SchemeCompiler:Test.
+
+importModule Bootstrap:Nat.
+
+let one   : Nat := suc zero.
+let two   : Nat := suc one.
+let three : Nat := suc two.
+let four  : Nat := suc three.
+
+let plus (n, m : Nat) : Nat := m ?Nat n suc.
+let mul  (n, m : Nat) : Nat := m ?Nat zero (plus n).
+
+let square (n : Nat) : Nat := mul n n.
+
+endModule.

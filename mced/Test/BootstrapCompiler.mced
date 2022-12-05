@@ -66,15 +66,6 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
 let showInitTerm (t : iTerm) : String :=
   showInitTermWithContext t [String|].
 
--- FIXME: get a proper syntax for writing characters
-let modSeparator : Char := maybe ?Char ?Char quote$A (λ c : Char. c) $ head ?Char $ stringToList "|".
-
-elet stripModPrefix : Term -> Term := renameNamesInTerm (λ s : String.
-  ifthenelse ?_ (isPrefix modulePrefix s)
-    (stringFromList $ drop ?_ 1 $ dropWhile ?_ (λ c : Char. not $ charEq modSeparator c) $
-       drop ?_ (stringLength modulePrefix) $ stringToList s)
-    s).
-
 elet printTypeAnn : Maybe Term -> String :=
   maybe ?_ ?_ "" (λ T : Term. stringConcat [String|" : ", showInitTerm (TermToInitTerm T)]).
 
@@ -86,21 +77,7 @@ elet printDefinition (def : LetInfo) : String :=
 elet writeDefinitionsToFile (fname : String) (defs : List LetInfo) : Eval Unit :=
   writeFile fname (stringConcat $ intersperse ?_ newline $ map ?_ ?_ printDefinition defs).
 
-elet nameToLetInfo (prefix, n : String) : Eval LetInfo :=
-  getDef (stringApp prefix n) >>= λ t : Term.
-  inferType (sVarTerm (stringApp prefix n)) >>= λ T : Term.
-    pureEval ?LetInfo $ mkLetInfo n (stripModPrefix t) (just ?Term $ stripModPrefix T).
-
 elet bootstrapCompileDir := "bootstrap/Compiled/".
-
-elet moduleToLetInfos (m : Module) : Eval (List LetInfo) :=
-  sequenceEval ?_ $
-    map ?_ ?_ (nameToLetInfo $ mkModuleContentPrefix $ ModuleModuleInfo m)
-              (reverse ?_ $ ModuleContents m).
-
-elet getModule (modName : ModuleName) : Eval Module :=
-  findModule modName >>= maybe ?_ ?_ (throwEval ?Module "Module doesn't exist!")
-    (λ m : Bool × Module. pureEval ?_ $ pr2 ?_ ?_ m).
 
 elet compileNames (modName : String) : Eval Unit :=
   (getModule [String|"Bootstrap", modName] >>= moduleToLetInfos) >>=

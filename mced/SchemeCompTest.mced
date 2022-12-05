@@ -1,0 +1,14 @@
+import Bootstrap.
+import Base.
+
+set PWD "Test/".
+
+import BootstrapCompiler/DSum.
+
+import BootstrapCompiler/Product.
+
+import BootstrapCompiler/Nat.
+
+import SchemeCompiler/Test.
+
+import SchemeCompiler.
