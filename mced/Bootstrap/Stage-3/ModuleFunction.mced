@@ -22,6 +22,11 @@ b-let findModule (n : ModuleName) : Eval (Maybe (Product Bool Module)) :=
   mapEval ?ModuleState ?(Maybe (Product Bool Module))
     (λ s : ModuleState. lookupModuleDict n (ModuleStateDict s)) getModuleState'.
 
+b-let moduleIsLoaded (n : ModuleName) : Eval Bool :=
+  bindEval ?(Maybe (Product Bool Module)) ?Bool (findModule n)
+    (λ x : Maybe (Product Bool Module). pureEval ?Bool
+      (maybe ?(Product Bool Module) ?Bool false (pr1 ?Bool ?Module) x)).
+
 b-let getNewModuleVersion (n : ModuleName) : Eval (Maybe Nat) :=
   bindEval ?(Maybe (Product Bool Module)) ?(Maybe Nat) (findModule n)
     (λ x : Maybe (Product Bool Module). pureEval ?(Maybe Nat)
@@ -110,13 +115,16 @@ b-let updateModuleDict (m : Module) (d : ModuleDict) : init$newStmt :=
     (just ?Term θ{ModuleDict})).
 
 b-let unloadModuleDictStmt (n : ModuleName) (d : ModuleDict) : init$newStmt :=
-  seqNewStmt
-    (letInfoToNewStmt (mkLetInfo
-      (mkModuleDictNameSuc d)
-      θ{unloadModuleFromDict γ{quoteModuleName n} γ{sVarTerm (mkModuleDictName d)}}
-      (just ?Term θ{ModuleDict})))
-    (modifyModuleState (λ s : ModuleState.
-      (mkModuleState (ModuleStateModule s) (unloadModuleFromDict n d)))).
+  bindEval ?Bool ?Unit (moduleIsLoaded n) λ loaded : Bool.
+    ifthenelse ?(Eval Unit) loaded
+      (seqNewStmt
+        (letInfoToNewStmt (mkLetInfo
+          (mkModuleDictNameSuc d)
+          θ{unloadModuleFromDict γ{quoteModuleName n} γ{sVarTerm (mkModuleDictName d)}}
+          (just ?Term θ{ModuleDict})))
+        (modifyModuleState (λ s : ModuleState.
+          (mkModuleState (ModuleStateModule s) (unloadModuleFromDict n d)))))
+      (throwEval ?Unit "Module isn't loaded!").
 
 b-let finishModuleDef (m : Module) (d : ModuleDict) : init$newStmt :=
   seqNewStmts [init$newStmt|
