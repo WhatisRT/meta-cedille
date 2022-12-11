@@ -204,20 +204,18 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   executePrimitive Normalize t = do
     Γ ← getContext
     u ← unquoteFromTerm t
-    T ← synthType Γ u
     return (strResult "" , quoteToAnnTerm (normalize Γ u))
 
   executePrimitive HeadNormalize t = do
     Γ ← getContext
     u ← unquoteFromTerm t
-    T ← synthType Γ u
-    return (strResult "" , (quoteToAnnTerm $ hnfNorm Γ u))
+    return (strResult "" , quoteToAnnTerm (hnfNorm Γ u))
 
   executePrimitive InferType t = do
     Γ ← getContext
     u ← unquoteFromTerm t
     T ← synthType Γ u
-    return (strResult "" , (quoteToAnnTerm T))
+    return (strResult "" , quoteToAnnTerm T)
 
   executePrimitive Import t = do
     x ← M String ∋ (unquoteFromTerm t)
