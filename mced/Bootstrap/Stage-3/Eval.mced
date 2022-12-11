@@ -165,6 +165,8 @@ b-let sequenceEval [T : *] (l : List (Eval T)) : Eval (List T) :=
   foldl ?(Eval T) ?(Eval (List T)) (λ l' : Eval (List T). λ x : Eval T.
     bindEval ?T ?(List T) x (λ x' : T. mapEval ?(List T) ?(List T) (cons ?T x') l'))
     l (pureEval ?(List T) (nil ?T)).
+b-let traverseEval [A, B : *] (f : A -> Eval B) (l : List A) : Eval (List B) :=
+  sequenceEval ?B (map ?A ?(Eval B) f l).
 b-let voidEval [T : *] (x : Eval T) : Eval Unit :=
   seqEval ?T ?Unit x (pureEval ?Unit tt).
 
@@ -353,22 +355,6 @@ b-let import (filename : String) : init$newStmt :=
 -- wrapping the term in lambdas, infering the type and then throwing
 -- away the pi's.
 --------------------------------------------------------------------------------
-
-b-let stripPi : Term -> Maybe Term :=
-  recursionTerm ?(Maybe Term)
-    (λ _ : Var. nothing ?Term)
-    (λ _ : Sort. nothing ?Term)
-    (λ b : Binder. λ _ : String. λ T, t : Term. λ _, _ : Maybe Term.
-      b ?(Maybe Term) (nothing ?Term) (nothing ?Term) (just ?Term t) (nothing ?Term))
-    (λ _ : Term. λ _ : List App. λ _ : Maybe Term. λ _ : List (Product Bool (Maybe Term)). nothing ?Term)
-    (λ _ : Char. nothing ?Term)
-    (nothing ?Term)
-    (λ _ : Term. λ _ : Maybe Term. nothing ?Term).
-
-b-let stripPis : Nat -> Term -> Maybe Term :=
-  recursionNat ?(Term -> Maybe Term)
-    (just ?Term)
-    (λ _ : Nat. λ rec : Term -> Maybe Term. λ t : Term. bindMaybe ?Term ?Term (stripPi t) rec).
 
 b-let inferType (t : Term) : Eval Term :=
   bindEval ?Context ?Term askContext

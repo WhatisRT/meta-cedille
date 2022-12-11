@@ -1,0 +1,27 @@
+--------------------------------------------------------------------------------
+-- FFI
+--
+-- We define a monad that can be used to run arbitrary scheme code
+--------------------------------------------------------------------------------
+
+-- FIXME: the evaluation order in scheme is different. It's currently
+-- necessary to use arguments to contol evaluation order, so one
+-- always has to use bind instead of seq to ensure the expected
+-- evaluation order.
+
+-- TODO: we need to block reduction as a workaround, since getDef always returns a head-normal form
+let SchemeFFI (A : *) : * := ∀ X : *. (String -> X) -> X.
+-- the compiler will compile applications of this differently
+let defineSchemeInternal := tt.
+let defineSchemePrim [A : *] (s : String) : SchemeFFI A :=
+  Λ X : *. λ x : String -> X. defineSchemeInternal ?X (x s).
+
+let pureScheme [A : *] (a : A) : SchemeFFI A := defineSchemePrim ?A "(lambda (A a) a)".
+let bindScheme [A, B : *] (a : SchemeFFI A) (f : A -> SchemeFFI B) : SchemeFFI B :=
+  defineSchemePrim ?B "(lambda (A) (lambda (B) (lambda (a) (lambda (f) (f a)))))".
+
+let seqScheme [A, B : *] (a : SchemeFFI A) (b : SchemeFFI B) : SchemeFFI B :=
+  bindScheme ?A ?B a (λ _ : A. b).
+
+let liftScheme [A, B : *] (f : SchemeFFI (A -> B)) (x : SchemeFFI A) : SchemeFFI B :=
+  bindScheme ?(A -> B) ?B f (λ f2 : A -> B. bindScheme ?A ?B x (λ x2 : A. pureScheme ?B (f2 x2))).

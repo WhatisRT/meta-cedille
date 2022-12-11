@@ -1,15 +1,47 @@
 module SchemeCompiler:Test.
 
 importModule Bootstrap:Nat.
+importModule Bootstrap:Unit.
+importModule Bootstrap:List.
+
+Given SchemeFFI defineSchemePrim liftScheme pureScheme bindScheme seqScheme String stringNil stringCons.
 
 let one   : Nat := suc zero.
 let two   : Nat := suc one.
 let three : Nat := suc two.
 let four  : Nat := suc three.
+let five  : Nat := suc four.
 
 let plus (n, m : Nat) : Nat := m ?Nat n suc.
 let mul  (n, m : Nat) : Nat := m ?Nat zero (plus n).
 
 let square (n : Nat) : Nat := mul n n.
+
+-- let stringTest : String := "abcde".
+
+let SchemeNat  : * := SchemeFFI Nat.
+let schemeZero : SchemeNat := defineSchemePrim ?Nat "0".
+let primSchemeSuc  : SchemeFFI (Nat -> Nat) := defineSchemePrim ?(Nat -> Nat) "(lambda (x) (+ 1 x))".
+let schemeSuc  : SchemeNat -> SchemeNat := liftScheme ?Nat ?Nat primSchemeSuc.
+
+let evalNat (n : Nat) : SchemeNat := n ?SchemeNat schemeZero schemeSuc.
+
+let primSchemePrintNat : SchemeFFI (SchemeNat -> SchemeFFI Unit) :=
+  defineSchemePrim ?(SchemeNat -> SchemeFFI Unit) "(lambda (x) (display x) (newline))".
+
+let schemePrintNat (n : SchemeNat) : SchemeFFI Unit :=
+  bindScheme ?(SchemeNat -> SchemeFFI Unit) ?Unit primSchemePrintNat
+    (λ f : SchemeNat -> SchemeFFI Unit. f n).
+
+let printSquare (n : Nat) : SchemeFFI Unit := schemePrintNat (evalNat $ square n).
+
+let printSquares (l : List Nat) : SchemeFFI Unit :=
+  recursionList ?Nat ?(SchemeFFI Unit)
+    (pureScheme ?Unit tt)
+    (λ n : Nat. λ _ : List Nat. λ x : SchemeFFI Unit.
+      seqScheme ?Unit ?Unit (printSquare n) x)
+    l.
+
+let main (_ : Unit) : SchemeFFI Unit := printSquares [Nat|zero, one, two, three, four, five].
 
 endModule.

@@ -1,0 +1,5 @@
+(define SchemeFFI (lambda (_) 'FORALL))
+(define pureScheme (lambda (A) (lambda (a) a)))
+(define bindScheme (lambda (A) (lambda (B) (lambda (a) (lambda (f) (f a))))))
+(define liftScheme (lambda (A) (lambda (B) (lambda (f) (lambda (x) (bindScheme 'PI B f (lambda (f) (bindScheme A B x (lambda (x) (pureScheme B (f x)))))))))))
+(define seqScheme (lambda (A) (lambda (B) (lambda (a) (lambda (b) a b)))))

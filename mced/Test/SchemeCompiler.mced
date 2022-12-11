@@ -2,13 +2,33 @@
 -- Compiles modules into scheme
 --------------------------------------------------------------------------------
 
+-- replace ' with 1
+let sanitizeNameScheme (s : String) : String :=
+  stringFromList $ map ?Char ?Char
+    (λ c : Char. ifthenelse ?Char (charEq c (charGen "'")) (charGen "1") c)
+    (stringToList s).
+
+let tryCompileSchemePrim (t : Term) (def : Eval String) : Eval String :=
+  maybe ?Term ?(Eval String) def (matchApp ?(Eval String) def λ t' : Term. λ a : List App.
+    matchVar ?(Eval String) def
+      (λ v : Var. ifthenelse ?(Eval String)
+        (and (varEq v (init$var$_string_ "defineSchemeInternal")) (natEq (length ?App a) 2))
+          (maybe ?App ?(Eval String) def (λ a' : App.
+            matchApp ?(Eval String) def
+              (λ t : Term. λ a : List App.
+                maybe ?App ?(Eval String) def (λ a' : App. checkTerm String (appTerm a')) (head ?App a))
+              (appTerm a'))
+            (head ?App (drop ?App 1 a)))
+          def) t')
+    (stripLambdas 2 t).
+
 let showTermWithContextScheme (t : Term) : List String -> String := recursionTerm
   ?(List String -> String)
-  (λ v : Var. λ con : List String. showVar con v)
+  (λ v : Var. λ con : List String. sanitizeNameScheme $ showVar con v)
   (λ s : Sort. λ _ : List String. "'SORT")
   (λ b : Binder. λ n : String. λ _, _ : Term. λ T, t : List String -> String. λ con : List String.
-    b ?String (stringConcat [String|"(lambda (", n, ") ", t (cons ?String n con), ")"])
-              (stringConcat [String|"(lambda (", n, ") ", t (cons ?String n con), ")"])
+    b ?String (stringConcat [String|"(lambda (", sanitizeNameScheme n, ") ", t (cons ?String n con), ")"])
+              (stringConcat [String|"(lambda (", sanitizeNameScheme n, ") ", t (cons ?String n con), ")"])
               "'PI" "'FORALL")
   (λ _ : Term. λ la : List App. λ t : List String -> String.
    λ l : List (Product Bool (List String -> String)). λ con : List String. stringConcat
@@ -20,13 +40,17 @@ let showTermWithContextScheme (t : Term) : List String -> String := recursionTer
   (λ _ : Term. λ t : List String -> String. λ con : List String. "'UNQUOTE")
   t.
 
-let showTermScheme (t : Term) : String := showTermWithContextScheme t [String|].
+let showTermScheme (t : Term) : Eval String :=
+  tryCompileSchemePrim (reduceMultiApp t) $ pureEval ?String (showTermWithContextScheme t [String|]).
 
-let printDefinitionScheme (def : LetInfo) : String :=
-  stringConcat [String|"(define ", letInfoName def, " ", showTermScheme (letInfoTerm def), ")"].
+let printDefinitionScheme (def : LetInfo) : Eval String :=
+  mapEval ?String ?String (λ t : String.
+    stringConcat [String|"(define ", sanitizeNameScheme (letInfoName def), " ", t , ")"])
+    (showTermScheme (letInfoTerm def)).
 
 elet writeDefinitionsToFileScheme (fname : String) (defs : List LetInfo) : Eval Unit :=
-  writeFile fname (stringConcat $ intersperse ?_ newline $ map ?_ ?_ printDefinitionScheme defs).
+  traverseEval ?_ ?_ printDefinitionScheme defs >>= λ defs' : List String.
+    writeFile fname (stringConcat $ intersperse ?_ newline defs').
 
 let schemeCompileDir := "scheme/".
 
@@ -39,11 +63,12 @@ elet compileModulesScheme (modNames : List ModuleName) : Eval Unit :=
 
 runMeta voidEval ?String $ shellCmd "mkdir" [String|"-p", stringConcat [String|schemeCompileDir, "/Bootstrap/"]].
 
+runMeta compileNamesScheme [String|"Bootstrap", "Unit"].
 runMeta compileNamesScheme [String|"Bootstrap", "DSum"].
-
 runMeta compileNamesScheme [String|"Bootstrap", "Product"].
-
 runMeta compileNamesScheme [String|"Bootstrap", "Nat"].
+runMeta compileNamesScheme [String|"Bootstrap", "Bool"].
+runMeta compileNamesScheme [String|"Bootstrap", "List"].
 
 runMeta voidEval ?String $ shellCmd "mkdir" [String|"-p", stringConcat [String|schemeCompileDir, "/SchemeCompiler/"]].
 

@@ -48,3 +48,57 @@ b-let matchTerm [X : *]
     (λ t : Term. λ app : List App. λ _ : X. λ _ : List (Product Bool X). fapp t app)
     fchar funk
     (λ t : Term. λ _ : X. funq t).
+
+b-let stripLambda : Term -> Maybe Term :=
+  matchTerm ?(Maybe Term)
+    (λ _ : Var. nothing ?Term)
+    (λ _ : Sort. nothing ?Term)
+    (λ b : Binder. λ _ : String. λ T, t : Term.
+      b ?(Maybe Term) (just ?Term t) (just ?Term t) (nothing ?Term) (nothing ?Term))
+    (λ _ : Term. λ _ : List App. nothing ?Term)
+    (λ _ : Char. nothing ?Term)
+    (nothing ?Term)
+    (λ _ : Term. nothing ?Term).
+
+b-let stripLambdas : Nat -> Term -> Maybe Term :=
+  recursionNat ?(Term -> Maybe Term)
+    (just ?Term)
+    (λ _ : Nat. λ rec : Term -> Maybe Term. λ t : Term. bindMaybe ?Term ?Term (stripLambda t) rec).
+
+b-let stripPi : Term -> Maybe Term :=
+  matchTerm ?(Maybe Term)
+    (λ _ : Var. nothing ?Term)
+    (λ _ : Sort. nothing ?Term)
+    (λ b : Binder. λ _ : String. λ T, t : Term.
+      b ?(Maybe Term) (nothing ?Term) (nothing ?Term) (just ?Term t) (nothing ?Term))
+    (λ _ : Term. λ _ : List App. nothing ?Term)
+    (λ _ : Char. nothing ?Term)
+    (nothing ?Term)
+    (λ _ : Term. nothing ?Term).
+
+b-let stripPis : Nat -> Term -> Maybe Term :=
+  recursionNat ?(Term -> Maybe Term)
+    (just ?Term)
+    (λ _ : Nat. λ rec : Term -> Maybe Term. λ t : Term. bindMaybe ?Term ?Term (stripPi t) rec).
+
+b-let matchVar [X : *] (def : X) (f : Var -> X) (t : Term) : X :=
+  matchTerm ?X
+    f
+    (λ _ : Sort. def)
+    (λ _ : Binder. λ _ : String. λ _, _ : Term. def)
+    (λ _ : Term. λ _ : List App. def)
+    (λ _ : Char. def)
+    def
+    (λ _ : Term. def)
+    t.
+
+b-let matchApp [X : *] (def : X) (f : Term -> List App -> X) (t : Term) : X :=
+  matchTerm ?X
+    (λ _ : Var. def)
+    (λ _ : Sort. def)
+    (λ _ : Binder. λ _ : String. λ _, _ : Term. def)
+    f
+    (λ _ : Char. def)
+    def
+    (λ _ : Term. def)
+    t.

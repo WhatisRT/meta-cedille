@@ -3,11 +3,14 @@ import Base.
 
 set PWD "Test/".
 
+import BootstrapCompiler/Unit.
 import BootstrapCompiler/DSum.
-
 import BootstrapCompiler/Product.
-
 import BootstrapCompiler/Nat.
+import BootstrapCompiler/Bool.
+import BootstrapCompiler/List.
+
+import SchemeFFI.
 
 import SchemeCompiler/Test.
 

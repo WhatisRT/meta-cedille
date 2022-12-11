@@ -3,7 +3,9 @@
 --------------------------------------------------------------------------------
 
 -- FIXME: get a proper syntax for writing characters
-let modSeparator : Char := maybe ?Char ?Char quote$A (λ c : Char. c) $ head ?Char $ stringToList "|".
+let charGen (s : String) : Char := maybe ?Char ?Char quote$A (λ c : Char. c) $ head ?Char $ stringToList s.
+
+let modSeparator : Char := charGen "|".
 
 elet stripModPrefix : Term -> Term := renameNamesInTerm (λ s : String.
   ifthenelse ?_ (isPrefix modulePrefix s)
