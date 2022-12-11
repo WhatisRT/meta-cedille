@@ -16,7 +16,7 @@ elet stripModPrefix : Term -> Term := renameNamesInTerm (λ s : String.
 elet nameToLetInfo (prefix, n : String) : Eval LetInfo :=
   getDef (stringApp prefix n) >>= λ t : Term.
   inferType (sVarTerm (stringApp prefix n)) >>= λ T : Term.
-    pureEval ?LetInfo $ mkLetInfo n (stripModPrefix t) (just ?Term $ stripModPrefix T).
+    pureEval ?_ $ mkLetInfo n (stripModPrefix t) (just ?_ $ stripModPrefix T).
 
 elet moduleToLetInfos (m : Module) : Eval (List LetInfo) :=
   sequenceEval ?_ $

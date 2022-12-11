@@ -2,7 +2,7 @@ let fueledFix [A : *] (n : Nat) (a : A) (f : A -> A) : A := n ?A a f.
 
 -- recursively rewrite: (f x1 ... xn) y1 ... yk -> f x1 ... xn y1 ... yk
 let reduceMultiApp : Term -> Term :=
-  fueledFix ?(Term -> Term) 10 (λ t : Term. t) λ reduceMultiApp : Term -> Term.
+  fueledFix ?(Term -> Term) 20 (λ t : Term. t) λ reduceMultiApp : Term -> Term.
     matchTerm ?Term
       varTerm
       sortTerm

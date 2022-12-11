@@ -5,10 +5,10 @@ importModule Bootstrap:DSum.
 elet Product (A, B : *) : * := DSum A (λ _ : A. B).
 elet prodPair [A, B : *] (a : A) (b : B) : A × B := pair ?_ ?(λ _ : A. B) a b.
 elet recursionProduct [A, B : *] : ∀ X : *. (A -> B -> X) -> (A × B) -> X :=
-  recursionDSum ?A ?(λ _ : A. B).
+  recursionDSum ?_ ?(λ _ : A. B).
 
-elet pr1 [A, B : *] : (A × B) -> A := recursionProduct ?_ ?B ?_ (λ a : A. λ _ : B. a).
-elet pr2 [A, B : *] : (A × B) -> B := recursionProduct ?_ ?B ?B (λ _ : A. λ b : B. b).
+elet pr1 [A, B : *] : (A × B) -> A := recursionProduct ?_ ?_ ?_ (λ a : A. λ _ : B. a).
+elet pr2 [A, B : *] : (A × B) -> B := recursionProduct ?_ ?_ ?_ (λ _ : A. λ b : B. b).
 
 elet productMap1 [A, B, C : *] (f : A -> C) (x : A × B) : C × B :=
   (f $ pr1 ?_ ?_ x) ; pr2 ?_ ?_ x.
@@ -18,11 +18,11 @@ elet productMap2 [A, B, C : *] (f : B -> C) (x : A × B) : A × C :=
 elet TripleProduct (A, B, C : *) : * := A × B × C.
 elet mkTripleProduct [A, B, C : *] (a : A) (b : B) (c : C) : TripleProduct A B C := a ; b ; c.
 elet recursionTripleProduct [A, B, C, D : *] (f : A -> B -> C -> D) (x : TripleProduct A B C) : D :=
-  recursionProduct ?_ ?(B × C) ?_
-    (λ a : A. λ bc : B × C. recursionProduct ?_ ?C ?_ (λ b : B. λ c : C. f a b c) bc) x.
+  recursionProduct ?_ ?_ ?_
+    (λ a : A. λ bc : B × C. recursionProduct ?_ ?_ ?_ (λ b : B. λ c : C. f a b c) bc) x.
 
-elet pr31 [A, B, C : *] (x : TripleProduct A B C) : A := pr1 ?A ?(B × C) x.
-elet pr32 [A, B, C : *] (x : TripleProduct A B C) : B := pr1 ?B ?C $ pr2 ?A ?(B × C) x.
-elet pr33 [A, B, C : *] (x : TripleProduct A B C) : C := pr2 ?B ?C $ pr2 ?A ?(B × C) x.
+elet pr31 [A, B, C : *] (x : TripleProduct A B C) : A := pr1 ?_ ?(B × C) x.
+elet pr32 [A, B, C : *] (x : TripleProduct A B C) : B := pr1 ?_ ?_ $ pr2 ?_ ?(B × C) x.
+elet pr33 [A, B, C : *] (x : TripleProduct A B C) : C := pr2 ?_ ?_ $ pr2 ?_ ?(B × C) x.
 
 endModule.

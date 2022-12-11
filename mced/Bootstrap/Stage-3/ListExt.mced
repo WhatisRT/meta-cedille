@@ -21,6 +21,9 @@ b-let tail [A : *] (l : List A) : List A :=
 b-let findMaybe [A : *] (P : A -> Bool) (l : List A) : Maybe A :=
     head ?A (filter ?A P l).
 
+b-let maybeToList [A : *] : Maybe A -> List A :=
+  maybe ?A ?(List A) [A|] (λ a : A. [A|a]).
+
 b-let initsNonEmpty [A : *] (l : List A) : List (Product A (List A)) :=
   recursionList ?A ?(List (Product A (List A)))
     [Product A (List A)|]

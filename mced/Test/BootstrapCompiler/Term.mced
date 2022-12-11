@@ -112,7 +112,7 @@ elet TermToInitTerm (t : Term) : iTerm :=
     (λ b : Binder. λ n : String. λ T, t : iTerm.
       b ?(String -> iTerm -> iTerm -> iTerm)
         quote$lambda quote$Lambda quote$Pi quote$forall n T t)
-    (λ t : iTerm. λ l : List App'. foldWithApp (reverse ?App' l) t)
+    (λ t : iTerm. λ l : List App'. foldWithApp (reverse ?_ l) t)
     (λ c : Char. quote$kappa c)
     quote$sq
     (λ u : iTerm. quote$sq).
@@ -137,16 +137,16 @@ elet toAppU := map ?_ ?_ mkAppU.
 elet PreParam := String × Term.
 elet mkPreParam := prodPair ?String ?Term.
 
-elet preParamName (p : PreParam) : String := pr1 ?String ?Term p.
-elet preParamType (p : PreParam) : Term   := pr2 ?String ?Term p.
+elet preParamName (p : PreParam) : String := pr1 ?_ ?Term p.
+elet preParamType (p : PreParam) : Term   := pr2 ?_ ?Term p.
 
 -- If the first entry in the product is `true` the argument is erased
 elet Param := Bool × PreParam.
 elet mkParam := prodPair ?Bool ?PreParam.
 
 elet paramErased : Param -> Bool := pr1 ?Bool ?PreParam.
-elet paramName (p : Param) : String := pr1 ?String ?Term $ pr2 ?Bool ?PreParam p.
-elet paramType (p : Param) : Term   := pr2 ?String ?Term $ pr2 ?Bool ?PreParam p.
+elet paramName (p : Param) : String := pr1 ?_ ?Term $ pr2 ?_ ?PreParam p.
+elet paramType (p : Param) : Term   := pr2 ?_ ?Term $ pr2 ?_ ?PreParam p.
 
 -- Constructs a `List PreParam` from some names and a type
 elet namesToPreParams (ns : List String) (t : Term) :=
@@ -195,7 +195,7 @@ elet mkInfixData : String -> (Term -> Term -> Term) -> InfixData :=
 elet appInfixData : InfixData -> (Term -> Term -> Term) := pr2 ?String ?(Term -> Term -> Term).
 
 elet appToTerm (i : Term × InfixData) (t : Term) : Term :=
-  appInfixData (pr2 ?Term ?InfixData i) t (pr1 ?Term ?InfixData i).
+  appInfixData (pr2 ?_ ?InfixData i) t (pr1 ?_ ?InfixData i).
 
 -- The single term is the leftmost, and every cons adds a term at the right
 elet MultiTerm : * := Term × List (Term × InfixData).
@@ -224,7 +224,7 @@ elet multiTermToTermRight (m : MultiTerm) :=
     (multiTermSingle m)
     (λ h : Term × InfixData. λ t : List (Term × InfixData). λ _ : Term. appToTerm
       (foldr ?_ ?_ (λ acc : Term × InfixData. λ x : Term × InfixData.
-        appToTerm acc (pr1 ?Term ?InfixData x) ; pr2 ?Term ?InfixData x) t h)
+        appToTerm acc (pr1 ?_ ?InfixData x) ; pr2 ?_ ?InfixData x) t h)
       (multiTermSingle m))
     (multiTermRest m).
 

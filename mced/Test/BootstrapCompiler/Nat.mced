@@ -8,8 +8,8 @@ elet zero : Nat := Λ X : *. λ z : X. λ s : X -> X. z.
 elet suc (n : Nat) : Nat := Λ X : *. λ z : X. λ s : X -> X. s $ n ?X z s.
 
 elet recursionNat [X : *] (rz : X) (rs : Nat -> X -> X) (n : Nat) : X :=
-  pr2 ?Nat ?X $ n ?(Nat × X)
+  pr2 ?_ ?X $ n ?(Nat × X)
     (zero ; rz)
-    (λ r : Nat × X. suc (pr1 ?Nat ?X r) ; rs (pr1 ?Nat ?X r) (pr2 ?Nat ?X r)).
+    (λ r : Nat × X. suc (pr1 ?_ ?X r) ; rs (pr1 ?_ ?X r) (pr2 ?_ ?X r)).
 
 endModule.

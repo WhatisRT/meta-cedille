@@ -49,17 +49,8 @@ let isUnknown (t : Term) : Bool :=
     true
     (λ _ : Bool. false).
 
-let getHoleNames (l : List InferenceInfo) : List String :=
-  map ?InferenceInfo ?String inferenceInfoName $
-    filter ?InferenceInfo (λ i : InferenceInfo. isUnknown $ inferenceInfoTerm i) l.
-
-let getHoleIndices (l : List InferenceInfo) : List Nat :=
-  collectMapMaybe ?(Nat × InferenceInfo) ?Nat
-    (λ x : Nat × InferenceInfo.
-      ifthenelse ?(Maybe Nat) (isUnknown $ inferenceInfoTerm $ pr2 ?Nat ?InferenceInfo x)
-        (just ?Nat $ pr1 ?Nat ?InferenceInfo x)
-        (nothing ?Nat))
-    (zipWithIndex ?InferenceInfo ?(Nat × InferenceInfo) (prodPair ?Nat ?InferenceInfo) l).
+let isSolved (l : List App) : Bool :=
+  isNil ?App (filter ?App (λ a : App. isUnknown $ appTerm a) l).
 
 let sequenceRecApp (recapp : List (Bool × Eval Term)) : Eval (List App) :=
   sequenceEval ?App $
@@ -109,11 +100,22 @@ let inferAppTypes (app : List App) : Eval (List (App × Maybe Term)) :=
 -- Unsolved equations of terms behind some number of binders
 let UnsEqn : * := Nat × Term × Term.
 
-let mkUnsEqn (t1, t2 : Term) : UnsEqn :=
-  prodPair ?Nat ?(Term × Term) 0 $ prodPair ?Term ?Term t1 t2.
+let mkUnsEqn' (ctx : Nat) (t1, t2 : Term) : UnsEqn :=
+  prodPair ?Nat ?(Term × Term) ctx $ prodPair ?Term ?Term t1 t2.
+
+let mkUnsEqn : Term -> Term -> UnsEqn := mkUnsEqn' 0.
 
 let deriveEqnsHelperSuc : List UnsEqn -> List UnsEqn :=
   map ?UnsEqn ?UnsEqn (productMap1 ?Nat ?(Term × Term) ?Nat suc).
+
+let incUnsEqnCtx (n : Nat) : List UnsEqn -> List UnsEqn :=
+  n ?(List UnsEqn -> List UnsEqn)
+    (λ l : List UnsEqn. l)
+    (λ f : List UnsEqn -> List UnsEqn. λ l : List UnsEqn. deriveEqnsHelperSuc (f l)).
+
+let showUnsEqn : UnsEqn -> String :=
+  recursionTripleProduct ?Nat ?Term ?Term ?String (λ n : Nat. λ t, t' : Term.
+    stringConcat [String|showTerm t, " = ", showTerm t', " in ctx: ", showNatDecimal n]).
 
 -- given two terms, return equations by matching on their structure
 -- doesn't do any reductions
@@ -139,8 +141,8 @@ let deriveEqns' : Term -> Term -> List UnsEqn :=
     (λ t1, t2 : Term. λ rec : List UnsEqn. rec)
     (λ t1, t2 : Term. [UnsEqn| mkUnsEqn t1 t2]).
 
--- TODO: deal with the binder level
 let deriveEqns (eq : UnsEqn) : List UnsEqn :=
+  incUnsEqnCtx (pr31 ?Nat ?Term ?Term eq) $
   deriveEqns' (reduceMultiApp $ pr32 ?Nat ?Term ?Term eq) (reduceMultiApp $ pr33 ?Nat ?Term ?Term eq).
 
 -- Solved equation
@@ -161,6 +163,21 @@ let solveEqn (ctx : Nat) (eqn : UnsEqn) : Maybe SEqn :=
     (nothing ?SEqn)
     (λ _ : Maybe SEqn. nothing ?SEqn).
 
+let tryHNFEqn (eq : UnsEqn) : Eval UnsEqn :=
+  bindEval ?Term ?UnsEqn (headNormalize $ pr32 ?Nat ?Term ?Term eq) λ t1 : Term.
+  bindEval ?Term ?UnsEqn (headNormalize $ pr33 ?Nat ?Term ?Term eq) λ t2 : Term.
+  pureEval ?UnsEqn $ mkUnsEqn' (pr31 ?Nat ?Term ?Term eq) t1 t2.
+
+-- partition equations into solved and unsolved
+let partitionSolved (ctx : Nat) (eqns : List UnsEqn) : List SEqn × List UnsEqn :=
+  foldl ?UnsEqn ?(List SEqn × List UnsEqn)
+    (λ acc : List SEqn × List UnsEqn. λ eq : UnsEqn.
+      maybe ?SEqn ?(List SEqn × List UnsEqn)
+        (productMap2 ?(List SEqn) ?(List UnsEqn) ?(List UnsEqn) (cons ?UnsEqn eq) acc)
+        (λ seqn : SEqn. productMap1 ?(List SEqn) ?(List UnsEqn) ?(List SEqn) (cons ?SEqn seqn) acc)
+        (solveEqn ctx eq))
+    eqns (prodPair ?(List SEqn) ?(List UnsEqn) [SEqn|] [UnsEqn|]).
+
 -- if possible, return a starting equation
 let toUnsEqn (i : InferenceInfo) : Maybe UnsEqn :=
   mapMaybe ?Term ?UnsEqn
@@ -172,16 +189,26 @@ let allUnsEqns (l : List InferenceInfo) : List UnsEqn :=
     (λ ctx : Nat. λ i : InferenceInfo.
       maybe ?UnsEqn ?(List UnsEqn) [UnsEqn|] (deriveEqns) (toUnsEqn i)) l.
 
-let allEqns (l : List InferenceInfo) : List SEqn :=
-  concat ?SEqn $ zipWithIndex ?InferenceInfo ?(List SEqn)
-    (λ ctx : Nat. λ i : InferenceInfo. maybe ?UnsEqn ?(List SEqn)
-      [SEqn|]
-      (λ eq : UnsEqn. collectMapMaybe ?UnsEqn ?SEqn (solveEqn ctx) $ deriveEqns eq)
-      (toUnsEqn i)) l.
+let progressEqns (ctx : Nat) (eqns : List UnsEqn) : List SEqn × List UnsEqn :=
+  partitionSolved ctx $ concat ?UnsEqn $ map ?UnsEqn ?(List UnsEqn) deriveEqns eqns.
 
-let showUnsEqn : UnsEqn -> String :=
-  recursionTripleProduct ?Nat ?Term ?Term ?String (λ n : Nat. λ t, t' : Term.
-    stringConcat [String|showTerm t, " = ", showTerm t', " in ctx: ", showNatDecimal n]).
+-- fueledFix
+let progressEqnsN (ctx : Nat) (eqns : List UnsEqn) : Eval (List SEqn × List UnsEqn) :=
+  recursionProduct ?(List SEqn) ?(List UnsEqn) ?(Eval (List SEqn × List UnsEqn))
+    (λ seqns : List SEqn. λ unseqns : List UnsEqn.
+      bindEval ?(List UnsEqn) ?(List SEqn × List UnsEqn)
+        (traverseEval ?UnsEqn ?UnsEqn tryHNFEqn unseqns) λ eqns' : List UnsEqn.
+        pureEval ?(List SEqn × List UnsEqn) $
+          productMap1 ?(List SEqn) ?(List UnsEqn) ?(List SEqn) (app ?SEqn seqns) $
+            progressEqns ctx eqns')
+    (partitionSolved ctx $ concat ?UnsEqn $ map ?UnsEqn ?(List UnsEqn) deriveEqns eqns).
+
+let allSolutions (l : List InferenceInfo) : Eval (List SEqn) :=
+  mapEval ?(List $ List SEqn) ?(List SEqn) (concat ?SEqn) $
+    sequenceEval ?(List SEqn) $ zipWithIndex ?InferenceInfo ?(Eval $ List SEqn)
+      (λ ctx : Nat. λ i : InferenceInfo. mapEval ?(List SEqn × List UnsEqn) ?(List SEqn)
+        (pr1 ?(List SEqn) ?(List UnsEqn))
+        (progressEqnsN ctx (maybeToList ?UnsEqn $ toUnsEqn i))) l.
 
 let showSolution (s : SEqn) : String :=
   stringConcat [String| showNatDecimal $ pr1 ?Nat ?Term s, " = ", showTerm $ pr2 ?Nat ?Term s].
@@ -197,20 +224,27 @@ let solveApp (app : List App) (s : List SEqn) : List App :=
 
 let debugPrintElabStep (l : List InferenceInfo) : Eval Unit :=
   ifthenelse ?(Eval Unit) (isNil ?InferenceInfo l) (pureEval ?Unit tt) $
+    bindEval ?(List SEqn) ?Unit (allSolutions l) λ s : List SEqn.
     printLineEval $ stringConcat
       [String|"  Equations: ", showList ?InferenceInfo showInferenceInfo l, newline,
               "  Derived 1: ", showList ?UnsEqn showUnsEqn $
                                collectMapMaybe ?InferenceInfo ?UnsEqn toUnsEqn l, newline,
               "  Derived 2: ", showList ?UnsEqn showUnsEqn $ allUnsEqns l, newline,
-              "  Solutions: ", showList ?(Nat × Term) showSolution $ allEqns l, newline].
+              "  Solutions: ", showList ?(Nat × Term) showSolution s, newline].
 
 let solveAppWithErr (f : Term) (app : List App) (s : List InferenceInfo) : Eval Term :=
-  (λ l : List App. ifthenelse ?(Eval Term)
-    (isNil ?App (filter ?App (λ a : App. isUnknown $ appTerm a) l))
-      (pureEval ?Term (appLTerm f l))
-      (seqEval ?Unit ?Term (debugPrintElabStep s) (throwEval ?Term $ stringConcat
-        [String|"Could not infer all holes in: ", showTerm (appLTerm f l), "!", newline])))
-  (solveApp app $ allEqns s).
+  bindEval ?(List App) ?Term (mapEval ?(List SEqn) ?(List App) (solveApp app) $ allSolutions s)
+  (λ l : List App. (λ ok : Bool.
+    -- FIXME: strangely, we can print the value of ok to the terminal
+    -- just fine, but branching on it loops infinitely at inferenceTest4
+
+    -- debugWrap ?Term (showBool ok) $
+    -- ok ?(Eval Term)
+    (pureEval ?Term (appLTerm f l))
+    -- (seqEval ?Unit ?Term (debugPrintElabStep s) (throwEval ?Term $ stringConcat
+    --   [String|"Could not infer all holes in: ", showTerm (appLTerm f l), "!", newline]))
+      )
+    (isSolved l)).
 
 let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term :=
   bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ e : String.
@@ -258,7 +292,7 @@ elet inferenceTest1' := λ x : Nat × Term. pr1 ?_ ?_ $ x.
 elet inferenceTest1'' := λ x : Nat × Term. (pr1 ?_ ?_) x.
 
 elet inferenceTest2 (t : Term) : init$newStmt :=
-  bindEval ?_ ?Unit (elabLocalInference false t) (λ t' : Term.
+  (elabLocalInference false t) >>= (λ t' : Term.
     seqNewStmt (printEval $ showTerm t') emptyStmt).
 
 elet inferenceTest3 (i : LetInfo) : init$newStmt :=

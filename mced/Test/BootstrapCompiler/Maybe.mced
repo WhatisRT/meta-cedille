@@ -22,7 +22,7 @@ elet liftMaybe2 [X, Y, Z : *] (f : X -> Y -> Z) (x : Maybe X) (y : Maybe Y) : Ma
   maybe ?_ ?(Maybe Z) (nothing ?Z) (λ x' : X. mapMaybe ?_ ?_ (λ y' : Y. f x' y') y) x.
 
 elet traverseMaybeList [X, Y : *] (f : X -> Maybe Y) : List X -> Maybe (List Y) :=
-  recursionList ?X ?_
+  recursionList ?_ ?_
     (just ?_ [Y|])
     (λ x : X. λ xs : List X. λ rec : Maybe (List Y). liftMaybe2 ?_ ?_ ?_ (cons ?Y) (f x) rec).
 

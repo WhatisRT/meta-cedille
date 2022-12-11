@@ -20,6 +20,6 @@ elet liftError2 [A, B, C : *] (f : A -> B -> C) (a : Error A) (b : Error B) : Er
   bindError ?_ ?_ (λ a' : A. mapError ?_ ?_ (f a') b) a.
 
 elet traverseErrorList [X, Y : *] (f : X -> Error Y) : List X -> Error (List Y) :=
-  recursionList ?X ?_
+  recursionList ?_ ?_
     (pureError ?_ (nil ?Y))
     (λ x : X. λ xs : List X. λ rec : Error (List Y). liftError2 ?_ ?_ ?_ (cons ?Y) (f x) rec).
