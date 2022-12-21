@@ -7,6 +7,9 @@ module Theory.Terms where
 open import Prelude
 open import Prelude.Nat
 
+open import Data.Integer using (ℤ)
+import Data.Integer.Show
+
 open import Theory.Names public
 open import Theory.TermLike
 open import Theory.PrimMeta public
@@ -16,7 +19,7 @@ private variable a b : Bool
 -- the second bool decides whether to have the NBE constructors
 data Term : @0 Bool → @0 Bool → Set where
   Var-T   : Name → Term a b
-  FDB     : 𝕀 → Term a true
+  FDB     : ℤ → Term a true
   Sort-T  : Sort → Term a b
   Const-T : Const → Term a b
   App     : Term a b → Term a b → Term a b
@@ -107,7 +110,7 @@ module _ {a b : Bool} where
 {-# TERMINATING #-}
 showTermCtx : List String → Term a b → String
 showTermCtx l (Var-T x)      = showVar l x
-showTermCtx l (FDB x)        = "FDB" <+> show x
+showTermCtx l (FDB x)        = "FDB" <+> Data.Integer.Show.show x
 showTermCtx l (Sort-T x)     = show x
 showTermCtx l (Const-T x)    = show x
 showTermCtx l (Pr1 t)        = "π1" <+> showTermCtx l t
