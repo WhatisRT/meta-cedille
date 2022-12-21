@@ -121,7 +121,9 @@ showTermCtx l (Lam-P n t)    = "λ" <+> n + "." <+> showTermCtx (n ∷ l) t
 showTermCtx l (Cont n _ t)   = "Cont" <+> n + "." <+> showTermCtx (n ∷ l) t
 showTermCtx l (Rho t t₁ t₂)  = "ρ" <+> showTermCtx l t <+> ":" <+> showTermCtx l t₁ <+> showTermCtx l t₂
 showTermCtx l (All n t t₁)   = "∀" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
-showTermCtx l (Pi n t t₁)    = "Π" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
+showTermCtx l (Pi n t t₁)    = if n ≣ "_"
+  then "(" + showTermCtx l t + ")" <+> "→" <+> showTermCtx (n ∷ l) t₁
+  else "Π" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
 showTermCtx l (Iota n t t₁)  = "ι" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
 showTermCtx l (Lam-A n t t₁) = "λ" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
 showTermCtx l (LamE n t t₁)  = "Λ" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁

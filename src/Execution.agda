@@ -176,10 +176,9 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     Γ ← getContext
     u ← unquoteFromTerm t'
     T' ← inferType u
-    catchError (checkβηPure Γ t $ Erase T')
-      (λ e → throwError $
-        "Type mismatch with the provided type!\nProvided: " + show t +
-        "\nSynthesized: " + show T')
+    appendIfError (checkβηPure Γ t $ Erase T')
+      ("CheckTerm: Type mismatch with the provided type!\nProvided: " + show t +
+        "\n\nSynthesized: " + show T')
     return (strResult "" , u)
 
   executePrimitive Parse (t , type , t') = do
@@ -195,7 +194,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
                         + (shortenString 10000 (show res))
                         + "\nWhile parsing: " + (shortenString 10000 parsed))
     appendIfError (checkβηPure Γ type $ Erase T)
-      ("Type mismatch with the provided type!\nProvided: " + show type +
+      ("Parse: Type mismatch with the provided type!\nProvided: " + show type +
         "\nSynthesized: " + show T)
     -- need to spell out instance manually, since we don't want to quote 'res'
     return (strResult "" , quoteToAnnTerm ⦃ Quotable-ProductData ⦃ Quotable-NoQuoteAnnTerm ⦄ ⦄

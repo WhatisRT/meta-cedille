@@ -66,7 +66,7 @@ private
 
   typeDecl : String → List ConstrData → String
   typeDecl name constrs =
-    "∀ _ : *" <+>
+    "∀ Z : *" <+>
     unwords (flip mapWithIndex constrs (λ k constr →
       "Π _ :" <+> constrDataToTypeAnn (inj₁ k) 'Π' constr)) <+>
     show (length constrs)

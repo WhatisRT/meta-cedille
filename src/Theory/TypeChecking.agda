@@ -154,9 +154,10 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
 
     {-# NON_TERMINATING #-}
     checkβηPure : PureTerm → PureTerm → M ⊤
-    checkβηPure t t' =
-      tryElse (compareNames t t') $
-      compareHnfs (hnfNormPure Γ t) (hnfNormPure Γ t')
+    checkβηPure t t' = appendIfError
+      (tryElse (compareNames t t') $
+      compareHnfs (hnfNormPure Γ t) (hnfNormPure Γ t'))
+      ("\n\nWhile checking equality of" <+> show t <+> "and" <+> show t')
       -- tryElse (compareHnfs (hnfNormPure Γ t) (hnfNormPure Γ t')) $
       -- pureTermBeq t t'
       where
