@@ -6,6 +6,7 @@ open import Prelude hiding (_⊔_)
 open import Prelude.Nat
 open import Unsafe using (error)
 
+open import Data.Integer as I using (+_)
 open import Data.Word using (toℕ; fromℕ)
 open import Theory.Context
 open import Theory.Names
@@ -56,7 +57,7 @@ private
   {-# TERMINATING #-}
   adjustContext : Context' b → Term b true → Context' b
   adjustContext Γ t = flip map₂ Γ (λ Γ' →
-    mapWithIndex (λ i → map₂ (_<∣> just (FDB $ fromℕ i)))
+    mapWithIndex (λ i → map₂ (_<∣> just (FDB $ + i)))
       (Γ' ++ replicate (necessaryVars t ∸ length Γ') ("_" , nothing)))
     where
       necessaryVars : Term b true → ℕ
@@ -114,7 +115,7 @@ private
     {-# TERMINATING #-}
     toPureTerm : ℕ → Context' false → Term false true → Term false false
     toPureTerm k Γ (Var-T x)     = Var-T x
-    toPureTerm k Γ (FDB x)       = Var (Bound (x +𝕀 fromℕ k))
+    toPureTerm k Γ (FDB x)       = BoundVar (fromℕ I.∣ (x I.+ + k) ∣)
     toPureTerm k Γ (Sort-T x)    = Sort-T x
     toPureTerm k Γ (Const-T x)   = Const-T x
     toPureTerm k Γ (App t t₁)    = App (toPureTerm k Γ t) (toPureTerm k Γ t₁)
@@ -130,14 +131,15 @@ private
     toPureTerm k Γ (Ev m x)      = Ev m (mapPrimMetaArgs (toPureTerm k Γ) x)
     toPureTerm k Γ (Char-T x)    = Char-T x
     toPureTerm k Γ (CharEq t t₁) = CharEq (toPureTerm k Γ t) (toPureTerm k Γ t₁)
-    toPureTerm k Γ (Cont n Γ' t) = Lam-P n (toPureTerm (suc k) Γ (nf' (pushAbstract (proj₁ Γ , Γ') n) t))
+    toPureTerm k Γ (Cont n Γ' t) = let Γ = (proj₁ Γ , Γ') in
+      Lam-P n (toPureTerm (suc k) Γ (nf' (pushTerm Γ n (FDB I.-1ℤ)) t))
 
     convContext : Context → Context' false
     convContext (Γ , Γ') = (Γ , map (map₂ convDef) Γ')
 
     nf : Context → PureTerm false → PureTerm false
-    nf Γ t = let t' = toNBETerm t
-      in toPureTerm (length (proj₂ Γ)) (convContext Γ) $ nf' (adjustContext (convContext Γ) t') t'
+    nf Γ t = let t' = toNBETerm t; Γ' = adjustContext (convContext Γ) t' in
+      toPureTerm (length (proj₂ Γ')) Γ' $ nf' Γ' t'
 
 module _ where
   private
@@ -146,7 +148,8 @@ module _ where
 
     open Lookup convDef
 
-    {-# NON_TERMINATING #-}
+    -- this is a lie, but it means we can reduce it in tests
+    {-# TERMINATING #-}
     dbnf : Context' false → PureTerm true → PureTerm true
     dbnf Γ (Var-T x)           = lookup' Γ x
     dbnf Γ (FDB x)             = FDB x
@@ -219,3 +222,14 @@ module _ where
     hnf = hnf' true
 
   open Conv hnf convDef using () renaming (nf to hnf) public
+
+private
+  ∅ : Context
+  ∅ = (emptyGlobalContext , [])
+
+  _→ⁿᶠ_ : PureTerm false → PureTerm false → Set
+  t →ⁿᶠ t' = nf ∅ t ≡ t'
+
+  test : Lam-P "x" (Lam-P "y" (Lam-P "z" (BoundVar 1)) ⟪$⟫ BoundVar 0)
+       →ⁿᶠ Lam-P "x" (Lam-P "z" (BoundVar 1))
+  test = refl

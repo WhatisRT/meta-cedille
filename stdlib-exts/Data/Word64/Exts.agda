@@ -14,8 +14,10 @@ subWord : Word64 → Word64 → Word64
 subWord a b = primWord64FromNat (primWord64ToNat a - primWord64ToNat b)
 {-# COMPILE GHC subWord = \ a b -> if a > b then a - b else 0 #-}
 
-postulate
-  wordEq : Word64 → Word64 → Bool
-  wordMax : Word64 → Word64 → Word64
-{-# COMPILE GHC wordEq = (==) #-}
+wordMax : Word64 → Word64 → Word64
+wordMax a b = primWord64FromNat (primWord64ToNat a ⊔ primWord64ToNat b)
 {-# COMPILE GHC wordMax = max #-}
+
+wordEq : Word64 → Word64 → Bool
+wordEq a b = a Data.Word.== b
+{-# COMPILE GHC wordEq = (==) #-}

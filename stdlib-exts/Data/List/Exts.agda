@@ -48,11 +48,7 @@ maximum [] = 0
 maximum (x ∷ l) = x ⊔ maximum l
 
 mapWithIndex : ∀ {a b} {A : Set a} {B : Set b} → (ℕ → A → B) → List A → List B
-mapWithIndex {A = A} {B} f = helper 0
-  where
-    helper : ℕ → List A → List B
-    helper i []      = []
-    helper i (x ∷ l) = f i x ∷ helper (suc i) l
+mapWithIndex f l = zipWith f (upTo (length l)) l
 
 isInit : ⦃ EqB A ⦄ → List A → List A → Bool
 isInit [] l' = true
