@@ -116,7 +116,7 @@ initGrammar = from-inj₂ $ preCoreGrammar {{Except-Monad}} {{Except-MonadExcept
 
 bootstrapMetaContext : MetaContext
 bootstrapMetaContext =
-  emptyGlobalContext , record { grammar = initGrammar ; namespace = "" ; evaluator = □ ; evaluatorArgType = □ }
+  emptyGlobalContext , record { grammar = initGrammar ; namespace = "" ; evaluator = □ ; evaluatorArgType = □ ; doProfiling = false }
 
 loadFiles : MetaContext → EvalFlags → List String → IO (MetaContext × Bool)
 loadFiles context flags []    = return (context , true)

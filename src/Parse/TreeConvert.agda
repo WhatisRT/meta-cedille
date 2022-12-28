@@ -193,6 +193,7 @@ toTerm = helper []
         ("ζPrint^space^_term_"                             , 1F , conv1ʰ (Ev Print)) ∷
         ("ζWriteFile^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev WriteFile)) ∷
         ("ζCommandLine"                                    , 0F , conv0ʰ (Ev CommandLine)) ∷
+        ("ζToggleProf"                                     , 0F , conv0ʰ (Ev ToggleProf)) ∷
 
         ("Κ_const_" , 1F , (λ z → Const-T <$> toConst z)) ∷
         ("κ_char_" , 1F , (λ z → Char-T <$> toChar z <∣> toChar' z)) ∷

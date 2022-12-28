@@ -3,11 +3,15 @@
 module IO.Exts where
 
 import IO.Primitive as Prim
-open import Class.Monad
 open import Class.Functor
-open import Data.List
-open import Data.Nat using (ℕ)
-open import Data.String
+open import Class.Monad
+open import Class.Monad.IO
+open import Data.Bool
+open import Data.List hiding (_++_)
+open import Data.Nat using (ℕ; _∸_; _<ᵇ_)
+open import Data.Nat.DivMod using (_/_)
+open import Data.Nat.Show
+open import Data.String hiding (show)
 open import Data.Sum
 open import Data.Unit
 open import Function
@@ -69,3 +73,23 @@ readFileUtf8 = lift ∘ readFileUtf8Prim
 readFileError : String → IO (String ⊎ String)
 readFileError name =
   catchIOError (inj₂ <$> readFileUtf8 name) (return ∘ inj₁)
+
+module _ {a} {M : Set a -> Set a} {{_ : Monad M}} {{_ : MonadIO M}} where
+
+  printTimeStamp : M ⊤
+  printTimeStamp = do
+    t ← liftIO $ getCPUTime
+    let milliseconds = t / 1000000000
+    liftIO $ IO.putStr (show milliseconds ++ "ms: ")
+    return _
+
+  measureTime : String → M A → M A
+  measureTime s x = do
+    t ← liftIO $ getCPUTime
+    a ← x
+    t' ← liftIO $ getCPUTime
+    let milliseconds = (t' ∸ t) / 1000000000
+    if (10 <ᵇ milliseconds)
+      then (printTimeStamp >> (liftIO $ IO.putStrLn (s ++ ":" <+> show milliseconds ++ "ms\n")))
+      else return _
+    return a

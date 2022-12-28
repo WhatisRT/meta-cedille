@@ -60,6 +60,7 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
     (unreachableShowTerm1 "Print")
     (unreachableShowTerm2 "WriteFile")
     (unreachableShowTerm0 "CommandLine")
+    (unreachableShowTerm0 "ToggleProf")
     (λ c : Char. λ _ : List String. stringConcat [String|"'", stringCons c stringNil, "'"])
     (unreachableShowTerm2 "CHAREQ").
 

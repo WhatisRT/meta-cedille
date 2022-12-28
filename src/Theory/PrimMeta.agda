@@ -1,3 +1,5 @@
+{-# OPTIONS --type-in-type #-}
+
 open import Class.Listable
 open import Data.List
 open import Data.List.Properties
@@ -34,6 +36,7 @@ data PrimMeta : Set where
   Print         : PrimMeta
   WriteFile     : PrimMeta
   CommandLine   : PrimMeta
+  ToggleProf    : PrimMeta
 
 private
   variable
@@ -42,7 +45,7 @@ private
 instance
   PrimMeta-Eq : Eq PrimMeta
   PrimMeta-Eq = Listable.Listable→Eq record
-    { listing = Let ∷ AnnLet ∷ SetEval ∷ ShellCmd ∷ CheckTerm ∷ Parse ∷ Normalize ∷ HeadNormalize ∷ InferType ∷ Import ∷ GetEval ∷ Print ∷ WriteFile ∷ CommandLine ∷ []
+    { listing = Let ∷ AnnLet ∷ SetEval ∷ ShellCmd ∷ CheckTerm ∷ Parse ∷ Normalize ∷ HeadNormalize ∷ InferType ∷ Import ∷ GetEval ∷ Print ∷ WriteFile ∷ CommandLine ∷ ToggleProf ∷ []
     ; complete = λ where
         Let           → pf 0 (here refl)
         AnnLet        → pf 1 (here refl)
@@ -58,6 +61,7 @@ instance
         Print         → pf 11 (here refl)
         WriteFile     → pf 12 (here refl)
         CommandLine   → pf 13 (here refl)
+        ToggleProf    → pf 14 (here refl)
     }
     where
       pf : ∀ {A : Set} {xs} {P : A → Set} (n : ℕ) → Any P (drop n xs) → Any P xs
@@ -81,6 +85,7 @@ instance
   PrimMeta-Show .show Print         = "Print"
   PrimMeta-Show .show WriteFile     = "WriteFile"
   PrimMeta-Show .show CommandLine   = "CommandLine"
+  PrimMeta-Show .show ToggleProf    = "ToggleProf"
 
 primMetaArity : PrimMeta → ℕ
 primMetaArity Let           = 2
@@ -97,6 +102,7 @@ primMetaArity GetEval       = 0
 primMetaArity Print         = 1
 primMetaArity WriteFile     = 2
 primMetaArity CommandLine   = 0
+primMetaArity ToggleProf    = 0
 
 primMetaArgs : Set → PrimMeta → Set
 primMetaArgs A m = A Data.Vec.Recursive.^ (primMetaArity m)
@@ -123,6 +129,9 @@ primMetaArgsAnd = Data.Vec.Recursive.foldr {P = const Bool} true id (const _∧_
 primMetaArgsMax : primMetaArgs 𝕀 m → 𝕀
 primMetaArgsMax = Data.Vec.Recursive.foldr {P = const 𝕀} 0 id (const _⊔𝕀_) _
 
+primMetaArgsProd : primMetaArgs Set m → Set
+primMetaArgsProd = Data.Vec.Recursive.foldr {P = const Set} ⊤ id (const _×_) _
+
 module Types {T} (tl : TermLike T) where
   open TermLike tl
   private
@@ -133,21 +142,36 @@ module Types {T} (tl : TermLike T) where
     tProduct    = FreeVar "init$product"
     tUnit       = FreeVar "init$unit"
 
+  data Univ : Set where
+    uStar uString uTerm uStringList : Univ
+    uProduct : Univ → Univ → Univ
+
+  ⟦_⟧ᵗ : Univ → T
+  ⟦ uStar ⟧ᵗ = ⋆
+  ⟦ uString ⟧ᵗ = tString
+  ⟦ uTerm ⟧ᵗ = tTerm
+  ⟦ uStringList ⟧ᵗ = tStringList
+  ⟦ uProduct u u₁ ⟧ᵗ = tProduct ⟪$⟫ ⟦ u ⟧ᵗ ⟪$⟫ ⟦ u₁ ⟧ᵗ
+
+  primMetaSᵘ : (m : PrimMeta) → primMetaArgs Univ m
+  primMetaSᵘ Let           = (uString , uTerm)
+  primMetaSᵘ AnnLet        = (uString , uTerm , uTerm)
+  primMetaSᵘ SetEval       = (uTerm , uString , uString)
+  primMetaSᵘ ShellCmd      = (uString , uStringList)
+  primMetaSᵘ CheckTerm     = (uStar , uTerm)
+  primMetaSᵘ Parse         = (uString , uStar , uString)
+  primMetaSᵘ Normalize     = uTerm
+  primMetaSᵘ HeadNormalize = uTerm
+  primMetaSᵘ InferType     = uTerm
+  primMetaSᵘ Import        = uString
+  primMetaSᵘ GetEval       = _
+  primMetaSᵘ Print         = uString
+  primMetaSᵘ WriteFile     = (uString , uString)
+  primMetaSᵘ CommandLine   = _
+  primMetaSᵘ ToggleProf    = _
+
   primMetaS : (m : PrimMeta) → primMetaArgs T m
-  primMetaS Let           = (tString , tTerm)
-  primMetaS AnnLet        = (tString , tTerm , tTerm)
-  primMetaS SetEval       = (tTerm , tString , tString)
-  primMetaS ShellCmd      = (tString , tStringList)
-  primMetaS CheckTerm     = (⋆ , tTerm)
-  primMetaS Parse         = (tString , ⋆ , tString)
-  primMetaS Normalize     = tTerm
-  primMetaS HeadNormalize = tTerm
-  primMetaS InferType     = tTerm
-  primMetaS Import        = tString
-  primMetaS GetEval       = _
-  primMetaS Print         = tString
-  primMetaS WriteFile     = (tString , tString)
-  primMetaS CommandLine   = _
+  primMetaS m = mapPrimMetaArgs ⟦_⟧ᵗ (primMetaSᵘ m)
 
   primMetaT : (m : PrimMeta) → primMetaArgs T m → T
   primMetaT Let _             = tUnit
@@ -164,3 +188,4 @@ module Types {T} (tl : TermLike T) where
   primMetaT Print   _         = tUnit
   primMetaT WriteFile _       = tUnit
   primMetaT CommandLine _     = tStringList
+  primMetaT ToggleProf _      = tUnit
