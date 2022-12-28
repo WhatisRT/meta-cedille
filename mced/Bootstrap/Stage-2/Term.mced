@@ -56,7 +56,11 @@ let appLTerm := λ t : Term λ l : [List [[Product Bool] Term]] Λ X : *
   λ k : (Π _ : Char X)
   λ x : X
   λ u : (Π _ : X X)
-    [[a [[[[[[[<t X> v] s] b] a] k] x] u]] [[<<map [[Product Bool] Term]> [[Product Bool] X]> λ bt : [[Product Bool] Term] [[<<prodPair Bool> X> [<<pr1 Bool> Term> bt]] [[[[[[[<[<<pr2 Bool> Term> bt] X> v] s] b] a] k] x] u]]] l]]
+    [[a [[[[[[[<t X> v] s] b] a] k] x] u]]
+        [[<<map [[Product Bool] Term]> [[Product Bool] X]>
+          [<<<recursionProduct Bool> Term> [[Product Bool] X]>
+            λ b' : Bool λ t : Term [[<<prodPair Bool> X> b'] [[[[[[[<t X> v] s] b] a] k] x] u]]]]
+          l]]
       : Π _ : Term Π _ : [List [[Product Bool] Term]] Term.
 
 let charTerm := λ c : Char Λ X : *

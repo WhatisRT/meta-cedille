@@ -152,7 +152,8 @@ b-let pureEval [T : *] (t : T) : Eval T := λ e : EvalEnv. λ s : EvalState.
 b-let bindEval [T, T' : *] (x : Eval T) (f : T -> Eval T') : Eval T' :=
   λ e : EvalEnv. λ s : EvalState.
     bindMeta ?(Product T EvalState) ?(Product T' EvalState) (x e s)
-      (λ res : Product T EvalState. f (pr1 ?T ?EvalState res) e (pr2 ?T ?EvalState res)).
+      (recursionProduct ?T ?EvalState ?(M (Product T' EvalState))
+        (λ res1 : T. λ res2 : EvalState. f res1 e res2)).
 
 -- Basic monad functions
 b-let joinEval [T : *] (t : Eval (Eval T)) :=
