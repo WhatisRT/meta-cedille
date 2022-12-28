@@ -95,9 +95,9 @@ in with pinnedPkgs; rec {
     buildInputs = [ bench meta-cedille ];
     buildPhase = ''
           bench --output bench.html \
-                '${meta-cedille}/bin/meta-cedille --no-repl'
+                '${meta-cedille}/bin/meta-cedille --no-repl' \
+                '${meta-cedille}/bin/meta-cedille --no-repl --load Benchmark'
           '';
     installPhase = "mkdir $out && cp bench.html $out";
   };
-  #              '${meta-cedille}/bin/meta-cedille --no-repl --load Benchmark'
 }
