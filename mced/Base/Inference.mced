@@ -77,41 +77,6 @@ let applyToApp (f : Term -> List App -> Eval Term) (t : Term) : Eval Term :=
     (pureEval ?Term unknownTerm)
     (λ u : Eval Term. mapEval ?Term ?Term unquoteTerm u).
 
--- -- apply f to all applications in a term
--- let applyToApp (f : Term -> List App -> Eval Term) : Term -> Eval Term :=
---   recursionTerm ?(Eval Term)
---     (λ v : Var. pureEval ?Term $ varTerm v)
---     (λ s : Sort. pureEval ?Term $ sortTerm s)
---     (λ b : Binder. λ n : String. λ _, _ : Term. λ recT, rect : Eval Term.
---       bindEval ?Term ?Term recT (λ T : Term. inContext ?Term [String × Term| prodPair ?String ?Term n T] $
---         bindEval ?Term ?Term rect (λ t : Term.
---           pureEval ?Term $ binderTerm b n T t)))
---     (λ _ : Term. λ _ : List App.
---       λ rect : Eval Term. λ recapp : List (Bool × Eval Term).
---         bindEval ?Term ?Term rect (λ t : Term.
---           bindEval ?(List App) ?Term (sequenceRecApp recapp) (λ app : List App.
---             f t app)))
---     (λ c : Char. pureEval ?Term $ charTerm c)
---     (pureEval ?Term unknownTerm)
---     (λ u : Term. λ _ : Eval Term. pureEval ?Term $ unquoteTerm u).
-
--- -- apply f to all applications in a term
--- let applyToApp (f : Term -> List App -> Eval Term) (t : Term) : Eval Term :=
---   t ?(Eval Term)
---     (λ v : Var. pureEval ?Term $ varTerm v)
---     (λ s : Sort. pureEval ?Term $ sortTerm s)
---     (λ b : Binder. λ n : String. λ recT, rect : Eval Term.
---       bindEval ?Term ?Term recT (λ T : Term. inContext ?Term [String × Term| prodPair ?String ?Term n T] $
---         bindEval ?Term ?Term rect (λ t : Term.
---           pureEval ?Term $ binderTerm b n T t)))
---     (λ rect : Eval Term. λ recapp : List (Bool × Eval Term).
---        bindEval ?Term ?Term rect (λ t : Term.
---          bindEval ?(List App) ?Term (sequenceRecApp recapp) (λ app : List App.
---            f t app)))
---     (λ c : Char. pureEval ?Term $ charTerm c)
---     (pureEval ?Term unknownTerm)
---     (λ u : Eval Term. mapEval ?Term ?Term unquoteTerm u).
-
 let showInferenceInfo (i : InferenceInfo) : String :=
   (λ withColor : String -> String.
     stringConcat [String|
@@ -306,14 +271,7 @@ let elabLetInfo (doDebugPrinting : Bool) : LetInfo -> Eval LetInfo :=
   recursionTripleProduct ?String ?Term ?(Maybe Term) ?(Eval LetInfo)
     λ n : String. λ t : Term. λ T : Maybe Term.
       mapEval ?Term ?LetInfo (λ t : Term. mkLetInfo n t T)
-        --(bindEval ?Term ?Term (reduceMultiAppE t) (elabLocalInference doDebugPrinting)).
         (elabLocalInference doDebugPrinting $ reduceMultiApp t).
-        --mapEval ?Term ?LetInfo (λ t : Term.
-          -- mapEval ?(Maybe Term) ?LetInfo
-
-            -- (maybe ?Term ?(Eval (Maybe Term)) (pureEval ?(Maybe Term) $ nothing ?Term)
-            --   (λ T : Term. mapEval ?Term ?(Maybe Term) (just ?Term) $ elabLocalInference doDebugPrinting $ reduceMultiApp T)
-            --   (letInfoType i))
 
 -- let that uses this elaborator
 -- this will be added to the regular let, once it works a little better
@@ -328,12 +286,7 @@ updateEval.
 --
 -- don't do anything on terms that don't contain holes
 
--- set ToggleProf.
-
 elet inferenceTest1 := λ x : Nat × Term. pr1 ?_ ?_ x.
-
--- set ToggleProf.
-
 elet inferenceTest1' := λ x : Nat × Term. pr1 ?_ ?_ $ x.
 elet inferenceTest1'' := λ x : Nat × Term. (pr1 ?_ ?_) x.
 

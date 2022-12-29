@@ -30,6 +30,8 @@ record MetaEnv : Set where
     grammar   : Grammar
     namespace : String  -- we need to remember the current namespace
                         -- because the rule string in the grammar doesn't
+    grammarValid : Bool -- whether we need to update the grammar if we
+                        -- don't change the namespace
     evaluator : AnnTerm
     evaluatorArgType : AnnTerm -- type of arguments to the evaluator
     doProfiling : Bool
@@ -319,12 +321,17 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     T ← case T of λ where
       (just T) → checkType t T >> return T
       nothing  → inferType t
-    res ← addDef n (record { def = just t ; type = T; extra = nothing })
+    addDef n (record { def = just t ; type = T; extra = nothing })
+    menv@record { namespace = namespace } ← getMeta
+    if (strTake (strLength namespace) n ≣ namespace) then setMeta record menv { grammarValid = false } else return _
     return (strResult "" , quoteToAnnTerm tt)
 
   executeBootstrapStmt (SetEval t n start) = do
     Γ ← getContext
-    y ← generateCFG start $ getParserNamespace Γ n
+    menv@record { grammar = G ; namespace = n' ; grammarValid = valid } ← getMeta
+    y ← if n ≣ n' ∧ valid
+      then return G
+      else (generateCFG start $ getParserNamespace Γ n)
     (Pi _ u u₁) ← hnfNorm Γ <$> synthType Γ t
       where _ → throwError "The evaluator needs to have a pi type"
     true ← return $ isLocallyClosed (Erase u) Γ
@@ -334,8 +341,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
         -- take the least normalized term that's locally free
         t' ∷ _ ← return $ boolFilter (λ t → isLocallyClosed (Erase t) Γ) (t ∷ hnfNorm Γ t ∷ [])
           where _ → throwError "The evaluator needs to normalize to a term without local variables!"
-        menv ← getMeta
-        setMeta record menv { grammar = y ; namespace = n ; evaluator = t' ; evaluatorArgType = u }
+        setMeta record menv { grammar = y ; namespace = n ; grammarValid = true ; evaluator = t' ; evaluatorArgType = u }
         return (strResult "" , quoteToAnnTerm tt)
       _       → throwError "The evaluator needs to return a M type"
 
