@@ -75,10 +75,10 @@ b-let stripLambda : Term -> Maybe Term :=
     (nothing ?Term)
     (λ _ : Term. nothing ?Term).
 
-b-let stripLambdas : Nat -> Term -> Maybe Term :=
-  recursionNat ?(Term -> Maybe Term)
+b-let stripLambdas (n : Nat) : Term -> Maybe Term :=
+  n ?(Term -> Maybe Term)
     (just ?Term)
-    (λ _ : Nat. λ rec : Term -> Maybe Term. λ t : Term. bindMaybe ?Term ?Term (stripLambda t) rec).
+    (λ rec : Term -> Maybe Term. λ t : Term. bindMaybe ?Term ?Term (stripLambda t) rec).
 
 b-let stripPi : Term -> Maybe Term :=
   matchTerm ?(Maybe Term)
@@ -91,10 +91,10 @@ b-let stripPi : Term -> Maybe Term :=
     (nothing ?Term)
     (λ _ : Term. nothing ?Term).
 
-b-let stripPis : Nat -> Term -> Maybe Term :=
-  recursionNat ?(Term -> Maybe Term)
+b-let stripPis (n : Nat) : Term -> Maybe Term :=
+  n ?(Term -> Maybe Term)
     (just ?Term)
-    (λ _ : Nat. λ rec : Term -> Maybe Term. λ t : Term. bindMaybe ?Term ?Term (stripPi t) rec).
+    (λ rec : Term -> Maybe Term. λ t : Term. bindMaybe ?Term ?Term (stripPi t) rec).
 
 b-let matchVar [X : *] (def : X) (f : Var -> X) (t : Term) : X :=
   matchTerm ?X

@@ -72,22 +72,22 @@ let termEq : Term -> Term -> Bool :=
 --------------------------------------------------------------------------------
 
 let substContextVars (s : Nat -> Nat) (t : Term) : Term :=
-  recursionTerm ?(Nat -> Term)
+  t ?(Nat -> Term)
     (λ v : Var. λ k : Nat. v ?Term
       (λ n : String. sVarTerm n)
       (λ i : init$index. ifthenelse ?Term (natLeq k $ indexToNat i)
         (iVarTerm $ natToIndex $ add (s $ sub (indexToNat i) k) k)
         (iVarTerm i)))
     (λ s : Sort. λ k : Nat. sortTerm s)
-    (λ b : Binder. λ n : String. λ T, t : Term. λ recT, rect : Nat -> Term. λ k : Nat.
+    (λ b : Binder. λ n : String. λ recT, rect : Nat -> Term. λ k : Nat.
       binderTerm b n (recT k) (rect $ suc k))
-    (λ t : Term. λ app : List App. λ rect : Nat -> Term. λ recApp : List (Bool × (Nat -> Term)).
+    (λ rect : Nat -> Term. λ recApp : List (Bool × (Nat -> Term)).
       λ k : Nat. appLTerm (rect k) (map ?(Bool × (Nat -> Term)) ?(Bool × Term)
         (productMap2 ?Bool ?(Nat -> Term) ?Term (λ f : Nat -> Term. f k)) recApp))
     (λ c : Char. λ _ : Nat. charTerm c)
     (λ _ : Nat. unknownTerm)
-    (λ t : Term. λ rect : Nat -> Term. λ k : Nat. rect k)
-    t 0.
+    (λ rect : Nat -> Term. λ k : Nat. rect k)
+    0.
 
 let strengthen : Term -> Term := substContextVars pred.
 let strengthenBy (k : Nat) : Term -> Term := substContextVars (λ n : Nat. sub n k).

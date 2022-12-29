@@ -163,9 +163,14 @@ b-let mapEval [T, T' : *] (f : T -> T') (t : Eval T) : Eval T' :=
 b-let seqEval [T, T' : *] (t : Eval T) (t' : Eval T') : Eval T' :=
   bindEval ?T ?T' t (λ _ : T. t').
 b-let sequenceEval [T : *] (l : List (Eval T)) : Eval (List T) :=
-  foldl ?(Eval T) ?(Eval (List T)) (λ l' : Eval (List T). λ x : Eval T.
-    bindEval ?T ?(List T) x (λ x' : T. mapEval ?(List T) ?(List T) (cons ?T x') l'))
-    l (pureEval ?(List T) (nil ?T)).
+  l ?(Eval (List T))
+    (pureEval ?(List T) (nil ?T))
+    (λ x : Eval T. λ rec : Eval (List T). bindEval ?T ?(List T) x
+      λ x' : T. mapEval ?(List T) ?(List T) (cons ?T x') rec).
+
+  -- foldl ?(Eval T) ?(Eval (List T)) (λ l' : Eval (List T). λ x : Eval T.
+  --   bindEval ?T ?(List T) x (λ x' : T. mapEval ?(List T) ?(List T) (cons ?T x') l'))
+  --   l (pureEval ?(List T) (nil ?T)).
 b-let traverseEval [A, B : *] (f : A -> Eval B) (l : List A) : Eval (List B) :=
   sequenceEval ?B (map ?A ?(Eval B) f l).
 b-let voidEval [T : *] (x : Eval T) : Eval Unit :=

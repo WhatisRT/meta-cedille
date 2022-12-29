@@ -37,11 +37,12 @@ let letInfoTerm := λ i : LetInfo [<<<pr32 String> Term> [Maybe Term]> i].
 let letInfoType := λ i : LetInfo [<<<pr33 String> Term> [Maybe Term]> i].
 let letInfoHasAnn := λ i : LetInfo [[[<<maybe Term> Bool> false] λ _ : Term true] [letInfoType i]].
 
-let appendTelToLetInfo := λ tel : Telescope λ i : LetInfo
-  [[[mkLetInfo
-    [letInfoName i]]
-    [[foldWithLambdas tel] [letInfoTerm i]]]
-    [[<<mapMaybe Term> Term> [foldWithPi tel]] [letInfoType i]]].
+let appendTelToLetInfo := λ tel : Telescope
+  [<<<<recursionTripleProduct String> Term> [Maybe Term]> LetInfo>
+    λ n : String λ t : Term λ T : [Maybe Term]
+      [[[mkLetInfo n]
+        [[foldWithLambdas tel] t]]
+        [[<<mapMaybe Term> Term> [foldWithPi tel]] T]]].
 
 -- converts a `LetInfo` to a let `init$stmt'`
 

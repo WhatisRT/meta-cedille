@@ -167,8 +167,8 @@ let telApp := λ p : [List PreParam] [<app Param> [[<<map PreParam> Param> [mkPa
 let telAppE := λ p : [List PreParam] [<app Param> [[<<map PreParam> Param> [mkParam true]] p]].
 let telNil := <nil Param>.
 
-let preParamToBinder := λ b : Binder λ t : Term λ p : PreParam
-  [[[[binderTerm b] [preParamName p]] [preParamType p]] t].
+let preParamToBinder := λ b : Binder λ t : Term [<<<recursionProduct String> Term> Term>
+  λ n : String λ T : Term [[[[binderTerm b] n] T] t]].
 
 let applyMultiBinder := λ b : Binder [<<foldl PreParam> Term> [preParamToBinder b]].
 

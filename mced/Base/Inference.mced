@@ -29,11 +29,12 @@ let inferenceInfoType2 (i : InferenceInfo) : Maybe Term :=
   pr2 ?Term ?(Maybe Term) $ pr2 ?Term ?(Term × Maybe Term) $ pr2 ?Variable ?(Term × Term × Maybe Term) i.
 
 let pairWithApp (tel : Telescope) : List (App × Maybe Term) -> List InferenceInfo :=
-  zipWith ?(Nat × Param) ?(App × Maybe Term) ?InferenceInfo (λ p : Nat × Param. λ a : App × Maybe Term.
+  zipWith ?(Nat × Param) ?(App × Maybe Term) ?InferenceInfo (recursionProduct ?Nat ?Param ?((App × Maybe Term) -> InferenceInfo)
+    λ n : Nat. λ p : Param. recursionProduct ?App ?(Maybe Term) ?InferenceInfo
+    λ a : App. λ t : Maybe Term.
     prodPair ?Variable ?(Term × Term × Maybe Term)
-      (prodPair ?String ?Nat (paramName $ pr2 ?Nat ?Param p) (pr1 ?Nat ?Param p)) $
-      prodPair ?Term ?(Term × Maybe Term) (appTerm $ pr1 ?App ?(Maybe Term) a) $
-        prodPair ?Term ?(Maybe Term) (paramType $ pr2 ?Nat ?Param p) (pr2 ?App ?(Maybe Term) a))
+      (prodPair ?String ?Nat (paramName p) n) $
+      prodPair ?Term ?(Term × Maybe Term) (appTerm a) $ prodPair ?Term ?(Maybe Term) (paramType p) t)
     (pairWithIndex tel).
 
 let genInferenceInfo (T : Term) (app : List (App × Maybe Term)) : List InferenceInfo :=
@@ -55,27 +56,61 @@ let isSolved (l : List App) : Bool :=
 let sequenceRecApp (recapp : List (Bool × Eval Term)) : Eval (List App) :=
   sequenceEval ?App $
     map ?(Bool × Eval Term) ?(Eval App)
-      (λ x : Bool × Eval Term.
-        mapEval ?Term ?App (mkApp $ pr1 ?Bool ?(Eval Term) x) $ pr2 ?Bool ?(Eval Term) x)
+      (recursionProduct ?Bool ?(Eval Term) ?(Eval App) λ b : Bool. λ t : Eval Term.
+        mapEval ?Term ?App (mkApp b) t)
     recapp.
 
 -- apply f to all applications in a term
-let applyToApp (f : Term -> List App -> Eval Term) : Term -> Eval Term :=
-  recursionTerm ?(Eval Term)
+let applyToApp (f : Term -> List App -> Eval Term) (t : Term) : Eval Term :=
+  t ?(Eval Term)
     (λ v : Var. pureEval ?Term $ varTerm v)
     (λ s : Sort. pureEval ?Term $ sortTerm s)
-    (λ b : Binder. λ n : String. λ _, _ : Term. λ recT, rect : Eval Term.
+    (λ b : Binder. λ n : String. λ recT, rect : Eval Term.
       bindEval ?Term ?Term recT (λ T : Term. inContext ?Term [String × Term| prodPair ?String ?Term n T] $
         bindEval ?Term ?Term rect (λ t : Term.
           pureEval ?Term $ binderTerm b n T t)))
-    (λ _ : Term. λ _ : List App.
-      λ rect : Eval Term. λ recapp : List (Bool × Eval Term).
-        bindEval ?Term ?Term rect (λ t : Term.
-          bindEval ?(List App) ?Term (sequenceRecApp recapp) (λ app : List App.
-            f t app)))
+    (λ rect : Eval Term. λ recapp : List (Bool × Eval Term).
+       bindEval ?Term ?Term rect (λ t : Term.
+         bindEval ?(List App) ?Term (sequenceRecApp recapp) (λ app : List App.
+           f t app)))
     (λ c : Char. pureEval ?Term $ charTerm c)
     (pureEval ?Term unknownTerm)
-    (λ u : Term. λ _ : Eval Term. pureEval ?Term $ unquoteTerm u).
+    (λ u : Eval Term. mapEval ?Term ?Term unquoteTerm u).
+
+-- -- apply f to all applications in a term
+-- let applyToApp (f : Term -> List App -> Eval Term) : Term -> Eval Term :=
+--   recursionTerm ?(Eval Term)
+--     (λ v : Var. pureEval ?Term $ varTerm v)
+--     (λ s : Sort. pureEval ?Term $ sortTerm s)
+--     (λ b : Binder. λ n : String. λ _, _ : Term. λ recT, rect : Eval Term.
+--       bindEval ?Term ?Term recT (λ T : Term. inContext ?Term [String × Term| prodPair ?String ?Term n T] $
+--         bindEval ?Term ?Term rect (λ t : Term.
+--           pureEval ?Term $ binderTerm b n T t)))
+--     (λ _ : Term. λ _ : List App.
+--       λ rect : Eval Term. λ recapp : List (Bool × Eval Term).
+--         bindEval ?Term ?Term rect (λ t : Term.
+--           bindEval ?(List App) ?Term (sequenceRecApp recapp) (λ app : List App.
+--             f t app)))
+--     (λ c : Char. pureEval ?Term $ charTerm c)
+--     (pureEval ?Term unknownTerm)
+--     (λ u : Term. λ _ : Eval Term. pureEval ?Term $ unquoteTerm u).
+
+-- -- apply f to all applications in a term
+-- let applyToApp (f : Term -> List App -> Eval Term) (t : Term) : Eval Term :=
+--   t ?(Eval Term)
+--     (λ v : Var. pureEval ?Term $ varTerm v)
+--     (λ s : Sort. pureEval ?Term $ sortTerm s)
+--     (λ b : Binder. λ n : String. λ recT, rect : Eval Term.
+--       bindEval ?Term ?Term recT (λ T : Term. inContext ?Term [String × Term| prodPair ?String ?Term n T] $
+--         bindEval ?Term ?Term rect (λ t : Term.
+--           pureEval ?Term $ binderTerm b n T t)))
+--     (λ rect : Eval Term. λ recapp : List (Bool × Eval Term).
+--        bindEval ?Term ?Term rect (λ t : Term.
+--          bindEval ?(List App) ?Term (sequenceRecApp recapp) (λ app : List App.
+--            f t app)))
+--     (λ c : Char. pureEval ?Term $ charTerm c)
+--     (pureEval ?Term unknownTerm)
+--     (λ u : Eval Term. mapEval ?Term ?Term unquoteTerm u).
 
 let showInferenceInfo (i : InferenceInfo) : String :=
   (λ withColor : String -> String.
@@ -93,8 +128,9 @@ let inferTypeIfNotUnknown (t : Term) : Eval (Maybe Term) :=
 
 let inferAppTypes (app : List App) : Eval (List (App × Maybe Term)) :=
   sequenceEval ?(App × Maybe Term) $ map ?App ?(Eval (App × Maybe Term))
-    (λ a : App. bindEval ?(Maybe Term) ?(App × Maybe Term) (inferTypeIfNotUnknown $ appTerm a) (λ T : Maybe Term.
-      pureEval ?(App × Maybe Term) $ prodPair ?App ?(Maybe Term) a T))
+    (recursionProduct ?Bool ?Term ?(Eval (App × Maybe Term)) λ b : Bool. λ t : Term.
+      mapEval ?(Maybe Term) ?(App × Maybe Term)
+        (prodPair ?App ?(Maybe Term) (mkApp b t)) (inferTypeIfNotUnknown t))
     app.
 
 -- Unsolved equations of terms behind some number of binders
@@ -170,13 +206,13 @@ let tryHNFEqn (eq : UnsEqn) : Eval UnsEqn :=
 
 -- partition equations into solved and unsolved
 let partitionSolved (ctx : Nat) (eqns : List UnsEqn) : List SEqn × List UnsEqn :=
-  foldl ?UnsEqn ?(List SEqn × List UnsEqn)
-    (λ acc : List SEqn × List UnsEqn. λ eq : UnsEqn.
+  eqns ?(List SEqn × List UnsEqn)
+    (prodPair ?(List SEqn) ?(List UnsEqn) [SEqn|] [UnsEqn|])
+    (λ eq : UnsEqn. λ rec : List SEqn × List UnsEqn.
       maybe ?SEqn ?(List SEqn × List UnsEqn)
-        (productMap2 ?(List SEqn) ?(List UnsEqn) ?(List UnsEqn) (cons ?UnsEqn eq) acc)
-        (λ seqn : SEqn. productMap1 ?(List SEqn) ?(List UnsEqn) ?(List SEqn) (cons ?SEqn seqn) acc)
-        (solveEqn ctx eq))
-    eqns (prodPair ?(List SEqn) ?(List UnsEqn) [SEqn|] [UnsEqn|]).
+        (productMap2 ?(List SEqn) ?(List UnsEqn) ?(List UnsEqn) (cons ?UnsEqn eq) rec)
+        (λ seqn : SEqn. productMap1 ?(List SEqn) ?(List UnsEqn) ?(List SEqn) (cons ?SEqn seqn) rec)
+        (solveEqn ctx eq)).
 
 -- if possible, return a starting equation
 let toUnsEqn (i : InferenceInfo) : Maybe UnsEqn :=
@@ -266,13 +302,18 @@ let elabLocalInference (doDebugPrinting : Bool) (t : Term) : Eval Term :=
       (pureEval ?Unit tt))
     (applyToApp (elabLocally doDebugPrinting) t).
 
-let elabLetInfo (doDebugPrinting : Bool) (i : LetInfo) : Eval LetInfo :=
-  bindEval ?Term ?LetInfo (elabLocalInference doDebugPrinting $ reduceMultiApp $ letInfoTerm i) (λ t : Term.
-    mapEval ?(Maybe Term) ?LetInfo
-      (mkLetInfo (letInfoName i) t)
-      (maybe ?Term ?(Eval (Maybe Term)) (pureEval ?(Maybe Term) $ nothing ?Term)
-        (λ T : Term. mapEval ?Term ?(Maybe Term) (just ?Term) $ elabLocalInference doDebugPrinting $ reduceMultiApp T)
-        (letInfoType i))).
+let elabLetInfo (doDebugPrinting : Bool) : LetInfo -> Eval LetInfo :=
+  recursionTripleProduct ?String ?Term ?(Maybe Term) ?(Eval LetInfo)
+    λ n : String. λ t : Term. λ T : Maybe Term.
+      mapEval ?Term ?LetInfo (λ t : Term. mkLetInfo n t T)
+        --(bindEval ?Term ?Term (reduceMultiAppE t) (elabLocalInference doDebugPrinting)).
+        (elabLocalInference doDebugPrinting $ reduceMultiApp t).
+        --mapEval ?Term ?LetInfo (λ t : Term.
+          -- mapEval ?(Maybe Term) ?LetInfo
+
+            -- (maybe ?Term ?(Eval (Maybe Term)) (pureEval ?(Maybe Term) $ nothing ?Term)
+            --   (λ T : Term. mapEval ?Term ?(Maybe Term) (just ?Term) $ elabLocalInference doDebugPrinting $ reduceMultiApp T)
+            --   (letInfoType i))
 
 -- let that uses this elaborator
 -- this will be added to the regular let, once it works a little better
@@ -287,7 +328,12 @@ updateEval.
 --
 -- don't do anything on terms that don't contain holes
 
+-- set ToggleProf.
+
 elet inferenceTest1 := λ x : Nat × Term. pr1 ?_ ?_ x.
+
+-- set ToggleProf.
+
 elet inferenceTest1' := λ x : Nat × Term. pr1 ?_ ?_ $ x.
 elet inferenceTest1'' := λ x : Nat × Term. (pr1 ?_ ?_) x.
 

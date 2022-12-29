@@ -5,8 +5,10 @@ let recursionProduct := Λ A : * Λ B : * <<recursionDSum A> λ _ : A B>.
 let pr1 := Λ A : * Λ B : * [<<<recursionProduct A> B> A> λ a : A λ _ : B a] : ∀ A : * ∀ B : * Π _ : [[Product A] B] A.
 let pr2 := Λ A : * Λ B : * [<<<recursionProduct A> B> B> λ _ : A λ b : B b] : ∀ A : * ∀ B : * Π _ : [[Product A] B] B.
 
-let productMap1 := Λ A : * Λ B : * Λ C : * λ f : Π _ : A C λ x : [[Product A] B] [[<<prodPair C> B> [f [<<pr1 A> B> x]]] [<<pr2 A> B> x]].
-let productMap2 := Λ A : * Λ B : * Λ C : * λ f : Π _ : B C λ x : [[Product A] B] [[<<prodPair A> C> [<<pr1 A> B> x]] [f [<<pr2 A> B> x]]].
+let productMap1 := Λ A : * Λ B : * Λ C : * λ f : Π _ : A C
+  [<<<recursionProduct A> B> [[Product C] B]> λ a : A λ b : B [[<<prodPair C> B> [f a]] b]].
+let productMap2 := Λ A : * Λ B : * Λ C : * λ f : Π _ : B C
+  [<<<recursionProduct A> B> [[Product A] C]> λ a : A λ b : B [[<<prodPair A> C> a] [f b]]].
 
 let TripleProduct := λ A : * λ B : * λ C : * [[Product A] [[Product B] C]].
 let mkTripleProduct := Λ A : * Λ B : * Λ C : * λ a : A λ b : B λ c : C [[<<prodPair A> [[Product B] C]> a] [[<<prodPair B> C> b] c]].
