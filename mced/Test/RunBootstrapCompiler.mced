@@ -1,17 +1,4 @@
 runMeta voidEval ?String $ shellCmd "mkdir" [String|"-p", bootstrapCompileDir].
 
-runMeta compileNames "DSum".
-runMeta compileNames "Product".
-runMeta compileNames "Sum".
-runMeta compileNames "Void".
-runMeta compileNames "Unit".
-runMeta compileNames "Nat".
-runMeta compileNames "Bool".
-runMeta compileNames "List".
-runMeta compileNames "Maybe".
-runMeta compileNames "Term".
-runMeta compileNames "MLLet".
-
--- FIXME: this works, but is really slow after the files have been written
--- runMeta compileModules
---   [String|"DSum", "Product", "Sum", "Void", "Unit", "Nat", "Bool", "List", "Maybe", "Term", "MLLet"].
+runMeta compileModules
+  [String|"DSum", "Product", "Sum", "Void", "Unit", "Nat", "Bool", "List", "Maybe", "Term", "MLLet"].

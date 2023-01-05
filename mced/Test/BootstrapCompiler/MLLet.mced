@@ -40,10 +40,10 @@ elet letInfoType   (i : LetInfo) : Maybe Term := pr33 ?String ?Term ?(Maybe Term
 elet letInfoHasAnn (i : LetInfo) : Bool       :=
   maybe ?_ ?_ false (λ _ : Term. true) (letInfoType i).
 
-elet appendTelToLetInfo (tel : Telescope) (i : LetInfo) : LetInfo :=
-  mkLetInfo (letInfoName i)
-            (foldWithLambdas tel $ letInfoTerm i)
-            (mapMaybe ?_ ?_ (foldWithPi tel) (letInfoType i)).
+elet appendTelToLetInfo (tel : Telescope) : LetInfo -> LetInfo :=
+  recursionTripleProduct ?String ?Term ?(Maybe Term) ?LetInfo
+    λ n : String. λ t : Term. λ T : Maybe Term.
+      mkLetInfo n (foldWithLambdas tel t) (mapMaybe ?_ ?_ (foldWithPi tel) T).
 
 -- define the definition specified in `LetInfo`
 
@@ -59,7 +59,8 @@ elet init$betterLetType$ : Sum Term Unit := inr ?Term ?_ tt.
 elet init$betterLetType$^space^_multiTerm_=colon= (t : Term) : Sum Term Unit :=
   inl ?_ ?Unit t.
 
-elet init$betterLet$_string_^space^_telescope_=colon=_betterLetType_=equal=^space'^_multiTerm_=dot=  (n : String) (tel : Telescope) (maybeType : Maybe Term) (term : Term) : LetInfo :=
+elet init$betterLet$_string_^space^_telescope_=colon=_betterLetType_=equal=^space'^_multiTerm_=dot=
+  (n : String) (tel : Telescope) (maybeType : Maybe Term) (term : Term) : LetInfo :=
   appendTelToLetInfo tel (mkLetInfo n term maybeType).
 
 elet init$stmt'$b=minus=let^space^_betterLet_ : LetInfo -> M Unit := convertLetInfo.

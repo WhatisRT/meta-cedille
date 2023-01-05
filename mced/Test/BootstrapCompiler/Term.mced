@@ -60,7 +60,8 @@ elet appLTerm (t : Term) (l : List (Bool × Term)) : Term := Λ X : *.
   λ k : Char -> X.
   λ x : X.
   λ u : X -> X. a (t ?X v s b a k x u)
-                  (map ?_ ?_ (productMap2 ?Bool ?_ ?_ (λ t : Term. t ?X v s b a k x u)) l).
+                  (map ?_ ?_ (recursionProduct ?Bool ?Term ?(Bool × X)
+                    (λ b' : Bool. λ t : Term. b' ; t ?X v s b a k x u)) l).
 
 elet charTerm (c : Char) : Term := Λ X : *.
   λ v : Var -> X.
