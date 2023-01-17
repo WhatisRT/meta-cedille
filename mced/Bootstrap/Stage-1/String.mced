@@ -1,4 +1,6 @@
 let Char := init$char.
 let charEq := λ c : Char λ c' : Char γ c c'.
 
+let init$char$!! := λ c : Char c.
+
 let String := init$string.

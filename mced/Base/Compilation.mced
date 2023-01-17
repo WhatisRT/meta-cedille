@@ -2,10 +2,7 @@
 -- Helper functions for compiling
 --------------------------------------------------------------------------------
 
--- FIXME: get a proper syntax for writing characters
-let charGen (s : String) : Char := maybe ?Char ?Char quote$A (λ c : Char. c) $ head ?Char $ stringToList s.
-
-let modSeparator : Char := charGen "|".
+let modSeparator : Char := κ|.
 
 elet stripModPrefix : Term -> Term := renameNamesInTerm (λ s : String.
   ifthenelse ?_ (isPrefix modulePrefix s)
@@ -24,5 +21,6 @@ elet moduleToLetInfos (m : Module) : Eval (List LetInfo) :=
               (reverse ?_ $ ModuleContents m).
 
 elet getModule (modName : ModuleName) : Eval Module :=
-  findModule modName >>= maybe ?_ ?_ (throwEval ?Module "Module doesn't exist!")
+  findModule modName >>= maybe ?_ ?_
+    (throwEval ?Module $ stringConcat [String|"Module", ModuleNameToName modName, " doesn't exist!"])
     (λ m : Bool × Module. pureEval ?_ $ pr2 ?_ ?_ m).

@@ -271,6 +271,7 @@ elet init$singleTerm$=underscore= := unknownTerm.
 
 elet init$singleTerm$_string_ := λ n : String. varTerm $ init$var$_string_ n.
 elet init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : Term. t.
+elet init$singleTerm$=kappa=_char_ : Char -> Term := charTerm.
 
 elet init$binder$=lambda= := lambdaBinder.
 elet init$binder$=Lambda= := LambdaBinder.

@@ -85,6 +85,7 @@ let init$singleTerm$=sq= := Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ
 let init$singleTerm$=underscore= := Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X x : Term.
 let init$singleTerm$_string_ := λ n : String [varTerm [init$var$_string_ n]] : Π n : String Term.
 let init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : Term t : Π t : Term Term.
+let init$singleTerm$=kappa=_char_ := λ c : Char Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [k c] : Π _ : Char Term.
 let init$binder$=lambda= := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X lambda : Binder.
 let init$binder$=Lambda= := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X Lambda : Binder.
 let init$binder$=Pi= := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X pi : Binder.

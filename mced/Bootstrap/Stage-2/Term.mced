@@ -289,6 +289,7 @@ let init$singleTerm$=underscore= := unknownTerm.
 
 let init$singleTerm$_string_ := λ n : String [varTerm [init$var$_string_ n]].
 let init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : Term t.
+let init$singleTerm$=kappa=_char_ := charTerm : Π _ : Char Term.
 
 let init$binder$=lambda= := lambdaBinder.
 let init$binder$=Lambda= := LambdaBinder.

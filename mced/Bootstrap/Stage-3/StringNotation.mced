@@ -2,11 +2,8 @@
 -- Functions for quoting strings and syntax to use with the new terms
 --------------------------------------------------------------------------------
 
-let stringNil := init$string$nil.
-let stringCons := init$string$cons.
-
-b-let quote$stringNil : Term := sVarTerm (stringCons quote$s (stringCons quote$t (stringCons quote$r (stringCons quote$i (stringCons quote$n (stringCons quote$g (stringCons quote$N (stringCons quote$i (stringCons quote$l stringNil))))))))).
-b-let quote$stringCons : Term := sVarTerm (stringCons quote$s (stringCons quote$t (stringCons quote$r (stringCons quote$i (stringCons quote$n (stringCons quote$g (stringCons quote$C (stringCons quote$o (stringCons quote$n (stringCons quote$s stringNil)))))))))).
+b-let quote$stringNil : Term := sVarTerm (stringCons κs (stringCons κt (stringCons κr (stringCons κi (stringCons κn (stringCons κg (stringCons κN (stringCons κi (stringCons κl stringNil))))))))).
+b-let quote$stringCons : Term := sVarTerm (stringCons κs (stringCons κt (stringCons κr (stringCons κi (stringCons κn (stringCons κg (stringCons κC (stringCons κo (stringCons κn (stringCons κs stringNil)))))))))).
 
 b-let quoteChar (c : Char) : Term := charTerm c.
 

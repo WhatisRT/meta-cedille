@@ -1,9 +1,8 @@
 import Bootstrap/Stage-1/Comment.
 import Bootstrap/Stage-1/Parens.
+import Bootstrap/Stage-1/String.
 
 seteval eval init stmt.
-
-import Bootstrap/Stage-1/String.
 
 import Bootstrap/Stage-1/MetaAliases.
 import Bootstrap/Stage-1/Quote.
