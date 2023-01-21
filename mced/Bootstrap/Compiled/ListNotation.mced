@@ -1,0 +1,6 @@
+let quoteTermList := λ type : Term [[<<recursionList Term> Term> [[appLTerm [sVarTerm [[stringCons κn] [[stringCons κi] [[stringCons κl] stringNil]]]]] [[<cons App> [[mkApp true] type]] <nil App>]]] λ t : Term λ _ : [List Term] λ rec : Term [[appLTerm [sVarTerm [[stringCons κc] [[stringCons κo] [[stringCons κn] [[stringCons κs] stringNil]]]]]] [[<cons App> [[mkApp true] type]] [[<cons App> [[mkApp false] t]] [[<cons App> [[mkApp false] rec]] <nil App>]]]]] : Π type : Term Π _ : [List Term] Term.
+let init$termlist'$ := Λ X : * λ n : X λ c : Π _ : Term Π _ : X X n : [List Term].
+let init$termlist'$=comma=^space'^_multiTerm__termlist'_ := λ t : Term λ ts : [List Term] [[<cons Term> t] ts] : Π t : Term Π ts : [List Term] [List Term].
+let init$termlist$ := Λ X : * λ n : X λ c : Π _ : Term Π _ : X X n : [List Term].
+let init$termlist$_multiTerm__termlist'_ := λ t : Term λ ts : [List Term] [[<cons Term> t] ts] : Π t : Term Π ts : [List Term] [List Term].
+let init$singleTerm$=lsquare=^space'^_multiTerm_=pipe=^space'^_termlist_=rsquare= := λ type : Term λ terms : [List Term] [[quoteTermList type] terms] : Π type : Term Π terms : [List Term] Term.

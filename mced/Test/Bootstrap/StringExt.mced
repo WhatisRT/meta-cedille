@@ -1,0 +1,30 @@
+module Bootstrap:StringExt.
+
+importModule Bootstrap:Builtins.
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:ListExt.
+importModule Bootstrap:Nat.
+importModule Bootstrap:StringHelpers.
+
+-- String operations
+
+elet stringLength (s : String) : Nat :=
+  length ?_ (stringToList s).
+
+elet stringDrop (n : Nat) (s : String) : String :=
+  stringFromList (drop ?_ n $ stringToList s).
+
+elet stringTake (n : Nat) (s : String) : String :=
+  stringFromList (take ?_ n $ stringToList s).
+
+-- Prefixes
+
+let isPrefix (prefix, s : String) : Bool :=
+  stringEq prefix (stringTake (stringLength prefix) s).
+
+-- remove the prefix, if present
+elet dropPrefix (prefix, s : String) : String :=
+  ifthenelse ?_ (isPrefix prefix s) (stringDrop (stringLength prefix) s) s.
+
+endModule.

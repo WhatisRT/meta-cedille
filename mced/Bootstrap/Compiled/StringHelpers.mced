@@ -1,0 +1,7 @@
+let stringNil := Λ X : * λ sc : Π _ : Char Π _ : X X λ sn : X sn : String.
+let stringCons := λ c : Char λ s : String Λ X : * λ sc : Π _ : Char Π _ : X X λ sn : X [[sc c] [[<s X> sc] sn]] : Π c : Char Π s : String String.
+let stringToList := λ s : String [[<s [List Char]> <cons Char>] <nil Char>] : Π s : String [List Char].
+let stringFromList := λ s : [List Char] [[<s String> stringNil] stringCons] : Π s : [List Char] String.
+let stringApp := λ s : String λ s' : String [[<s String> stringCons] s'] : Π s : String Π s' : String String.
+let stringConcat := λ l : [List String] [[<l String> stringNil] stringApp] : Π l : [List String] String.
+let stringEq := λ s : String λ s' : String [[[<listEq Char> charEq] [stringToList s]] [stringToList s']] : Π s : String Π s' : String Bool.

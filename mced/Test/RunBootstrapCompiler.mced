@@ -1,4 +1,8 @@
 runMeta voidEval ?String $ shellCmd "mkdir" [String|"-p", bootstrapCompileDir].
 
 runMeta compileModules
-  [String|"DSum", "Product", "Sum", "Void", "Unit", "Nat", "Bool", "List", "Maybe", "Term", "MLLet"].
+  [String|"DSum", "Product", "Sum", "Unit", "Nat", "Bool", "List", "Maybe", "Term", "MLLet",
+          "StringHelpers", "TermRec", "ListExt", "NatHelpers", "ShowTerm",
+          "StringNotation", "ListNotation", "QuoteTerm", "Quoters", "ConversionHelpers",
+          "ModuleDefinitions", "Eval", "Output", "ModuleFunctions", "Syntax",
+          "Void", "StringExt"].

@@ -1,0 +1,12 @@
+let quote$stringNil := Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [v [init$var$_string_ [[stringCons κs] [[stringCons κt] [[stringCons κr] [[stringCons κi] [[stringCons κn] [[stringCons κg] [[stringCons κN] [[stringCons κi] [[stringCons κl] stringNil]]]]]]]]]]] : Term.
+let quote$stringCons := Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [v [init$var$_string_ [[stringCons κs] [[stringCons κt] [[stringCons κr] [[stringCons κi] [[stringCons κn] [[stringCons κg] [[stringCons κC] [[stringCons κo] [[stringCons κn] [[stringCons κs] stringNil]]]]]]]]]]]] : Term.
+let quoteChar := λ c : Char [charTerm c] : Π c : Char Term.
+let quoteString := λ s : String [[<s Term> λ c : Char λ rec : Term [[appSingle [[appSingle quote$stringCons] [quoteChar c]]] rec]] quote$stringNil] : Π s : String Term.
+let init$stringchar$!=doublequote=! := λ c : Char c : Π c : Char Char.
+let init$newstring$ := Λ X : * λ sc : Π _ : Char Π _ : X X λ sn : X sn : String.
+let init$newstring$_stringchar__newstring_ := λ c : Char λ s : String Λ X : * λ sc : Π _ : Char Π _ : X X λ sn : X [[sc c] [[<s X> sc] sn]] : Π _ : Char Π _ : String String.
+let init$singleTerm$=doublequote=_newstring_=doublequote= := λ s : String [[<s Term> λ c : Char λ rec : Term [[appSingle [[appSingle quote$stringCons] [quoteChar c]]] rec]] quote$stringNil] : Π _ : String Term.
+let init$term$=doublequote=_newstring_=doublequote= := λ s : String [[<s Term> λ c : Char λ rec : Term [[appSingle [[appSingle quote$stringCons] [quoteChar c]]] rec]] quote$stringNil] : Π _ : String Term.
+let newline := Λ X : * λ sc : Π _ : Char Π _ : X X λ sn : X [[sc κ
+] [[<stringNil X> sc] sn]] : String.
+let showBool := λ b : Bool [[[<ifthenelse String> b] [[stringCons κt] [[stringCons κr] [[stringCons κu] [[stringCons κe] stringNil]]]]] [[stringCons κf] [[stringCons κa] [[stringCons κl] [[stringCons κs] [[stringCons κe] stringNil]]]]]] : Π b : Bool String.

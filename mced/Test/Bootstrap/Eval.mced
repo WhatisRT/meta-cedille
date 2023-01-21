@@ -1,0 +1,399 @@
+module Bootstrap:Eval.
+
+Given M returnMeta bindMeta mapMeta.
+Given primLet primAnnLet primSetEval primShellCmd primCheckTerm primParse primHeadNormalize primNormalize primInferType primGetEval primPrint primWriteFile primCommandLine primToggleProf primImport catchErr.
+
+importModule Bootstrap:Builtins.
+importModule Bootstrap:Bool.
+importModule Bootstrap:ConversionHelpers.
+importModule Bootstrap:List.
+importModule Bootstrap:ListExt.
+importModule Bootstrap:MLLet.
+importModule Bootstrap:Maybe.
+importModule Bootstrap:ModuleDefinitions.
+importModule Bootstrap:Nat.
+importModule Bootstrap:NatHelpers.
+importModule Bootstrap:Product.
+importModule Bootstrap:Quoters.
+importModule Bootstrap:QuoteTerm.
+importModule Bootstrap:ShowTerm.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:StringNotation.
+importModule Bootstrap:Term.
+importModule Bootstrap:TermRec.
+importModule Bootstrap:Unit.
+
+--------------------------------------------------------------------------------
+-- The Eval monad
+--
+-- Computations that interact with the typechecker and carry state and
+-- an environment.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+-- State: flags, module & some magic
+--
+-- The state is stored in the meta environment. Specifically, if we
+-- want to store the state s with an evaluator f, we actually set the
+-- evaluator to (f s). This means that we need to be careful to keep
+-- the state in the meta environment in sync with the actual state in
+-- computations. Also, since setting the evaluatior like that means we
+-- need a term, we need a function that quotes s.
+--------------------------------------------------------------------------------
+
+-- Flags that can be used to control the evaluator
+let EvalOpts : * := Bool × Bool × String.
+let mkEvalOpts : Bool -> Bool -> String -> EvalOpts := mkTripleProduct ?Bool ?Bool ?String.
+let defaultFlags : EvalOpts := mkEvalOpts false false "".
+elet quoteEvalOpts : EvalOpts -> Term :=
+  recursionTripleProduct ?_ ?_ ?_ ?_ (λ annReq, printInfo : Bool. λ workingDir : String.
+    θ{mkEvalOpts γ{quoteBool annReq} γ{quoteBool printInfo} γ{quoteString workingDir}}).
+
+-- Controls whether `let` has to have a type annotation at the end to be accepted
+let getAnnReq            : EvalOpts -> Bool := pr31 ?Bool ?Bool ?String.
+elet setAnnReq (b : Bool) : EvalOpts -> EvalOpts :=
+  productMap1 ?_ ?(Bool × String) ?_ (λ _ : Bool. b).
+
+-- Controls whether to show `Info` messages
+let getPrintInfo            : EvalOpts -> Bool := pr32 ?Bool ?Bool ?String.
+elet setPrintInfo (b : Bool) : EvalOpts -> EvalOpts :=
+  productMap2 ?Bool ?_ ?_ (productMap1 ?_ ?String ?_ (λ _ : Bool. b)).
+
+-- Working directory for imports
+let getWorkingDir                : EvalOpts -> String := pr33 ?Bool ?Bool ?String.
+elet setWorkingDir (dir : String) : EvalOpts -> EvalOpts :=
+  productMap2 ?Bool ?_ ?_ (productMap2 ?Bool ?_ ?_ (λ _ : String. dir)).
+
+-- ModuleState contains a module if we are in the process of defining one, as
+-- well as the module dictionary. Quoting ModuleState requires the Module and
+-- ModuleDict to be defined in the environment.
+
+let ModuleState : * := List Module × ModuleDict.
+elet mkModuleState (m : List Module) (d : ModuleDict) : ModuleState := m ; d.
+elet ModuleStateModuleStack (s : ModuleState) : List Module := pr1 ?_ ?ModuleDict s.
+elet ModuleStateDict (s : ModuleState) : ModuleDict := pr2 ?_ ?ModuleDict s.
+
+elet ModuleStateCurrentModule (s : ModuleState) : Maybe Module :=
+  head ?_ (ModuleStateModuleStack s).
+
+let emptyModState : ModuleState := mkModuleState (nil ?Module) emptyModuleDict.
+
+let quoteDict (d : ModuleDict) : Term := sVarTerm (mkModuleDictName d).
+let quoteModuleState (s : ModuleState) : Term :=
+  θ{mkModuleState γ{quoteList ?Module θ{Module}
+    (λ m : Module. sVarTerm (mkTempModuleName m)) (ModuleStateModuleStack s)}
+    γ{quoteDict (ModuleStateDict s)}}.
+
+-- TermInfoState is a map of names to meta information about that name.
+
+-- File, line and column
+let SourceLocation : * := String × Nat × Nat.
+let mkSourceLocation := mkTripleProduct ?String ?Nat ?Nat.
+let getFileName := pr31 ?String ?Nat ?Nat.
+let getLine := pr32 ?String ?Nat ?Nat.
+let getColumn := pr33 ?String ?Nat ?Nat.
+
+let quoteSourceLocation (l : SourceLocation) : Term :=
+  θ{mkSourceLocation γ{quoteString (getFileName l)} γ{quoteNat (getLine l)} γ{quoteNat (getColumn l)}}.
+
+-- Location of the definition and the actual definition
+let TermInfo : * := SourceLocation × Term.
+let mkTermInfo := prodPair ?SourceLocation ?Term.
+let getLocation : TermInfo -> SourceLocation := pr1 ?SourceLocation ?Term.
+let getDefinition : TermInfo -> Term := pr2 ?SourceLocation ?Term.
+
+let quoteTermInfo (i : TermInfo) : Term :=
+  θ{mkTermInfo γ{quoteSourceLocation (getLocation i)} γ{quoteTerm (getDefinition i)}}.
+
+let TermInfoState : * := List (String × TermInfo).
+elet addTermInfo (n : String) (i : TermInfo) : TermInfoState -> TermInfoState := cons ?_ (n ; i).
+elet lookupTermInfo (st : TermInfoState) (n : String) : Maybe TermInfo :=
+  mapMaybe ?_ ?_ (pr2 ?String ?TermInfo)
+    (findMaybe ?_ (λ p : String × TermInfo. stringEq (pr1 ?_ ?TermInfo p) n) st).
+
+elet quoteTermInfoState (st : TermInfoState) : Term := quoteList ?_ θ{String × TermInfo}
+  (quoteProduct ?_ ?_ θ{String} θ{TermInfo} quoteString quoteTermInfo) st.
+let emptyTermInfoState : TermInfoState := [String × TermInfo|].
+
+-- OtherState is a trick/hack for storing arbitrary things in the state
+let OtherState := Nat. -- used for counting
+let quoteOtherState (s : OtherState) := quoteNat s.
+let emptyOtherState := zero.
+
+-- The additional state in the evaluator contains the ModuleState as well as the flags
+let EvalState : * := EvalOpts × ModuleState × TermInfoState × OtherState.
+elet mkEvalState (f : EvalOpts) (s : ModuleState) (i : TermInfoState) (o : OtherState) : EvalState :=
+  mkTripleProduct ?_ ?_ ?_ f s (i ; o).
+let getEvalOpts := pr31 ?EvalOpts ?ModuleState ?(TermInfoState × OtherState).
+let getModuleState := pr32 ?EvalOpts ?ModuleState ?(TermInfoState × OtherState).
+let getTermInfoState (s : EvalState) :=
+  pr1 ?TermInfoState ?OtherState (pr33 ?EvalOpts ?ModuleState ?(TermInfoState × OtherState) s).
+let getOtherState (s : EvalState) :=
+  pr2 ?TermInfoState ?OtherState (pr33 ?EvalOpts ?ModuleState ?(TermInfoState × OtherState) s).
+
+let quoteEvalState (s : EvalState) : Term :=
+  θ{mkEvalState γ{quoteEvalOpts (getEvalOpts s)} γ{quoteModuleState (getModuleState s)}
+                γ{quoteTermInfoState (getTermInfoState s)} γ{quoteOtherState (getOtherState s)}}.
+
+let emptyEvalState : EvalState :=
+  mkEvalState defaultFlags emptyModState emptyTermInfoState emptyOtherState.
+
+elet modifyModuleInState (f : List Module -> List Module) (s : EvalState) : EvalState :=
+  mkEvalState (getEvalOpts s)
+              (mkModuleState (f (ModuleStateModuleStack (getModuleState s)))
+                             (ModuleStateDict (getModuleState s)))
+              (getTermInfoState s)
+              (getOtherState s).
+
+let modifyModuleDictInState (f : ModuleDict -> ModuleDict) (s : EvalState) : EvalState :=
+  mkEvalState (getEvalOpts s)
+              (mkModuleState (ModuleStateModuleStack (getModuleState s))
+                             (f (ModuleStateDict (getModuleState s))))
+              (getTermInfoState s)
+              (getOtherState s).
+
+let incrementStateCounter (s : EvalState) : EvalState :=
+  mkEvalState (getEvalOpts s) (getModuleState s) (getTermInfoState s) (suc (getOtherState s)).
+
+--------------------------------------------------------------------------------
+-- Environment: local context
+--
+-- The environment is not stored directly in the meta environment like
+-- the state is. Instead, it is computed from the state at the
+-- beginning of a computation.
+--------------------------------------------------------------------------------
+
+let Context : * := List (String × Term).
+let EvalEnv : * := Context.
+
+let getContext (e : EvalEnv) : List (String × Term) := e.
+elet appendContext (ctx : Context) (e : EvalEnv) : EvalEnv := app ?_ e ctx.
+
+let initEvalEnv (s : EvalState) : EvalEnv := nil ?(String × Term).
+
+--------------------------------------------------------------------------------
+-- Eval monad. This is a reader & state monad on top of the meta monad.
+--------------------------------------------------------------------------------
+
+let Eval : * -> * := λ T : *. EvalEnv -> EvalState -> M (T × EvalState).
+elet pureEval [T : *] (t : T) : Eval T :=
+  λ e : EvalEnv. λ s : EvalState. returnMeta ?_ (t ; s).
+
+-- NOTE: since >>= is bound to `bindEval` globally, we get to use that notation
+elet bindEval [T, T' : *] (x : Eval T) (f : T -> Eval T') : Eval T' :=
+  λ e : EvalEnv. λ s : EvalState. bindMeta ?_ ?(T' × EvalState) (x e s)
+    (recursionProduct ?_ ?_ ?_ (λ res1 : T. λ res2 : EvalState. f res1 e res2)).
+
+-- Basic monad functions
+elet joinEval [T : *] (t : Eval (Eval T)) :=
+  t >>= λ t' : Eval T. t'.
+elet mapEval [T, T' : *] (f : T -> T') (t : Eval T) : Eval T' :=
+  t >>= λ x : T. pureEval ?_ (f x).
+elet seqEval [T, T' : *] (t : Eval T) (t' : Eval T') : Eval T' :=
+  t >>= λ _ : T. t'.
+elet sequenceEval [T : *] (l : List (Eval T)) : Eval (List T) :=
+  l ?(Eval (List T))
+    (pureEval ?_ (nil ?T))
+    (λ x : Eval T. λ rec : Eval (List T). x >>= λ x' : T. mapEval ?_ ?_ (cons ?_ x') rec).
+
+  -- foldl ?(Eval T) ?(Eval (List T)) (λ l' : Eval (List T). λ x : Eval T.
+  --   bindEval ?T ?(List T) x (λ x' : T. mapEval ?(List T) ?(List T) (cons ?T x') l'))
+  --   l (pureEval ?(List T) (nil ?T)).
+elet traverseEval [A, B : *] (f : A -> Eval B) (l : List A) : Eval (List B) :=
+  sequenceEval ?_ (map ?_ ?_ f l).
+elet voidEval [T : *] (x : Eval T) : Eval Unit :=
+  seqEval ?_ ?_ x (pureEval ?_ tt).
+
+elet liftMtoEval [T : *] (t : M T) : Eval T :=
+  λ _ : EvalEnv. λ s : EvalState.
+    bindMeta ?_ ?_ t (λ x : T. returnMeta ?_ (x ; s)).
+
+-- State monad functions
+elet getEval : Eval EvalState := λ _ : EvalEnv. λ s : EvalState. returnMeta ?_ (s ; s).
+elet setEval (s : EvalState) : Eval Unit := λ _ : EvalEnv. λ _ : EvalState. returnMeta ?_ (tt ; s).
+elet modifyEval (f : EvalState -> EvalState) : Eval Unit :=
+  getEval >>= λ s : EvalState. setEval (f s).
+
+elet getModuleState' : Eval ModuleState := mapEval ?_ ?_ getModuleState getEval.
+elet modifyModuleState (f : ModuleState -> ModuleState) : Eval Unit :=
+  modifyEval (λ s : EvalState.
+    mkEvalState (getEvalOpts s) (f (getModuleState s)) (getTermInfoState s) (getOtherState s)).
+elet setModuleState (s : ModuleState) : Eval Unit :=
+  getEval >>= λ s' : EvalState.
+  setEval (mkEvalState (getEvalOpts s') s (getTermInfoState s') (getOtherState s')).
+
+elet getEvalOpts' : Eval EvalOpts :=
+  mapEval ?_ ?_ getEvalOpts getEval.
+let modifyEvalOpts (f : EvalOpts -> EvalOpts) : Eval Unit :=
+  modifyEval (λ s : EvalState. mkEvalState (f (getEvalOpts s)) (getModuleState s) (getTermInfoState s) (getOtherState s)).
+let modifyOtherState (f : OtherState -> OtherState) : Eval Unit :=
+  modifyEval (λ s : EvalState. mkEvalState (getEvalOpts s) (getModuleState s) (getTermInfoState s) (f (getOtherState s))).
+
+-- Reader monad functions
+elet askEval : Eval EvalEnv := λ e : EvalEnv. λ s : EvalState. returnMeta ?_ (e ; s).
+elet readerEval [T : *] (p : EvalEnv -> T) : Eval T := mapEval ?_ ?_ p askEval.
+let localEval [T : *] (f : EvalEnv -> EvalEnv) (x : Eval T) : Eval T :=
+  λ e : EvalEnv. x (f e).
+
+let askContext : Eval Context := readerEval ?Context getContext.
+let inContext [T : *] (ctx : Context) : Eval T -> Eval T :=
+  localEval ?T (appendContext ctx).
+
+--------------------------------------------------------------------------------
+-- Lift the primitives into Eval
+--------------------------------------------------------------------------------
+let let (n : String) (t : Term) : Eval Unit :=
+  liftMtoEval ?Unit (primLet n (TermToInitTerm t)).
+let annLet (n : String) (t, T : Term) : Eval Unit :=
+  liftMtoEval ?Unit (primAnnLet n (TermToInitTerm t) (TermToInitTerm T)).
+let setMEnv (eval : Term) (NT, ns : String) : Eval Unit :=
+  liftMtoEval ?Unit (primSetEval (TermToInitTerm eval) NT ns).
+let shellCmd (cmd : String) (args : List String) : Eval String :=
+  liftMtoEval ?String (primShellCmd cmd args).
+let checkTerm (T : *) (t : Term) : Eval T :=
+  liftMtoEval ?T (primCheckTerm T (TermToInitTerm t)).
+let parse (nt : String) (T : *) (text : String) : Eval (Product T String) :=
+  liftMtoEval ?(Product T String) (primParse nt T text).
+elet normalize (t : Term) : Eval Term :=
+  liftMtoEval ?Term (mapMeta ?_ ?_ initTermToTerm (primNormalize (TermToInitTerm t))).
+elet headNormalize (t : Term) : Eval Term :=
+  liftMtoEval ?Term (mapMeta ?_ ?_ initTermToTerm (primHeadNormalize (TermToInitTerm t))).
+
+-- inferType should also respect the context, use inferType below
+elet inferTypeBasic (t : Term) : Eval Term :=
+  liftMtoEval ?Term (mapMeta ?_ ?_ initTermToTerm (primInferType (TermToInitTerm t))).
+
+-- Importing is special, see below
+-- let import (s : String) : Eval Unit :=
+--   liftMtoEval ?Unit (primImport s).
+
+elet getEval' : Eval Term :=
+  liftMtoEval ?Term (mapMeta ?_ ?_ initTermToTerm primGetEval).
+
+let printEval (s : String) : Eval Unit :=
+  liftMtoEval ?Unit (primPrint s).
+
+let writeFile (fName, s : String) : Eval Unit :=
+  liftMtoEval ?Unit (primWriteFile fName s).
+
+let commandLine : Eval (List String) :=
+  liftMtoEval ?(List String) primCommandLine.
+
+let toggleProf : Eval Unit :=
+  liftMtoEval ?Unit primToggleProf.
+
+let printLineEval (s : String) : Eval Unit :=
+  printEval (stringApp s newline).
+
+let printConcatEval (s : List String) : Eval Unit := printEval (stringConcat s).
+
+-- NOTE: this doesn't currently return the actual definition, just something equivalent
+let getDef (n : String) : Eval Term := headNormalize (sVarTerm n).
+
+--------------------------------------------------------------------------------
+-- Statements are just special Eval computations that run at the top level
+--------------------------------------------------------------------------------
+let init$newStmt : * := Eval Unit.
+
+-- Useful functions for working with statements
+elet emptyStmt : init$newStmt := pureEval ?_ tt.
+
+elet seqNewStmt (s, s' : init$newStmt) : init$newStmt := seqEval ?_ ?_ s s'.
+
+elet seqNewStmts (l : List init$newStmt) : init$newStmt :=
+  foldl ?_ ?_ seqNewStmt (reverse ?_ l) emptyStmt.
+
+-- Lift old statements
+let stmtToNewStmt (stmt : M Unit) : init$newStmt :=
+  liftMtoEval ?Unit stmt.
+
+elet updateMEnv : init$newStmt :=
+  getEval >>= λ s : EvalState.
+  setMEnv (appSingle θ{evalNewStmt} (quoteEvalState s)) "init" "newStmt".
+
+let readFile (filename : String) : Eval String := shellCmd "cat" [String| filename].
+
+let getPWD : Eval String := shellCmd "pwd" [String|].
+
+let catchEval [T : *] (x : Eval T) (f : String -> Eval T) : Eval T :=
+  λ e : EvalEnv. λ s : EvalState.
+    catchErr ?(T × EvalState) (x e s) (λ res : String. f res e s).
+
+elet throwEval [T : *] (s : String) : Eval T :=
+  seqEval ?_ ?_ (printEval s) (checkTerm T θ{□}).
+
+elet showTermE (t : Term) : Eval String :=
+  mapEval ?_ ?_
+    (λ ctx : Context. showTermWithContext t (reverse ?_ (map ?_ ?_ (pr1 ?String ?Term) ctx)))
+    askContext.
+
+elet letInfoToNewStmt (i : LetInfo) : init$newStmt :=
+  getEvalOpts' >>= λ f : EvalOpts.
+  ifthenelse ?_ (or (not (getAnnReq f)) (letInfoHasAnn i))
+    (stmtToNewStmt (convertLetInfo i))
+    (throwEval ?Unit "The provided command has no type annotation!").
+
+--------------------------------------------------------------------------------
+-- Elaborate let
+--
+-- To elaborate a let, we chain Eval computations that modify it.
+--------------------------------------------------------------------------------
+
+let ElabLet : * := LetInfo -> Eval LetInfo.
+
+elet runEvalLets' : List ElabLet -> ElabLet := recursionList ?_ ?_
+  (pureEval ?LetInfo)
+  (λ el : ElabLet. λ _ : List ElabLet. λ rec : ElabLet.
+    λ i : LetInfo. el i >>= rec).
+
+elet runEvalLets (els : List ElabLet) (i : LetInfo) : init$newStmt :=
+  runEvalLets' els i >>= letInfoToNewStmt.
+
+-- Run a computation without modifying the LetInfo
+elet liftElabLet (x : LetInfo -> Eval Unit) : ElabLet :=
+  λ i : LetInfo. seqEval ?_ ?_ (x i) (pureEval ?_ i).
+
+elet checkTypeAnn : ElabLet :=
+  liftElabLet (λ i : LetInfo. getEval >>= λ s : EvalState.
+    ifthenelse ?_ (or (not (getAnnReq (getEvalOpts s))) (letInfoHasAnn i))
+      (pureEval ?_ tt)
+      (throwEval ?Unit "The provided command has no type annotation!")).
+
+--------------------------------------------------------------------------------
+-- Importing
+--
+-- We need to make sure the state in the meta environment is tracked
+-- correctly accross imports. We could either have some mechanism to
+-- get the state from the import primitive, or we can just make our
+-- own. Also, importing needs to respect the working directory.
+--------------------------------------------------------------------------------
+
+let Evaluator : * := init$newStmt -> M (Unit × EvalState).
+elet import (filename : String) : init$newStmt :=
+  mapEval ?_ ?_ getWorkingDir getEvalOpts' >>= λ workingDir : String.
+  seqNewStmt
+    (liftMtoEval ?Unit (primImport (stringConcat [String| workingDir, filename])))
+    ((getEval' >>= checkTerm Evaluator) >>= λ ev : Evaluator.
+      liftMtoEval ?EvalState (mapMeta ?_ ?_ (pr2 ?Unit ?EvalState) (ev emptyStmt)) >>= setEval).
+
+--------------------------------------------------------------------------------
+-- inferType
+--
+-- inferType should respect the current environment. This is done by
+-- wrapping the term in lambdas, infering the type and then throwing
+-- away the pi's.
+--------------------------------------------------------------------------------
+
+elet inferType (t : Term) : Eval Term :=
+  askContext >>= λ ctx : Context.
+  inferTypeBasic (applyMultiBinder lambdaBinder ctx t) >>= λ T : Term.
+  maybe ?_ ?_ (throwEval ?Term "inferType': BUG!") (pureEval ?Term) (stripPis (length ?_ ctx) T).
+
+--------------------------------------------------------------------------------
+-- Invoking Eval computations.
+--------------------------------------------------------------------------------
+
+elet runEval [T : *] (eval : Eval T) (s : EvalState) : M (T × EvalState) :=
+  (eval >>= λ t : T. seqEval ?_ ?_ updateMEnv (pureEval ?_ t)) (initEvalEnv s) s.
+
+endModule.

@@ -1,0 +1,104 @@
+--------------------------------------------------------------------------------
+-- Base of the new syntax
+--
+-- We define some basic statements and the new syntax here
+--------------------------------------------------------------------------------
+
+module Bootstrap:Syntax.
+
+Given M.
+
+importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
+importModule Bootstrap:Eval.
+importModule Bootstrap:List.
+importModule Bootstrap:MLLet.
+importModule Bootstrap:Maybe.
+importModule Bootstrap:ModuleDefinitions.
+importModule Bootstrap:ModuleFunctions.
+importModule Bootstrap:Output.
+importModule Bootstrap:Product.
+importModule Bootstrap:QuoteTerm.
+importModule Bootstrap:ShowTerm.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:Term.
+importModule Bootstrap:Unit.
+
+elet letInfoTermToQuoted (i : LetInfo) : LetInfo :=
+  mkLetInfo (stringApp "qTerm" (letInfoName i)) (quoteTerm (letInfoTerm i)) (just ?_ θ{Term}).
+
+elet addQuotedLetInfo : ElabLet :=
+  liftElabLet (λ i : LetInfo. voidEval ?_ (letInfoToNewStmt (letInfoTermToQuoted i))).
+
+let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn, moduleElab, debugPrintLetInfo].
+
+elet runMetaCommand (t : Term) : init$newStmt := joinEval ?_ (checkTerm init$newStmt t).
+
+let runEcho (t : Term) : init$newStmt := runMetaCommand θ{printLineEval γ{t}}.
+
+let reloadMEnv : init$newStmt := modifyEval (λ e : EvalState. e).
+
+elet showTypeStmt (tel : Telescope) (t : Term) : init$newStmt :=
+  inContext ?_ (map ?_ ?_ (pr2 ?Bool ?PreParam) tel)
+    ((inferType t >>= showTermE) >>= λ x : String.
+     printConcatEval [String|showTerm t, " : ", x]).
+
+elet normalizeStmt (t : Term) : Eval Unit :=
+  normalize t >>= λ t' : Term.
+  printConcatEval [String|showTerm t, " normalizes to: ", showTerm t'].
+
+elet hnfStmt (t : Term) : Eval Unit :=
+  headNormalize t >>= λ t' : Term.
+  printConcatEval [String|showTerm t, " head-normalizes to: ", showTerm t'].
+
+-- Syntax
+
+-- statements from the old syntax
+let init$newStmt'$o=minus=_stmt'_ (stmt : M Unit) : init$newStmt := stmtToNewStmt stmt.
+
+-- flags
+
+let init$flag$true := true.
+let init$flag$false := false.
+
+-- set statements
+
+let modifyAndUpdateEvalOpts (f : EvalOpts -> EvalOpts) : init$newStmt :=
+  seqNewStmt (modifyEvalOpts f) updateMEnv.
+
+let init$setStmt$RequireTypeAnnotations^space^_flag_ (b : Bool) :=
+  modifyAndUpdateEvalOpts (setAnnReq b).
+let init$setStmt$PrintInfo^space^_flag_ (b : Bool) :=
+  modifyAndUpdateEvalOpts (setPrintInfo b).
+elet init$setStmt$PWD^space^_term_ (dirT : Term) :=
+  checkTerm String dirT >>= λ dir : String.
+  modifyAndUpdateEvalOpts (setWorkingDir dir).
+let init$setStmt$ToggleProf := toggleProf.
+
+-- "native" statements in the new syntax
+let init$newStmt'$set^space^_setStmt_=dot= (s : init$newStmt) := s.
+let init$newStmt'$let^space^_betterLet_ : LetInfo -> init$newStmt := letInfoToNewStmtMod.
+let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : init$newStmt :=
+  runEvalLets [ElabLet| checkTypeAnn, moduleElab, addQuotedLetInfo] i.
+let init$newStmt'$runMeta^space^_multiTerm_=dot= : Term -> init$newStmt := runMetaCommand.
+elet init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
+  modifyTermMod t >>= runEcho.
+let init$newStmt'$showType^space^_telescope__multiTerm_=dot= : Telescope -> Term -> init$newStmt := showTypeStmt.
+let init$newStmt'$normalize^space^_multiTerm_=dot= : Term -> init$newStmt := normalizeStmt.
+let init$newStmt'$headNormalize^space^_multiTerm_=dot= : Term -> init$newStmt := hnfStmt.
+let init$newStmt'$import^space^_string_=dot= : String -> init$newStmt := import.
+let init$newStmt'$updateEval=dot= : init$newStmt := updateMEnv.
+let init$newStmt'$ : init$newStmt := emptyStmt.
+
+let init$newStmt$^space'^_newStmt'_ (stmt : init$newStmt) : init$newStmt := stmt.
+
+-- new evaluator
+elet evalNewStmt (s : EvalState) (stmt : init$newStmt) : M (Product Unit EvalState) :=
+  runEval ?_ stmt s.
+
+-- seteval [evalNewStmt emptyEvalState] init newStmt.
+
+-- -- this defines the initial dictionary
+-- runMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDict) θ{emptyModuleDict} (just ?Term θ{ModuleDict}))).
+
+endModule.

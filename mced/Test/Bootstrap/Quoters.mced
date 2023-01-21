@@ -1,0 +1,21 @@
+--------------------------------------------------------------------------------
+-- Quotation functions
+--------------------------------------------------------------------------------
+
+module Bootstrap:Quoters.
+
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:Product.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:Term.
+
+elet quoteProduct [A, B : *] (quotedA, quotedB : Term) (quoteA : A -> Term) (quoteB : B -> Term)
+  : Product A B -> Term := recursionProduct ?_ ?_ ?_ λ a : A. λ b : B.
+  θ{prodPair ?γ{quotedA} ?γ{quotedB} γ{quoteA a} γ{quoteB b}}.
+
+elet quoteList [X : *] (quotedX : Term) (quoteX : X -> Term) : List X -> Term :=
+  recursionList ?_ ?_ θ{nil ?γ{quotedX}}
+    (λ x : X. λ _ : List X. λ rec : Term. θ{cons ?γ{quotedX} γ{quoteX x} γ{rec}}).
+
+endModule.

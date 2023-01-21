@@ -1,0 +1,5 @@
+let stringLength := λ s : String [<length Char> [stringToList s]] : Π s : String Nat.
+let stringDrop := λ n : Nat λ s : String [stringFromList [[<drop Char> n] [stringToList s]]] : Π n : Nat Π s : String String.
+let stringTake := λ n : Nat λ s : String [stringFromList [[<take Char> n] [stringToList s]]] : Π n : Nat Π s : String String.
+let isPrefix := λ prefix : String λ s : String [[stringEq prefix] [[stringTake [stringLength prefix]] s]] : Π prefix : String Π s : String Bool.
+let dropPrefix := λ prefix : String λ s : String [[[<ifthenelse String> [[isPrefix prefix] s]] [[stringDrop [stringLength prefix]] s]] s] : Π prefix : String Π s : String String.

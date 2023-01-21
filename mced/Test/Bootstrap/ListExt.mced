@@ -1,0 +1,99 @@
+--------------------------------------------------------------------------------
+-- List functions that are more pleasantly written now
+--------------------------------------------------------------------------------
+
+module Bootstrap:ListExt.
+
+importModule Bootstrap:Builtins.
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:Maybe.
+importModule Bootstrap:Nat.
+importModule Bootstrap:Product.
+importModule Bootstrap:StringHelpers.
+
+elet showList [X : *] (showX : X -> String) (l : List X) : String :=
+  stringApp "[" (stringApp (stringConcat (intersperse ?_ ", " (map ?_ ?_ showX l))) "]").
+
+let lookupDefault [A : *] (n : Nat) (d : A) (l : List A) : A :=
+  l ?(Nat -> A)
+    (λ _ : Nat. d)
+    (λ a : A. λ rec : Nat -> A. recursionNat ?A a (λ k : Nat. λ _ : A. rec k))
+    n.
+
+elet head [A : *] (l : List A) : Maybe A :=
+  l ?(Maybe A) (nothing ?A) (λ a : A. λ _ : Maybe A. just ?_ a).
+
+elet tail [A : *] (l : List A) : List A :=
+  recursionList ?_ ?_ [A|] (λ a : A. λ l', _ : List A. l') l.
+
+elet findMaybe [A : *] (P : A -> Bool) (l : List A) : Maybe A :=
+  head ?_ (filter ?_ P l).
+
+elet exists [A : *] (P : A -> Bool) (l : List A) : Bool :=
+  not (isNil ?_ (filter ?_ P l)).
+
+elet isMember [A : *] (Aeq : A -> A -> Bool) (l : List A) (a : A) : Bool :=
+  exists ?_ (Aeq a) l.
+
+elet maybeToList [A : *] : Maybe A -> List A :=
+  maybe ?_ ?_ [A|] (λ a : A. [A|a]).
+
+elet mapHead [A : *] (f : Maybe A -> Maybe A) : List A -> List A :=
+  recursionList ?_ ?_ (maybeToList ?_ $ f (nothing ?A))
+    (λ a : A. λ as, _ : List A. app ?_ (maybeToList ?_ $ f (just ?_ a)) as).
+
+elet initsNonEmpty [A : *] : List A -> List (A × List A) :=
+  recursionList ?_ ?_
+    [A × List A|]
+    (λ a : A. λ as : List A. λ rec : List (A × List A). (a ; as) ∷ rec).
+
+elet tailsNonEmpty [A : *] (l : List A) : List (A × List A) :=
+  reverse ?_ (initsNonEmpty ?_ (reverse ?_ l)).
+
+elet countToZero : Nat -> List Nat :=
+  recursionNat ?_
+    [Nat| zero]
+    (λ m : Nat. λ rec : List Nat. suc m ∷ rec).
+
+elet countToZeroExc : Nat -> List Nat :=
+  recursionNat ?_
+    [Nat|]
+    (λ m : Nat. λ rec : List Nat. m ∷ rec).
+
+elet zipWith [A, B, C : *] (f : A -> B -> C) (l : List A) (l' : List B) : List C :=
+  l ?(List B -> List C)
+    (λ _ : List B. [C|])
+    (λ a : A. λ rec : List B -> List C.
+      recursionList ?_ ?_ [C|] (λ b : B. λ bs : List B. λ _ : List C. f a b ∷ rec bs))
+    l'.
+
+elet zip [A, B : *] : List A -> List B -> List (A × B) := zipWith ?_ ?_ ?_ (prodPair ?A ?B).
+
+elet zipWith3 [A, B, C, D : *] (f : A -> B -> C -> D) (l : List A) (l' : List B) (l'' : List C)
+  : List D :=
+  zipWith ?_ ?_ ?_ (λ a : A. λ bc : B × C. f a (pr1 ?B ?C bc) (pr2 ?B ?C bc)) l (zip ?B ?C l' l'').
+
+elet zip3 [A, B, C : *] : List A -> List B -> List C -> List (A × B × C) :=
+  zipWith3 ?_ ?_ ?_ ?_ (mkTripleProduct ?A ?B ?C).
+
+let zipWith4 [A, B, C, D, E : *] (f : A -> B -> C -> D -> E)
+  (l : List A) (l' : List B) (l'' : List C) (l''' : List D) : List E :=
+  zipWith ?A ?(B × C × D) ?E (λ a : A. λ bcd : B × C × D.
+      f a (pr31 ?B ?C ?D bcd) (pr32 ?B ?C ?D bcd) (pr33 ?B ?C ?D bcd))
+    l (zip3 ?B ?C ?D l' l'' l''').
+
+let concat [A : *] (l : List (List A)) : List A :=
+  l ?(List A) [A|] (λ l' : List A. λ rec : List A. app ?A l' rec).
+
+let drop [A : *] (n : Nat) (l : List A) : List A :=
+  n ?(List A) l (tail ?A).
+
+elet take [A : *] (n : Nat) (l : List A) : List A :=
+  zipWith ?_ ?_ ?_ (λ a : A. λ _ : Nat. a) l (countToZeroExc n).
+
+elet dropWhile [A : *] (P : A -> Bool) (l : List A) : List A :=
+  recursionList ?_ ?_ [A|]
+    (λ a : A. λ as, rec : List A. ifthenelse ?_ (P a) rec (a ∷ as)) l.
+
+endModule.

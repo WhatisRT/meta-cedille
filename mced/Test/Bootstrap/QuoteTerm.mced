@@ -1,0 +1,99 @@
+--------------------------------------------------------------------------------
+-- Quotation and antiquotation for terms
+--
+-- The syntax is θ{...} for quotation and γ{...} for antiquotation.
+--------------------------------------------------------------------------------
+
+module Bootstrap:QuoteTerm.
+
+Given init$index'.
+
+importModule Bootstrap:Builtins.
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:ListNotation.
+importModule Bootstrap:MLLet.
+importModule Bootstrap:Maybe.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:StringNotation.
+importModule Bootstrap:Term.
+importModule Bootstrap:TermRec.
+
+-- We want to define quoteTerm, the rest are helper functions
+
+let quoteIndex' (i : init$index') : Term :=
+  i ?Term
+    (sVarTerm "init$index'$")
+    (λ rec : Term. appSingle (sVarTerm "init$index'$0_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$1_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$2_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$3_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$4_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$5_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$6_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$7_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$8_index'_") rec)
+    (λ rec : Term. appSingle (sVarTerm "init$index'$9_index'_") rec).
+
+let quoteIndex (i : DBIndex) : Term :=
+  i ?Term
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$0_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$1_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$2_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$3_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$4_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$5_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$6_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$7_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$8_index'_") (quoteIndex' i'))
+    (λ i' : init$index'. appSingle (sVarTerm "init$index$9_index'_") (quoteIndex' i')).
+
+let appDouble (t, t', t'' : Term) := appLTerm t [App| mkAppU t', mkAppU t''].
+
+let quoteAst : Term := sortTerm SortAst.
+let quoteSq : Term := sortTerm SortSq.
+
+let quoteVar (v : Var) : Term :=
+  v ?Term
+    (λ n : String. appSingle (sVarTerm "sVarTerm") (quoteString n))
+    (λ i : DBIndex. appSingle (sVarTerm "iVarTerm") (quoteIndex i)).
+
+let quoteCharTerm (c : Char) : Term :=
+  appSingle
+    (sVarTerm "charTerm")
+    (quoteChar c).
+
+let quoteBinder (b : Binder) : Term :=
+  b ?Term (sVarTerm "lambdaBinder") (sVarTerm "LambdaBinder") (sVarTerm "piBinder") (sVarTerm "forallBinder").
+
+let quoteBool (b : Bool) : Term := ifthenelse ?Term b (sVarTerm "true") (sVarTerm "false").
+
+let quoteAppLeft (a : App) : Term :=
+  appDouble (sVarTerm "mkApp") (quoteBool (appErased a)) (appTerm a). -- don't need to quote the term here
+
+let quoteTerm (t : Term) : Term :=
+  recursionTerm ?Term
+    (λ v : Var. quoteVar v)
+    (λ s : Sort. s ?Term (sVarTerm "quoteAst") (sVarTerm "quoteSq"))
+    (λ b : Binder. λ n : String. λ T : Term. λ t : Term. λ recT : Term. λ rect : Term.
+      appLTerm (sVarTerm "binderTerm") (toAppU [Term| quoteBinder b, quoteString n, recT, rect]))
+    (λ t : Term. λ l : List App. λ rect : Term. λ recl : List App.
+      appDouble (sVarTerm "appLTerm") rect (quoteTermList (sVarTerm "App") (map ?App ?Term quoteAppLeft recl)))
+    (λ c : Char. quoteCharTerm c)
+    (sVarTerm "unknownTerm")
+    (λ u : Term. λ recuf : Term. u)
+    t.
+
+-- Syntax
+
+let init$singleTerm$=theta==lbrace=^space'^_multiTerm_=rbrace= (t : Term) : Term := quoteTerm t.
+let init$singleTerm$=gamma==lbrace=^space'^_multiTerm_=rbrace= (t : Term) : Term := unquoteTerm t.
+-- unquoteTerm is just a constructor of Term
+
+let quoteLetInfo (i : LetInfo) : Term :=
+  θ{mkLetInfo
+    γ{quoteString (letInfoName i)}
+    γ{quoteTerm (letInfoTerm i)}
+    γ{maybe ?Term ?Term θ{nothing ?Term} (λ T : Term. θ{just ?Term γ{quoteTerm T}}) (letInfoType i)}}.
+
+endModule.

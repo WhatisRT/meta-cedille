@@ -1,0 +1,35 @@
+--------------------------------------------------------------------------------
+-- Helper functions for strings
+--------------------------------------------------------------------------------
+
+module Bootstrap:StringHelpers.
+
+Given charEq.
+
+importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
+importModule Bootstrap:List.
+
+let stringNil : String := Λ X : *.
+  λ sc : Char -> X -> X. λ sn : X. sn.
+let stringCons (c : Char) (s : String) : String := Λ X : *.
+  λ sc : Char -> X -> X. λ sn : X. sc c (s ?X sc sn).
+
+let stringToList (s : String) : List Char :=
+  s ?(List Char) (cons ?Char) (nil ?Char).
+
+let stringFromList (s : List Char) : String :=
+  s ?String stringNil stringCons.
+
+let stringApp (s, s' : String) : String :=
+  s ?String stringCons s'.
+
+let stringConcat (l : List String) : String :=
+  l ?String stringNil stringApp.
+
+-- Equality
+
+elet stringEq (s, s' : String) : Bool :=
+  listEq ?_ charEq (stringToList s) (stringToList s').
+
+endModule.

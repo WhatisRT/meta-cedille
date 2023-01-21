@@ -1,0 +1,235 @@
+--------------------------------------------------------------------------------
+-- Functions for defining and importing modules
+--------------------------------------------------------------------------------
+
+-- TODO: - add dependencies into the module structure itself
+--           this helps with compiling & reloading
+--
+--       - deal with module parameters properly
+--
+--       - detect cyclic dependencies
+
+module Bootstrap:ModuleFunctions.
+
+Given init$var$_string_ init$var$_index_.
+
+importModule Bootstrap:Builtins.
+importModule Bootstrap:Bool.
+importModule Bootstrap:Eval.
+importModule Bootstrap:List.
+importModule Bootstrap:ListExt.
+importModule Bootstrap:ListNotation.
+importModule Bootstrap:MLLet.
+importModule Bootstrap:Maybe.
+importModule Bootstrap:ModuleDefinitions.
+importModule Bootstrap:Nat.
+importModule Bootstrap:NatHelpers.
+importModule Bootstrap:Output.
+importModule Bootstrap:Product.
+importModule Bootstrap:QuoteTerm.
+importModule Bootstrap:ShowTerm.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:StringNotation.
+importModule Bootstrap:Term.
+importModule Bootstrap:Unit.
+
+elet renameVar (boundNames : List String) (f : String -> String) (v : Var) : Var :=
+  v ?Var
+    (λ s : String. init$var$_string_ (ifthenelse ?_ (isMember ?_ stringEq boundNames s) s (f s)))
+    init$var$_index_.
+
+elet renameNamesInTermHelper (f : String -> String) (t : Term) : List String -> Term :=
+  t ?(List String -> Term)
+    (λ v : Var. λ boundNames : List String. varTerm (renameVar boundNames f v))
+    (λ s : Sort. λ _ : List String. sortTerm s)
+    (λ b : Binder. λ n : String. λ T, t : List String -> Term. λ boundNames : List String.
+      binderTerm b n (T boundNames) (t (n ∷ boundNames)))
+    (λ t : List String -> Term. λ l : List (Bool × (List String -> Term)). λ bn : List String.
+      appLTerm (t bn) (map ?_ ?_
+        (recursionProduct ?_ ?_ ?_ λ b : Bool. λ tm : List String -> Term. b ; tm bn) l))
+    (λ c : Char. λ _ : List String. charTerm c)
+    (λ _ : List String. unknownTerm)
+    (λ u : List String -> Term. λ bn : List String. unquoteTerm (u bn)).
+
+let renameNamesInTerm (f : String -> String) (t : Term) : Term :=
+  renameNamesInTermHelper f t [String|].
+
+let quoteParam (p : Param) : Term :=
+  θ{mkParam γ{quoteBool (paramErased p)} (mkPreParam γ{quoteString (paramName p)} γ{quoteTerm (paramType p)})}.
+
+elet quoteTelescope (t : Telescope) : Term := quoteTermList θ{Param} (map ?_ ?_ quoteParam t).
+
+elet findModule (n : ModuleName) : Eval (Maybe (Bool × Module)) :=
+  mapEval ?_ ?_ (λ s : ModuleState. lookupModuleDict n (ModuleStateDict s)) getModuleState'.
+
+-- find module only if it is active
+elet findLoadedModule (n : ModuleName) : Eval (Maybe Module) :=
+  findModule n >>= λ x : Maybe (Bool × Module).
+  pureEval ?_ (maybe ?_ ?_ (nothing ?Module) (recursionProduct ?_ ?_ ?_
+    λ loaded : Bool. λ m : Module. ifthenelse ?_ loaded (just ?_ m) (nothing ?Module)) x).
+
+elet moduleIsLoaded (n : ModuleName) : Eval Bool :=
+  findModule n >>= λ x : Maybe (Bool × Module).
+  pureEval ?Bool (maybe ?_ ?_ false (pr1 ?Bool ?Module) x).
+
+elet getNewModuleVersion (n : ModuleName) : Eval Nat :=
+  findModule n >>= λ x : Maybe (Bool × Module).
+  pureEval ?_ $ maybe ?_ ?_
+    zero
+    (λ p : Bool × Module. suc (ModuleVersion (pr2 ?_ ?Module p))) x.
+
+--------------------------------------------------------------------------------
+-- Defining a new module
+--------------------------------------------------------------------------------
+
+-- reload a module if it is loaded already
+elet initModule (n : ModuleName) (t : Telescope) : Eval Unit :=
+  getNewModuleVersion n >>= λ v : Nat.
+    (λ m : Module.
+      seqNewStmt
+        (letInfoToNewStmt
+          (mkLetInfo (mkTempModuleName m)
+            θ{mkInitModule γ{quoteModuleName n} γ{quoteNat v} γ{quoteTelescope t}}
+            (just ?_ θ{Module})))
+        (modifyEval (modifyModuleInState (cons ?_ m))))
+    (mkInitModule n v t).
+
+elet consModule (n : String) (m : Module) : Module :=
+  mkModule (ModuleModuleName m) (ModuleVersion m) (ModuleTelescope m) (n ∷ ModuleContents m).
+
+elet updateTempModule (n : String) (m : Module) : Eval Unit :=
+  seqNewStmt
+    (letInfoToNewStmt
+      (mkLetInfo (mkTempModuleNameSuc m)
+        θ{consModule γ{quoteString n} γ{sVarTerm (mkTempModuleName m)}}
+        (just ?_ θ{Module})))
+    (modifyEval (modifyModuleInState (mapHead ?_ (λ _ : Maybe Module. just ?_ (consModule n m))))).
+
+let nameToModuleName (m : Module) (n : String) : String :=
+  stringApp (mkModuleContentPrefix (ModuleModuleInfo m)) n.
+elet nameToMaybeModuleName (x : Maybe Module) (n : String) : String :=
+  maybe ?_ ?_ n (λ m : Module. nameToModuleName m n) x.
+
+let importExternalLetInfo (name : String) (m : Module) : LetInfo :=
+  mkLetInfo (nameToModuleName m name) (sVarTerm name) (nothing ?Term).
+
+let modifyTerm (t : Term) (m : Module) : Term :=
+  renameNamesInTerm (stringApp (mkModuleContentPrefix (ModuleModuleInfo m))) t.
+
+elet modifyTermMod (t : Term) : Eval Term :=
+  getEval >>= λ s : EvalState.
+  pureEval ?_ $ maybe ?_ ?_ t (modifyTerm t) (ModuleStateCurrentModule (getModuleState s)).
+
+elet modifyLetInfo (i : LetInfo) (m : Module) : LetInfo :=
+  mkLetInfo
+    (nameToModuleName m (letInfoName i))
+    (modifyTerm (foldWithLambdas (ModuleTelescope m) (letInfoTerm i)) m)
+    (maybe ?_ ?_
+      (nothing ?Term) (λ t : Term. just ?_ (modifyTerm (foldWithPi (ModuleTelescope m) t) m))
+      (letInfoType i)).
+
+elet letInModule (i : LetInfo) (m : Module) : Eval LetInfo :=
+  seqEval ?_ ?_
+    (updateTempModule (letInfoName i) m)
+    (pureEval ?_ (modifyLetInfo i m)).
+
+elet letInMaybeModule (i : LetInfo) (x : Maybe Module) : Eval LetInfo :=
+  maybe ?_ ?_ (pureEval ?_ i) (letInModule i) x.
+
+elet moduleElab : ElabLet := λ i : LetInfo.
+  getEval >>= λ s : EvalState. letInMaybeModule i (ModuleStateCurrentModule (getModuleState s)).
+
+elet importExternalStmt (name : String) : init$newStmt :=
+  getEval >>= λ s : EvalState.
+  maybe ?_ ?_
+    (throwEval ?Unit "External imports are only possible in modules!")
+    (λ m : Module. stmtToNewStmt (convertLetInfo (importExternalLetInfo name m)))
+    (ModuleStateCurrentModule (getModuleState s)).
+
+elet updateModuleDict (m : Module) (d : ModuleDict) : Eval Unit :=
+  letInfoToNewStmt (mkLetInfo
+    (mkModuleDictNameSuc d)
+    θ{insertModuleDict γ{sVarTerm (mkModuleName m)} γ{sVarTerm (mkModuleDictName d)}}
+    (just ?_ θ{ModuleDict})).
+
+elet unloadModuleDictStmt (n : ModuleName) (d : ModuleDict) : Eval Unit :=
+  moduleIsLoaded n >>= λ loaded : Bool.
+  ifthenelse ?_ loaded
+    (seqNewStmt
+      (letInfoToNewStmt (mkLetInfo
+        (mkModuleDictNameSuc d)
+        θ{unloadModuleFromDict γ{quoteModuleName n} γ{sVarTerm (mkModuleDictName d)}}
+        (just ?_ θ{ModuleDict})))
+      (modifyEval (modifyModuleDictInState (λ _ : ModuleDict. unloadModuleFromDict n d))))
+    (throwEval ?Unit "Module isn't loaded!").
+
+elet finishModuleDef (m : Module) (d : ModuleDict) : Eval Unit :=
+  seqNewStmts [Eval Unit|
+    letInfoToNewStmt (mkLetInfo
+      (mkModuleName m)
+      (sVarTerm (mkTempModuleName m))
+      (just ?_ θ{Module})),
+    updateModuleDict m d,
+    modifyModuleState (λ s : ModuleState.
+      mkModuleState (tail ?_ $ ModuleStateModuleStack s) (insertModuleDict m d)),
+    debugPrint LogTypeDebug zero
+      (stringConcat [String|"Loaded module: ", ModuleNameToName (ModuleModuleName m)])].
+
+elet endModule : Eval Unit :=
+  getModuleState' >>= λ s : ModuleState.
+  maybe ?_ ?_
+    (throwEval ?Unit "Currently not in a module!")
+    (λ m : Module. finishModuleDef m (ModuleStateDict s))
+    (ModuleStateCurrentModule s).
+
+--------------------------------------------------------------------------------
+-- Importing
+--------------------------------------------------------------------------------
+
+elet importModule (m : Module) (l : List App) : Eval Unit :=
+  getModuleState' >>= λ s : ModuleState.
+  seqNewStmts (map ?_ ?_
+    (λ n : String. letInfoToNewStmt (mkLetInfo
+      (nameToMaybeModuleName (ModuleStateCurrentModule s) n)
+      (appLTerm (sVarTerm (nameToModuleName m n)) l)
+      (nothing ?Term)))
+    (ModuleContents m)).
+
+elet moduleNameToPath (n : ModuleName) : String := stringConcat (intersperse ?_ "/" n).
+
+let loadModule (n : ModuleName) (prefix : String) : Eval Unit :=
+  import $ stringApp prefix (moduleNameToPath n).
+
+elet importModuleWithLoad (n : ModuleName) (l : List App) : Eval Unit :=
+  moduleIsLoaded n >>= λ loaded : Bool.
+  seqNewStmt (ifthenelse ?_ loaded emptyStmt (loadModule n ""))
+    (findLoadedModule n >>= maybe ?_ ?_
+      (throwEval ?Unit "importModuleWithLoad: error")
+      (λ m : Module. importModule m l)).
+
+--------------------------------------------------------------------------------
+-- Parsers
+--------------------------------------------------------------------------------
+
+elet init$moduleName'$=colon=_string__moduleName'_ (s : String) (n : ModuleName) := s ∷ n.
+let init$moduleName'$ := nil ?String.
+
+elet init$moduleName$_string__moduleName'_ (s : String) (n : ModuleName) := s ∷ n.
+
+-- Top-level statements
+
+let init$givenArgs$=dot= := [String|].
+elet init$givenArgs$^space^_string__givenArgs_ (s : String) (l : List String) := s ∷ l.
+
+let init$newStmt'$module^space^_moduleName__telescope'_=dot=
+  (m : ModuleName) (t : Telescope) : init$newStmt :=
+  initModule m t.
+let init$newStmt'$endModule=dot= : init$newStmt := endModule.
+let init$newStmt'$importModule^space^_moduleName__maybeApplist_=dot= (n : ModuleName) (l : List App) : init$newStmt :=
+  importModuleWithLoad n l.
+elet init$newStmt'$Given_givenArgs_ (args : List String) : init$newStmt :=
+  seqNewStmts (map ?_ ?_ importExternalStmt args).
+elet init$newStmt'$Unload^space^_moduleName_=dot= (n : ModuleName) : init$newStmt :=
+  getModuleState' >>= λ s : ModuleState. unloadModuleDictStmt n (ModuleStateDict s).
+
+endModule.

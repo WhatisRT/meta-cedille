@@ -3,19 +3,11 @@
 
 module Bootstrap.
 
-importModule Bootstrap:DSum.
-importModule Bootstrap:Product.
-importModule Bootstrap:Sum.
-
+-- TODO: move those out of bootstrap or move things depending on this
+-- into bootstrap
 importModule Bootstrap:Void.
-importModule Bootstrap:Unit.
+importModule Bootstrap:StringExt.
 
-importModule Bootstrap:Nat.
-importModule Bootstrap:Bool.
-importModule Bootstrap:List.
-importModule Bootstrap:Maybe.
-
-importModule Bootstrap:Term.
-importModule Bootstrap:MLLet.
+importModule Bootstrap:Syntax.
 
 endModule.

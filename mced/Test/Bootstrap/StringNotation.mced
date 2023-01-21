@@ -1,0 +1,37 @@
+--------------------------------------------------------------------------------
+-- Functions for quoting strings and syntax to use with the new terms
+--------------------------------------------------------------------------------
+
+module Bootstrap:StringNotation.
+
+importModule Bootstrap:Builtins.
+importModule Bootstrap:Bool.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:Term.
+
+let quote$stringNil : Term := sVarTerm "stringNil".
+let quote$stringCons : Term := sVarTerm "stringCons".
+
+let quoteChar (c : Char) : Term := charTerm c.
+
+let quoteString (s : String) : Term :=
+  s ?Term
+    (λ c : Char. λ rec : Term. appSingle (appSingle quote$stringCons (quoteChar c)) rec)
+    quote$stringNil.
+
+-- Syntax
+
+let init$stringchar$!=doublequote=! (c : Char) : Char := c.
+
+let init$newstring$ : String := stringNil.
+let init$newstring$_stringchar__newstring_ : Char -> String -> String := stringCons.
+
+let init$singleTerm$=doublequote=_newstring_=doublequote= : String -> Term := quoteString.
+let init$term$=doublequote=_newstring_=doublequote= : String -> Term := quoteString.
+
+let newline := "
+".
+
+elet showBool (b : Bool) := ifthenelse ?_ b "true" "false".
+
+endModule.

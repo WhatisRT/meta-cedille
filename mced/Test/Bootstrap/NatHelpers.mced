@@ -1,0 +1,157 @@
+--------------------------------------------------------------------------------
+-- Helper & conversion functions for natural numbers
+--------------------------------------------------------------------------------
+
+module Bootstrap:NatHelpers.
+
+Given init$index'.
+
+importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
+importModule Bootstrap:List.
+importModule Bootstrap:Maybe.
+importModule Bootstrap:Nat.
+importModule Bootstrap:Product.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:Term.
+
+let one   := suc zero.
+let two   := suc one.
+let three := suc two.
+let four  := suc three.
+let five  := suc four.
+let six   := suc five.
+let seven := suc six.
+let eight := suc seven.
+let nine  := suc eight.
+let ten   := suc nine.
+
+elet add (n, m : Nat) : Nat := recursionNat ?_ n    (λ _, rec : Nat. suc rec)   m.
+elet mul (n, m : Nat) : Nat := recursionNat ?_ zero (λ _, rec : Nat. add rec n) m.
+
+elet pred (n : Nat)   : Nat := recursionNat ?_ zero (λ n', _ : Nat. n')         n.
+elet sub (n, m : Nat) : Nat := recursionNat ?_ n    (λ _, rec : Nat. pred rec)  m.
+
+elet isZero : Nat -> Bool := recursionNat ?_ true (λ _ : Nat. λ _ : Bool. false).
+
+elet natEq : Nat -> Nat -> Bool :=
+  recursionNat ?_
+    isZero
+    (λ _ : Nat. λ rec : Nat -> Bool. recursionNat ?_ false (λ n : Nat. λ _ : Bool. rec n)).
+
+elet natLeq : Nat -> Nat -> Bool :=
+  recursionNat ?_
+    (λ _ : Nat. true)
+    (λ _ : Nat. λ rec : Nat -> Bool. recursionNat ?_ false (λ n : Nat. λ _ : Bool. rec n)).
+
+let natLt (m, n : Nat) : Bool := natLeq (suc m) n.
+
+--------------------------------------------------------------------------------
+-- Decimal digits
+--------------------------------------------------------------------------------
+
+let Dec := ∀ X : *. Π _, _, _, _, _, _, _, _, _, _ : X. X.
+let Dec0 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d0.
+let Dec1 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d1.
+let Dec2 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d2.
+let Dec3 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d3.
+let Dec4 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d4.
+let Dec5 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d5.
+let Dec6 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d6.
+let Dec7 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d7.
+let Dec8 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d8.
+let Dec9 : Dec := Λ X : *. λ d0, d1, d2, d3, d4, d5, d6, d7, d8, d9 : X. d9.
+
+let showDec (d : Dec) : String := d ?String "0" "1" "2" "3" "4" "5" "6" "7" "8" "9".
+
+--------------------------------------------------------------------------------
+-- Conversions to Nat
+--------------------------------------------------------------------------------
+
+elet baseListToNat [B : *] (digitToNat : B -> Nat) (ds : List B) (base : Nat) : Nat :=
+  recursionList ?_ ?_ zero
+    (λ d : B. λ _ : List B. λ rec : Nat. add (mul rec base) (digitToNat d))
+    (reverse ?B ds).
+
+elet boolToNat (b : Bool) : Nat := ifthenelse ?_ b one zero.
+let decToNat (d : Dec) : Nat := d ?Nat zero one two three four five six seven eight nine.
+
+elet boolListToNat (bs : List Bool) : Nat := baseListToNat ?_ boolToNat bs two.
+elet decListToNat  (ds : List Dec)  : Nat := baseListToNat ?_ decToNat  ds ten.
+
+-- Index conversion
+
+elet index'ToDigits (i : init$index') : List Dec :=
+  i ?(List Dec)
+    [Dec|]
+    (cons ?_ Dec0) (cons ?_ Dec1) (cons ?_ Dec2) (cons ?_ Dec3) (cons ?_ Dec4)
+    (cons ?_ Dec5) (cons ?_ Dec6) (cons ?_ Dec7) (cons ?_ Dec8) (cons ?_ Dec9).
+
+elet indexToDigits (i : DBIndex) : List Dec :=
+  i ?(List Dec)
+    (λ i' : init$index'. Dec0 ∷ (index'ToDigits i'))
+    (λ i' : init$index'. Dec1 ∷ (index'ToDigits i'))
+    (λ i' : init$index'. Dec2 ∷ (index'ToDigits i'))
+    (λ i' : init$index'. Dec3 ∷ (index'ToDigits i'))
+    (λ i' : init$index'. Dec4 ∷ (index'ToDigits i'))
+    (λ i' : init$index'. Dec5 ∷ (index'ToDigits i'))
+    (λ i' : init$index'. Dec6 ∷ (index'ToDigits i'))
+    (λ i' : init$index'. Dec7 ∷ (index'ToDigits i'))
+    (λ i' : init$index'. Dec8 ∷ (index'ToDigits i'))
+    (λ i' : init$index'. Dec9 ∷ (index'ToDigits i')).
+
+let indexToNat (i : DBIndex) : Nat := decListToNat (indexToDigits i).
+
+--------------------------------------------------------------------------------
+-- Conversions from Nat
+--------------------------------------------------------------------------------
+
+elet incrementBoolList : List Bool -> List Bool :=
+  recursionList ?_ ?_
+    [Bool | true]
+    (λ b : Bool. λ bs : List Bool. λ rec : List Bool. ifthenelse ?_ b (false ∷ rec) (true ∷ bs)).
+
+elet incrementDecList : List Dec -> List Dec :=
+  recursionList ?_ ?_
+    [Dec | Dec1]
+    (λ d : Dec. λ ds : List Dec. λ rec : List Dec.
+      d ?(List Dec)
+        (Dec1 ∷ ds) (Dec2 ∷ ds) (Dec3 ∷ ds) (Dec4 ∷ ds) (Dec5 ∷ ds)
+        (Dec6 ∷ ds) (Dec7 ∷ ds) (Dec8 ∷ ds) (Dec9 ∷ ds) (Dec0 ∷ rec)).
+
+elet natToBoolList : Nat -> List Bool :=
+  recursionNat ?_
+    [Bool | false]
+    (λ _ : Nat. λ rec : List Bool. incrementBoolList rec).
+
+elet natToDecList : Nat -> List Dec :=
+  recursionNat ?_
+    [Dec | Dec0]
+    (λ _ : Nat. λ rec : List Dec. incrementDecList rec).
+
+--------------------------------------------------------------------------------
+-- Show functions
+--------------------------------------------------------------------------------
+
+-- Prints a list of digits in a certain base
+elet showListOfDigitsBased [X : *] (showX : X -> String) (l : List X) : String :=
+  stringConcat (map ?_ ?_ showX (reverse ?_ l)).
+
+elet showNatBinary (n : Nat) : String :=
+  showListOfDigitsBased ?_ (λ b : Bool. ifthenelse ?_ b "1" "0") (natToBoolList n).
+elet showNatDecimal (n : Nat) : String :=
+  showListOfDigitsBased ?_ showDec (natToDecList n).
+
+elet quoteNat (n : Nat) : Term :=
+  recursionNat ?_ θ{zero} (λ _ : Nat. λ rec : Term. θ{suc γ{rec}}) n.
+
+--------------------------------------------------------------------------------
+-- Parse functions
+--------------------------------------------------------------------------------
+
+-- let parseCharToDecimal (c : Char) : Maybe Dec :=
+
+-- let parseNatFromString (s : String) : Maybe Nat :=
+--   decListToNat (map ?Char ?(Maybe Dec) ? (stringToList s)).
+
+endModule.

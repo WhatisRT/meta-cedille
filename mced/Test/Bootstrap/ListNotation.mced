@@ -1,0 +1,30 @@
+--------------------------------------------------------------------------------
+-- List notation: Use [ X | x1 , ... , xn] to denote a List X
+--------------------------------------------------------------------------------
+
+module Bootstrap:ListNotation.
+
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:Term.
+
+elet quoteTermList (type : Term) : List Term -> Term :=
+  recursionList ?_ ?_
+    θ{nil ?γ{type}}
+    (λ t : Term. λ _ : List Term. λ rec : Term. θ{cons ?γ{type} γ{t} γ{rec}}).
+
+-- Syntax
+
+let init$termlist'$ : List Term := nil ?Term.
+elet init$termlist'$=comma=^space'^_multiTerm__termlist'_
+  (t : Term) (ts : List Term) : List Term := t ∷ ts.
+
+let init$termlist$ : List Term := nil ?Term.
+elet init$termlist$_multiTerm__termlist'_ (t : Term) (ts : List Term) : List Term := t ∷ ts.
+
+let init$singleTerm$=lsquare=^space'^_multiTerm_=pipe=^space'^_termlist_=rsquare=
+  (type : Term) (terms : List Term) : Term :=
+  quoteTermList type terms.
+
+endModule.

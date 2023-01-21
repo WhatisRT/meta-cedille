@@ -1,0 +1,79 @@
+--------------------------------------------------------------------------------
+-- This file exports functions for writing terms with less overhead
+--
+-- Please use the quotation mechanism defined in `QuoteTerm` whenever possible.
+--------------------------------------------------------------------------------
+
+module Bootstrap:Quote.
+
+let quote$ast : iTerm := init$term$_sort_ init$sort$=ast=.
+let quote$sq  : iTerm := init$term$_sort_ init$sort$=sq=.
+
+let quote$var (n : String) : iTerm := init$term$_var_ (init$var$_string_ n).
+
+let quote$pi  : iTerm -> iTerm := init$term$=pi=^space^_term_.
+let quote$psi : iTerm -> iTerm := init$term$=psi=^space^_term_.
+
+let quote$beta  : iTerm -> iTerm -> iTerm := init$term$=beta=^space^_term_^space^_term_.
+let quote$delta : iTerm -> iTerm -> iTerm := init$term$=delta=^space^_term_^space^_term_.
+
+let quote$sigma : iTerm -> iTerm := init$term$=sigma=^space^_term_.
+
+let quote$square : iTerm -> iTerm -> iTerm := init$term$=lsquare=^space'^_term_^space^_term_^space'^=rsquare=.
+let quote$angle  : iTerm -> iTerm -> iTerm := init$term$=langle=^space'^_term_^space^_term_^space'^=rangle=.
+
+let quote$rho : iTerm -> String -> iTerm -> iTerm -> iTerm :=
+  init$term$=rho=^space^_term_^space^_string_^space'^=dot=^space'^_term_^space^_term_.
+
+let quote$forall : String -> iTerm -> iTerm -> iTerm :=
+  init$term$=forall=^space^_string_^space'^=colon=^space'^_term_^space^_term_.
+
+let quote$Pi : String -> iTerm -> iTerm -> iTerm :=
+  init$term$=Pi=^space^_string_^space'^=colon=^space'^_term_^space^_term_.
+
+let quote$iota : String -> iTerm -> iTerm -> iTerm :=
+  init$term$=iota=^space^_string_^space'^=colon=^space'^_term_^space^_term_.
+
+let quote$lambda : String -> iTerm -> iTerm -> iTerm :=
+  init$term$=lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_.
+
+let quote$Lambda : String -> iTerm -> iTerm -> iTerm :=
+  init$term$=Lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_.
+
+let quote$brace : iTerm -> iTerm -> String -> iTerm -> iTerm :=
+init$term$=lbrace=^space'^_term_^space'^=comma=^space'^_term_^space^_string_^space'^=dot=^space'^_term_^space'^=rbrace=.
+
+let quote$phi : iTerm -> iTerm -> iTerm -> iTerm :=
+  init$term$=phi=^space^_term_^space^_term_^space^_term_.
+
+let quote$equal : iTerm -> iTerm -> iTerm := init$term$=equal=^space^_term_^space^_term_.
+
+let quote$omega : iTerm -> iTerm := init$term$=omega=^space^_term_.
+
+let quote$mu : iTerm -> iTerm -> iTerm := init$term$=mu=^space^_term_^space^_term_.
+
+let quote$epsilon : iTerm -> iTerm := init$term$=epsilon=^space^_term_.
+
+-- let quote$ZetaLet : iTerm -> iTerm -> iTerm := init$term$=zeta=Let^space^_term_^space^_term_.
+
+-- let quote$ZetaAnnLet : iTerm -> iTerm -> iTerm :=
+--   init$term$=zeta=AnnLet^space^_term_^space^_term_^space^_term_.
+
+-- let quote$ZetaSetEval := λ t : iTerm λ t' : iTerm λ t'' : iTerm [[[init$term$=zeta=SetEval^space^_term_^space^_term_^space^_term_ t] t'] t''].
+
+-- let quote$ZetaShellCmd := λ t : iTerm λ t' : iTerm [[init$term$=zeta=ShellCmd^space^_term_^space^_term_ t] t'].
+
+-- let quote$ZetaCheckTerm := λ t : iTerm λ t' : iTerm [[init$term$=zeta=CheckTerm^space^_term_^space^_term_ t] t'].
+
+-- let quote$ZetaNormalize := λ t : iTerm [init$term$=zeta=Normalize^space^_term_ t].
+
+-- let quote$ZetaHeadNormalize := λ t : iTerm [init$term$=zeta=HeadNormalize^space^_term_ t].
+
+-- let quote$ZetaCatchErr := λ t : iTerm λ t' : iTerm [[init$term$=zeta=CatchErr^space^_term_^space^_term_ t] t'].
+
+-- let quote$constChar := init$const$Char.
+-- let quote$Kappa := λ c : init$const init$term$=Kappa=_const_.
+
+let quote$kappa : Char -> iTerm := init$term$=kappa=_char_.
+
+endModule.

@@ -1,0 +1,80 @@
+--------------------------------------------------------------------------------
+-- Providing conversions for the built-in types to more natural ones
+--
+-- Maybe this should be moved elsewhere?
+--------------------------------------------------------------------------------
+
+module Bootstrap:ConversionHelpers.
+
+Given init$stringList init$stringList$nil init$stringList$cons quoteSq init$const.
+
+importModule Bootstrap:Builtins.
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:Product.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:Term.
+importModule Bootstrap:TermRec.
+
+elet stringListToList (l : init$stringList) : List String :=
+  l ?(List String) (nil ?String)
+    (λ s : String. λ rec : List String. s ∷ rec).
+
+elet listToStringList : List String -> init$stringList :=
+  recursionList ?_ ?_
+    init$stringList$nil
+    (λ s : String. λ _ : List String. λ rec : init$stringList. init$stringList$cons s rec).
+
+-- let termListToList (l : init$termList) : List init$term :=
+--   l ?(List init$term) (nil ?init$term)
+--     (λ s : init$term. λ rec : List init$term. cons ?init$term s rec).
+
+let nothingTerm := θ{□}.
+let nothingTerm1 (_ : Term) := nothingTerm.
+let nothingTerm2 (_, _ : Term) := nothingTerm.
+let nothingTerm3 (_, _, _ : Term) := nothingTerm.
+
+let initTermToTerm (t : iTerm) := t ?Term
+  varTerm sortTerm (λ _ : init$const. sVarTerm "Char")
+    nothingTerm1 nothingTerm1 nothingTerm2 nothingTerm2 nothingTerm1 appSingle appSingleE
+    (λ _ : Term. λ _ : String. λ _, _ : Term. nothingTerm)
+    (λ s : String. λ t, t' : Term. binderTerm forallBinder s t t')
+    (λ s : String. λ t, t' : Term. binderTerm piBinder s t t')
+    (λ _ : String. λ _, _ : Term. nothingTerm)
+    (λ s : String. λ t, t' : Term. binderTerm lambdaBinder s t t')
+    (λ s : String. λ t, t' : Term. binderTerm LambdaBinder s t t')
+    (λ _, _ : Term. λ _ : String. λ _ : Term. nothingTerm)
+    nothingTerm3 nothingTerm2 nothingTerm1 nothingTerm2 nothingTerm1
+    -- Zetas
+    nothingTerm2 nothingTerm3 nothingTerm3 nothingTerm2 nothingTerm2
+    nothingTerm3 nothingTerm1 nothingTerm1 nothingTerm1 nothingTerm2
+    nothingTerm1 nothingTerm nothingTerm1 nothingTerm2 nothingTerm
+    nothingTerm
+    (λ c : Char. charTerm c) nothingTerm2.
+
+-- assuming no unknowns in f and no recursive unknowns in app, infer
+-- unknowns in app and return the applied term
+
+elet telescopeFromTypeHelper (t : Term) : Telescope × Term := telNil ; t.
+
+elet telCons  (n : String) (T : Term) := cons ?_ (mkParam false (mkPreParam n T)).
+elet telConsE (n : String) (T : Term) := cons ?_ (mkParam true  (mkPreParam n T)).
+
+elet telescopeFromType : Term -> Telescope × Term :=
+  recursionTerm ?_
+    (λ v : Var. telescopeFromTypeHelper (varTerm v))
+    (λ s : Sort. telescopeFromTypeHelper (sortTerm s))
+    (λ b : Binder. λ n : String. λ t, t' : Term. λ rect, rect' : Telescope × Term.
+      b ?(Telescope × Term)
+        (telescopeFromTypeHelper (lambdaTerm n t t'))
+        (telescopeFromTypeHelper (LambdaTerm n t t'))
+        (productMap1 ?_ ?Term ?_ (telCons n t) rect')
+        (productMap1 ?_ ?Term ?_ (telConsE n t) rect'))
+    (λ t : Term. λ app : List App.
+     λ _ : Telescope × Term. λ _ : List (Bool × Telescope × Term).
+       telescopeFromTypeHelper (appLTerm t app))
+    (λ c : Char. telescopeFromTypeHelper (charTerm c))
+    (telescopeFromTypeHelper unknownTerm)
+    (λ u : Term. λ _ : Telescope × Term. telescopeFromTypeHelper (unquoteTerm u)).
+
+endModule.

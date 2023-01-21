@@ -1,0 +1,105 @@
+--------------------------------------------------------------------------------
+-- Datatypes and functions for modules
+--------------------------------------------------------------------------------
+
+module Bootstrap:ModuleDefinitions.
+
+importModule Bootstrap:Builtins.
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:ListNotation.
+importModule Bootstrap:Maybe.
+importModule Bootstrap:Nat.
+importModule Bootstrap:NatHelpers.
+importModule Bootstrap:Product.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:StringNotation.
+importModule Bootstrap:Term.
+
+-- global prefix to write all data in
+let modulePrefix := "modPrefix|".
+
+-- ModuleName, each entry in the list represents a level of nesting
+let ModuleName := List String.
+elet moduleNameEq (n, n' : ModuleName) : Bool := listEq ?_ stringEq n n'.
+elet ModuleNameToName (n : ModuleName) : String := stringConcat (intersperse ?_ ":" n).
+elet quoteModuleName (n : ModuleName) : Term := quoteTermList θ{String} (map ?_ ?_ quoteString n).
+
+-- ModuleInfo contains all the global data about the module
+let ModuleInfo := ModuleName × Nat × Telescope.
+elet ModuleInfoName      (i : ModuleInfo) : ModuleName := pr31 ?_ ?Nat ?Telescope i.
+elet ModuleInfoVersion   (i : ModuleInfo) : Nat        := pr32 ?_ ?Nat ?Telescope i.
+elet ModuleInfoTelescope (i : ModuleInfo) : Telescope  := pr33 ?_ ?Nat ?Telescope i.
+
+elet mkModuleInfo (name : ModuleName) (version : Nat) (t : Telescope) : ModuleInfo :=
+  mkTripleProduct ?_ ?_ ?_ name version t.
+
+-- Everything related to the module has this prefix
+let mkModulePrefix (i : ModuleInfo) : String :=
+  stringConcat [String|
+    modulePrefix, ModuleNameToName (ModuleInfoName i), showNatDecimal (ModuleInfoVersion i)].
+
+-- The definitions in the module have this prefix
+let mkModuleContentPrefix (i : ModuleInfo) : String :=
+  stringApp (mkModulePrefix i) "|".
+
+-- All the data about a module is collected in the Module type
+let Module := ModuleInfo × List String.
+elet ModuleModuleInfo (m : Module) : ModuleInfo  := pr1 ?_ ?(List String) m.
+elet ModuleContents   (m : Module) : List String := pr2 ?_ ?(List String) m.
+let ModuleModuleName  (m : Module) : ModuleName  := ModuleInfoName (ModuleModuleInfo m).
+let ModuleVersion     (m : Module) : Nat         := ModuleInfoVersion (ModuleModuleInfo m).
+let ModuleTelescope   (m : Module) : Telescope   := ModuleInfoTelescope (ModuleModuleInfo m).
+
+elet mkModule (name : ModuleName) (version : Nat) (t : Telescope) (contents : List String) : Module :=
+  mkModuleInfo name version t ; contents.
+
+let mkInitModule (name : ModuleName) (version : Nat) (t : Telescope) : Module :=
+  mkModule name version t [String|].
+
+-- Functions for generating module names. While they are being defined, we use
+-- the temporary names to build them incrementally.
+
+let mkTempModuleName' (m : Module) (n : Nat) : String := -- name for temporary modules
+  stringConcat [String | mkModulePrefix (ModuleModuleInfo m), "||", showNatDecimal n].
+elet mkTempModuleName    (m : Module) : String :=
+  mkTempModuleName' m (length ?_ $ ModuleContents m).
+elet mkTempModuleNameSuc (m : Module) : String :=
+  mkTempModuleName' m (suc $ length ?_ $ ModuleContents m).
+let mkModuleName (m : Module) : String :=
+  stringConcat [String | mkModulePrefix (ModuleModuleInfo m), "||"].
+
+-- ModuleDict is a type that is used to collect all the modules that are
+-- currently defined. We will bind them to a global name where the version is
+-- used to let us update the dictionary. There are probably better ways of doing
+-- this.
+
+let ModuleDict := Nat × (ModuleName -> Maybe (Bool × Module)).
+let mkModuleDict := prodPair ?Nat ?(ModuleName -> Maybe (Bool × Module)).
+let ModuleDictVersion := pr1 ?Nat ?(ModuleName -> Maybe (Bool × Module)).
+let ModuleDictDict    := pr2 ?Nat ?(ModuleName -> Maybe (Bool × Module)).
+let emptyModuleDict : ModuleDict :=
+  mkModuleDict zero (λ _ : ModuleName. nothing ?(Bool × Module)).
+elet insertModuleDict (m : Module) (dict : ModuleDict) : ModuleDict :=
+  mkModuleDict
+    (suc (ModuleDictVersion dict))
+    (λ n : ModuleName. ifthenelse ?_ (moduleNameEq n (ModuleModuleName m))
+                         (just ?_ (true ; m))
+                         (ModuleDictDict dict n)).
+let lookupModuleDict (k : ModuleName) (dict : ModuleDict) : Maybe (Bool × Module) :=
+  ModuleDictDict dict k.
+elet unloadModuleFromDict (m : ModuleName) (dict : ModuleDict) : ModuleDict :=
+  maybe ?_ ?_
+    dict
+    (λ x : Bool × Module. mkModuleDict (suc (ModuleDictVersion dict)) (λ n : ModuleName.
+      ifthenelse ?_ (moduleNameEq n m)
+        (just ?_ (productMap1 ?_ ?Module ?_ (λ _ : Bool. false) x))
+        (ModuleDictDict dict n)))
+    (ModuleDictDict dict m).
+
+let mkModuleDictName' (v : Nat) (d : ModuleDict) : String :=
+  stringConcat [String| modulePrefix, "||Dict", (showNatDecimal v)].
+let mkModuleDictName    (d : ModuleDict) : String := mkModuleDictName' (ModuleDictVersion d) d.
+let mkModuleDictNameSuc (d : ModuleDict) : String := mkModuleDictName' (suc (ModuleDictVersion d)) d.
+
+endModule.
