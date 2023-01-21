@@ -1,10 +1,6 @@
-let CNat := Nat.
-let Czero := zero.
-let Csucc := suc.
+module DatatypesTest:NatConversions.
 
-module NatConversions.
-
-importModule Nat.
+importModule DatatypesTest:Nat.
 
 Given CNat Czero Csucc.
 

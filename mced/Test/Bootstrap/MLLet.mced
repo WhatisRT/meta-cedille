@@ -6,8 +6,9 @@
 
 module Bootstrap:MLLet.
 
-Given String M primLet primAnnLet.
+Given M primLet primAnnLet.
 
+importModule Bootstrap:Builtins.
 importModule Bootstrap:Bool.
 importModule Bootstrap:List.
 importModule Bootstrap:Maybe.

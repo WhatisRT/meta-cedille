@@ -81,8 +81,9 @@ elet writeDefinitionsToFile (fname : String) (defs : List LetInfo) : Eval Unit :
 elet bootstrapCompileDir := "bootstrap/Compiled/".
 
 elet compileNames (modName : String) : Eval Unit :=
-  (getModule [String|"Bootstrap", modName] >>= moduleToLetInfos) >>=
-    writeDefinitionsToFile (stringConcat [String|bootstrapCompileDir, modName, ".mced"]).
+  seqNewStmt (debugPrint LogTypeDebug zero $ stringConcat [String|"Compiling: ", modName])
+    ((getModule [String|"Bootstrap", modName] >>= moduleToLetInfos) >>=
+      writeDefinitionsToFile (stringConcat [String|bootstrapCompileDir, modName, ".mced"])).
 
 elet compileModules (modNames : List String) : Eval Unit :=
   voidEval ?_ $ sequenceEval ?_ $ map ?_ ?_ compileNames modNames.

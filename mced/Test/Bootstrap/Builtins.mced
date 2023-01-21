@@ -1,0 +1,21 @@
+--------------------------------------------------------------------------------
+-- Exports primitive types and functions
+--------------------------------------------------------------------------------
+
+module Bootstrap:Builtins.
+
+Given init$term init$var init$sort init$sort$=ast= init$sort$=sq=.
+Given init$char init$string init$index.
+
+let iTerm := init$term.
+let Var := init$var.
+let Sort := init$sort.
+
+let SortAst := init$sort$=ast=.
+let SortSq  := init$sort$=sq=.
+
+let Char := init$char.
+let String := init$string.
+let DBIndex := init$index.
+
+endModule.

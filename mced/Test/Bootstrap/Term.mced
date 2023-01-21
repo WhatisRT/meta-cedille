@@ -7,10 +7,11 @@
 
 module Bootstrap:Term.
 
-Given Var init$var$_string_ init$var$_index_ init$index Sort Char String iTerm.
-Given init$term$_var_ init$term$_sort_ init$string$nil SortAst SortSq quote$sq.
+Given init$var$_string_ init$var$_index_.
+Given init$term$_var_ init$term$_sort_ init$string$nil quote$sq.
 Given quote$angle quote$square quote$lambda quote$Lambda quote$Pi quote$forall quote$kappa.
 
+importModule Bootstrap:Builtins.
 importModule Bootstrap:Bool.
 importModule Bootstrap:List.
 importModule Bootstrap:Product.
@@ -91,7 +92,7 @@ elet unquoteTerm (t : Term) : Term := Λ X : *.
   λ u : X -> X. u $ t ?X v s b a k x u.
 
 elet sVarTerm (s : String) : Term := varTerm (init$var$_string_ s).
-elet iVarTerm (i : init$index) : Term := varTerm (init$var$_index_ i).
+elet iVarTerm (i : DBIndex) : Term := varTerm (init$var$_index_ i).
 elet lambdaTerm := binderTerm lambdaBinder.
 elet LambdaTerm := binderTerm LambdaBinder.
 elet piTerm := binderTerm piBinder.

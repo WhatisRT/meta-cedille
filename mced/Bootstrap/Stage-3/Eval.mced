@@ -43,19 +43,21 @@ b-let setWorkingDir (dir : String) : EvalOpts -> EvalOpts :=
 -- well as the module dictionary. Quoting ModuleState requires the Module and
 -- ModuleDict to be defined in the environment.
 
-b-let ModuleState : * := Product (Maybe Module) ModuleDict.
-b-let mkModuleState (m : Maybe Module) (d : ModuleDict) : ModuleState := prodPair ?(Maybe Module) ?ModuleDict m d.
-b-let ModuleStateModule (s : ModuleState) : Maybe Module := pr1 ?(Maybe Module) ?ModuleDict s.
-b-let ModuleStateDict (s : ModuleState) : ModuleDict := pr2 ?(Maybe Module) ?ModuleDict s.
-b-let emptyModState : ModuleState := mkModuleState (nothing ?Module) emptyModuleDict.
-b-let quoteMaybeModule (x : Maybe Module) : Term :=
-  maybe ?Module ?Term
-    θ{nothing ?Module}
-    (λ m : Module. θ{just ?Module γ{sVarTerm (mkTempModuleName m)}})
-    x.
+b-let ModuleState : * := Product (List Module) ModuleDict.
+b-let mkModuleState (m : List Module) (d : ModuleDict) : ModuleState := prodPair ?(List Module) ?ModuleDict m d.
+b-let ModuleStateModuleStack (s : ModuleState) : List Module := pr1 ?(List Module) ?ModuleDict s.
+b-let ModuleStateDict (s : ModuleState) : ModuleDict := pr2 ?(List Module) ?ModuleDict s.
+
+b-let ModuleStateCurrentModule (s : ModuleState) : Maybe Module :=
+  head ?Module (ModuleStateModuleStack s).
+
+b-let emptyModState : ModuleState := mkModuleState (nil ?Module) emptyModuleDict.
+
 b-let quoteDict (d : ModuleDict) : Term := sVarTerm (mkModuleDictName d).
 b-let quoteModuleState (s : ModuleState) : Term :=
-  θ{mkModuleState γ{quoteMaybeModule (ModuleStateModule s)} γ{quoteDict (ModuleStateDict s)}}.
+  θ{mkModuleState γ{quoteList ?Module θ{Module}
+    (λ m : Module. sVarTerm (mkTempModuleName m)) (ModuleStateModuleStack s)}
+    γ{quoteDict (ModuleStateDict s)}}.
 
 -- TermInfoState is a map of names to meta information about that name.
 
@@ -110,15 +112,17 @@ b-let quoteEvalState (s : EvalState) : Term :=
 b-let emptyEvalState : EvalState :=
   mkEvalState defaultFlags emptyModState emptyTermInfoState emptyOtherState.
 
-b-let modifyModuleInState (f : Maybe Module -> Maybe Module) (s : EvalState) : EvalState :=
+b-let modifyModuleInState (f : List Module -> List Module) (s : EvalState) : EvalState :=
   mkEvalState (getEvalOpts s)
-              (mkModuleState (f (ModuleStateModule (getModuleState s))) (ModuleStateDict (getModuleState s)))
+              (mkModuleState (f (ModuleStateModuleStack (getModuleState s)))
+                             (ModuleStateDict (getModuleState s)))
               (getTermInfoState s)
               (getOtherState s).
 
 b-let modifyModuleDictInState (f : ModuleDict -> ModuleDict) (s : EvalState) : EvalState :=
   mkEvalState (getEvalOpts s)
-              (mkModuleState (ModuleStateModule (getModuleState s)) (f (ModuleStateDict (getModuleState s))))
+              (mkModuleState (ModuleStateModuleStack (getModuleState s))
+                             (f (ModuleStateDict (getModuleState s))))
               (getTermInfoState s)
               (getOtherState s).
 

@@ -1,4 +1,4 @@
-module Nat.
+module DatatypesTest:Nat.
 
 -- Temporary workaround to make all the names that `data` needs available
 import Datatypes/ModuleCompatibility.

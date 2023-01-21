@@ -1,17 +1,21 @@
 -- FIXME: this breaks importing
 --set RequireTypeAnnotations true.
 
-import BootstrapCompiler/DSum.
-import BootstrapCompiler/Product.
-import BootstrapCompiler/Sum.
+module Bootstrap.
 
-import BootstrapCompiler/Void.
-import BootstrapCompiler/Unit.
+importModule Bootstrap:DSum.
+importModule Bootstrap:Product.
+importModule Bootstrap:Sum.
 
-import BootstrapCompiler/Nat.
-import BootstrapCompiler/Bool.
-import BootstrapCompiler/List.
-import BootstrapCompiler/Maybe.
+importModule Bootstrap:Void.
+importModule Bootstrap:Unit.
 
-import BootstrapCompiler/Term.
-import BootstrapCompiler/MLLet.
+importModule Bootstrap:Nat.
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:Maybe.
+
+importModule Bootstrap:Term.
+importModule Bootstrap:MLLet.
+
+endModule.

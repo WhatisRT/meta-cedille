@@ -7,10 +7,10 @@ module COC:Theory.
 -- Temporary workaround to make all the names that `data` needs available
 import Datatypes/ModuleCompatibility.
 
-importModule List.
-importModule Maybe.
-importModule Nat.
-importModule NatConversions.
+importModule DatatypesTest:List.
+importModule DatatypesTest:Maybe.
+importModule DatatypesTest:Nat.
+importModule DatatypesTest:NatConversions.
 importModule COC:Map.
 
 -- Strings and string notation

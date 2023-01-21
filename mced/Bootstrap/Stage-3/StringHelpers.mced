@@ -11,18 +11,16 @@ b-let stringToList (s : String) : List Char :=
   s ?(List Char) (λ c : Char. λ rec : List Char. cons ?Char c rec) (nil ?Char).
 
 b-let stringFromList (s : List Char) : String :=
-  recursionList ?Char ?String init$string$nil
-    (λ c : Char. λ cs : List Char. λ rec : String. init$string$cons c rec)
-    s.
+  s ?String stringNil
+    (λ c : Char. λ rec : String. stringCons c rec).
 
 b-let stringApp (s, s' : String) : String :=
-  s ?String init$string$cons s'.
+  s ?String stringCons s'.
 
 b-let stringConcat (l : List String) : String :=
-  recursionList ?String ?String
-    init$string$nil
-    (λ s : String. λ _ : List String. λ rec : String. stringApp s rec)
-    l.
+  l ?String
+    stringNil
+    (λ s : String. λ rec : String. stringApp s rec).
 
 -- Equality
 

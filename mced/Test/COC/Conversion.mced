@@ -11,8 +11,8 @@ Given TripleProduct mkTripleProduct pr31 pr32 pr33.
 Given LetInfo letInfoName letInfoTerm letInfoType.
 Given Maybe just nothing maybe bindMaybe mapMaybe.
 
-importModule Nat.
-importModule NatConversions.
+importModule DatatypesTest:Nat.
+importModule DatatypesTest:NatConversions.
 importModule COC:Theory.
 
 let findMaybe [A : *] (pred : A -> Bool) (l : List A) : Maybe Nat :=

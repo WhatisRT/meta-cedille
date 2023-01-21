@@ -1,4 +1,4 @@
-module Maybe.
+module DatatypesTest:Maybe.
 
 -- Temporary workaround to make all the names that `data` needs available
 import Datatypes/ModuleCompatibility.

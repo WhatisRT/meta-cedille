@@ -1,4 +1,4 @@
-module Category.
+module DatatypesTest:Category.
 
 -- Temporary workaround to make all the names that `data` needs available
 import Datatypes/ModuleCompatibility.
