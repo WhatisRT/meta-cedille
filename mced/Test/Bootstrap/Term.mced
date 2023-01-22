@@ -282,4 +282,27 @@ elet init$binder$=forall= := forallBinder.
 elet init$singleTerm$_binder_^space^_params_=dot=^space^_multiTerm_ :=
   λ b : Binder. λ p : List PreParam. λ t : Term. applyMultiBinder b p t.
 
+-- Let bindings: ψ n = t : T. t'
+-- Not part of the syntax, they are just elaborated to (λ n : T. t') t
+
+-- name, definition, type
+let LetParam := String × Term × Term.
+elet letPreParams : List LetParam -> List PreParam :=
+  map ?_ ?_ $ recursionTripleProduct ?_ ?_ ?_ ?_ λ n : String. λ _, ty : Term. n ; ty.
+elet letApp (b : Bool) (lp : LetParam) : App :=
+  mkApp b (recursionTripleProduct ?_ ?_ ?_ ?_ (λ _ : String. λ def, _ : Term. def) lp).
+
+elet init$letParam$_string_^space^=equal=^space^_multiTerm_=colon=^space^_multiTerm_ :=
+  λ n : String. λ def, ty : Term. n ; def ; ty.
+
+elet init$letParams'$ := nil ?LetParam.
+elet init$letParams'$=comma=^space^_letParam__letParams'_ := cons ?LetParam.
+
+elet init$letParams$_letParam__letParams'_ := cons ?LetParam.
+
+elet init$singleTerm$=psi=^space^_letParams_=dot=^space^_multiTerm_ (p : List LetParam) (t : Term) :=
+  appLTerm (applyMultiBinder lambdaBinder (letPreParams p) t) (map ?_ ?_ (letApp false) p).
+elet init$singleTerm$=Psi=^space^_letParams_=dot=^space^_multiTerm_ (p : List LetParam) (t : Term) :=
+  appLTerm (applyMultiBinder LambdaBinder (letPreParams p) t) (map ?_ ?_ (letApp true) p).
+
 endModule.

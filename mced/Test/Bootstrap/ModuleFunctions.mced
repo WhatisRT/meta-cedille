@@ -82,15 +82,12 @@ elet getNewModuleVersion (n : ModuleName) : Eval Nat :=
 
 -- reload a module if it is loaded already
 elet initModule (n : ModuleName) (t : Telescope) : Eval Unit :=
-  getNewModuleVersion n >>= λ v : Nat.
-    (λ m : Module.
-      seqNewStmt
-        (letInfoToNewStmt
-          (mkLetInfo (mkTempModuleName m)
-            θ{mkInitModule γ{quoteModuleName n} γ{quoteNat v} γ{quoteTelescope t}}
-            (just ?_ θ{Module})))
-        (modifyEval (modifyModuleInState (cons ?_ m))))
-    (mkInitModule n v t).
+  getNewModuleVersion n >>= λ v : Nat. ψ m = mkInitModule n v t : Module.
+  seqNewStmt
+    (letInfoToNewStmt (mkLetInfo (mkTempModuleName m)
+                        θ{mkInitModule γ{quoteModuleName n} γ{quoteNat v} γ{quoteTelescope t}}
+                        (just ?_ θ{Module})))
+    (modifyEval (modifyModuleInState (cons ?_ m))).
 
 elet consModule (n : String) (m : Module) : Module :=
   mkModule (ModuleModuleName m) (ModuleVersion m) (ModuleTelescope m) (n ∷ ModuleContents m).

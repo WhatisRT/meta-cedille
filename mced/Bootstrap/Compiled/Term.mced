@@ -91,3 +91,12 @@ let init$binder$=Lambda= := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ fo
 let init$binder$=Pi= := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X pi : Binder.
 let init$binder$=forall= := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X forall : Binder.
 let init$singleTerm$_binder_^space^_params_=dot=^space^_multiTerm_ := λ b : Binder λ p : [List PreParam] λ t : Term [[[applyMultiBinder b] p] t] : Π b : Binder Π p : [List PreParam] Π t : Term Term.
+let LetParam := ∀ X : * Π _ : Π a : String Π _ : [λ _ : String [[Product Term] Term] a] X X : *.
+let letPreParams := λ l : [List [[[TripleProduct String] Term] Term]] [[<l [List [[Product String] Term]]> <nil [[Product String] Term]>] λ x : [[[TripleProduct String] Term] Term] λ rec : [List [[Product String] Term]] [[<cons [[Product String] Term]> [[<<<<recursionTripleProduct String> Term> Term> [[Product String] Term]> λ n : String λ _ : Term λ ty : Term [[<<prodPair String> Term> n] ty]] x]] rec]] : Π _ : [List LetParam] [List PreParam].
+let letApp := λ b : Bool λ lp : LetParam [[mkApp b] [[<<<<recursionTripleProduct String> Term> Term> Term> λ _ : String λ def : Term λ _ : Term def] lp]] : Π b : Bool Π lp : LetParam App.
+let init$letParam$_string_^space^=equal=^space^_multiTerm_=colon=^space^_multiTerm_ := λ n : String λ def : Term λ ty : Term [[<<prodPair String> [[Product Term] Term]> n] [[<<prodPair Term> Term> def] ty]] : Π n : String Π def : Term Π ty : Term [[Product String] [[Product Term] Term]].
+let init$letParams'$ := Λ X : * λ n : X λ c : Π _ : LetParam Π _ : X X n : [List LetParam].
+let init$letParams'$=comma=^space^_letParam__letParams'_ := λ a : LetParam λ as : [List LetParam] Λ X : * λ n : X λ c : Π _ : LetParam Π _ : X X [[c a] [[<as X> n] c]] : Π a : LetParam Π as : [List LetParam] [List LetParam].
+let init$letParams$_letParam__letParams'_ := λ a : LetParam λ as : [List LetParam] Λ X : * λ n : X λ c : Π _ : LetParam Π _ : X X [[c a] [[<as X> n] c]] : Π a : LetParam Π as : [List LetParam] [List LetParam].
+let init$singleTerm$=psi=^space^_letParams_=dot=^space^_multiTerm_ := λ p : [List LetParam] λ t : Term [[appLTerm [[[applyMultiBinder lambdaBinder] [letPreParams p]] t]] [[<<map LetParam> App> [letApp false]] p]] : Π p : [List LetParam] Π t : Term Term.
+let init$singleTerm$=Psi=^space^_letParams_=dot=^space^_multiTerm_ := λ p : [List LetParam] λ t : Term [[appLTerm [[[applyMultiBinder LambdaBinder] [letPreParams p]] t]] [[<<map LetParam> App> [letApp true]] p]] : Π p : [List LetParam] Π t : Term Term.
