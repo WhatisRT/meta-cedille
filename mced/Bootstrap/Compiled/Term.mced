@@ -11,8 +11,8 @@ let appLTerm := λ t : Term λ l : [List [[Product Bool] Term]] Λ X : * λ v : 
 let charTerm := λ c : Char Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [k c] : Π c : Char Term.
 let unknownTerm := Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X x : Term.
 let unquoteTerm := λ t : Term Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [u [[[[[[[<t X> v] s] b] a] k] x] u]] : Π t : Term Term.
-let sVarTerm := λ s : String [varTerm [init$var$_string_ s]] : Π s : String Term.
-let iVarTerm := λ i : DBIndex [varTerm [init$var$_index_ i]] : Π i : DBIndex Term.
+let sVarTerm := λ s : String [varTerm [varString s]] : Π s : String Term.
+let iVarTerm := λ i : DBIndex [varTerm [varIndex i]] : Π i : DBIndex Term.
 let lambdaTerm := λ name : String λ T : Term λ t : Term Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [[[[b lambdaBinder] name] [[[[[[[<T X> v] s] b] a] k] x] u]] [[[[[[[<t X> v] s] b] a] k] x] u]] : Π name : String Π T : Term Π t : Term Term.
 let LambdaTerm := λ name : String λ T : Term λ t : Term Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [[[[b LambdaBinder] name] [[[[[[[<T X> v] s] b] a] k] x] u]] [[[[[[[<t X> v] s] b] a] k] x] u]] : Π name : String Π T : Term Π t : Term Term.
 let piTerm := λ name : String λ T : Term λ t : Term Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [[[[b piBinder] name] [[[[[[[<T X> v] s] b] a] k] x] u]] [[[[[[[<t X> v] s] b] a] k] x] u]] : Π name : String Π T : Term Π t : Term Term.
@@ -76,14 +76,14 @@ let init$applist$_app__maybeApplist_ := λ a : App λ as : [List App] [[<cons Ap
 let init$maybeApplist$ := Λ X : * λ n : X λ c : Π _ : App Π _ : X X n : [List App].
 let init$maybeApplist$^space^_applist_ := λ l : [List App] l : Π l : [List App] [List App].
 let init$appTerm$_singleTerm__maybeApplist_ := λ t : Term λ l : [List [[Product Bool] Term]] Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [[a [[[[[[[<t X> v] s] b] a] k] x] u]] [[<<map [[Product Bool] Term]> [[Product Bool] X]> [<<<recursionProduct Bool> Term> [[Product Bool] X]> λ b' : Bool λ t : Term [[<<prodPair Bool> X> b'] [[[[[[[<t X> v] s] b] a] k] x] u]]]] l]] : Π t : Term Π l : [List [[Product Bool] Term]] Term.
-let init$infix$=minus==rangle= := Λ X : * λ p : Π a : String Π _ : [λ _ : String Π _ : Term Π _ : Term Term a] X [[p init$string$nil] [piTerm init$string$nil]] : InfixData.
+let init$infix$=minus==rangle= := Λ X : * λ p : Π a : String Π _ : [λ _ : String Π _ : Term Π _ : Term Term a] X [[p stringNil] [piTerm stringNil]] : InfixData.
 let init$multiTerm'$ := λ m : MultiTerm m : Π m : MultiTerm MultiTerm.
 let init$multiTerm'$_infix_^space^_appTerm_^space'^_multiTerm'_ := λ inf : InfixData λ t : Term λ trans : Π _ : MultiTerm MultiTerm λ m : MultiTerm [trans [[[consMultiTerm t] inf] m]] : Π inf : InfixData Π t : Term Π trans : Π _ : MultiTerm MultiTerm Π m : MultiTerm MultiTerm.
 let init$multiTerm$_appTerm_^space'^_multiTerm'_ := λ t : Term λ trans : Π _ : MultiTerm MultiTerm [multiTermToTerm [trans [singleMultiTerm t]]] : Π t : Term Π trans : Π _ : MultiTerm MultiTerm Term.
 let init$singleTerm$=ast= := Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [s SortAst] : Term.
 let init$singleTerm$=sq= := Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [s SortSq] : Term.
 let init$singleTerm$=underscore= := Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X x : Term.
-let init$singleTerm$_string_ := λ n : String [varTerm [init$var$_string_ n]] : Π n : String Term.
+let init$singleTerm$_string_ := λ n : String [varTerm [varString n]] : Π n : String Term.
 let init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : Term t : Π t : Term Term.
 let init$singleTerm$=kappa=_char_ := λ c : Char Λ X : * λ v : Π _ : Var X λ s : Π _ : Sort X λ b : Π _ : Binder Π _ : String Π _ : X Π _ : X X λ a : Π _ : X Π _ : [List [[Product Bool] X]] X λ k : Π _ : Char X λ x : X λ u : Π _ : X X [k c] : Π _ : Char Term.
 let init$binder$=lambda= := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X lambda : Binder.

@@ -1,2 +1,9 @@
+module DatatypesTest:Unit.
+
+-- Temporary workaround to make all the names that `data` needs available
+import Datatypes/ModuleCompatibility.
+
 data TestUnit where
 | ttTest : TestUnit.
+
+endModule.

@@ -6,8 +6,6 @@
 
 module Bootstrap:QuoteTerm.
 
-Given init$index'.
-
 importModule Bootstrap:Builtins.
 importModule Bootstrap:Bool.
 importModule Bootstrap:List.
@@ -21,7 +19,7 @@ importModule Bootstrap:TermRec.
 
 -- We want to define quoteTerm, the rest are helper functions
 
-let quoteIndex' (i : init$index') : Term :=
+let quoteIndex' (i : DBIndex') : Term :=
   i ?Term
     (sVarTerm "init$index'$")
     (λ rec : Term. appSingle (sVarTerm "init$index'$0_index'_") rec)
@@ -37,16 +35,16 @@ let quoteIndex' (i : init$index') : Term :=
 
 let quoteIndex (i : DBIndex) : Term :=
   i ?Term
-    (λ i' : init$index'. appSingle (sVarTerm "init$index$0_index'_") (quoteIndex' i'))
-    (λ i' : init$index'. appSingle (sVarTerm "init$index$1_index'_") (quoteIndex' i'))
-    (λ i' : init$index'. appSingle (sVarTerm "init$index$2_index'_") (quoteIndex' i'))
-    (λ i' : init$index'. appSingle (sVarTerm "init$index$3_index'_") (quoteIndex' i'))
-    (λ i' : init$index'. appSingle (sVarTerm "init$index$4_index'_") (quoteIndex' i'))
-    (λ i' : init$index'. appSingle (sVarTerm "init$index$5_index'_") (quoteIndex' i'))
-    (λ i' : init$index'. appSingle (sVarTerm "init$index$6_index'_") (quoteIndex' i'))
-    (λ i' : init$index'. appSingle (sVarTerm "init$index$7_index'_") (quoteIndex' i'))
-    (λ i' : init$index'. appSingle (sVarTerm "init$index$8_index'_") (quoteIndex' i'))
-    (λ i' : init$index'. appSingle (sVarTerm "init$index$9_index'_") (quoteIndex' i')).
+    (λ i' : DBIndex'. appSingle (sVarTerm "init$index$0_index'_") (quoteIndex' i'))
+    (λ i' : DBIndex'. appSingle (sVarTerm "init$index$1_index'_") (quoteIndex' i'))
+    (λ i' : DBIndex'. appSingle (sVarTerm "init$index$2_index'_") (quoteIndex' i'))
+    (λ i' : DBIndex'. appSingle (sVarTerm "init$index$3_index'_") (quoteIndex' i'))
+    (λ i' : DBIndex'. appSingle (sVarTerm "init$index$4_index'_") (quoteIndex' i'))
+    (λ i' : DBIndex'. appSingle (sVarTerm "init$index$5_index'_") (quoteIndex' i'))
+    (λ i' : DBIndex'. appSingle (sVarTerm "init$index$6_index'_") (quoteIndex' i'))
+    (λ i' : DBIndex'. appSingle (sVarTerm "init$index$7_index'_") (quoteIndex' i'))
+    (λ i' : DBIndex'. appSingle (sVarTerm "init$index$8_index'_") (quoteIndex' i'))
+    (λ i' : DBIndex'. appSingle (sVarTerm "init$index$9_index'_") (quoteIndex' i')).
 
 let appDouble (t, t', t'' : Term) := appLTerm t [App| mkAppU t', mkAppU t''].
 

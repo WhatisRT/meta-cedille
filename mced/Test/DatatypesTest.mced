@@ -1,13 +1,11 @@
-import DatatypesTest/Unit.
-import DatatypesTest/DSum.
-
 let CNat := Nat.
 let Czero := zero.
 let Csucc := suc.
 
 module DatatypesTest.
 
--- The following use the module system
+importModule DatatypesTest:Unit.
+importModule DatatypesTest:DSum.
 importModule DatatypesTest:Maybe.
 importModule DatatypesTest:Nat.
 importModule DatatypesTest:NatConversions.

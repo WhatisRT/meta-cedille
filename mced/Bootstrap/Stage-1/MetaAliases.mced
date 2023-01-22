@@ -2,6 +2,11 @@ let iTerm := init$term.
 let Var := init$var.
 let Sort := init$sort.
 let DBIndex := init$index.
+let DBIndex' := init$index'.
+let Const := init$const.
+
+let varString := init$var$_string_.
+let varIndex := init$var$_index_.
 
 let SortAst := init$sort$=ast=.
 let SortSq  := init$sort$=sq=.

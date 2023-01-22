@@ -6,8 +6,6 @@
 
 module Bootstrap:Syntax.
 
-Given M.
-
 importModule Bootstrap:Bool.
 importModule Bootstrap:Builtins.
 importModule Bootstrap:Eval.
@@ -54,7 +52,7 @@ elet hnfStmt (t : Term) : Eval Unit :=
 -- Syntax
 
 -- statements from the old syntax
-let init$newStmt'$o=minus=_stmt'_ (stmt : M Unit) : init$newStmt := stmtToNewStmt stmt.
+let init$newStmt'$o=minus=_stmt'_ := stmtToNewStmt.
 
 -- flags
 
@@ -91,10 +89,6 @@ let init$newStmt'$updateEval=dot= : init$newStmt := updateMEnv.
 let init$newStmt'$ : init$newStmt := emptyStmt.
 
 let init$newStmt$^space'^_newStmt'_ (stmt : init$newStmt) : init$newStmt := stmt.
-
--- new evaluator
-elet evalNewStmt (s : EvalState) (stmt : init$newStmt) : M (Product Unit EvalState) :=
-  runEval ?_ stmt s.
 
 -- seteval [evalNewStmt emptyEvalState] init newStmt.
 

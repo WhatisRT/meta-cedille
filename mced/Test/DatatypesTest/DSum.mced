@@ -1,2 +1,9 @@
+module DatatypesTest:DSum.
+
+-- Temporary workaround to make all the names that `data` needs available
+import Datatypes/ModuleCompatibility.
+
 data TestDSum (A : *) (B : A -> *) where
 | pairTest : Π a : A. B a -> TestDSum A B.
+
+endModule.

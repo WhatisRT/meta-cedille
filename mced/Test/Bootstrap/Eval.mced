@@ -396,4 +396,8 @@ elet inferType (t : Term) : Eval Term :=
 elet runEval [T : *] (eval : Eval T) (s : EvalState) : M (T × EvalState) :=
   (eval >>= λ t : T. seqEval ?_ ?_ updateMEnv (pureEval ?_ t)) (initEvalEnv s) s.
 
+-- new evaluator
+elet evalNewStmt (s : EvalState) (stmt : Eval Unit) : M (Unit × EvalState) :=
+  runEval ?_ stmt s.
+
 endModule.

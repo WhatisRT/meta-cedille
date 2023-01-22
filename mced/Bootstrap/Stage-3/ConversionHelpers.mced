@@ -4,15 +4,6 @@
 -- Maybe this should be moved elsewhere?
 --------------------------------------------------------------------------------
 
-b-let stringListToList (l : init$stringList) : List String :=
-  l ?(List String) (nil ?String)
-    (λ s : String. λ rec : List String. cons ?String s rec).
-
-b-let listToStringList : List String -> init$stringList :=
-  recursionList ?String ?init$stringList
-                init$stringList$nil
-                (λ s : String. λ _ : List String. λ rec : init$stringList. init$stringList$cons s rec).
-
 b-let nothingTerm := θ{□}.
 b-let nothingTerm1 (_ : Term) := nothingTerm.
 b-let nothingTerm2 (_, _ : Term) := nothingTerm.

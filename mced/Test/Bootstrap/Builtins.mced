@@ -4,12 +4,14 @@
 
 module Bootstrap:Builtins.
 
-Given init$term init$var init$sort init$sort$=ast= init$sort$=sq=.
-Given init$char init$string init$index.
+Given init$term init$var init$sort init$sort$=ast= init$sort$=sq= init$const.
+Given init$char init$string init$index init$index' init$var$_string_ init$var$_index_.
+Given primCharEq.
 
 let iTerm := init$term.
 let Var := init$var.
 let Sort := init$sort.
+let Const := init$const.
 
 let SortAst := init$sort$=ast=.
 let SortSq  := init$sort$=sq=.
@@ -17,5 +19,11 @@ let SortSq  := init$sort$=sq=.
 let Char := init$char.
 let String := init$string.
 let DBIndex := init$index.
+let DBIndex' := init$index'.
+
+let charEq := primCharEq.
+
+let varString := init$var$_string_.
+let varIndex := init$var$_index_.
 
 endModule.

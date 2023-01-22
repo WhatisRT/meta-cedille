@@ -6,24 +6,14 @@
 
 module Bootstrap:ConversionHelpers.
 
-Given init$stringList init$stringList$nil init$stringList$cons quoteSq init$const.
-
-importModule Bootstrap:Builtins.
 importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
 importModule Bootstrap:List.
 importModule Bootstrap:Product.
+importModule Bootstrap:QuoteTerm.
 importModule Bootstrap:StringHelpers.
 importModule Bootstrap:Term.
 importModule Bootstrap:TermRec.
-
-elet stringListToList (l : init$stringList) : List String :=
-  l ?(List String) (nil ?String)
-    (λ s : String. λ rec : List String. s ∷ rec).
-
-elet listToStringList : List String -> init$stringList :=
-  recursionList ?_ ?_
-    init$stringList$nil
-    (λ s : String. λ _ : List String. λ rec : init$stringList. init$stringList$cons s rec).
 
 let nothingTerm := θ{□}.
 let nothingTerm1 (_ : Term) := nothingTerm.
@@ -31,7 +21,7 @@ let nothingTerm2 (_, _ : Term) := nothingTerm.
 let nothingTerm3 (_, _, _ : Term) := nothingTerm.
 
 let initTermToTerm (t : iTerm) := t ?Term
-  varTerm sortTerm (λ _ : init$const. sVarTerm "Char")
+  varTerm sortTerm (λ _ : Const. sVarTerm "Char")
     nothingTerm1 nothingTerm1 nothingTerm2 nothingTerm2 nothingTerm1 appSingle appSingleE
     (λ _ : Term. λ _ : String. λ _, _ : Term. nothingTerm)
     (λ s : String. λ t, t' : Term. binderTerm forallBinder s t t')

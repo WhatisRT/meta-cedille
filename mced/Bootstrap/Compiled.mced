@@ -24,12 +24,10 @@ import Bootstrap/Compiled/Bool.
 import Bootstrap/Compiled/List.
 import Bootstrap/Compiled/Maybe.
 
+import Bootstrap/Compiled/StringHelpers.
 import Bootstrap/Compiled/Term.
 import Bootstrap/Compiled/MLLet.
 
--- Stage 3
-
-import Bootstrap/Compiled/StringHelpers.
 import Bootstrap/Compiled/TermRec.
 
 import Bootstrap/Compiled/StringNotation.

@@ -4,8 +4,6 @@
 
 module Bootstrap:ShowTerm.
 
-Given init$index'.
-
 importModule Bootstrap:Builtins.
 importModule Bootstrap:Bool.
 importModule Bootstrap:List.
@@ -16,7 +14,7 @@ importModule Bootstrap:StringHelpers.
 importModule Bootstrap:Term.
 importModule Bootstrap:TermRec.
 
-let showIndex' (i : init$index') : String :=
+let showIndex' (i : DBIndex') : String :=
   i ?String
     ""
     (stringApp "0") (stringApp "1") (stringApp "2") (stringApp "3") (stringApp "4")
@@ -24,16 +22,16 @@ let showIndex' (i : init$index') : String :=
 
 let showIndex (i : DBIndex) : String :=
   i ?String
-    (λ i' : init$index'. stringApp "0" (showIndex' i'))
-    (λ i' : init$index'. stringApp "1" (showIndex' i'))
-    (λ i' : init$index'. stringApp "2" (showIndex' i'))
-    (λ i' : init$index'. stringApp "3" (showIndex' i'))
-    (λ i' : init$index'. stringApp "4" (showIndex' i'))
-    (λ i' : init$index'. stringApp "5" (showIndex' i'))
-    (λ i' : init$index'. stringApp "6" (showIndex' i'))
-    (λ i' : init$index'. stringApp "7" (showIndex' i'))
-    (λ i' : init$index'. stringApp "8" (showIndex' i'))
-    (λ i' : init$index'. stringApp "9" (showIndex' i')).
+    (λ i' : DBIndex'. stringApp "0" (showIndex' i'))
+    (λ i' : DBIndex'. stringApp "1" (showIndex' i'))
+    (λ i' : DBIndex'. stringApp "2" (showIndex' i'))
+    (λ i' : DBIndex'. stringApp "3" (showIndex' i'))
+    (λ i' : DBIndex'. stringApp "4" (showIndex' i'))
+    (λ i' : DBIndex'. stringApp "5" (showIndex' i'))
+    (λ i' : DBIndex'. stringApp "6" (showIndex' i'))
+    (λ i' : DBIndex'. stringApp "7" (showIndex' i'))
+    (λ i' : DBIndex'. stringApp "8" (showIndex' i'))
+    (λ i' : DBIndex'. stringApp "9" (showIndex' i')).
 
 elet showVar (con : List String) (v : Var) : String :=
   v ?String (λ s : String. s) (λ i : DBIndex. lookupDefault ?_ (indexToNat i) (showIndex i) con).

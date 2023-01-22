@@ -7,14 +7,14 @@
 
 module Bootstrap:Term.
 
-Given init$var$_string_ init$var$_index_.
-Given init$term$_var_ init$term$_sort_ init$string$nil quote$sq.
+Given init$term$_var_ init$term$_sort_ quote$sq.
 Given quote$angle quote$square quote$lambda quote$Lambda quote$Pi quote$forall quote$kappa.
 
-importModule Bootstrap:Builtins.
 importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
 importModule Bootstrap:List.
 importModule Bootstrap:Product.
+importModule Bootstrap:StringHelpers.
 
 elet Binder : * := ∀ X : *. X -> X -> X -> X -> X.
 elet lambdaBinder : Binder := Λ X : *. λ lambda, Lambda, pi, forall : X. lambda.
@@ -91,8 +91,8 @@ elet unquoteTerm (t : Term) : Term := Λ X : *.
   λ x : X.
   λ u : X -> X. u $ t ?X v s b a k x u.
 
-elet sVarTerm (s : String) : Term := varTerm (init$var$_string_ s).
-elet iVarTerm (i : DBIndex) : Term := varTerm (init$var$_index_ i).
+elet sVarTerm (s : String) : Term := varTerm (varString s).
+elet iVarTerm (i : DBIndex) : Term := varTerm (varIndex i).
 elet lambdaTerm := binderTerm lambdaBinder.
 elet LambdaTerm := binderTerm LambdaBinder.
 elet piTerm := binderTerm piBinder.
@@ -256,7 +256,7 @@ elet init$appTerm$_singleTerm__maybeApplist_ := appLTerm.
 -- singleTerm is for anything else
 
 -- We need one infix definition to please the parser generation
-elet init$infix$=minus==rangle= := mkInfixData init$string$nil (piTerm init$string$nil).
+elet init$infix$=minus==rangle= := mkInfixData stringNil (piTerm stringNil).
 
 elet init$multiTerm'$ (m : MultiTerm) : MultiTerm := m.
 elet init$multiTerm'$_infix_^space^_appTerm_^space'^_multiTerm'_ :=
@@ -270,7 +270,7 @@ elet init$singleTerm$=ast= := sortTerm SortAst.
 elet init$singleTerm$=sq= := sortTerm SortSq.
 elet init$singleTerm$=underscore= := unknownTerm.
 
-elet init$singleTerm$_string_ := λ n : String. varTerm $ init$var$_string_ n.
+elet init$singleTerm$_string_ := λ n : String. varTerm $ varString n.
 elet init$singleTerm$=lparen=_multiTerm_=rparen= := λ t : Term. t.
 elet init$singleTerm$=kappa=_char_ : Char -> Term := charTerm.
 

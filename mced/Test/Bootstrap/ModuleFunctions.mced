@@ -11,8 +11,6 @@
 
 module Bootstrap:ModuleFunctions.
 
-Given init$var$_string_ init$var$_index_.
-
 importModule Bootstrap:Builtins.
 importModule Bootstrap:Bool.
 importModule Bootstrap:Eval.
@@ -35,8 +33,8 @@ importModule Bootstrap:Unit.
 
 elet renameVar (boundNames : List String) (f : String -> String) (v : Var) : Var :=
   v ?Var
-    (λ s : String. init$var$_string_ (ifthenelse ?_ (isMember ?_ stringEq boundNames s) s (f s)))
-    init$var$_index_.
+    (λ s : String. varString (ifthenelse ?_ (isMember ?_ stringEq boundNames s) s (f s)))
+    varIndex.
 
 elet renameNamesInTermHelper (f : String -> String) (t : Term) : List String -> Term :=
   t ?(List String -> Term)

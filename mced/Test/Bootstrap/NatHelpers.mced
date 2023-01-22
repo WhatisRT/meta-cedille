@@ -4,8 +4,6 @@
 
 module Bootstrap:NatHelpers.
 
-Given init$index'.
-
 importModule Bootstrap:Bool.
 importModule Bootstrap:Builtins.
 importModule Bootstrap:List.
@@ -81,7 +79,7 @@ elet decListToNat  (ds : List Dec)  : Nat := baseListToNat ?_ decToNat  ds ten.
 
 -- Index conversion
 
-elet index'ToDigits (i : init$index') : List Dec :=
+elet index'ToDigits (i : DBIndex') : List Dec :=
   i ?(List Dec)
     [Dec|]
     (cons ?_ Dec0) (cons ?_ Dec1) (cons ?_ Dec2) (cons ?_ Dec3) (cons ?_ Dec4)
@@ -89,16 +87,16 @@ elet index'ToDigits (i : init$index') : List Dec :=
 
 elet indexToDigits (i : DBIndex) : List Dec :=
   i ?(List Dec)
-    (λ i' : init$index'. Dec0 ∷ (index'ToDigits i'))
-    (λ i' : init$index'. Dec1 ∷ (index'ToDigits i'))
-    (λ i' : init$index'. Dec2 ∷ (index'ToDigits i'))
-    (λ i' : init$index'. Dec3 ∷ (index'ToDigits i'))
-    (λ i' : init$index'. Dec4 ∷ (index'ToDigits i'))
-    (λ i' : init$index'. Dec5 ∷ (index'ToDigits i'))
-    (λ i' : init$index'. Dec6 ∷ (index'ToDigits i'))
-    (λ i' : init$index'. Dec7 ∷ (index'ToDigits i'))
-    (λ i' : init$index'. Dec8 ∷ (index'ToDigits i'))
-    (λ i' : init$index'. Dec9 ∷ (index'ToDigits i')).
+    (λ i' : DBIndex'. Dec0 ∷ (index'ToDigits i'))
+    (λ i' : DBIndex'. Dec1 ∷ (index'ToDigits i'))
+    (λ i' : DBIndex'. Dec2 ∷ (index'ToDigits i'))
+    (λ i' : DBIndex'. Dec3 ∷ (index'ToDigits i'))
+    (λ i' : DBIndex'. Dec4 ∷ (index'ToDigits i'))
+    (λ i' : DBIndex'. Dec5 ∷ (index'ToDigits i'))
+    (λ i' : DBIndex'. Dec6 ∷ (index'ToDigits i'))
+    (λ i' : DBIndex'. Dec7 ∷ (index'ToDigits i'))
+    (λ i' : DBIndex'. Dec8 ∷ (index'ToDigits i'))
+    (λ i' : DBIndex'. Dec9 ∷ (index'ToDigits i')).
 
 let indexToNat (i : DBIndex) : Nat := decListToNat (indexToDigits i).
 

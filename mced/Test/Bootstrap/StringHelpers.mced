@@ -4,8 +4,6 @@
 
 module Bootstrap:StringHelpers.
 
-Given charEq.
-
 importModule Bootstrap:Bool.
 importModule Bootstrap:Builtins.
 importModule Bootstrap:List.
