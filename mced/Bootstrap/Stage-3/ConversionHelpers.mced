@@ -13,10 +13,6 @@ b-let listToStringList : List String -> init$stringList :=
                 init$stringList$nil
                 (λ s : String. λ _ : List String. λ rec : init$stringList. init$stringList$cons s rec).
 
-b-let termListToList (l : init$termList) : List init$term :=
-  l ?(List init$term) (nil ?init$term)
-    (λ s : init$term. λ rec : List init$term. cons ?init$term s rec).
-
 b-let nothingTerm := θ{□}.
 b-let nothingTerm1 (_ : Term) := nothingTerm.
 b-let nothingTerm2 (_, _ : Term) := nothingTerm.

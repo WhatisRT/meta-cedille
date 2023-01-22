@@ -25,10 +25,6 @@ elet listToStringList : List String -> init$stringList :=
     init$stringList$nil
     (λ s : String. λ _ : List String. λ rec : init$stringList. init$stringList$cons s rec).
 
--- let termListToList (l : init$termList) : List init$term :=
---   l ?(List init$term) (nil ?init$term)
---     (λ s : init$term. λ rec : List init$term. cons ?init$term s rec).
-
 let nothingTerm := θ{□}.
 let nothingTerm1 (_ : Term) := nothingTerm.
 let nothingTerm2 (_, _ : Term) := nothingTerm.

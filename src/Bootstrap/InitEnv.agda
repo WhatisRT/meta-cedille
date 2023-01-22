@@ -116,11 +116,6 @@ private
     ("init$stringList" ,
     ("init$stringList$nil" , []) ∷ ("init$stringList$cons" , (Other "init$string" ∷ Self ∷ [])) ∷ [])
 
-  termListData : InductiveData
-  termListData =
-    ("init$termList"
-    , ("init$termList$nil" , []) ∷ ("init$termList$cons" , (Other "init$term" ∷ Self ∷ [])) ∷ [])
-
   charDataConstructor : Char → String → String
   charDataConstructor c prefix =
     "let " + prefix + fromList (escapeChar c) + " := κ" + show c + "."
@@ -157,7 +152,7 @@ private
   otherInit =
     "let init$unit := ∀ X : * Π _ : X X."
     ∷ "let init$tt := Λ X : * λ x : X x."
-    ∷ map simpleInductive (stringListData ∷ termListData ∷ [])
+    ∷ map simpleInductive (stringListData ∷ [])
     ++ map (λ where (n , d) → "let init$" + n + " := " + d + ".") definedGrammar
     ++ "let init$product := λ A : * λ B : * ∀ X : * Π _ : Π _ : A Π _ : B X X."
     ∷ "let init$pair := λ A : * λ B : * λ a : A λ b : B Λ X : * λ p : Π _ : A Π _ : B X [[p a] b]."
