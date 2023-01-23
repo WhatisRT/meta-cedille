@@ -47,12 +47,21 @@ import Bootstrap/Compiled/Output.
 import Bootstrap/Compiled/ModuleFunctions.
 import Bootstrap/Compiled/Syntax.
 
+import Bootstrap/Compiled/InfixNotations.
+import Bootstrap/Compiled/NatSyntax.
+
 seteval [evalNewStmt emptyEvalState] init newStmt.
 
 -- this defines the initial dictionary
 
 runMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDict) θ{emptyModuleDict} (just ?Term θ{ModuleDict}))).
 
-import Bootstrap/Stage-3/InfixNotations.
+infix "×" := Product.
 
-import Bootstrap/Stage-3/NatSyntax.
+-- TODO: do the quoting stuff automatically
+infixMacro f "=dollar=" x := γ{f} γ{x}.
+
+-- Note: this requires elet until the regular let supports elaboration
+infixMacro x "=rangle==rangle==equal=" y := bindEval ?_ ?_ γ{x} γ{y}.
+infixMacro x "=semicolon=" y := prodPair ?_ ?_ γ{x} γ{y}.
+infixMacro x "∷" y := cons ?_ γ{x} γ{y}.

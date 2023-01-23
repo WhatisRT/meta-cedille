@@ -10,4 +10,7 @@ importModule Bootstrap:StringExt.
 
 importModule Bootstrap:Syntax.
 
+importModule Bootstrap:InfixNotations.
+importModule Bootstrap:NatSyntax.
+
 endModule.

@@ -1,0 +1,52 @@
+module Bootstrap:NatSyntax.
+
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:NatHelpers.
+importModule Bootstrap:QuoteTerm.
+importModule Bootstrap:Quoters.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:Term.
+
+-- Binary
+
+let init$bindigit$0 : Bool := false.
+let init$bindigit$1 : Bool := true.
+
+let init$binnat'$_bindigit__binnat'_ := cons ?Bool.
+let init$binnat'$ : List Bool := [Bool|].
+
+let init$binnat$_bindigit__binnat'_ := cons ?Bool.
+
+-- Decimal
+
+let init$decdigit$0 : Dec := Dec0.
+let init$decdigit$1 : Dec := Dec1.
+let init$decdigit$2 : Dec := Dec2.
+let init$decdigit$3 : Dec := Dec3.
+let init$decdigit$4 : Dec := Dec4.
+let init$decdigit$5 : Dec := Dec5.
+let init$decdigit$6 : Dec := Dec6.
+let init$decdigit$7 : Dec := Dec7.
+let init$decdigit$8 : Dec := Dec8.
+let init$decdigit$9 : Dec := Dec9.
+
+let init$decnat'$_decdigit__decnat'_ := cons ?Dec.
+let init$decnat'$ : List Dec := [Dec|].
+
+let init$decnat$_decdigit__decnat'_ := cons ?Dec.
+
+let quoteDec (d : Dec) : Term :=
+  d ?Term θ{Dec0} θ{Dec1} θ{Dec2} θ{Dec3} θ{Dec4} θ{Dec5} θ{Dec6} θ{Dec7} θ{Dec8} θ{Dec9}.
+
+--
+
+let quoteListBool := quoteList ?Bool θ{Bool} quoteBool.
+let quoteListDec := quoteList ?Dec θ{Dec} quoteDec.
+
+--------------------------------------------------------------------------------
+
+--let init$singleTerm$_binnat_ (bs : List Bool) : init$term := quote$square θ{boolListToNat} (quoteListBool bs).
+let init$singleTerm$_decnat_ (ds : List Dec) : Term := θ{decListToNat γ{quoteListDec ds}}.
+
+endModule.

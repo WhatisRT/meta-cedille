@@ -1,0 +1,48 @@
+--------------------------------------------------------------------------------
+-- Defines a convenient syntax to register binary infix symbols
+--------------------------------------------------------------------------------
+
+module Bootstrap:InfixNotations.
+
+importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
+importModule Bootstrap:Eval.
+importModule Bootstrap:List.
+importModule Bootstrap:MLLet.
+importModule Bootstrap:Maybe.
+importModule Bootstrap:QuoteTerm.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:StringNotation.
+importModule Bootstrap:Syntax.
+importModule Bootstrap:Term.
+importModule Bootstrap:Unit.
+
+let mkInfixData' (s, s' : String) := mkInfixData s (λ t, t' : Term. θ{γ{sVarTerm s'} γ{t} γ{t'}}).
+let mkMacroInfixData (s, n1, n2 : String) (subst : Term) := mkInfixData s
+  (λ t, t' : Term. θ{γ{lambdaTerm n1 θ{Term} (lambdaTerm n2 θ{Term} subst)} γ{t} γ{t'}}).
+
+elet defineInfix (symbol, n1, n2 : String) (macro : Term) : Eval Unit :=
+  seqNewStmt
+    (letInfoToNewStmt (mkLetInfo
+      (stringApp "init$infix$" symbol)
+      θ{mkInfixData γ{quoteString symbol}
+          γ{lambdaTerm n1 θ{Term} (lambdaTerm n2 θ{Term} macro)}}
+      (just ?_ θ{InfixData})))
+    reloadMEnv.
+
+elet defineInfix' (symbol, macro : String) : Eval Unit :=
+  seqNewStmt
+    (letInfoToNewStmt (mkLetInfo
+      (stringApp "init$infix$" symbol)
+      θ{mkInfixData' γ{quoteString symbol} γ{quoteString macro}}
+      (just ?_ θ{InfixData})))
+    reloadMEnv.
+
+let init$newStmt'$infix^space^=doublequote=_newstring_=doublequote=^space^=colon==equal=^space^_string_=dot=
+  (s, s' : String) : Eval Unit := defineInfix' s s'.
+
+let init$newStmt'$infixMacro^space^_string_^space^=doublequote=_newstring_=doublequote=^space^_string_^space^=colon==equal=^space^_multiTerm_=dot=
+  (n1, s, n2 : String) (subst : Term) : Eval Unit :=
+  defineInfix s n1 n2 (quoteTerm subst).
+
+endModule.
