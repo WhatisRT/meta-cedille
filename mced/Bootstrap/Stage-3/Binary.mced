@@ -1,0 +1,9 @@
+b-let Byte : * := ∀ X : *. (Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> X) -> X.
+
+b-let mkByte (b1, b2, b3, b4, b5, b6, b7, b8 : Bool) : Byte := Λ X : *.
+  λ b : Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> Bool -> X. b b1 b2 b3 b4 b5 b6 b7 b8.
+
+b-let byteToNat (b : Byte) : Nat := boolListToNat
+  (b ?(List Bool) (λ b1, b2, b3, b4, b5, b6, b7, b8 : Bool. [Bool|b1, b2, b3, b4, b5, b6, b7, b8])).
+
+b-let showByte (b : Byte) : String := showNatDecimal (byteToNat b).

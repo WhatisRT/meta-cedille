@@ -51,6 +51,8 @@ import Bootstrap/Compiled/Syntax.
 import Bootstrap/Compiled/InfixNotations.
 import Bootstrap/Compiled/NatSyntax.
 
+import Bootstrap/Compiled/TermHelpers.
+
 seteval [evalNewStmt emptyEvalState] init newStmt.
 
 -- this defines the initial dictionary

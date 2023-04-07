@@ -1,14 +1,9 @@
 set PWD "Base/".
 
-import Binary.
-import Output.
-
 import Eq.
 
 import Statements.
 
-import TermRecDiagonal.
-import TermHelpers.
 import ReduceMultiApp.
 import Inference.
 

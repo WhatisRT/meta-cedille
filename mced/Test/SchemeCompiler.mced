@@ -5,7 +5,7 @@
 -- replace ' with 1
 let sanitizeNameScheme (s : String) : String :=
   stringFromList $ map ?Char ?Char
-    (λ c : Char. ifthenelse ?Char (charEq c (charGen "'")) (charGen "1") c)
+    (λ c : Char. ifthenelse ?Char (charEq c κ') κ1 c)
     (stringToList s).
 
 let tryCompileSchemePrim (t : Term) (def : Eval String) : Eval String :=
@@ -52,7 +52,7 @@ elet writeDefinitionsToFileScheme (fname : String) (defs : List LetInfo) : Eval 
   traverseEval ?_ ?_ printDefinitionScheme defs >>= λ defs' : List String.
     writeFile fname (stringConcat $ intersperse ?_ newline defs').
 
-let schemeCompileDir := "scheme/".
+let schemeCompileDir := "Compiled/Scheme/".
 
 elet compileNamesScheme (modName : ModuleName) : Eval Unit :=
   (getModule modName >>= moduleToLetInfos) >>=
