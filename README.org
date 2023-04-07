@@ -1,10 +1,11 @@
 #+HTML: <img src="https://github.com/WhatisRT/meta-cedille/actions/workflows/test.yml/badge.svg">
 * Meta Cedille
-This is the reference implementation for a version of cedille that supports metaprogramming. The [[https://github.com/WhatisRT/meta-cedille/wiki][wiki]] and [[https://whatisrt.github.io/][blog]] contain some information and documentation.
-* Building
-- Manually
-=Agda 2.6.2=, the Agda standard library (version 1.7) and =bytestring-trie= (the Haskell library) are required. If those are setup correctly, just use the makefile. If you are using =stack=, you can also try =make stack= (this will not install Agda and the Agda standard library for you though).
+This is an implementation of a type theory (Cedille) with syntactic metaprogramming. Essential features and syntax of the language are built in itself via metaprogramming. This includes things such as the module system, datatype system and type inference. The [[https://github.com/WhatisRT/meta-cedille/wiki][wiki]] and [[https://whatisrt.github.io/][blog]] contain some information and documentation.
+* Building and installing
+Building with nix is the only setup that's actively maintained. Any other setup may or may not be broken.
 - Using Nix
-If you use =nix=, simply use =nix-build=.
+If you have installed =nix=, simply run =nix-build=. Alternatively, running =install.sh= will build and install the executable to the system.
+- Manually
+=Agda 2.6.2=, the Agda standard library (version 1.7), =bytestring-trie= and =containers= (the Haskell libraries) are required. If those are setup correctly, just use the makefile. If you are using =stack=, you can also try =make stack= (this will not install Agda and the Agda standard library for you though).
 * Running the current tests/examples
-The file =test/Test.mced= contains the current tests. Run =./meta-cedille --load test/Test= to execute all current tests. Alternatively, run =run_tests.sh= (which doesn't spawn a repl).
+The file =mced/Test.mced= contains the current tests. Run =meta-cedille --load Test= in the =mced= directory to execute all current tests.
