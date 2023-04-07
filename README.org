@@ -1,6 +1,6 @@
 #+HTML: <img src="https://github.com/WhatisRT/meta-cedille/actions/workflows/test.yml/badge.svg">
 * Meta Cedille
-This is an implementation of a type theory (Cedille) with syntactic metaprogramming. Essential features and syntax of the language are built in itself via metaprogramming. This includes things such as the module system, datatype system and type inference. The [[https://github.com/WhatisRT/meta-cedille/wiki][wiki]] and [[https://whatisrt.github.io/][blog]] contain some information and documentation.
+This is an implementation of a type theory (Cedille) with syntactic metaprogramming. Essential features and syntax of the language are built in itself via metaprogramming. This includes things such as the module system, datatype system and type inference. The [[docs/Syntactic_metaprogramming.pdf][preprint]] contains a fairly complete theoretical description of the system, and the [[https://github.com/WhatisRT/meta-cedille/wiki][wiki]] and [[https://whatisrt.github.io/][blog]] contain some additional information and documentation.
 * Building and installing
 Building with nix is the only setup that's actively maintained. Any other setup may or may not be broken.
 - Using Nix
