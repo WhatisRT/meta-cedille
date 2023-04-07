@@ -196,9 +196,6 @@ elet sequenceEval [T : *] (l : List (Eval T)) : Eval (List T) :=
     (pureEval ?_ (nil ?T))
     (λ x : Eval T. λ rec : Eval (List T). x >>= λ x' : T. mapEval ?_ ?_ (cons ?_ x') rec).
 
-  -- foldl ?(Eval T) ?(Eval (List T)) (λ l' : Eval (List T). λ x : Eval T.
-  --   bindEval ?T ?(List T) x (λ x' : T. mapEval ?(List T) ?(List T) (cons ?T x') l'))
-  --   l (pureEval ?(List T) (nil ?T)).
 elet traverseEval [A, B : *] (f : A -> Eval B) (l : List A) : Eval (List B) :=
   sequenceEval ?_ (map ?_ ?_ f l).
 elet voidEval [T : *] (x : Eval T) : Eval Unit :=

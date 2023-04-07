@@ -1,9 +1,9 @@
 set PWD "Base/".
 
-import Eq.
-
 import Binary.
 import Output.
+
+import Eq.
 
 import Statements.
 

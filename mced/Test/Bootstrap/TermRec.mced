@@ -4,13 +4,14 @@
 
 module Bootstrap:TermRec.
 
-importModule Bootstrap:Builtins.
 importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
 importModule Bootstrap:List.
-importModule Bootstrap:Term.
-importModule Bootstrap:Product.
+importModule Bootstrap:ListExt.
 importModule Bootstrap:Maybe.
 importModule Bootstrap:Nat.
+importModule Bootstrap:Product.
+importModule Bootstrap:Term.
 
 elet mapAppList [X, Y : *] (f : X -> Y) (l : List (Bool × X)) : List (Bool × Y) :=
   map ?_ ?_ (recursionProduct ?_ ?_ ?_ λ b : Bool. λ x : X. b ; (f x)) l.
@@ -115,5 +116,79 @@ let matchApp [X : *] (def : X) (f : Term -> List App -> X) (t : Term) : X :=
     def
     (λ _ : Term. def)
     t.
+--------------------------------------------------------------------------------
+-- Helper for pattern matching of two terms and computing something on
+-- the diagonal
+--------------------------------------------------------------------------------
+
+let recursionTermsDiag [X : *]
+  (fvar : Var -> Var -> X)
+  (fsort : Sort -> Sort -> X)
+  (fbind : Binder -> String -> Term -> Term -> Binder -> String -> Term -> Term -> X -> X -> X)
+  (fapp : Term -> List App -> Term -> List App -> X -> List X -> X)
+  (fchar : Char -> Char -> X)
+  (funk : X)
+  (funq : Term -> Term -> X -> X)
+  (default : Term -> Term -> X) : Term -> Term -> X :=
+  recursionTerm ?(Term -> X)
+    (λ v1 : Var. recursionTerm ?X
+      (λ v2 : Var. fvar v1 v2)
+      (λ s2 : Sort. default (varTerm v1) (sortTerm s2))
+      (λ b2 : Binder. λ n2 : String. λ T2, t2 : Term. λ _, _ : X. default (varTerm v1) (binderTerm b2 n2 T2 t2))
+      (λ t2 : Term. λ app2 : List App. λ _ : X. λ _ : List (Bool × X). default (varTerm v1) (appLTerm t2 app2))
+      (λ c2 : Char. default (varTerm v1) (charTerm c2))
+      (default (varTerm v1) unknownTerm)
+      (λ t2 : Term. λ _ : X. default (varTerm v1) (unquoteTerm t2)))
+    (λ s1 : Sort. recursionTerm ?X
+      (λ v2 : Var. default (sortTerm s1) (varTerm v2))
+      (λ s2 : Sort. fsort s1 s2)
+      (λ b2 : Binder. λ n2 : String. λ T2, t2 : Term. λ _, _ : X. default (sortTerm s1) (binderTerm b2 n2 T2 t2))
+      (λ t2 : Term. λ app2 : List App. λ _ : X. λ _ : List (Bool × X). default (sortTerm s1) (appLTerm t2 app2))
+      (λ c2 : Char. default (sortTerm s1) (charTerm c2))
+      (default (sortTerm s1) unknownTerm)
+      (λ t2 : Term. λ _ : X. default (sortTerm s1) (unquoteTerm t2)))
+    (λ b1 : Binder. λ n1 : String. λ T1, t1 : Term. λ recT1, rect1 : Term -> X. recursionTerm ?X
+      (λ v2 : Var. default (binderTerm b1 n1 T1 t1) (varTerm v2))
+      (λ s2 : Sort. default (binderTerm b1 n1 T1 t1) (sortTerm s2))
+      (λ b2 : Binder. λ n2 : String. λ T2, t2 : Term. λ _, _ : X. fbind b1 n1 T1 t1 b2 n2 T2 t2 (recT1 T2) (rect1 t2))
+      (λ t2 : Term. λ app2 : List App. λ _ : X. λ _ : List (Bool × X). default (binderTerm b1 n1 T1 t1) (appLTerm t2 app2))
+      (λ c2 : Char. default (binderTerm b1 n1 T1 t1) (charTerm c2))
+      (default (binderTerm b1 n1 T1 t1) unknownTerm)
+      (λ t2 : Term. λ _ : X. default (binderTerm b1 n1 T1 t1) (unquoteTerm t2)))
+    (λ t1 : Term. λ app1 : List App. λ rect1 : Term -> X. λ recapp1 : List (Bool × (Term -> X)). recursionTerm ?X
+      (λ v2 : Var. default (appLTerm t1 app1) (varTerm v2))
+      (λ s2 : Sort. default (appLTerm t1 app1) (sortTerm s2))
+      (λ b2 : Binder. λ n2 : String. λ T2, t2 : Term. λ _, _ : X. default (appLTerm t1 app1) (binderTerm b2 n2 T2 t2))
+      (λ t2 : Term. λ app2 : List App. λ _ : X. λ _ : List (Bool × X).
+        fapp t1 app1 t2 app2 (rect1 t2) (zipWith ?(Bool × (Term -> X)) ?(Bool × Term) ?X
+             (λ r1 : Bool × (Term -> X). λ r2 : Bool × Term.
+               pr2 ?Bool ?(Term -> X) r1 $ pr2 ?Bool ?Term r2) recapp1 app2))
+      (λ c2 : Char. default (appLTerm t1 app1) (charTerm c2))
+      (default (appLTerm t1 app1) unknownTerm)
+      (λ t2 : Term. λ _ : X. default (appLTerm t1 app1) (unquoteTerm t2)))
+    (λ c1 : Char. recursionTerm ?X
+      (λ v2 : Var. default (charTerm c1) (varTerm v2))
+      (λ s2 : Sort. default (charTerm c1) (sortTerm s2))
+      (λ b2 : Binder. λ n2 : String. λ T2, t2 : Term. λ _, _ : X. default (charTerm c1) (binderTerm b2 n2 T2 t2))
+      (λ t2 : Term. λ app2 : List App. λ _ : X. λ _ : List (Bool × X). default (charTerm c1) (appLTerm t2 app2))
+      (λ c2 : Char. fchar c1 c2)
+      (default (charTerm c1) unknownTerm)
+      (λ t2 : Term. λ _ : X. default (charTerm c1) (unquoteTerm t2)))
+    (recursionTerm ?X
+      (λ v2 : Var. default unknownTerm (varTerm v2))
+      (λ s2 : Sort. default unknownTerm (sortTerm s2))
+      (λ b2 : Binder. λ n2 : String. λ T2, t2 : Term. λ _, _ : X. default unknownTerm (binderTerm b2 n2 T2 t2))
+      (λ t2 : Term. λ app2 : List App. λ _ : X. λ _ : List (Bool × X). default unknownTerm (appLTerm t2 app2))
+      (λ c2 : Char. default unknownTerm (charTerm c2))
+      (funk)
+      (λ t2 : Term. λ _ : X. default unknownTerm (unquoteTerm t2)))
+    (λ t1 : Term. λ rect1 : Term -> X. recursionTerm ?X
+      (λ v2 : Var. default (unquoteTerm t1) (varTerm v2))
+      (λ s2 : Sort. default (unquoteTerm t1) (sortTerm s2))
+      (λ b2 : Binder. λ n2 : String. λ T2, t2 : Term. λ _, _ : X. default (unquoteTerm t1) (binderTerm b2 n2 T2 t2))
+      (λ t2 : Term. λ app2 : List App. λ _ : X. λ _ : List (Bool × X). default (unquoteTerm t1) (appLTerm t2 app2))
+      (λ c2 : Char. default (unquoteTerm t1) (charTerm c2))
+      (default (unquoteTerm t1) unknownTerm)
+      (λ t2 : Term. λ rect2 : X. funq t1 t2 (rect1 t2))).
 
 endModule.

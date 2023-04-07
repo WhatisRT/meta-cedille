@@ -13,4 +13,6 @@ importModule Bootstrap:Syntax.
 importModule Bootstrap:InfixNotations.
 importModule Bootstrap:NatSyntax.
 
+importModule Bootstrap:TermHelpers.
+
 endModule.

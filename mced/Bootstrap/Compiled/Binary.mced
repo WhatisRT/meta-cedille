@@ -1,0 +1,4 @@
+let Byte := ∀ X : * Π _ : Π _ : Bool Π _ : Bool Π _ : Bool Π _ : Bool Π _ : Bool Π _ : Bool Π _ : Bool Π _ : Bool X X : *.
+let mkByte := λ b1 : Bool λ b2 : Bool λ b3 : Bool λ b4 : Bool λ b5 : Bool λ b6 : Bool λ b7 : Bool λ b8 : Bool Λ X : * λ b : Π _ : Bool Π _ : Bool Π _ : Bool Π _ : Bool Π _ : Bool Π _ : Bool Π _ : Bool Π _ : Bool X [[[[[[[[b b1] b2] b3] b4] b5] b6] b7] b8] : Π b1 : Bool Π b2 : Bool Π b3 : Bool Π b4 : Bool Π b5 : Bool Π b6 : Bool Π b7 : Bool Π b8 : Bool Byte.
+let byteToNat := λ b : Byte [boolListToNat [<b [List Bool]> λ b1 : Bool λ b2 : Bool λ b3 : Bool λ b4 : Bool λ b5 : Bool λ b6 : Bool λ b7 : Bool λ b8 : Bool [[<cons Bool> b1] [[<cons Bool> b2] [[<cons Bool> b3] [[<cons Bool> b4] [[<cons Bool> b5] [[<cons Bool> b6] [[<cons Bool> b7] [[<cons Bool> b8] <nil Bool>]]]]]]]]]] : Π b : Byte Nat.
+let showByte := λ b : Byte [showNatDecimal [byteToNat b]] : Π b : Byte String.

@@ -28,14 +28,14 @@ import Bootstrap/Compiled/StringHelpers.
 import Bootstrap/Compiled/Term.
 import Bootstrap/Compiled/MLLet.
 
-import Bootstrap/Compiled/TermRec.
-
 import Bootstrap/Compiled/StringNotation.
 import Bootstrap/Compiled/ListNotation.
+import Bootstrap/Compiled/ListExt.
+
+import Bootstrap/Compiled/TermRec.
 import Bootstrap/Compiled/QuoteTerm.
 import Bootstrap/Compiled/Quoters.
 
-import Bootstrap/Compiled/ListExt.
 import Bootstrap/Compiled/StringExt.
 import Bootstrap/Compiled/NatHelpers.
 import Bootstrap/Compiled/ShowTerm.
@@ -43,6 +43,7 @@ import Bootstrap/Compiled/ConversionHelpers.
 
 import Bootstrap/Compiled/ModuleDefinitions.
 import Bootstrap/Compiled/Eval.
+import Bootstrap/Compiled/Binary.
 import Bootstrap/Compiled/Output.
 import Bootstrap/Compiled/ModuleFunctions.
 import Bootstrap/Compiled/Syntax.

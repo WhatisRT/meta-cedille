@@ -1,3 +1,21 @@
+module Bootstrap:TermHelpers.
+
+Given init$index'$0_index'_ init$index'$1_index'_ init$index'$2_index'_ init$index'$3_index'_ init$index'$4_index'_
+      init$index'$5_index'_ init$index'$6_index'_ init$index'$7_index'_ init$index'$8_index'_ init$index'$9_index'_
+      init$index$0_index'_ init$index$1_index'_ init$index$2_index'_ init$index$3_index'_ init$index$4_index'_
+      init$index$5_index'_ init$index$6_index'_ init$index$7_index'_ init$index$8_index'_ init$index$9_index'_
+      init$index'$.
+
+importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
+importModule Bootstrap:List.
+importModule Bootstrap:Nat.
+importModule Bootstrap:NatHelpers.
+importModule Bootstrap:Product.
+importModule Bootstrap:String.
+importModule Bootstrap:Term.
+importModule Bootstrap:TermRec.
+
 --------------------------------------------------------------------------------
 -- Generating indices from Nats
 --------------------------------------------------------------------------------
@@ -24,13 +42,13 @@ let digitListToIndex : List Dec -> DBIndex :=
     (λ d : Dec. λ ds : List Dec. λ _ : DBIndex. consDecToIndex (digitListToIndex' ds) d).
 
 let natToIndex (n : Nat) : DBIndex := digitListToIndex $ natToDecList n.
-let natToVar (n : Nat) : Term := varTerm $ init$var$_index_ $ natToIndex n.
+let natToVar (n : Nat) : Term := iVarTerm $ natToIndex n.
 
 --------------------------------------------------------------------------------
 -- Equality checks
 --------------------------------------------------------------------------------
 
-let indexEq (i1, i2 : init$index) : Bool :=
+let indexEq (i1, i2 : DBIndex) : Bool :=
   natEq (indexToNat i1) (indexToNat i2).
 
 let varEq (v1, v2 : Var) : Bool :=
@@ -92,3 +110,5 @@ let substContextVars (s : Nat -> Nat) (t : Term) : Term :=
 let strengthen : Term -> Term := substContextVars pred.
 let strengthenBy (k : Nat) : Term -> Term := substContextVars (λ n : Nat. sub n k).
 let weakenBy (k : Nat) : Term -> Term := substContextVars (add k).
+
+endModule.

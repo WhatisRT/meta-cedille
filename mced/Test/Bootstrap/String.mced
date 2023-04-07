@@ -1,0 +1,35 @@
+--------------------------------------------------------------------------------
+-- Helper functions for strings
+--------------------------------------------------------------------------------
+
+module Bootstrap:String.
+
+importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
+importModule Bootstrap:List.
+
+Given init$string$nil init$string$cons.
+
+elet stringToList (s : String) : List Char :=
+  s ?(List Char) (λ c : Char. λ rec : List Char. c ∷ rec) [Char|].
+
+elet stringFromList (s : List Char) : String :=
+  recursionList ?_ ?_ init$string$nil
+    (λ c : Char. λ cs : List Char. λ rec : String. init$string$cons c rec)
+    s.
+
+let stringApp (s, s' : String) : String :=
+  s ?String init$string$cons s'.
+
+elet stringConcat (l : List String) : String :=
+  recursionList ?_ ?_
+    init$string$nil
+    (λ s : String. λ _ : List String. λ rec : String. stringApp s rec)
+    l.
+
+-- Equality
+
+elet stringEq (s, s' : String) : Bool :=
+  listEq ?_ charEq (stringToList s) (stringToList s').
+
+endModule.

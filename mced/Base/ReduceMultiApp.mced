@@ -8,8 +8,10 @@ let reduceMultiApp : Term -> Term :=
       sortTerm
       (λ b : Binder. λ n : String. λ T, t : Term.
         binderTerm b n (reduceMultiApp T) (reduceMultiApp t))
-      (λ t1 : Term. λ app1 : List App. (λ reduceAppL : List App -> List App.
-        (λ t : Term. matchTerm ?Term
+      (λ t1 : Term. λ app1 : List App.
+        ψ reduceAppL = map ?App ?App $ productMap2 ?Bool ?Term ?Term reduceMultiApp
+                      : List App -> List App.
+        ψ t          = appLTerm (reduceMultiApp t1) (reduceAppL app1) : Term. matchTerm ?Term
           (λ _ : Var. t)
           (λ _ : Sort. t)
           (λ _ : Binder. λ _ : String. λ _, _ : Term. t)
@@ -18,8 +20,7 @@ let reduceMultiApp : Term -> Term :=
           (λ _ : Char. t)
           t
           (λ _ : Term. t)
-          t1) (appLTerm (reduceMultiApp t1) (reduceAppL app1)))
-              (map ?App ?App $ productMap2 ?Bool ?Term ?Term reduceMultiApp))
+          t1)
       charTerm
       unknownTerm
       (λ t : Term. unquoteTerm (reduceMultiApp t)).

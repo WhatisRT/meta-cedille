@@ -5,4 +5,4 @@ runMeta compileModules
           "StringHelpers", "TermRec", "ListExt", "NatHelpers", "ShowTerm",
           "StringNotation", "ListNotation", "QuoteTerm", "Quoters", "ConversionHelpers",
           "ModuleDefinitions", "Eval", "Output", "ModuleFunctions", "Syntax",
-          "Void", "StringExt", "InfixNotations", "NatSyntax"].
+          "Void", "StringExt", "InfixNotations", "NatSyntax", "Binary"].
