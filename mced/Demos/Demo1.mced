@@ -1,0 +1,32 @@
+module Demo.
+
+import Datatypes/ModuleCompatibility.
+
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+importModule Bootstrap:ListExt.
+importModule Bootstrap:Nat.
+importModule Bootstrap:NatHelpers.
+importModule Bootstrap:StringHelpers.
+importModule Bootstrap:Term.
+
+
+let someList     : List Nat := [Nat|5].
+let quotedString : Term     := θ{"Hello"}.
+
+infix "+" := add.
+echo showNatDecimal (2 + 3).
+
+infixMacro f "⟪=dollar=⟫" x := map ?_ ?_ γ{f} γ{x}.
+elet natList := suc ⟪$⟫ [Nat|3,2,1].
+echo showList ?Nat showNatDecimal natList.
+
+data Nat' where
+| zero' : Nat'
+| succ' : Nat' -> Nat'.
+
+let plus' (n : Nat') : Nat' -> Nat' := Nat'Fold Nat'
+  n
+  (λ rec : Nat'. succ' rec). -- (succ' k), rec = plus' n k
+
+endModule.
