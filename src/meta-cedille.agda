@@ -39,11 +39,12 @@ runtimeFlagsDefault = record
 eval : MetaContext → String → EvalFlags → IO (MetaContext × Bool)
 eval Γ ""    _     = return (Γ , true)
 eval Γ input flags = let open EvalFlags flags in do
-  (s , (inj₂ (out , _))) ← execute (parseAndExecute input) Γ
+  (s , (inj₂ _)) ← execute (parseAndExecute input) Γ
     where (_ , (inj₁ err)) → putStrErr err >> return (Γ , false)
-  if printAnything ∧ printInfo
-    then putStr $ concat out
-    else return tt
+  -- TODO: do printing differently
+  -- if printAnything ∧ printInfo
+  --   then putStr $ concat out
+  --   else return tt
   return (contextFromState s , true)
 
 rep : MetaContext → IO MetaContext

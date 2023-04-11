@@ -190,10 +190,6 @@ record ProductData (L R : Set) : Set where
     l : L
     r : R
 
--- The type of results of executing a statement in the interpreter. This can be
--- returned back to the code via embedExecutionResult
-MetaResult = List String × List AnnTerm
-
 instance
   Quotable-ProductData : ∀ {L R} ⦃ _ : Quotable L ⦄ ⦃ _ : Quotable R ⦄ → Quotable (ProductData L R)
   Quotable-ProductData .quoteToAnnTerm pDat = let open ProductData pDat in
