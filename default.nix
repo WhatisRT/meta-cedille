@@ -7,7 +7,7 @@ let fetchFromGitHub = nixpkgs.fetchFromGitHub;
       rev = "aec48af439d69dbde35e3141d5980bc8804d518d";
       sha256 = "NDAflAkWdSLQcER8/S0FAQUr9m5pbdqKtif2N79/h/c=";
     }) nixpkgsArgs;
-    ghcpkgs = nixpkgs; # in case we need a different GHC
+    ghcpkgs = pinnedPkgs; # in case we need a different GHC
 
     profiledHaskellPackages = (import <nixpkgs> nixpkgsArgs).haskellPackages.override {
       overrides = hself: hsuper: rec {
