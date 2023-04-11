@@ -48,28 +48,19 @@ let printDefinitionScheme (def : LetInfo) : Eval String :=
     stringConcat [String|"(define ", sanitizeNameScheme (letInfoName def), " ", t , ")"])
     (showTermScheme (letInfoTerm def)).
 
-elet writeDefinitionsToFileScheme (fname : String) (defs : List LetInfo) : Eval Unit :=
-  traverseEval ?_ ?_ printDefinitionScheme defs >>= λ defs' : List String.
-    writeFile fname (stringConcat $ intersperse ?_ newline defs').
-
 let schemeCompileDir := "Compiled/Scheme/".
 
-elet compileNamesScheme (modName : ModuleName) : Eval Unit :=
-  (getModule modName >>= moduleToLetInfos) >>=
-    writeDefinitionsToFileScheme (stringConcat [String|schemeCompileDir, moduleNameToPath modName, ".ss"]).
+let genNameScheme (name : ModuleName) : String :=
+  stringConcat [String|schemeCompileDir, moduleNameToPath modName, ".ss"].
 
-elet compileModulesScheme (modNames : List ModuleName) : Eval Unit :=
-  voidEval ?_ $ sequenceEval ?_ $ map ?_ ?_ compileNamesScheme modNames.
+let compileModulesScheme : List ModuleName -> Eval Unit :=
+  compileModules printDefinitionScheme genNameScheme.
 
-runMeta voidEval ?String $ shellCmd "mkdir" [String|"-p", stringConcat [String|schemeCompileDir, "/Bootstrap/"]].
+runMeta ensureDirExists (stringConcat [String|schemeCompileDir, "/Bootstrap/"]).
+runMeta ensureDirExists (stringConcat [String|schemeCompileDir, "/SchemeCompiler/"]).
 
-runMeta compileNamesScheme [String|"Bootstrap", "Unit"].
-runMeta compileNamesScheme [String|"Bootstrap", "DSum"].
-runMeta compileNamesScheme [String|"Bootstrap", "Product"].
-runMeta compileNamesScheme [String|"Bootstrap", "Nat"].
-runMeta compileNamesScheme [String|"Bootstrap", "Bool"].
-runMeta compileNamesScheme [String|"Bootstrap", "List"].
-
-runMeta voidEval ?String $ shellCmd "mkdir" [String|"-p", stringConcat [String|schemeCompileDir, "/SchemeCompiler/"]].
-
-runMeta compileNamesScheme [String|"SchemeCompiler", "Test"].
+runMeta compileModulesScheme
+  [ModuleName| [String|"Bootstrap", "Unit"], [String|"Bootstrap", "DSum"]
+             , [String|"Bootstrap", "Product"], [String|"Bootstrap", "Nat"]
+             , [String|"Bootstrap", "Bool"], [String|"Bootstrap", "List"]
+             , [String|"SchemeCompiler", "Test"]].

@@ -24,3 +24,22 @@ elet getModule (modName : ModuleName) : Eval Module :=
   findModule modName >>= maybe ?_ ?_
     (throwEval ?Module $ stringConcat [String|"Module", ModuleNameToName modName, " doesn't exist!"])
     (λ m : Bool × Module. pureEval ?_ $ pr2 ?_ ?_ m).
+
+-- TODO: run this automatically as part of writeDefinitionsToFile
+elet ensureDirExists (dir : String) :=
+  voidEval ?String $ shellCmd "mkdir" [String|"-p", dir].
+
+elet writeDefinitionsToFile (printDef : LetInfo -> Eval String)
+    (fname : String) (defs : List LetInfo) : Eval Unit :=
+  traverseEval ?_ ?_ printDef defs >>= λ defs' : List String.
+    writeFile fname (stringConcat $ intersperse ?_ newline defs').
+
+elet compileModule (printDef : LetInfo -> Eval String) (genName : ModuleName -> String)
+    (modName : ModuleName) : Eval Unit :=
+  seqNewStmt (debugPrint LogTypeDebug zero $
+                         stringConcat [String|"Compiling: ", ModuleNameToName modName])
+    ((getModule modName >>= moduleToLetInfos) >>= writeDefinitionsToFile printDef (genName modName)).
+
+elet compileModules (printDef : LetInfo -> Eval String) (genName : ModuleName -> String)
+    (modNames : List ModuleName) : Eval Unit :=
+  voidEval ?_ $ sequenceEval ?_ $ map ?_ ?_ (compileModule printDef genName) modNames.

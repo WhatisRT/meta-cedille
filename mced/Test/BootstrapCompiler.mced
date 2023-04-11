@@ -64,8 +64,7 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
     (λ c : Char. λ _ : List String. stringConcat [String|"κ", stringCons c stringNil])
     (unreachableShowTerm2 "CHAREQ").
 
-let showInitTerm (t : iTerm) : String :=
-  showInitTermWithContext t [String|].
+let showInitTerm (t : iTerm) : String := showInitTermWithContext t [String|].
 
 elet printTypeAnn : Maybe Term -> String :=
   maybe ?_ ?_ "" (λ T : Term. stringConcat [String|" : ", showInitTerm (TermToInitTerm T)]).
@@ -75,15 +74,10 @@ elet printDefinition (def : LetInfo) : String :=
                        " := ", showInitTerm (TermToInitTerm $ letInfoTerm def),
                        printTypeAnn (letInfoType def) , "."].
 
-elet writeDefinitionsToFile (fname : String) (defs : List LetInfo) : Eval Unit :=
-  writeFile fname (stringConcat $ intersperse ?_ newline $ map ?_ ?_ printDefinition defs).
+let bootstrapCompileDir := "Bootstrap/Compiled/".
 
-elet bootstrapCompileDir := "bootstrap/Compiled/".
-
-elet compileNames (modName : String) : Eval Unit :=
-  seqNewStmt (debugPrint LogTypeDebug zero $ stringConcat [String|"Compiling: ", modName])
-    ((getModule [String|"Bootstrap", modName] >>= moduleToLetInfos) >>=
-      writeDefinitionsToFile (stringConcat [String|bootstrapCompileDir, modName, ".mced"])).
-
-elet compileModules (modNames : List String) : Eval Unit :=
-  voidEval ?_ $ sequenceEval ?_ $ map ?_ ?_ compileNames modNames.
+elet compileBootstrapModules (modNames : List String) : Eval Unit :=
+  compileModules (λ d : LetInfo. pureEval ?_ $ printDefinition d)
+                 (λ n : ModuleName. stringConcat
+                    [String|bootstrapCompileDir, moduleNameToPath (tail ?_ n), ".mced"])
+                 (map ?_ ?_ (λ s : String. [String|"Bootstrap", s]) modNames).
