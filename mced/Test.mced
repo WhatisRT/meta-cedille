@@ -5,8 +5,7 @@ set PWD "Test/".
 import BootstrapTest.
 
 import BootstrapCompiler.
-import BootstrapModules.
-import RunBootstrapCompiler.
+import Bootstrap.
 
 import ErrorMonad.
 

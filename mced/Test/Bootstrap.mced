@@ -1,3 +1,22 @@
+-- FIXME: this breaks importing
+--set RequireTypeAnnotations true.
+
+module Bootstrap.
+
+-- TODO: move those out of bootstrap or move things depending on this
+-- into bootstrap
+importModule Bootstrap:Void.
+importModule Bootstrap:StringExt.
+
+importModule Bootstrap:Syntax.
+
+importModule Bootstrap:InfixNotations.
+importModule Bootstrap:NatSyntax.
+
+importModule Bootstrap:TermHelpers.
+
+endModule.
+
 runMeta ensureDirExists bootstrapCompileDir.
 
 runMeta compileBootstrapModules
