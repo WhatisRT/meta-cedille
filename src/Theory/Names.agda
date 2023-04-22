@@ -74,6 +74,6 @@ instance
 
 showVar : List String → Name → String
 showVar l (Bound x) with lookupMaybe (toℕ x) l
-... | nothing = show x
+... | nothing = "DB" + show x
 ... | just x₁ = if x₁ ≣ "_" then show x else x₁
 showVar l (Free x) = x

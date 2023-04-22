@@ -213,8 +213,8 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     measureTime ("execHNF:" <+> show t) (executeTerm' t)
 
   executeTerm' (Mu t t₁) = do
-    t' ← measureTime "Mu1" $ executeTerm t
-    measureTime ("Mu2:" <+> show t') $ executeTerm (t₁ ⟪$⟫ t')
+    t' ← measureTime ("Mu1:" <+> show t) $ executeTerm t
+    measureTime ("Mu2:" <+> show (t₁ ⟪$⟫ t')) $ executeTerm (t₁ ⟪$⟫ t')
 
   executeTerm' (Epsilon t) = return t
 
@@ -224,7 +224,8 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     args ← measureTime "Converting arguments" $ convertPrimArgs m t
     t' ← measureTime ("Executing:" <+> showPrimMetaSˢ {m = m} args) $ executePrimitive m args
     measureTime "Sanity checking" $ appendIfError (checkTypePure t' $ primMetaT m t)
-                  ("Bug: Result type mismatch in ζ" + show m)
+                  ("Bug: Result type mismatch in" <+> showPrimMetaSˢ {m = m} args + "\n"
+                  + show t' <+> "doesn't have type" <+> show (primMetaT m t))
     return (Erase t')
 
   {-# CATCHALL #-}
@@ -233,11 +234,11 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executePrimitive Let (n , t) = do
     returnQuoted =<< appendIfError (executeBootstrapStmt (Let n t nothing))
-                                   ("Couldn't define" <+> n <+> ":=" <+> show t)
+                                   ("\n\nCouldn't define" <+> n <+> ":=" <+> show t)
 
   executePrimitive AnnLet (n , t , T) = do
     returnQuoted =<< appendIfError (executeBootstrapStmt (Let n t (just T)))
-                                   ("Couldn't define" <+> n <+> ":=" <+> show t <+> ":" <+> show T)
+                                   ("\n\nCouldn't define" <+> n <+> ":=" <+> show t <+> ":" <+> show T)
 
   executePrimitive SetEval (ev , NT , namespace) = do
     returnQuoted =<< executeBootstrapStmt (SetEval ev NT namespace)

@@ -10,6 +10,6 @@ elet suc (n : Nat) : Nat := Λ X : *. λ z : X. λ s : X -> X. s $ n ?X z s.
 elet recursionNat [X : *] (rz : X) (rs : Nat -> X -> X) (n : Nat) : X :=
   pr2 ?_ ?X $ n ?(Nat × X)
     (zero ; rz)
-    (λ r : Nat × X. suc (pr1 ?_ ?X r) ; rs (pr1 ?_ ?X r) (pr2 ?_ ?X r)).
+    (recursionProduct ?_ ?_ ?_ (λ k : Nat. λ x : X. suc k ; rs k x)).
 
 endModule.

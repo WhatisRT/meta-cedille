@@ -80,7 +80,7 @@ module _ {a} {M : Set a -> Set a} {{_ : Monad M}} {{_ : MonadIO M}} where
   printTimeStamp = do
     t ← liftIO $ getCPUTime
     let milliseconds = t / 1000000000
-    liftIO $ IO.putStr (show milliseconds ++ "ms: ")
+    liftIO $ IO.putStr ("@" ++ show milliseconds ++ "ms: ")
     return _
 
   measureTime : String → M A → M A
@@ -89,7 +89,7 @@ module _ {a} {M : Set a -> Set a} {{_ : Monad M}} {{_ : MonadIO M}} where
     a ← x
     t' ← liftIO $ getCPUTime
     let milliseconds = (t' ∸ t) / 1000000000
-    if (10 <ᵇ milliseconds)
-      then (printTimeStamp >> (liftIO $ IO.putStrLn (s ++ ":" <+> show milliseconds ++ "ms\n")))
+    if (1 <ᵇ milliseconds)
+      then (printTimeStamp >> (liftIO $ IO.putStrLn (show milliseconds ++ "ms:" <+> s ++ "\n")))
       else return _
     return a
