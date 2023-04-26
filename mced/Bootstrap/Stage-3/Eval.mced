@@ -271,24 +271,23 @@ b-let printConcatEval (s : List String) : Eval Unit := printEval (stringConcat s
 b-let getDef (n : String) : Eval Term := headNormalize (sVarTerm n).
 
 --------------------------------------------------------------------------------
--- Statements are just special Eval computations that run at the top level
+-- Statements are just special Eval computations that don't produce a result
 --------------------------------------------------------------------------------
-b-let init$newStmt : * := Eval Unit.
 
 -- Useful functions for working with statements
-b-let emptyStmt : init$newStmt := pureEval ?Unit tt.
+b-let emptyStmt : Eval Unit := pureEval ?Unit tt.
 
-b-let seqNewStmt (s, s' : init$newStmt) : init$newStmt :=
+b-let seqNewStmt (s, s' : Eval Unit) : Eval Unit :=
   seqEval ?Unit ?Unit s s'.
 
-b-let seqNewStmts (l : List init$newStmt) : init$newStmt :=
-  foldl ?init$newStmt ?init$newStmt seqNewStmt (reverse ?init$newStmt l) emptyStmt.
+b-let seqNewStmts (l : List (Eval Unit)) : Eval Unit :=
+  foldl ?(Eval Unit) ?(Eval Unit) seqNewStmt (reverse ?(Eval Unit) l) emptyStmt.
 
 -- Lift old statements
-b-let stmtToNewStmt (stmt : M Unit) : init$newStmt :=
+b-let stmtToNewStmt (stmt : M Unit) : Eval Unit :=
   liftMtoEval ?Unit stmt.
 
-b-let updateMEnv : init$newStmt :=
+b-let updateMEnv : Eval Unit :=
   bindEval ?EvalState ?Unit getEval (λ s : EvalState.
     setMEnv (appSingle θ{evalNewStmt} (quoteEvalState s)) "init" "newStmt").
 
@@ -308,9 +307,9 @@ b-let showTermE (t : Term) : Eval String :=
     (λ ctx : Context. showTermWithContext t (reverse ?String (map ?PreParam ?String (pr1 ?String ?Term) ctx)))
     askContext.
 
-b-let letInfoToNewStmt (i : LetInfo) : init$newStmt :=
+b-let letInfoToNewStmt (i : LetInfo) : Eval Unit :=
   bindEval ?EvalOpts ?Unit getEvalOpts' (λ f : EvalOpts.
-    ifthenelse ?init$newStmt (or (not (getAnnReq f)) (letInfoHasAnn i))
+    ifthenelse ?(Eval Unit) (or (not (getAnnReq f)) (letInfoHasAnn i))
       (stmtToNewStmt (convertLetInfo i))
       (throwEval ?Unit "The provided command has no type annotation!")).
 
@@ -328,7 +327,7 @@ b-let runEvalLets' : List ElabLet -> ElabLet :=
     (λ el : ElabLet. λ _ : List ElabLet. λ rec : ElabLet.
       λ i : LetInfo. bindEval ?LetInfo ?LetInfo (el i) rec).
 
-b-let runEvalLets (els : List ElabLet) (i : LetInfo) : init$newStmt :=
+b-let runEvalLets (els : List ElabLet) (i : LetInfo) : Eval Unit :=
   bindEval ?LetInfo ?Unit (runEvalLets' els i) letInfoToNewStmt.
 
 -- Run a computation without modifying the LetInfo
@@ -350,8 +349,8 @@ b-let checkTypeAnn : ElabLet :=
 -- own. Also, importing needs to respect the working directory.
 --------------------------------------------------------------------------------
 
-b-let Evaluator : * := init$newStmt -> M (Product Unit EvalState).
-b-let import (filename : String) : init$newStmt :=
+b-let Evaluator : * := Eval Unit -> M (Product Unit EvalState).
+b-let import (filename : String) : Eval Unit :=
   bindEval ?String ?Unit (mapEval ?EvalOpts ?String getWorkingDir getEvalOpts')
     (λ workingDir : String. seqNewStmt
       (liftMtoEval ?Unit (primImport (stringConcat [String| workingDir, filename])))

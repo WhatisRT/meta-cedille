@@ -6,7 +6,7 @@ let mkInfixData' (s, s' : String) := mkInfixData s (λ t, t' : Term. θ{γ{sVarT
 let mkMacroInfixData (s, n1, n2 : String) (subst : Term) := mkInfixData s
   (λ t, t' : Term. θ{γ{lambdaTerm n1 θ{Term} (lambdaTerm n2 θ{Term} subst)} γ{t} γ{t'}}).
 
-let defineInfix (symbol, n1, n2 : String) (macro : Term) : init$newStmt :=
+let defineInfix (symbol, n1, n2 : String) (macro : Term) : Eval Unit :=
   seqNewStmt
     (letInfoToNewStmt (mkLetInfo
       (stringApp "init$infix$" symbol)
@@ -15,7 +15,7 @@ let defineInfix (symbol, n1, n2 : String) (macro : Term) : init$newStmt :=
       (just ?Term θ{InfixData})))
     reloadMEnv.
 
-let defineInfix' (symbol, macro : String) : init$newStmt :=
+let defineInfix' (symbol, macro : String) : Eval Unit :=
   seqNewStmt
     (letInfoToNewStmt (mkLetInfo
       (stringApp "init$infix$" symbol)
@@ -24,10 +24,10 @@ let defineInfix' (symbol, macro : String) : init$newStmt :=
     reloadMEnv.
 
 let init$newStmt'$infix^space^=doublequote=_newstring_=doublequote=^space^=colon==equal=^space^_string_=dot=
-  (s, s' : String) : init$newStmt := defineInfix' s s'.
+  (s, s' : String) : Eval Unit := defineInfix' s s'.
 
 let init$newStmt'$infixMacro^space^_string_^space^=doublequote=_newstring_=doublequote=^space^_string_^space^=colon==equal=^space^_multiTerm_=dot=
-  (n1, s, n2 : String) (subst : Term) : init$newStmt :=
+  (n1, s, n2 : String) (subst : Term) : Eval Unit :=
   defineInfix s n1 n2 (quoteTerm subst).
 
 updateEval.

@@ -55,7 +55,7 @@ b-let getNewModuleVersion (n : ModuleName) : Eval Nat :=
 --------------------------------------------------------------------------------
 
 -- reload a module if it is loaded already
-b-let initModule (n : ModuleName) (t : Telescope) : init$newStmt :=
+b-let initModule (n : ModuleName) (t : Telescope) : Eval Unit :=
   bindEval ?Nat ?Unit (getNewModuleVersion n) λ v : Nat.
     (λ m : Module.
       seqNewStmt
@@ -69,7 +69,7 @@ b-let initModule (n : ModuleName) (t : Telescope) : init$newStmt :=
 b-let consModule (n : String) (m : Module) : Module :=
   mkModule (ModuleModuleName m) (ModuleVersion m) (ModuleTelescope m) (cons ?String n (ModuleContents m)).
 
-b-let updateTempModule (n : String) (m : Module) : init$newStmt :=
+b-let updateTempModule (n : String) (m : Module) : Eval Unit :=
   seqNewStmt
     (letInfoToNewStmt
       (mkLetInfo (mkTempModuleNameSuc m)
@@ -114,20 +114,20 @@ b-let moduleElab : ElabLet :=
   λ i : LetInfo. bindEval ?EvalState ?LetInfo getEval
     (λ s : EvalState. letInMaybeModule i (ModuleStateCurrentModule (getModuleState s))).
 
-b-let importExternalStmt (name : String) : init$newStmt :=
+b-let importExternalStmt (name : String) : Eval Unit :=
   bindEval ?EvalState ?Unit getEval (λ s : EvalState.
-    maybe ?Module ?init$newStmt
+    maybe ?Module ?(Eval Unit)
       (throwEval ?Unit "External imports are only possible in modules!")
       (λ m : Module. stmtToNewStmt (convertLetInfo (importExternalLetInfo name m)))
       (ModuleStateCurrentModule (getModuleState s))).
 
-b-let updateModuleDict (m : Module) (d : ModuleDict) : init$newStmt :=
+b-let updateModuleDict (m : Module) (d : ModuleDict) : Eval Unit :=
   letInfoToNewStmt (mkLetInfo
     (mkModuleDictNameSuc d)
     θ{insertModuleDict γ{sVarTerm (mkModuleName m)} γ{sVarTerm (mkModuleDictName d)}}
     (just ?Term θ{ModuleDict})).
 
-b-let unloadModuleDictStmt (n : ModuleName) (d : ModuleDict) : init$newStmt :=
+b-let unloadModuleDictStmt (n : ModuleName) (d : ModuleDict) : Eval Unit :=
   bindEval ?Bool ?Unit (moduleIsLoaded n) λ loaded : Bool.
     ifthenelse ?(Eval Unit) loaded
       (seqNewStmt
@@ -139,8 +139,8 @@ b-let unloadModuleDictStmt (n : ModuleName) (d : ModuleDict) : init$newStmt :=
           (mkModuleState (ModuleStateModuleStack s) (unloadModuleFromDict n d)))))
       (throwEval ?Unit "Module isn't loaded!").
 
-b-let finishModuleDef (m : Module) (d : ModuleDict) : init$newStmt :=
-  seqNewStmts [init$newStmt|
+b-let finishModuleDef (m : Module) (d : ModuleDict) : Eval Unit :=
+  seqNewStmts [Eval Unit|
     letInfoToNewStmt (mkLetInfo
       (mkModuleName m)
       (sVarTerm (mkTempModuleName m))
@@ -150,10 +150,10 @@ b-let finishModuleDef (m : Module) (d : ModuleDict) : init$newStmt :=
       mkModuleState (tail ?Module (ModuleStateModuleStack s)) (insertModuleDict m d)),
     debugPrint LogTypeDebug zero (stringConcat [String|"Loaded module: ", ModuleNameToName (ModuleModuleName m)])].
 
-b-let endModule : init$newStmt :=
+b-let endModule : Eval Unit :=
   bindEval ?ModuleState ?Unit getModuleState'
     (λ s : ModuleState.
-      maybe ?Module ?init$newStmt
+      maybe ?Module ?(Eval Unit)
         (throwEval ?Unit "Currently not in a module!")
         (λ m : Module. finishModuleDef m (ModuleStateDict s))
         (ModuleStateCurrentModule s)).
@@ -162,9 +162,9 @@ b-let endModule : init$newStmt :=
 -- Importing
 --------------------------------------------------------------------------------
 
-b-let importModule (m : Module) (l : List App) : init$newStmt :=
+b-let importModule (m : Module) (l : List App) : Eval Unit :=
   bindEval ?ModuleState ?Unit getModuleState' (λ s : ModuleState.
-    seqNewStmts (map ?String ?init$newStmt
+    seqNewStmts (map ?String ?(Eval Unit)
       (λ n : String. letInfoToNewStmt (mkLetInfo
         (nameToMaybeModuleName (ModuleStateCurrentModule s) n)
         (appLTerm (sVarTerm (nameToModuleName m n)) l)
@@ -198,13 +198,14 @@ b-let init$givenArgs$=dot= := [String|].
 b-let init$givenArgs$^space^_string__givenArgs_ (s : String) (l : List String) := cons ?String s l.
 
 b-let init$newStmt'$module^space^_moduleName__telescope'_=dot=
-  (m : ModuleName) (t : Telescope) : init$newStmt :=
+  (m : ModuleName) (t : Telescope) : Eval Unit :=
   initModule m t.
-b-let init$newStmt'$endModule=dot= : init$newStmt := endModule.
-b-let init$newStmt'$importModule^space^_moduleName__maybeApplist_=dot= (n : ModuleName) (l : List App) : init$newStmt :=
+b-let init$newStmt'$endModule=dot= : Eval Unit := endModule.
+b-let init$newStmt'$importModule^space^_moduleName__maybeApplist_=dot=
+  (n : ModuleName) (l : List App) : Eval Unit :=
   importModuleWithLoad n l.
-b-let init$newStmt'$Given_givenArgs_ (args : List String) : init$newStmt :=
-  seqNewStmts (map ?String ?init$newStmt importExternalStmt args).
-b-let init$newStmt'$Unload^space^_moduleName_=dot= (n : ModuleName) : init$newStmt :=
+b-let init$newStmt'$Given_givenArgs_ (args : List String) : Eval Unit :=
+  seqNewStmts (map ?String ?(Eval Unit) importExternalStmt args).
+b-let init$newStmt'$Unload^space^_moduleName_=dot= (n : ModuleName) : Eval Unit :=
   bindEval ?ModuleState ?Unit getModuleState'
     (λ s : ModuleState. unloadModuleDictStmt n (ModuleStateDict s)).

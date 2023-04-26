@@ -101,9 +101,9 @@ let datatypeToFold (name : String) (constrs : List ConstrFunctorData) (apply : L
                    γ{t}})
         (initsNonEmpty ?ConstrFunctorData constrs)}}}}.
 
-let datatypeToLet (d : DatatypeData) : init$newStmt :=
+let datatypeToLet (d : DatatypeData) : Eval Unit :=
   (λ name : String -> String. λ appName : String -> Term.
-    seqNewStmts $ map ?LetInfo ?init$newStmt (λ i : LetInfo. letInfoToNewStmtMod $ appendTelToLetInfo (DatatypeTelescope d) i)
+    seqNewStmts $ map ?LetInfo ?(Eval Unit) (λ i : LetInfo. letInfoToNewStmtMod $ appendTelToLetInfo (DatatypeTelescope d) i)
       (app ?LetInfo [LetInfo|
         mkLetInfo (name "F") (DatatypeF d) $ just ?Term θ{* -> *},
         mkLetInfo (name "Functor") (DatatypeFunctor d) $ just ?Term θ{Functor γ{DatatypeF d}},

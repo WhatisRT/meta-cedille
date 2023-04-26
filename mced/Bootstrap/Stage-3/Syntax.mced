@@ -12,13 +12,13 @@ b-let addQuotedLetInfo : ElabLet :=
 
 b-let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn, moduleElab, debugPrintLetInfo].
 
-b-let runMetaCommand (t : Term) : init$newStmt := joinEval ?Unit (checkTerm init$newStmt t).
+b-let runMetaCommand (t : Term) : Eval Unit := joinEval ?Unit (checkTerm (Eval Unit) t).
 
-b-let runEcho (t : Term) : init$newStmt := runMetaCommand θ{printLineEval γ{t}}.
+b-let runEcho (t : Term) : Eval Unit := runMetaCommand θ{printLineEval γ{t}}.
 
-b-let reloadMEnv : init$newStmt := modifyEval (λ e : EvalState. e).
+b-let reloadMEnv : Eval Unit := modifyEval (λ e : EvalState. e).
 
-b-let showTypeStmt (tel : Telescope) (t : Term) : init$newStmt :=
+b-let showTypeStmt (tel : Telescope) (t : Term) : Eval Unit :=
   inContext ?Unit (map ?Param ?PreParam (pr2 ?Bool ?PreParam) tel)
     (bindEval ?String ?Unit (bindEval ?Term ?String (inferType t) showTermE) (λ x : String.
       printConcatEval [String|showTerm t, " : ", x])).
@@ -34,7 +34,7 @@ b-let hnfStmt (t : Term) : Eval Unit :=
 -- Syntax
 
 -- statements from the old syntax
-b-let init$newStmt'$o=minus=_stmt'_ (stmt : M Unit) : init$newStmt := stmtToNewStmt stmt.
+b-let init$newStmt'$o=minus=_stmt'_ (stmt : M Unit) : Eval Unit := stmtToNewStmt stmt.
 
 -- flags
 
@@ -43,7 +43,7 @@ b-let init$flag$false := false.
 
 -- set statements
 
-b-let modifyAndUpdateEvalOpts (f : EvalOpts -> EvalOpts) : init$newStmt :=
+b-let modifyAndUpdateEvalOpts (f : EvalOpts -> EvalOpts) : Eval Unit :=
   seqNewStmt (modifyEvalOpts f) updateMEnv.
 
 b-let init$setStmt$RequireTypeAnnotations^space^_flag_ (b : Bool) :=
@@ -56,24 +56,24 @@ b-let init$setStmt$PWD^space^_term_ (dirT : Term) :=
 b-let init$setStmt$ToggleProf := toggleProf.
 
 -- "native" statements in the new syntax
-b-let init$newStmt'$set^space^_setStmt_=dot= (s : init$newStmt) := s.
-b-let init$newStmt'$let^space^_betterLet_ : LetInfo -> init$newStmt := letInfoToNewStmtMod.
-b-let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : init$newStmt :=
+b-let init$newStmt'$set^space^_setStmt_=dot= (s : Eval Unit) := s.
+b-let init$newStmt'$let^space^_betterLet_ : LetInfo -> Eval Unit := letInfoToNewStmtMod.
+b-let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : Eval Unit :=
   runEvalLets [ElabLet| checkTypeAnn, moduleElab, addQuotedLetInfo] i.
-b-let init$newStmt'$runMeta^space^_multiTerm_=dot= : Term -> init$newStmt := runMetaCommand.
-b-let init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
+b-let init$newStmt'$runMeta^space^_multiTerm_=dot= : Term -> Eval Unit := runMetaCommand.
+b-let init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : Eval Unit :=
   bindEval ?Term ?Unit (modifyTermMod t) runEcho.
-b-let init$newStmt'$showType^space^_telescope__multiTerm_=dot= : Telescope -> Term -> init$newStmt := showTypeStmt.
-b-let init$newStmt'$normalize^space^_multiTerm_=dot= : Term -> init$newStmt := normalizeStmt.
-b-let init$newStmt'$headNormalize^space^_multiTerm_=dot= : Term -> init$newStmt := hnfStmt.
-b-let init$newStmt'$import^space^_string_=dot= : String -> init$newStmt := import.
-b-let init$newStmt'$updateEval=dot= : init$newStmt := updateMEnv.
-b-let init$newStmt'$ : init$newStmt := emptyStmt.
+b-let init$newStmt'$showType^space^_telescope__multiTerm_=dot= : Telescope -> Term -> Eval Unit := showTypeStmt.
+b-let init$newStmt'$normalize^space^_multiTerm_=dot= : Term -> Eval Unit := normalizeStmt.
+b-let init$newStmt'$headNormalize^space^_multiTerm_=dot= : Term -> Eval Unit := hnfStmt.
+b-let init$newStmt'$import^space^_string_=dot= : String -> Eval Unit := import.
+b-let init$newStmt'$updateEval=dot= : Eval Unit := updateMEnv.
+b-let init$newStmt'$ : Eval Unit := emptyStmt.
 
-b-let init$newStmt$^space'^_newStmt'_ (stmt : init$newStmt) : init$newStmt := stmt.
+b-let init$newStmt$^space'^_newStmt'_ (stmt : Eval Unit) : Eval Unit := stmt.
 
 -- new evaluator
-b-let evalNewStmt (s : EvalState) (stmt : init$newStmt) : M (Product Unit EvalState) :=
+b-let evalNewStmt (s : EvalState) (stmt : Eval Unit) : M (Product Unit EvalState) :=
   runEval ?Unit stmt s.
 
 seteval [evalNewStmt emptyEvalState] init newStmt.

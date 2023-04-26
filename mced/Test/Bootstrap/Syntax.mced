@@ -30,13 +30,13 @@ elet addQuotedLetInfo : ElabLet :=
 
 let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn, moduleElab, debugPrintLetInfo].
 
-elet runMetaCommand (t : Term) : init$newStmt := joinEval ?_ (checkTerm init$newStmt t).
+elet runMetaCommand (t : Term) : Eval Unit := joinEval ?_ (checkTerm (Eval Unit) t).
 
-let runEcho (t : Term) : init$newStmt := runMetaCommand θ{printLineEval γ{t}}.
+let runEcho (t : Term) : Eval Unit := runMetaCommand θ{printLineEval γ{t}}.
 
-let reloadMEnv : init$newStmt := modifyEval (λ e : EvalState. e).
+let reloadMEnv : Eval Unit := modifyEval (λ e : EvalState. e).
 
-elet showTypeStmt (tel : Telescope) (t : Term) : init$newStmt :=
+elet showTypeStmt (tel : Telescope) (t : Term) : Eval Unit :=
   inContext ?_ (map ?_ ?_ (pr2 ?Bool ?PreParam) tel)
     ((inferType t >>= showTermE) >>= λ x : String.
      printConcatEval [String|showTerm t, " : ", x]).
@@ -61,7 +61,7 @@ let init$flag$false := false.
 
 -- set statements
 
-let modifyAndUpdateEvalOpts (f : EvalOpts -> EvalOpts) : init$newStmt :=
+let modifyAndUpdateEvalOpts (f : EvalOpts -> EvalOpts) : Eval Unit :=
   seqNewStmt (modifyEvalOpts f) updateMEnv.
 
 let init$setStmt$RequireTypeAnnotations^space^_flag_ (b : Bool) :=
@@ -74,21 +74,21 @@ elet init$setStmt$PWD^space^_term_ (dirT : Term) :=
 let init$setStmt$ToggleProf := toggleProf.
 
 -- "native" statements in the new syntax
-let init$newStmt'$set^space^_setStmt_=dot= (s : init$newStmt) := s.
-let init$newStmt'$let^space^_betterLet_ : LetInfo -> init$newStmt := letInfoToNewStmtMod.
-let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : init$newStmt :=
+let init$newStmt'$set^space^_setStmt_=dot= (s : Eval Unit) := s.
+let init$newStmt'$let^space^_betterLet_ : LetInfo -> Eval Unit := letInfoToNewStmtMod.
+let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : Eval Unit :=
   runEvalLets [ElabLet| checkTypeAnn, moduleElab, addQuotedLetInfo] i.
-let init$newStmt'$runMeta^space^_multiTerm_=dot= : Term -> init$newStmt := runMetaCommand.
-elet init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : init$newStmt :=
+let init$newStmt'$runMeta^space^_multiTerm_=dot= : Term -> Eval Unit := runMetaCommand.
+elet init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : Eval Unit :=
   modifyTermMod t >>= runEcho.
-let init$newStmt'$showType^space^_telescope__multiTerm_=dot= : Telescope -> Term -> init$newStmt := showTypeStmt.
-let init$newStmt'$normalize^space^_multiTerm_=dot= : Term -> init$newStmt := normalizeStmt.
-let init$newStmt'$headNormalize^space^_multiTerm_=dot= : Term -> init$newStmt := hnfStmt.
-let init$newStmt'$import^space^_string_=dot= : String -> init$newStmt := import.
-let init$newStmt'$updateEval=dot= : init$newStmt := updateMEnv.
-let init$newStmt'$ : init$newStmt := emptyStmt.
+let init$newStmt'$showType^space^_telescope__multiTerm_=dot= : Telescope -> Term -> Eval Unit := showTypeStmt.
+let init$newStmt'$normalize^space^_multiTerm_=dot= : Term -> Eval Unit := normalizeStmt.
+let init$newStmt'$headNormalize^space^_multiTerm_=dot= : Term -> Eval Unit := hnfStmt.
+let init$newStmt'$import^space^_string_=dot= : String -> Eval Unit := import.
+let init$newStmt'$updateEval=dot= : Eval Unit := updateMEnv.
+let init$newStmt'$ : Eval Unit := emptyStmt.
 
-let init$newStmt$^space'^_newStmt'_ (stmt : init$newStmt) : init$newStmt := stmt.
+let init$newStmt$^space'^_newStmt'_ (stmt : Eval Unit) : Eval Unit := stmt.
 
 -- seteval [evalNewStmt emptyEvalState] init newStmt.
 

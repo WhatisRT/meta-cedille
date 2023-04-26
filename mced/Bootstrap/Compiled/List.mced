@@ -1,7 +1,7 @@
 let List := λ A : * ∀ X : * Π _ : X Π _ : Π _ : A Π _ : X X X : Π A : * *.
 let nil := Λ A : * Λ X : * λ n : X λ c : Π _ : A Π _ : X X n : ∀ A : * [List A].
 let cons := Λ A : * λ a : A λ as : [List A] Λ X : * λ n : X λ c : Π _ : A Π _ : X X [[c a] [[<as X> n] c]] : ∀ A : * Π a : A Π as : [List A] [List A].
-let recursionList := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : [List A] Π _ : X X λ l : [List A] [<<pr2 [List A]> X> [[<l [[Product [List A]] X]> [[<<prodPair [List A]> X> <nil A>] rn]] λ a : A λ p : [[Product [List A]] X] [[<<prodPair [List A]> X> [[<cons A> a] [<<pr1 [List A]> X> p]]] [[[rc a] [<<pr1 [List A]> X> p]] [<<pr2 [List A]> X> p]]]]] : ∀ A : * ∀ X : * Π rn : X Π rc : Π _ : A Π _ : [List A] Π _ : X X Π l : [List A] X.
+let recursionList := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : [List A] Π _ : X X λ l : [List A] [<<pr2 [List A]> X> [[<l [[Product [List A]] X]> [[<<prodPair [List A]> X> <nil A>] rn]] λ a : A [<<<recursionProduct [List A]> X> [[Product [List A]] X]> λ as : [List A] λ x : X [[<<prodPair [List A]> X> [[<cons A> a] as]] [[[rc a] as] x]]]]] : ∀ A : * ∀ X : * Π rn : X Π rc : Π _ : A Π _ : [List A] Π _ : X X Π l : [List A] X.
 let length := Λ X : * λ l : [List X] [[<l Nat> zero] λ x : X λ n : Nat [suc n]] : ∀ X : * Π l : [List X] Nat.
 let isNil := Λ X : * λ l : [List X] [[<l Bool> true] λ _ : X λ _ : Bool false] : ∀ X : * Π l : [List X] Bool.
 let listEq := Λ X : * λ eqX : Π _ : X Π _ : X Bool [[<<recursionList X> Π l : [List X] Bool> <isNil X>] λ x : X λ xs : [List X] λ rec : Π _ : [List X] Bool [[<<recursionList X> Bool> false] λ y : X λ ys : [List X] λ _ : Bool [[and [[eqX x] y]] [rec ys]]]] : ∀ X : * Π eqX : Π _ : X Π _ : X Bool Π _ : [List X] Π _ : [List X] Bool.

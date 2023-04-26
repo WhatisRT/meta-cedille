@@ -288,23 +288,22 @@ let printConcatEval (s : List String) : Eval Unit := printEval (stringConcat s).
 let getDef (n : String) : Eval Term := headNormalize (sVarTerm n).
 
 --------------------------------------------------------------------------------
--- Statements are just special Eval computations that run at the top level
+-- Statements are just special Eval computations that don't produce a result
 --------------------------------------------------------------------------------
-let init$newStmt : * := Eval Unit.
 
 -- Useful functions for working with statements
-elet emptyStmt : init$newStmt := pureEval ?_ tt.
+elet emptyStmt : Eval Unit := pureEval ?_ tt.
 
-elet seqNewStmt (s, s' : init$newStmt) : init$newStmt := s >> s'.
+elet seqNewStmt (s, s' : Eval Unit) : Eval Unit := s >> s'.
 
-elet seqNewStmts (l : List init$newStmt) : init$newStmt :=
+elet seqNewStmts (l : List (Eval Unit)) : Eval Unit :=
   foldl ?_ ?_ seqNewStmt (reverse ?_ l) emptyStmt.
 
 -- Lift old statements
-let stmtToNewStmt (stmt : M Unit) : init$newStmt :=
+let stmtToNewStmt (stmt : M Unit) : Eval Unit :=
   liftMtoEval ?Unit stmt.
 
-elet updateMEnv : init$newStmt :=
+elet updateMEnv : Eval Unit :=
   getEval >>= λ s : EvalState.
   setMEnv (appSingle θ{evalNewStmt} (quoteEvalState s)) "init" "newStmt".
 
@@ -324,7 +323,7 @@ elet showTermE (t : Term) : Eval String :=
     (λ ctx : Context. showTermWithContext t (reverse ?_ (map ?_ ?_ (pr1 ?String ?Term) ctx)))
     askContext.
 
-elet letInfoToNewStmt (i : LetInfo) : init$newStmt :=
+elet letInfoToNewStmt (i : LetInfo) : Eval Unit :=
   getEvalOpts' >>= λ f : EvalOpts.
   ifthenelse ?_ (or (not (getAnnReq f)) (letInfoHasAnn i))
     (stmtToNewStmt (convertLetInfo i))
@@ -343,7 +342,7 @@ elet runEvalLets' : List ElabLet -> ElabLet := recursionList ?_ ?_
   (λ el : ElabLet. λ _ : List ElabLet. λ rec : ElabLet.
     λ i : LetInfo. el i >>= rec).
 
-elet runEvalLets (els : List ElabLet) (i : LetInfo) : init$newStmt :=
+elet runEvalLets (els : List ElabLet) (i : LetInfo) : Eval Unit :=
   runEvalLets' els i >>= letInfoToNewStmt.
 
 -- Run a computation without modifying the LetInfo
@@ -365,8 +364,8 @@ elet checkTypeAnn : ElabLet :=
 -- own. Also, importing needs to respect the working directory.
 --------------------------------------------------------------------------------
 
-let Evaluator : * := init$newStmt -> M (Unit × EvalState).
-elet import (filename : String) : init$newStmt :=
+let Evaluator : * := Eval Unit -> M (Unit × EvalState).
+elet import (filename : String) : Eval Unit :=
   mapEval ?_ ?_ getWorkingDir getEvalOpts' >>= λ workingDir : String.
   seqNewStmt
     (liftMtoEval ?Unit (primImport (stringConcat [String| workingDir, filename])))

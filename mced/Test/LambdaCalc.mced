@@ -9,14 +9,14 @@ let init$lambdaTerm$=lambda=^space^_string_^space'^=dot=^space'^_lambdaTerm_
   (name : String) (t : init$term) : init$term := quote$lambda name quote$ast t.
 
 let init$lambdaStmt$let^space^_string_^space'^=colon==equal=^space'^_lambdaTerm_^space'^=dot=
-  (name : String) (t : init$term) : init$newStmt :=
+  (name : String) (t : init$term) : Eval Unit :=
   stmtToNewStmt $ primAnnLet name (lambdaTermToTerm t) $ TermToInitTerm θ{Top}.
 
 -- TODO: FIXME
 -- let init$lambdaStmt$normalize^space^_lambdaTerm_^space'^=dot=
---   (_ : init$space) (t : init$term) (_ : init$space') : init$newStmt :=
+--   (_ : init$space) (t : init$term) (_ : init$space') : Eval Unit :=
 --   seqEvalState ?init$term ?Unit (normalize' (lambdaTermToTerm t)) emptyStmt.
 
-let init$newStmt'$=lambda==minus=_lambdaStmt_ (x : init$newStmt) : init$newStmt := x.
+let init$newStmt'$=lambda==minus=_lambdaStmt_ (x : Eval Unit) : Eval Unit := x.
 
 updateEval.

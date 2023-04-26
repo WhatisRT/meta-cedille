@@ -15,8 +15,8 @@ let toRecordDecl (d : DatatypeDecl) : DatatypeDecl :=
           (applyMultiBinder piBinder es $ appLTerm (sVarTerm name) $ telescopeToApp t)])
     d.
 
-let DatatypeDeclToStmt (d : DatatypeDecl) (m : String) : init$newStmt :=
-  catchError ?DatatypeData ?init$newStmt
+let DatatypeDeclToStmt (d : DatatypeDecl) (m : String) : Eval Unit :=
+  catchError ?DatatypeData ?(Eval Unit)
     (recursionTripleProduct ?String ?Telescope ?Entries ?(Error DatatypeData) mkDatatypeData d)
     (λ e : String. throwEval ?Unit $ stringApp m e)
     datatypeToLet.
@@ -32,10 +32,10 @@ let init$data$_string_^space^_telescope_where^space^_entries_
   : DatatypeDecl :=
     mkTripleProduct ?String ?Telescope ?Entries name t es.
 
-let init$newStmt'$data^space^_data_=dot= (d : DatatypeDecl) : init$newStmt :=
+let init$newStmt'$data^space^_data_=dot= (d : DatatypeDecl) : Eval Unit :=
   DatatypeDeclToStmt d "Error: not a valid datatype! ".
 
-let init$newStmt'$record^space^_data_=dot= (d : DatatypeDecl) : init$newStmt :=
+let init$newStmt'$record^space^_data_=dot= (d : DatatypeDecl) : Eval Unit :=
   DatatypeDeclToStmt (toRecordDecl d) "Error: not a valid record! ".
 
 updateEval.
