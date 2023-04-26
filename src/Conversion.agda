@@ -90,8 +90,8 @@ instance
   Quotable-Unit .quoteToAnnTerm _ = FreeVar "init$tt"
 
   Quotable-ListChar : Quotable (List Char)
-  Quotable-ListChar .quoteToAnnTerm [] = FreeVar "init$string$nil"
-  Quotable-ListChar .quoteToAnnTerm (c ∷ cs) = FreeVar "init$string$cons" ⟪$⟫ Char-T c ⟪$⟫ quoteToAnnTerm cs
+  Quotable-ListChar .quoteToAnnTerm [] = FreeVar "stringNil"
+  Quotable-ListChar .quoteToAnnTerm (c ∷ cs) = FreeVar "stringCons" ⟪$⟫ Char-T c ⟪$⟫ quoteToAnnTerm cs
 
   Quotable-String : Quotable String
   Quotable-String .quoteToAnnTerm = quoteToAnnTerm ∘ toList

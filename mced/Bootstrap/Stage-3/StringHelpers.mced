@@ -2,11 +2,6 @@
 -- Helper functions for strings
 --------------------------------------------------------------------------------
 
-b-let stringNil : String := Λ X : *.
-  λ sc : Char -> X -> X. λ sn : X. sn.
-b-let stringCons (c : Char) (s : String) : String := Λ X : *.
-  λ sc : Char -> X -> X. λ sn : X. sc c (s ?X sc sn).
-
 b-let stringToList (s : String) : List Char :=
   s ?(List Char) (λ c : Char. λ rec : List Char. cons ?Char c rec) (nil ?Char).
 

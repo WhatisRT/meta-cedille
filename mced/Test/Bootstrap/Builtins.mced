@@ -6,7 +6,7 @@ module Bootstrap:Builtins.
 
 Given init$term init$var init$sort init$sort$=ast= init$sort$=sq= init$const.
 Given init$char init$string init$index init$index' init$var$_string_ init$var$_index_.
-Given primCharEq.
+Given primCharEq builtinStringNil builtinStringCons.
 
 let iTerm := init$term.
 let Var := init$var.
@@ -20,6 +20,9 @@ let Char := init$char.
 let String := init$string.
 let DBIndex := init$index.
 let DBIndex' := init$index'.
+
+let stringNil  := builtinStringNil.
+let stringCons := builtinStringCons.
 
 let charEq := primCharEq.
 

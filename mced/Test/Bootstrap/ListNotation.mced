@@ -5,6 +5,7 @@
 module Bootstrap:ListNotation.
 
 importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
 importModule Bootstrap:List.
 importModule Bootstrap:StringHelpers.
 importModule Bootstrap:Term.

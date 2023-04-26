@@ -81,3 +81,9 @@ elet compileBootstrapModules (modNames : List String) : Eval Unit :=
                  (λ n : ModuleName. stringConcat
                     [String|bootstrapCompileDir, moduleNameToPath (tail ?_ n), ".mced"])
                  (map ?_ ?_ (λ s : String. [String|"Bootstrap", s]) modNames).
+
+-- we need those definitions to compile things properly
+let builtinStringNil : String := Λ X : *.
+  λ sc : Char -> X -> X. λ sn : X. sn.
+let builtinStringCons (c : Char) (s : String) : String := Λ X : *.
+  λ sc : Char -> X -> X. λ sn : X. sc c (s ?X sc sn).

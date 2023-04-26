@@ -100,9 +100,11 @@ module _ {V MultiChar : Set} (showV : V → String)
   parseWithInitNT : V → String → M (SynTree × String)
   parseWithInitNT v a = do
     (y , rest) ← helper [ inj₁ v ] a
-    maybe
-      (λ z → return (z , rest)) (throwError "BUG: Error while creating syntax tree.")
-      (resToTree y)
+    if strLength a ≣ strLength rest ∧ not (strNull a)
+      then throwError ("Could not parse anything from input:\n" + a)
+      else maybe
+        (λ z → return (z , rest)) (throwError "BUG: Error while creating syntax tree.")
+        (resToTree y)
     where
       helper : List (V ⊎ Terminal) → String → M (List (Rule ⊎ Char) × String)
       helper [] s = return ([] , s)
@@ -114,8 +116,8 @@ module _ {V MultiChar : Set} (showV : V → String)
       ... | just (x , _) | true  = let prepend = if isMultiChar y then inj₂ x ∷_ else id
         in map₁ prepend <$> helper stack (strDrop (terminalLength y) s)
       ... | just       _ | false = throwError $
-          "Mismatch while parsing characters: tried to parse " + showTerminal y +
-          " but got '" + s + "'"
+          "Mismatch while parsing characters:\n expected '" + showTerminal y +
+          "' but got '" + strTake (strLength $ showTerminal y) s + "'"
       ... | nothing | _ = throwError ("Unexpected end of input while trying to parse " + showTerminal y)
 
       resToTree : List (Rule ⊎ Char) → Maybe SynTree

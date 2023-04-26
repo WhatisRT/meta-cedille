@@ -124,9 +124,7 @@ elet modifyLetInfo (i : LetInfo) (m : Module) : LetInfo :=
       (letInfoType i)).
 
 elet letInModule (i : LetInfo) (m : Module) : Eval LetInfo :=
-  seqEval ?_ ?_
-    (updateTempModule (letInfoName i) m)
-    (pureEval ?_ (modifyLetInfo i m)).
+  updateTempModule (letInfoName i) m >> pureEval ?_ (modifyLetInfo i m).
 
 elet letInMaybeModule (i : LetInfo) (x : Maybe Module) : Eval LetInfo :=
   maybe ?_ ?_ (pureEval ?_ i) (letInModule i) x.

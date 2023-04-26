@@ -199,7 +199,7 @@ elet sequenceEval [T : *] (l : List (Eval T)) : Eval (List T) :=
 elet traverseEval [A, B : *] (f : A -> Eval B) (l : List A) : Eval (List B) :=
   sequenceEval ?_ (map ?_ ?_ f l).
 elet voidEval [T : *] (x : Eval T) : Eval Unit :=
-  seqEval ?_ ?_ x (pureEval ?_ tt).
+  x >> pureEval ?_ tt.
 
 elet liftMtoEval [T : *] (t : M T) : Eval T :=
   λ _ : EvalEnv. λ s : EvalState.
@@ -295,7 +295,7 @@ let init$newStmt : * := Eval Unit.
 -- Useful functions for working with statements
 elet emptyStmt : init$newStmt := pureEval ?_ tt.
 
-elet seqNewStmt (s, s' : init$newStmt) : init$newStmt := seqEval ?_ ?_ s s'.
+elet seqNewStmt (s, s' : init$newStmt) : init$newStmt := s >> s'.
 
 elet seqNewStmts (l : List init$newStmt) : init$newStmt :=
   foldl ?_ ?_ seqNewStmt (reverse ?_ l) emptyStmt.
@@ -317,7 +317,7 @@ let catchEval [T : *] (x : Eval T) (f : String -> Eval T) : Eval T :=
     catchErr ?(T × EvalState) (x e s) (λ res : String. f res e s).
 
 elet throwEval [T : *] (s : String) : Eval T :=
-  seqEval ?_ ?_ (printEval s) (checkTerm T θ{□}).
+  printEval s >> checkTerm T θ{□}.
 
 elet showTermE (t : Term) : Eval String :=
   mapEval ?_ ?_
@@ -348,7 +348,7 @@ elet runEvalLets (els : List ElabLet) (i : LetInfo) : init$newStmt :=
 
 -- Run a computation without modifying the LetInfo
 elet liftElabLet (x : LetInfo -> Eval Unit) : ElabLet :=
-  λ i : LetInfo. seqEval ?_ ?_ (x i) (pureEval ?_ i).
+  λ i : LetInfo. x i >> pureEval ?_ i.
 
 elet checkTypeAnn : ElabLet :=
   liftElabLet (λ i : LetInfo. getEval >>= λ s : EvalState.
@@ -391,7 +391,7 @@ elet inferType (t : Term) : Eval Term :=
 --------------------------------------------------------------------------------
 
 elet runEval [T : *] (eval : Eval T) (s : EvalState) : M (T × EvalState) :=
-  (eval >>= λ t : T. seqEval ?_ ?_ updateMEnv (pureEval ?_ t)) (initEvalEnv s) s.
+  (eval >>= λ t : T. updateMEnv >> pureEval ?_ t) (initEvalEnv s) s.
 
 -- new evaluator
 elet evalNewStmt (s : EvalState) (stmt : Eval Unit) : M (Unit × EvalState) :=

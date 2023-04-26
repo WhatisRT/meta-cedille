@@ -272,7 +272,7 @@ let init$appTerm$_singleTerm__maybeApplist_ := appLTerm.
 -- singleTerm is for anything else
 
 -- We need one infix definition to please the parser generation
-let init$infix$=minus==rangle= := [[mkInfixData init$string$nil] [piTerm init$string$nil]].
+let init$infix$=minus==rangle= := [[mkInfixData stringNil] [piTerm stringNil]].
 
 let init$multiTerm'$ := λ m : MultiTerm m : Π _ : MultiTerm MultiTerm.
 let init$multiTerm'$_infix_^space^_appTerm_^space'^_multiTerm'_ :=

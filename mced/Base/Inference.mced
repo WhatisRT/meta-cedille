@@ -292,7 +292,7 @@ elet inferenceTest1'' := λ x : Nat × Term. (pr1 ?_ ?_) x.
 
 elet inferenceTest2 (t : Term) : init$newStmt :=
   (elabLocalInference false t) >>= (λ t' : Term.
-    seqNewStmt (printEval $ showTerm t') emptyStmt).
+    (printEval $ showTerm t') >> emptyStmt).
 
 elet inferenceTest3 (i : LetInfo) : init$newStmt :=
   elabLocalInference false (letInfoTerm i) >>= λ t : Term. pureEval ?_ tt.

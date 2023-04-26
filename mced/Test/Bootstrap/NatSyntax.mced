@@ -1,6 +1,7 @@
 module Bootstrap:NatSyntax.
 
 importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
 importModule Bootstrap:List.
 importModule Bootstrap:NatHelpers.
 importModule Bootstrap:QuoteTerm.

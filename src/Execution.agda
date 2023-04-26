@@ -208,8 +208,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   parseAndExecute : String → M ⊤
 
   executeTerm t = do
-    Γ ← getContext
-    t ← measureTime "HNF" (return $ hnfNormPure Γ t)
+    t ← measureTime "HNF" ((λ Γ → hnfNormPure Γ t) <$> getContext)
     measureTime ("execHNF:" <+> show t) (executeTerm' t)
 
   executeTerm' (Mu t t₁) = do

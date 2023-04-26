@@ -109,12 +109,12 @@ private
   stringData : InductiveData
   stringData =
     ("init$string"
-    , ("init$string$cons" , (Other "ΚChar" ∷ Self ∷ [])) ∷ ("init$string$nil" , []) ∷ []) -- capital kappa
+    , ("stringCons" , (Other "ΚChar" ∷ Self ∷ [])) ∷ ("stringNil" , []) ∷ []) -- capital kappa
 
   stringListData : InductiveData
   stringListData =
     ("init$stringList" ,
-    ("init$stringList$nil" , []) ∷ ("init$stringList$cons" , (Other "init$string" ∷ Self ∷ [])) ∷ [])
+    ("stringListNil" , []) ∷ ("stringListCons" , (Other "init$string" ∷ Self ∷ [])) ∷ [])
 
   charDataConstructor : Char → String → String
   charDataConstructor c prefix =
@@ -131,9 +131,9 @@ private
 
   definedGrammar : List (String × String)
   definedGrammar =
-      ("string$_nameInitChar__string'_" , "init$string$cons")
-    ∷ ("string'$_nameTailChar__string'_" , "init$string$cons")
-    ∷ ("string'$" , "init$string$nil")
+      ("string$_nameInitChar__string'_" , "stringCons")
+    ∷ ("string'$_nameTailChar__string'_" , "stringCons")
+    ∷ ("string'$" , "stringNil")
 
     ∷ ("err" , "init$string")
 

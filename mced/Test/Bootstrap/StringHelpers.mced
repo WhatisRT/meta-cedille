@@ -8,11 +8,6 @@ importModule Bootstrap:Bool.
 importModule Bootstrap:Builtins.
 importModule Bootstrap:List.
 
-let stringNil : String := Λ X : *.
-  λ sc : Char -> X -> X. λ sn : X. sn.
-let stringCons (c : Char) (s : String) : String := Λ X : *.
-  λ sc : Char -> X -> X. λ sn : X. sc c (s ?X sc sn).
-
 let stringToList (s : String) : List Char :=
   s ?(List Char) (cons ?Char) (nil ?Char).
 

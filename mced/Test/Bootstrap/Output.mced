@@ -92,7 +92,6 @@ elet showLetInfo (i : LetInfo) : String :=
                        newline].
 
 elet debugPrintLetInfo : ElabLet := λ i : LetInfo.
-  seqEval ?_ ?_ (debugPrint LogTypeInfo zero (stringConcat [String |"Defined: ", showLetInfo i]))
-                (pureEval ?_ i).
+  debugPrint LogTypeInfo zero (stringConcat [String |"Defined: ", showLetInfo i]) >> pureEval ?_ i.
 
 endModule.

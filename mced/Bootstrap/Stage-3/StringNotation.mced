@@ -16,8 +16,8 @@ b-let quoteString (s : String) : Term :=
 
 b-let init$stringchar$!=doublequote=! (c : Char) : Char := c.
 
-let init$newstring$ := init$string$nil : String.
-let init$newstring$_stringchar__newstring_ := init$string$cons : Π _ : Char Π _ : String String.
+let init$newstring$ := stringNil : String.
+let init$newstring$_stringchar__newstring_ := stringCons : Π _ : Char Π _ : String String.
 
 --let init$singleTerm$=quote=_stringchar_=quote= := quoteChar : Π _ : Char Term.
 let init$singleTerm$=doublequote=_newstring_=doublequote= := quoteString : Π _ : String Term.

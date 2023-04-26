@@ -9,11 +9,15 @@ module Parse.Generate where
 
 open import Class.Monad.Except
 open import Data.Fin.Map
+open import Data.List.Sort
+import Data.Nat.Properties as ℕ
 import Data.List.NonEmpty as NE
 open NE using (List⁺; _∷_)
 open import Data.String using (toList; fromChar; uncons) renaming (fromList to fromListS)
 open import Data.Vec using (Vec; lookup; fromList; []; _∷_; _[_]%=_)
 open import Data.Vec.Exts
+import Relation.Binary.Construct.Flip as Flip
+import Relation.Binary.Construct.On   as On
 
 open import Parse.LL1
 open import Parse.MarkedString
@@ -63,16 +67,30 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
           else throwError "Found unexpected marker!"
 
   preParseCFG : List MarkedString → M (∃[ n ] Vec (String × List MarkedString) n)
-  preParseCFG [] = return $ zero , []
-  preParseCFG (x ∷ l) with break (_≟ inj₂ NameDivider) x
-  ... | name , rule' = if null name
-    then throwError $ "Parsing rule has no/empty name! Rule: " + markedStringToString x
-    else do
-      _ , rules ← preParseCFG l
-      let rule = dropHeadIfAny rule'
-      return $ case findIndex (checkRuleNameDec $ markedStringToString name) rules of λ
-        { (just x) → -, rules [ x ]%= map₂ (rule ∷_)
-        ; nothing → -, (markedStringToString name , [ rule ]) ∷ rules}
+  preParseCFG l = do
+    (n , l) ← helper l
+    return (-, sortedRules l)
+    where
+      consumedChars : MarkedString → ℕ
+      consumedChars []           = 0
+      consumedChars (inj₁ _ ∷ s) = suc (consumedChars s)
+      consumedChars (inj₂ _ ∷ _) = 0
+
+      sortedRules : ∀ {n} → Vec (String × List MarkedString) n → Vec (String × List MarkedString) n
+      sortedRules rules = flip Data.Vec.map rules $ map₂ $
+        sort $ Flip.decTotalOrder (On.decTotalOrder ℕ.≤-decTotalOrder consumedChars)
+
+      helper : List MarkedString → M (∃[ n ] Vec (String × List MarkedString) n)
+      helper [] = return $ zero , []
+      helper (x ∷ l) with break (_≟ inj₂ NameDivider) x
+      ... | name , rule' = if null name
+        then throwError $ "Parsing rule has no/empty name! Rule: " + markedStringToString x
+        else do
+          _ , rules ← helper l
+          let rule = dropHeadIfAny rule'
+          return $ case findIndex (checkRuleNameDec $ markedStringToString name) rules of λ
+            { (just x) → -, rules [ x ]%= map₂ (rule ∷_)
+            ; nothing → -, (markedStringToString name , [ rule ]) ∷ rules}
   
   {-# TERMINATING #-}
   generateCFG' : ∀ {n} → String → Vec (String × List MarkedString) (suc n) → M Grammar

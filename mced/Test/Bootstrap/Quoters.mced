@@ -5,6 +5,7 @@
 module Bootstrap:Quoters.
 
 importModule Bootstrap:Bool.
+importModule Bootstrap:Builtins.
 importModule Bootstrap:List.
 importModule Bootstrap:Product.
 importModule Bootstrap:StringHelpers.
