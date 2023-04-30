@@ -11,18 +11,16 @@ importModule Bootstrap:List.
 elet stringToList (s : String) : List Char :=
   s ?(List Char) (λ c : Char. λ rec : List Char. c ∷ rec) [Char|].
 
-elet stringFromList (s : List Char) : String :=
-  recursionList ?_ ?_ stringNil
-    (λ c : Char. λ cs : List Char. λ rec : String. stringCons c rec)
-    s.
+elet stringFromList : List Char -> String :=
+  recursionList' ?_ ?_ stringNil stringCons.
 
 let stringApp (s, s' : String) : String :=
   s ?String stringCons s'.
 
 elet stringConcat (l : List String) : String :=
-  recursionList ?_ ?_
+  recursionList' ?_ ?_
     stringNil
-    (λ s : String. λ _ : List String. λ rec : String. stringApp s rec)
+    (λ s : String. λ rec : String. stringApp s rec)
     l.
 
 -- Equality

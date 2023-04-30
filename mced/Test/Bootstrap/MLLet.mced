@@ -20,13 +20,15 @@ importModule Bootstrap:Unit.
 -- Functions to turn a Telescope into an actual telescope that can be applied to
 -- a term.
 
-elet paramToLambda (t : Term) (p : Param) : Term :=
-  (ifthenelse ?_ (paramErased p) LambdaTerm lambdaTerm) (paramName p) (paramType p) t.
+elet paramToLambda (t : Term) : Param -> Term :=
+  recursionTripleProduct ?_ ?_ ?_ ?_ λ erased : Bool. λ name : String. λ type : Term.
+    (ifthenelse ?_ erased LambdaTerm lambdaTerm) name type t.
 
 elet foldWithLambdas : Telescope -> Term -> Term := foldl ?_ ?_ paramToLambda.
 
-elet paramToPi (t : Term) (p : Param) : Term :=
-  (ifthenelse ?_ (paramErased p) forallTerm piTerm) (paramName p) (paramType p) t.
+elet paramToPi (t : Term) : Param -> Term :=
+  recursionTripleProduct ?_ ?_ ?_ ?_ λ erased : Bool. λ name : String. λ type : Term.
+    (ifthenelse ?_ erased forallTerm piTerm) name type t.
 
 elet foldWithPi : Telescope -> Term -> Term := foldl ?_ ?_ paramToPi.
 
@@ -48,11 +50,12 @@ elet appendTelToLetInfo (tel : Telescope) : LetInfo -> LetInfo :=
 
 -- define the definition specified in `LetInfo`
 
-elet convertLetInfo (i : LetInfo) : M Unit :=
-  maybe ?_ ?(M Unit)
-    (primLet (letInfoName i) (TermToInitTerm $ letInfoTerm i))
-    (λ type : Term. primAnnLet (letInfoName i) (TermToInitTerm $ letInfoTerm i) (TermToInitTerm type))
-    (letInfoType i).
+elet convertLetInfo : LetInfo -> M Unit :=
+  recursionTripleProduct ?_ ?_ ?_ ?_ λ n : String. λ t : Term. λ T : Maybe Term.
+    maybe ?_ ?(M Unit)
+      (primLet n (TermToInitTerm t))
+      (λ type : Term. primAnnLet n (TermToInitTerm t) (TermToInitTerm type))
+      T.
 
 -- Syntax for `let`
 

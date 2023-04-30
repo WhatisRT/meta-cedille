@@ -21,4 +21,9 @@ let recursionNat :=
         [[<<prodPair Nat> X> zero] rz]]
         [<<<recursionProduct Nat> X> [[Product Nat] X]>
           λ k : Nat λ x : X [[<<prodPair Nat> X> [suc k]] [[rs k] x]]]]]
-    : ∀ X : * Π _ : X Π _ : Π _ : Nat Π _ : X X Π n : Nat X.
+  : ∀ X : * Π _ : X Π _ : Π _ : Nat Π _ : X X Π n : Nat X.
+
+let recursionNat' :=
+  Λ X : * λ rz : X λ rs : Π _ : X X λ n : Nat
+    [[<n X> rz] rs]
+  : ∀ X : * Π _ : X Π _ : Π _ : X X Π n : Nat X.

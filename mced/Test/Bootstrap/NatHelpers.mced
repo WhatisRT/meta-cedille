@@ -24,23 +24,23 @@ let eight := suc seven.
 let nine  := suc eight.
 let ten   := suc nine.
 
-elet add (n, m : Nat) : Nat := recursionNat ?_ n    (λ _, rec : Nat. suc rec)   m.
-elet mul (n, m : Nat) : Nat := recursionNat ?_ zero (λ _, rec : Nat. add rec n) m.
+elet add (n, m : Nat) : Nat := recursionNat' ?_ n    (λ rec   : Nat. suc rec)   m.
+elet mul (n, m : Nat) : Nat := recursionNat' ?_ zero (λ rec   : Nat. add rec n) m.
 
-elet pred (n : Nat)   : Nat := recursionNat ?_ zero (λ n', _ : Nat. n')         n.
-elet sub (n, m : Nat) : Nat := recursionNat ?_ n    (λ _, rec : Nat. pred rec)  m.
+elet pred (n : Nat)   : Nat := recursionNat  ?_ zero (λ n', _ : Nat. n')        n.
+elet sub (n, m : Nat) : Nat := recursionNat' ?_ n    (λ rec   : Nat. pred rec)  m.
 
-elet isZero : Nat -> Bool := recursionNat ?_ true (λ _ : Nat. λ _ : Bool. false).
+elet isZero : Nat -> Bool := recursionNat' ?_ true (λ _ : Bool. false).
 
 elet natEq : Nat -> Nat -> Bool :=
-  recursionNat ?_
+  recursionNat' ?_
     isZero
-    (λ _ : Nat. λ rec : Nat -> Bool. recursionNat ?_ false (λ n : Nat. λ _ : Bool. rec n)).
+    (λ rec : Nat -> Bool. recursionNat ?_ false (λ n : Nat. λ _ : Bool. rec n)).
 
 elet natLeq : Nat -> Nat -> Bool :=
-  recursionNat ?_
+  recursionNat' ?_
     (λ _ : Nat. true)
-    (λ _ : Nat. λ rec : Nat -> Bool. recursionNat ?_ false (λ n : Nat. λ _ : Bool. rec n)).
+    (λ rec : Nat -> Bool. recursionNat ?_ false (λ n : Nat. λ _ : Bool. rec n)).
 
 let natLt (m, n : Nat) : Bool := natLeq (suc m) n.
 
@@ -67,9 +67,9 @@ let showDec (d : Dec) : String := d ?String "0" "1" "2" "3" "4" "5" "6" "7" "8" 
 --------------------------------------------------------------------------------
 
 elet baseListToNat [B : *] (digitToNat : B -> Nat) (ds : List B) (base : Nat) : Nat :=
-  recursionList ?_ ?_ zero
-    (λ d : B. λ _ : List B. λ rec : Nat. add (mul rec base) (digitToNat d))
-    (reverse ?B ds).
+  (reverse ?B ds) ?Nat
+    zero
+    (λ d : B. λ rec : Nat. add (mul rec base) (digitToNat d)).
 
 elet boolToNat (b : Bool) : Nat := ifthenelse ?_ b one zero.
 let decToNat (d : Dec) : Nat := d ?Nat zero one two three four five six seven eight nine.
@@ -118,14 +118,10 @@ elet incrementDecList : List Dec -> List Dec :=
         (Dec6 ∷ ds) (Dec7 ∷ ds) (Dec8 ∷ ds) (Dec9 ∷ ds) (Dec0 ∷ rec)).
 
 elet natToBoolList : Nat -> List Bool :=
-  recursionNat ?_
-    [Bool | false]
-    (λ _ : Nat. λ rec : List Bool. incrementBoolList rec).
+  recursionNat' ?_ [Bool | false] incrementBoolList.
 
-elet natToDecList : Nat -> List Dec :=
-  recursionNat ?_
-    [Dec | Dec0]
-    (λ _ : Nat. λ rec : List Dec. incrementDecList rec).
+elet natToDecList  : Nat -> List Dec  :=
+  recursionNat' ?_ [Dec | Dec0]   incrementDecList.
 
 --------------------------------------------------------------------------------
 -- Show functions
@@ -140,8 +136,8 @@ elet showNatBinary (n : Nat) : String :=
 elet showNatDecimal (n : Nat) : String :=
   showListOfDigitsBased ?_ showDec (natToDecList n).
 
-elet quoteNat (n : Nat) : Term :=
-  recursionNat ?_ θ{zero} (λ _ : Nat. λ rec : Term. θ{suc γ{rec}}) n.
+elet quoteNat : Nat -> Term :=
+  recursionNat' ?_ θ{zero} (λ rec : Term. θ{suc γ{rec}}).
 
 --------------------------------------------------------------------------------
 -- Parse functions

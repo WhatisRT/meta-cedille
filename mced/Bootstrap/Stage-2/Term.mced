@@ -97,35 +97,35 @@ let LambdaTerm := [binderTerm LambdaBinder].
 let piTerm := [binderTerm piBinder].
 let forallTerm := [binderTerm forallBinder].
 
-let App' := [[Product Bool] init$term].
-let appErased' := <<pr1 Bool> init$term>.
-let appTerm' := <<pr2 Bool> init$term>.
+let App' := [[Product Bool] iTerm].
+let appErased' := <<pr1 Bool> iTerm>.
+let appTerm' := <<pr2 Bool> iTerm>.
 
-let appToQuotedApp :=
-  λ t : init$term λ a : App'
+let appToQuotedApp := λ t : iTerm [<<<recursionProduct Bool> iTerm> iTerm>
+  λ erased : Bool λ t' : iTerm
     [[[[
-      [<ifthenelse Π _ : init$term Π _ : init$term init$term> [appErased' a]]
+      [<ifthenelse Π _ : iTerm Π _ : iTerm iTerm> erased]
         quote$angle]
         quote$square]
-      t] [appTerm' a]].
+      t] t']].
 
-let foldWithApp := [<<foldl App'> init$term> appToQuotedApp] : Π _ : [List App'] Π _ : init$term init$term.
+let foldWithApp := [<<foldl App'> iTerm> appToQuotedApp] : Π _ : [List App'] Π _ : iTerm iTerm.
 
 let TermToInitTerm := λ t : Term
-  [[[[[[[<t init$term>
+  [[[[[[[<t iTerm>
     λ v : Var [init$term$_var_ v]]
     λ s : Sort [init$term$_sort_ s]]
-    λ b : Binder λ n : String λ T : init$term λ t : init$term
-      [[[[[[[<b Π _ : String Π _ : init$term Π _ : init$term init$term>
+    λ b : Binder λ n : String λ T : iTerm λ t : iTerm
+      [[[[[[[<b Π _ : String Π _ : iTerm Π _ : iTerm iTerm>
         quote$lambda]
         quote$Lambda]
         quote$Pi]
         quote$forall] n] T] t]]
-    λ t : init$term λ l : [List App'] [[foldWithApp [<reverse App'> l]] t]]
+    λ t : iTerm λ l : [List App'] [[foldWithApp [<reverse App'> l]] t]]
     λ c : Char [quote$kappa c]]
     quote$sq]
-    λ u : init$term quote$sq]
-  : Π _ : Term init$term.
+    λ u : iTerm quote$sq]
+  : Π _ : Term iTerm.
 
 let App := [[Product Bool] Term].
 let mkApp := <<prodPair Bool> Term>.

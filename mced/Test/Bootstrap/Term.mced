@@ -102,8 +102,9 @@ elet App' := Bool × iTerm.
 elet appErased' := pr1 ?Bool ?iTerm.
 elet appTerm' := pr2 ?Bool ?iTerm.
 
-elet appToQuotedApp (t : iTerm) (a : App') :=
-  (ifthenelse ?_ (appErased' a) quote$angle quote$square) t (appTerm' a).
+elet appToQuotedApp (t : iTerm) : App' -> iTerm :=
+  recursionProduct ?_ ?_ ?_ λ erased : Bool. λ t' : iTerm.
+    (ifthenelse ?_ erased quote$angle quote$square) t t'.
 
 elet foldWithApp : List App' -> iTerm -> iTerm := foldl ?_ ?_ appToQuotedApp.
 
@@ -159,8 +160,9 @@ elet telApp  (p : List PreParam) := app ?_ $ map ?_ ?_ (mkParam false) p.
 elet telAppE (p : List PreParam) := app ?_ $ map ?_ ?_ (mkParam true)  p.
 elet telNil := nil ?Param.
 
-elet preParamToBinder (b : Binder) (t : Term) (p : PreParam) : Term :=
-  binderTerm b (preParamName p) (preParamType p) t.
+elet preParamToBinder (b : Binder) (t : Term) : PreParam -> Term :=
+  recursionProduct ?_ ?_ ?_ λ n : String. λ T : Term.
+    binderTerm b n T t.
 
 elet applyMultiBinder (b : Binder) := foldl ?_ ?_ (preParamToBinder b).
 

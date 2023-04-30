@@ -117,7 +117,7 @@ module _ {V MultiChar : Set} (showV : V → String)
         in map₁ prepend <$> helper stack (strDrop (terminalLength y) s)
       ... | just       _ | false = throwError $
           "Mismatch while parsing characters:\n expected '" + showTerminal y +
-          "' but got '" + strTake (strLength $ showTerminal y) s + "'"
+          "' but got '" + strTake (strLength $ showTerminal y) s + "'" + "\nRemaining:\n" + s
       ... | nothing | _ = throwError ("Unexpected end of input while trying to parse " + showTerminal y)
 
       resToTree : List (Rule ⊎ Char) → Maybe SynTree

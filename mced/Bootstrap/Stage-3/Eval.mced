@@ -308,10 +308,7 @@ b-let showTermE (t : Term) : Eval String :=
     askContext.
 
 b-let letInfoToNewStmt (i : LetInfo) : Eval Unit :=
-  bindEval ?EvalOpts ?Unit getEvalOpts' (λ f : EvalOpts.
-    ifthenelse ?(Eval Unit) (or (not (getAnnReq f)) (letInfoHasAnn i))
-      (stmtToNewStmt (convertLetInfo i))
-      (throwEval ?Unit "The provided command has no type annotation!")).
+  stmtToNewStmt (convertLetInfo i).
 
 --------------------------------------------------------------------------------
 -- Elaborate let

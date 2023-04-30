@@ -92,17 +92,20 @@ b-let modifyTermMod (t : Term) : Eval Term :=
     pureEval ?Term (maybe ?Module ?Term t (λ m : Module. modifyTerm t m) (ModuleStateCurrentModule (getModuleState s)))).
 
 b-let modifyLetInfo (i : LetInfo) (m : Module) : LetInfo :=
-  mkLetInfo
-    (nameToModuleName m (letInfoName i))
-    (modifyTerm (foldWithLambdas (ModuleTelescope m) (letInfoTerm i)) m)
-    (maybe ?Term ?(Maybe Term)
-      (nothing ?Term) (λ t : Term. just ?Term (modifyTerm (foldWithPi (ModuleTelescope m) t) m))
-      (letInfoType i)).
+  recursionTripleProduct ?String ?Term ?(Maybe Term) ?LetInfo (λ n : String. λ t : Term. λ T : Maybe Term.
+    mkLetInfo
+      (nameToModuleName m n)
+      (modifyTerm (foldWithLambdas (ModuleTelescope m) t) m)
+      (maybe ?Term ?(Maybe Term)
+        (nothing ?Term) (λ t : Term. just ?Term (modifyTerm (foldWithPi (ModuleTelescope m) t) m))
+        T)) i.
 
 b-let letInModule (i : LetInfo) (m : Module) : Eval LetInfo :=
-  seqEval ?Unit ?LetInfo
-    (updateTempModule (letInfoName i) m)
-    (pureEval ?LetInfo (modifyLetInfo i m)).
+  (recursionTripleProduct ?String ?Term ?(Maybe Term) ?(Eval LetInfo)
+    λ n : String. λ t : Term. λ T : Maybe Term.
+      seqEval ?Unit ?LetInfo
+        (updateTempModule n m)
+        (pureEval ?LetInfo (modifyLetInfo (mkLetInfo n t T) m))) i.
 
 b-let letInMaybeModule (i : LetInfo) (x : Maybe Module) : Eval LetInfo :=
   maybe ?Module ?(Eval LetInfo)

@@ -7,23 +7,23 @@
 -- Functions to turn a Telescope into an actual telescope that can be applied to
 -- a term.
 
-let paramToLambda := λ t : Term λ p : Param
-  [[[[[
-    [<ifthenelse Π _ : String Π _ : Term Π _ : Term Term> [paramErased p]]
-      LambdaTerm]
-      lambdaTerm]
-    [paramName p]] [paramType p]] t]
-  : Π _ : Term Π _ : Param Term.
+let paramToLambda := λ t : Term [<<<<recursionTripleProduct Bool> String> Term> Term>
+  λ erased : Bool λ name : String λ type : Term
+    [[[[[[<ifthenelse Π name : String Π T : Term Π t : Term Term> erased]
+             LambdaTerm]
+             lambdaTerm]
+           name] type] t]]
+  : Π t : Term Π _ : Param Term.
 
 let foldWithLambdas := [<<foldl Param> Term> paramToLambda] : Π _ : Telescope Π _ : Term Term.
 
-let paramToPi := λ t : Term λ p : Param
-  [[[[[
-    [<ifthenelse Π _ : String Π _ : Term Π _ : Term Term> [paramErased p]]
-      forallTerm]
-      piTerm]
-    [paramName p]] [paramType p]] t]
-  : Π _ : Term Π _ : Param Term.
+let paramToPi := λ t : Term [<<<<recursionTripleProduct Bool> String> Term> Term>
+  λ erased : Bool λ name : String λ type : Term
+    [[[[[[<ifthenelse Π name : String Π T : Term Π t : Term Term> erased]
+             forallTerm]
+             piTerm]
+           name] type] t]]
+  : Π t : Term Π _ : Param Term.
 
 let foldWithPi := [<<foldl Param> Term> paramToPi] : Π _ : Telescope Π _ : Term Term.
 
@@ -47,11 +47,12 @@ let appendTelToLetInfo := λ tel : Telescope
 -- converts a `LetInfo` to a let `init$stmt'`
 
 let convertLetInfo :=
-  λ i : LetInfo
-    [[[<<maybe Term> [M Unit]>
-      [[primLet [letInfoName i]] [TermToInitTerm [letInfoTerm i]]]]
-      λ type : Term [[[primAnnLet [letInfoName i]] [TermToInitTerm [letInfoTerm i]]] [TermToInitTerm type]]]
-      [letInfoType i]].
+  [<<<<recursionTripleProduct String> Term> [Maybe Term]> [M Unit]>
+    λ n : String λ t : Term λ T : [Maybe Term]
+      [[[<<maybe Term> [M Unit]>
+        [[primLet n] [TermToInitTerm t]]]
+        λ type : Term [[[primAnnLet n] [TermToInitTerm t]] [TermToInitTerm type]]]
+        T]].
 
 -- Syntax for `let`
 

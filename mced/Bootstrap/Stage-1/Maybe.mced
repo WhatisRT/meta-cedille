@@ -16,7 +16,7 @@ let liftMaybe2 :=
     [[[<<maybe X> [Maybe Z]> <nothing Z>] λ x' : X [[<<mapMaybe Y> Z> λ y' : Y [[f x'] y']] y]] x].
 
 let traverseMaybeList := Λ X : * Λ Y : * λ f : Π _ : X [Maybe Y]
-  [[<<recursionList X> [Maybe [List Y]]>
+  [[<<recursionList' X> [Maybe [List Y]]>
     [<just [List Y]> <nil Y>]]
-    λ x : X λ xs : [List X] λ rec : [Maybe [List Y]]
+    λ x : X λ rec : [Maybe [List Y]]
       [[[<<<liftMaybe2 Y> [List Y]> [List Y]> <cons Y>] [f x]] rec]].

@@ -142,21 +142,22 @@ let deriveEqns' : Term -> Term -> List UnsEqn :=
     (λ t1, t2 : Term. λ rec : List UnsEqn. rec)
     (λ t1, t2 : Term. [UnsEqn| mkUnsEqn t1 t2]).
 
-let deriveEqns (eq : UnsEqn) : List UnsEqn :=
-  incUnsEqnCtx (pr31 ?Nat ?Term ?Term eq) $
-  deriveEqns' (reduceMultiApp $ pr32 ?Nat ?Term ?Term eq) (reduceMultiApp $ pr33 ?Nat ?Term ?Term eq).
+let deriveEqns : UnsEqn -> List UnsEqn :=
+  recursionTripleProduct ?Nat ?Term ?Term ?(List UnsEqn) λ eqnC : Nat. λ eqnL, eqnR : Term.
+    incUnsEqnCtx eqnC $ deriveEqns' (reduceMultiApp eqnL) (reduceMultiApp eqnR).
 
 -- Solved equation
 let SEqn : * := Nat × Term.
 
 -- if LHS is an index, return that index together with the appropriate RHS
-let solveEqn (ctx : Nat) (eqn : UnsEqn) : Maybe SEqn :=
-  pr32 ?Nat ?Term ?Term eqn ?(Maybe SEqn)
+let solveEqn (ctx : Nat) : UnsEqn -> Maybe SEqn :=
+  recursionTripleProduct ?Nat ?Term ?Term ?(Maybe SEqn) λ eqnC : Nat. λ eqnL, eqnR : Term.
+  eqnL ?(Maybe SEqn)
     (λ v : Var. v ?(Maybe SEqn)
       (λ _ : String. nothing ?SEqn)
       (λ i : init$index. just ?SEqn $
-        prodPair ?Nat ?Term (sub (add ctx $ pr31 ?Nat ?Term ?Term eqn) (suc $ indexToNat i))
-          (strengthenBy (pr31 ?Nat ?Term ?Term eqn) $ pr33 ?Nat ?Term ?Term eqn)))
+        prodPair ?Nat ?Term (sub (add ctx eqnC) (suc $ indexToNat i))
+          (strengthenBy eqnC eqnR)))
     (λ _ : Sort. nothing ?SEqn)
     (λ _ : Binder. λ _ : String. λ _, _ : Maybe SEqn. nothing ?SEqn)
     (λ _ : Maybe SEqn. λ _ : List (Bool × (Maybe SEqn)). nothing ?SEqn)
@@ -164,10 +165,11 @@ let solveEqn (ctx : Nat) (eqn : UnsEqn) : Maybe SEqn :=
     (nothing ?SEqn)
     (λ _ : Maybe SEqn. nothing ?SEqn).
 
-let tryHNFEqn (eq : UnsEqn) : Eval UnsEqn :=
-  bindEval ?Term ?UnsEqn (headNormalize $ pr32 ?Nat ?Term ?Term eq) λ t1 : Term.
-  bindEval ?Term ?UnsEqn (headNormalize $ pr33 ?Nat ?Term ?Term eq) λ t2 : Term.
-  pureEval ?UnsEqn $ mkUnsEqn' (pr31 ?Nat ?Term ?Term eq) t1 t2.
+let tryHNFEqn : UnsEqn -> Eval UnsEqn :=
+  recursionTripleProduct ?Nat ?Term ?Term ?(Eval UnsEqn) λ eqnC : Nat. λ eqnL, eqnR : Term.
+    bindEval ?Term ?UnsEqn (headNormalize eqnL) λ t1 : Term.
+    bindEval ?Term ?UnsEqn (headNormalize eqnR) λ t2 : Term.
+    pureEval ?UnsEqn $ mkUnsEqn' eqnC t1 t2.
 
 -- partition equations into solved and unsolved
 let partitionSolved (ctx : Nat) (eqns : List UnsEqn) : List SEqn × List UnsEqn :=
@@ -218,9 +220,9 @@ let solveApp (app : List App) (s : List SEqn) : List App :=
   zipWithIndex ?App ?App
     (λ i : Nat. λ a : App. ifthenelse ?App (isUnknown $ appTerm a)
       (foldl ?SEqn ?App
-        (λ a : App. λ x : SEqn. ifthenelse ?App
-          (and (isUnknown $ appTerm a) (natEq i (pr1 ?Nat ?Term x)))
-            (mkApp (appErased a) (pr2 ?Nat ?Term x))
+        (λ a : App. recursionProduct ?Nat ?Term ?App λ eqnC : Nat. λ eqnT : Term.
+          ifthenelse ?App (and (isUnknown $ appTerm a) (natEq i eqnC))
+            (mkApp (appErased a) eqnT)
             a) s a) a) app.
 
 let debugPrintElabStep (l : List InferenceInfo) : Eval Unit :=
@@ -248,17 +250,19 @@ let solveAppWithErr (f : Term) (app : List App) (s : List InferenceInfo) : Eval 
     (isSolved l)).
 
 let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term :=
-  bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ e : String.
-    throwEval ?Term $ stringConcat
-      [String|"Elaboration failure: Failed to infer the type of ", showTerm f, "!", newline,
-              "Reason: ", e]))
-    (λ T : Term.
-      bindEval ?(List (App × Maybe Term)) ?Term (inferAppTypes app) (λ app' : List (App × Maybe Term).
-        seqEval ?Unit ?Term
-          (ifthenelse ?(Eval Unit) doDebugPrinting
-            (debugPrintElabStep $ genInferenceInfo T app')
-            (pureEval ?Unit tt)) $
-          solveAppWithErr f app $ genInferenceInfo T app')).
+  ifthenelse ?(Eval Term) (isNil ?App app)
+    (pureEval ?Term (appLTerm f app)) $
+    bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ e : String.
+      throwEval ?Term $ stringConcat
+        [String|"Elaboration failure: Failed to infer the type of ", showTerm f, "!", newline,
+                "Reason: ", e]))
+      (λ T : Term.
+        bindEval ?(List (App × Maybe Term)) ?Term (inferAppTypes app) (λ app' : List (App × Maybe Term).
+          seqEval ?Unit ?Term
+            (ifthenelse ?(Eval Unit) doDebugPrinting
+              (debugPrintElabStep $ genInferenceInfo T app')
+              (pureEval ?Unit tt)) $
+            solveAppWithErr f app $ genInferenceInfo T app')).
 
 let elabLocalInference (doDebugPrinting : Bool) (t : Term) : Eval Term :=
   seqEval ?Unit ?Term

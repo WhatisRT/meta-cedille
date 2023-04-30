@@ -24,6 +24,10 @@ let recursionList := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : [List A
           [[<cons A> a] [<<pr1 [List A]> X> p]]]
           [[[rc a] [<<pr1 [List A]> X> p]] [<<pr2 [List A]> X> p]]]]].
 
+let recursionList' := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : X X λ l : [List A]
+  [[<l X> rn] rc]
+  : ∀ A : * ∀ X : * Π rn : X Π rc : Π _ : A Π _ : X X Π l : [List A] X.
+
 let length := Λ X : * λ l : [List X]
   [[<l Nat> zero] λ x : X λ n : Nat [suc n]]
   : ∀ X : * Π _ : [List X] Nat.
@@ -35,8 +39,8 @@ let isNil := Λ X : * λ l : [List X]
   : ∀ X : * Π _ : [List X] Bool.
 
 let listEq := Λ X : * λ eqX : Π _ : X Π _ : X Bool
-  [[<<recursionList X> Π _ : [List X] Bool> <isNil X>]
-    λ x : X λ xs : [List X] λ rec : Π _ : [List X] Bool
+  [[<<recursionList' X> Π _ : [List X] Bool> <isNil X>]
+    λ x : X λ rec : Π _ : [List X] Bool
       [[<<recursionList X> Bool> false] λ y : X λ ys : [List X] λ _ : Bool [[and [[eqX x] y]] [rec ys]]]]
   : ∀ X : * Π eqX : Π _ : X Π _ : X Bool Π _ : [List X] Π _ : [List X] Bool.
 

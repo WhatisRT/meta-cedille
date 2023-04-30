@@ -3,9 +3,9 @@
 --------------------------------------------------------------------------------
 
 b-let quoteTermList (type : Term) (terms : List Term) : Term :=
-  recursionList ?Term ?Term
+  recursionList' ?Term ?Term
     (appSingleE (sVarTerm "nil") type)
-    (λ t : Term. λ _ : List Term. λ rec : Term.
+    (λ t : Term. λ rec : Term.
       appSingle (appSingle (appSingleE (sVarTerm "cons") type) t) rec)
     terms.
 

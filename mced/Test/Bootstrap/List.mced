@@ -13,8 +13,10 @@ elet cons [A : *] (a : A) (as : List A) : List A :=
 elet recursionList [A, X : *] (rn : X) (rc : A -> List A -> X -> X) (l : List A) : X :=
   pr2 ?_ ?X $ l ?(List A × X)
     (nil ?A ; rn)
-    (λ a : A. λ p : List A × X.
-      (a ∷ pr1 ?_ ?X p) ; rc a (pr1 ?_ ?X p) (pr2 ?_ ?X p)).
+    (λ a : A. recursionProduct ?_ ?_ ?_ λ p1 : List A. λ p2 : X. (a ∷ p1) ; rc a p1 p2).
+
+elet recursionList' [A, X : *] (rn : X) (rc : A -> X -> X) (l : List A) : X :=
+  l ?X rn rc.
 
 elet length [X : *] (l : List X) : Nat :=
   l ?Nat zero (λ x : X. λ n : Nat. suc n).
@@ -23,8 +25,8 @@ elet isNil [X : *] (l : List X) : Bool :=
   l ?Bool true (λ _ : X. λ _ : Bool. false).
 
 elet listEq [X : *] (eqX : X -> X -> Bool) : List X -> List X -> Bool :=
-  recursionList ?_ ?_ (isNil ?X) $
-    λ x : X. λ xs : List X. λ rec : List X -> Bool.
+  recursionList' ?_ ?_ (isNil ?X) $
+    λ x : X. λ rec : List X -> Bool.
       recursionList ?_ ?_ false (λ y : X. λ ys : List X. λ _ : Bool. and (eqX x y) (rec ys)).
 
 elet pureList [X : *] (x : X) : List X := [X|x].

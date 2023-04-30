@@ -12,4 +12,7 @@ elet recursionNat [X : *] (rz : X) (rs : Nat -> X -> X) (n : Nat) : X :=
     (zero ; rz)
     (recursionProduct ?_ ?_ ?_ (λ k : Nat. λ x : X. suc k ; rs k x)).
 
+elet recursionNat' [X : *] (rz : X) (rs : X -> X) (n : Nat) : X :=
+  n ?X rz rs.
+
 endModule.

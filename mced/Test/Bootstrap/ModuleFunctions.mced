@@ -116,15 +116,17 @@ elet modifyTermMod (t : Term) : Eval Term :=
   pureEval ?_ $ maybe ?_ ?_ t (modifyTerm t) (ModuleStateCurrentModule (getModuleState s)).
 
 elet modifyLetInfo (i : LetInfo) (m : Module) : LetInfo :=
-  mkLetInfo
-    (nameToModuleName m (letInfoName i))
-    (modifyTerm (foldWithLambdas (ModuleTelescope m) (letInfoTerm i)) m)
-    (maybe ?_ ?_
-      (nothing ?Term) (λ t : Term. just ?_ (modifyTerm (foldWithPi (ModuleTelescope m) t) m))
-      (letInfoType i)).
+  recursionTripleProduct ?_ ?_ ?_ ?_ (λ n : String. λ t : Term. λ T : Maybe Term.
+    mkLetInfo
+      (nameToModuleName m n)
+      (modifyTerm (foldWithLambdas (ModuleTelescope m) t) m)
+      (maybe ?_ ?_
+        (nothing ?Term) (λ t : Term. just ?_ (modifyTerm (foldWithPi (ModuleTelescope m) t) m))
+        T)) i.
 
 elet letInModule (i : LetInfo) (m : Module) : Eval LetInfo :=
-  updateTempModule (letInfoName i) m >> pureEval ?_ (modifyLetInfo i m).
+  (recursionTripleProduct ?_ ?_ ?_ ?_ λ n : String. λ t : Term. λ T : Maybe Term.
+    updateTempModule n m >> pureEval ?_ (modifyLetInfo (mkLetInfo n t T) m)) i.
 
 elet letInMaybeModule (i : LetInfo) (x : Maybe Module) : Eval LetInfo :=
   maybe ?_ ?_ (pureEval ?_ i) (letInModule i) x.
