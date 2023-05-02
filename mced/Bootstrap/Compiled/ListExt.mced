@@ -1,3 +1,4 @@
+let replicate := Λ A : * λ a : A λ n : Nat [[<n [List A]> <nil A>] [<cons A> a]] : ∀ A : * Π a : A Π n : Nat [List A].
 let showList := Λ X : * λ showX : Π _ : X String λ l : [List X] [[stringApp [[stringCons κ[] stringNil]] [[stringApp [stringConcat [[<intersperse String> [[stringCons κ,] [[stringCons κ ] stringNil]]] [[<<map X> String> showX] l]]]] [[stringCons κ]] stringNil]]] : ∀ X : * Π showX : Π _ : X String Π l : [List X] String.
 let lookupDefault := Λ A : * λ n : Nat λ d : A λ l : [List A] [[[<l Π _ : Nat A> λ _ : Nat d] λ a : A λ rec : Π _ : Nat A [[<recursionNat A> a] λ k : Nat λ _ : A [rec k]]] n] : ∀ A : * Π n : Nat Π d : A Π l : [List A] A.
 let head := Λ A : * λ l : [List A] [[<l [Maybe A]> <nothing A>] λ a : A λ _ : [Maybe A] [<just A> a]] : ∀ A : * Π l : [List A] [Maybe A].

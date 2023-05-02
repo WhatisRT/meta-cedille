@@ -2,6 +2,9 @@
 -- List functions that are more pleasantly written now
 --------------------------------------------------------------------------------
 
+b-let replicate [A : *] (a : A) (n : Nat) : List A :=
+  n ?(List A) (nil ?A) (cons ?A a).
+
 b-let showList [X : *] (showX : X -> String) (l : List X) : String :=
   stringApp "[" (stringApp (stringConcat (intersperse ?String ", " (map ?X ?String showX l))) "]").
 

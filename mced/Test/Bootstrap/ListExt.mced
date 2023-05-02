@@ -12,6 +12,9 @@ importModule Bootstrap:Nat.
 importModule Bootstrap:Product.
 importModule Bootstrap:StringHelpers.
 
+elet replicate [A : *] (a : A) (n : Nat) : List A :=
+  n ?(List A) (nil ?A) (cons ?_ a).
+
 elet showList [X : *] (showX : X -> String) (l : List X) : String :=
   stringApp "[" (stringApp (stringConcat (intersperse ?_ ", " (map ?_ ?_ showX l))) "]").
 

@@ -1,3 +1,25 @@
+b-let genEscapeCode (s : String) : String :=
+  stringConcat [String|"[", s, "m"].
+
+b-let resetCode : String :=
+  genEscapeCode "0".
+
+--------------------------------------------------------------------------------
+-- Functional
+--------------------------------------------------------------------------------
+
+b-let backspaceCode := "".
+
+b-let undoPrint (s : String) : String :=
+  stringConcat (replicate ?String backspaceCode (stringLength s)).
+
+b-let evalWithProgress [T : *] (progress, done : String) (x : Eval T) :=
+  seqEval ?Unit ?T (printEval progress)
+    (bindEval ?T ?T x (λ x' : T.
+      seqEval ?Unit ?T
+              (seqEval ?Unit ?Unit (printEval (undoPrint progress)) (printEval done))
+              (pureEval ?T x'))).
+
 --------------------------------------------------------------------------------
 -- Functions for printing to the terminal
 --------------------------------------------------------------------------------
@@ -12,12 +34,6 @@ b-let ANSI8Blue    := Λ X : *. λ black, red, green, yellow, blue, magenta, cya
 b-let ANSI8Magenta := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. magenta.
 b-let ANSI8Cyan    := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. cyan.
 b-let ANSI8White   := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. white.
-
-b-let genEscapeCode (s : String) : String :=
-  stringConcat [String|"[", s, "m"].
-
-b-let resetCode : String :=
-  genEscapeCode "0".
 
 b-let toColorCode8 (c : ANSI8Color) : String :=
   genEscapeCode (c ?String "30" "31" "32" "33" "34" "35" "36" "37").

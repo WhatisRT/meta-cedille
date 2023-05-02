@@ -36,8 +36,8 @@ elet writeDefinitionsToFile (printDef : LetInfo -> Eval String)
 
 elet compileModule (printDef : LetInfo -> Eval String) (genName : ModuleName -> String)
     (modName : ModuleName) : Eval Unit :=
-  seqNewStmt (debugPrint LogTypeDebug zero $
-                         stringConcat [String|"Compiling: ", ModuleNameToName modName])
+  evalWithProgress ?_ (stringConcat [String|"Compiling: ", ModuleNameToName modName])
+                      (stringConcat [String|"Compiled:  ", ModuleNameToName modName, newline])
     ((getModule modName >>= moduleToLetInfos) >>= writeDefinitionsToFile printDef (genName modName)).
 
 elet compileModules (printDef : LetInfo -> Eval String) (genName : ModuleName -> String)

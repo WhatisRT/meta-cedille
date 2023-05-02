@@ -9,15 +9,39 @@ importModule Bootstrap:Bool.
 importModule Bootstrap:Builtins.
 importModule Bootstrap:Eval.
 importModule Bootstrap:List.
+importModule Bootstrap:ListExt.
 importModule Bootstrap:MLLet.
 importModule Bootstrap:Maybe.
 importModule Bootstrap:Nat.
 importModule Bootstrap:Product.
 importModule Bootstrap:ShowTerm.
+importModule Bootstrap:StringExt.
 importModule Bootstrap:StringHelpers.
 importModule Bootstrap:StringNotation.
 importModule Bootstrap:Term.
 importModule Bootstrap:Unit.
+
+let genEscapeCode (s : String) : String :=
+  stringConcat [String|"[", s, "m"].
+
+let resetCode : String :=
+  genEscapeCode "0".
+
+--------------------------------------------------------------------------------
+-- Functional
+--------------------------------------------------------------------------------
+
+let backspaceCode := "".
+elet undoPrint (s : String) : String :=
+  stringConcat $ replicate ?_ backspaceCode $ stringLength s.
+
+elet evalWithProgress [T : *] (progress, done : String) (x : Eval T) :=
+  printEval progress >> (x >>= λ x' : T.
+  (printEval (undoPrint progress) >> printEval done) >> pureEval ?T x').
+
+--------------------------------------------------------------------------------
+-- Colors
+--------------------------------------------------------------------------------
 
 let ANSI8Color : * := ∀ X : *. X -> X -> X -> X -> X -> X -> X -> X -> X.
 
@@ -29,12 +53,6 @@ let ANSI8Blue    := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan,
 let ANSI8Magenta := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. magenta.
 let ANSI8Cyan    := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. cyan.
 let ANSI8White   := Λ X : *. λ black, red, green, yellow, blue, magenta, cyan, white : X. white.
-
-let genEscapeCode (s : String) : String :=
-  stringConcat [String|"[", s, "m"].
-
-let resetCode : String :=
-  genEscapeCode "0".
 
 let toColorCode8 (c : ANSI8Color) : String :=
   genEscapeCode (c ?String "30" "31" "32" "33" "34" "35" "36" "37").

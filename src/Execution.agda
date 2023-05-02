@@ -292,7 +292,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     returnQuoted =<< MetaEnv.evaluator <$> getMeta
 
   executePrimitive Print s = do
-    returnQuoted =<< (liftIO $ putStr s)
+    returnQuoted =<< (liftIO (putStr s >> flushStdout >> return tt))
 
   executePrimitive WriteFile (fName , contents) = do
     returnQuoted =<< (liftIO $ writeFile fName contents)

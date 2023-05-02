@@ -166,9 +166,7 @@ elet finishModuleDef (m : Module) (d : ModuleDict) : Eval Unit :=
       (just ?_ θ{Module})),
     updateModuleDict m d,
     modifyModuleState (λ s : ModuleState.
-      mkModuleState (tail ?_ $ ModuleStateModuleStack s) (insertModuleDict m d)),
-    debugPrint LogTypeDebug zero
-      (stringConcat [String|"Loaded module: ", ModuleNameToName (ModuleModuleName m)])].
+      mkModuleState (tail ?_ $ ModuleStateModuleStack s) (insertModuleDict m d))].
 
 elet endModule : Eval Unit :=
   getModuleState' >>= λ s : ModuleState.
@@ -192,8 +190,10 @@ elet importModule (m : Module) (l : List App) : Eval Unit :=
 
 elet moduleNameToPath (n : ModuleName) : String := stringConcat (intersperse ?_ "/" n).
 
-let loadModule (n : ModuleName) (prefix : String) : Eval Unit :=
-  import $ stringApp prefix (moduleNameToPath n).
+elet loadModule (n : ModuleName) (prefix : String) : Eval Unit :=
+  debugPrint LogTypeDebug zero
+     (stringConcat [String|"Loading module: ", ModuleNameToName n]) >>
+  (import $ stringApp prefix (moduleNameToPath n)).
 
 elet importModuleWithLoad (n : ModuleName) (l : List App) : Eval Unit :=
   moduleIsLoaded n >>= λ loaded : Bool.
