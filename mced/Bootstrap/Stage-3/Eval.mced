@@ -262,8 +262,7 @@ b-let commandLine : Eval (List String) :=
 b-let toggleProf : Eval Unit :=
   liftMtoEval ?Unit primToggleProf.
 
-b-let printLineEval (s : String) : Eval Unit :=
-  printEval (stringApp s newline).
+b-let printLineEval (s : String) : Eval Unit := printEval φ"${s}\n".
 
 b-let printConcatEval (s : List String) : Eval Unit := printEval (stringConcat s).
 

@@ -89,7 +89,8 @@ let printEval := λ s : String [<liftMtoEval Unit> [primPrint s]] : Π s : Strin
 let writeFile := λ fName : String λ s : String [<liftMtoEval Unit> [[primWriteFile fName] s]] : Π fName : String Π s : String [Eval Unit].
 let commandLine := λ _ : EvalEnv λ s : EvalState [[<<bindMeta [List String]> [[Product [List String]] EvalState]> primCommandLine] λ x : [List String] [<returnMeta [[Product [List String]] EvalState]> [[<<prodPair [List String]> EvalState> x] s]]] : [Eval [List String]].
 let toggleProf := λ _ : EvalEnv λ s : EvalState [[<<bindMeta Unit> [[Product Unit] EvalState]> primToggleProf] λ x : Unit [<returnMeta [[Product Unit] EvalState]> [[<<prodPair Unit> EvalState> x] s]]] : [Eval Unit].
-let printLineEval := λ s : String [printEval [[stringApp s] newline]] : Π s : String [Eval Unit].
+let printLineEval := λ s : String [printEval [[stringApp s] [[stringCons κ
+] stringNil]]] : Π s : String [Eval Unit].
 let printConcatEval := λ s : [List String] [printEval [stringConcat s]] : Π s : [List String] [Eval Unit].
 let getDef := λ n : String [headNormalize [sVarTerm n]] : Π n : String [Eval Term].
 let emptyStmt := λ e : EvalEnv λ s : EvalState [<returnMeta [[Product Unit] EvalState]> [[<<prodPair Unit> EvalState> tt] s]] : [Eval Unit].

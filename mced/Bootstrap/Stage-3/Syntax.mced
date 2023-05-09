@@ -50,7 +50,7 @@ b-let init$setStmt$RequireTypeAnnotations^space^_flag_ (b : Bool) :=
   modifyAndUpdateEvalOpts (setAnnReq b).
 b-let init$setStmt$PrintInfo^space^_flag_ (b : Bool) :=
   modifyAndUpdateEvalOpts (setPrintInfo b).
-b-let init$setStmt$PWD^space^_term_ (dirT : Term) :=
+b-let init$setStmt$PWD^space^_multiTerm_ (dirT : Term) :=
   bindEval ?String ?Unit (checkTerm String dirT)
     (λ dir : String. modifyAndUpdateEvalOpts (setWorkingDir dir)).
 b-let init$setStmt$ToggleProf := toggleProf.

@@ -46,11 +46,11 @@ b-let mkInitModule (name : ModuleName) (version : Nat) (t : Telescope) : Module 
 -- the temporary names to build them incrementally.
 
 b-let mkTempModuleName' (m : Module) (n : Nat) : String := -- name for temporary modules
-  stringConcat [String | mkModulePrefix (ModuleModuleInfo m), "||", showNatDecimal n].
+  φ"${mkModulePrefix (ModuleModuleInfo m)}||${showNatDecimal n}".
 b-let mkTempModuleName (m : Module) : String := mkTempModuleName' m (length ?String (ModuleContents m)).
 b-let mkTempModuleNameSuc (m : Module) : String := mkTempModuleName' m (suc (length ?String (ModuleContents m))).
 b-let mkModuleName (m : Module) : String :=
-  stringConcat [String | mkModulePrefix (ModuleModuleInfo m), "||"].
+  φ"${mkModulePrefix (ModuleModuleInfo m)}||".
 
 -- ModuleDict is a type that is used to collect all the modules that are
 -- currently defined. We will bind them to a global name where the version is
@@ -83,6 +83,6 @@ b-let unloadModuleFromDict (m : ModuleName) (dict : ModuleDict) : ModuleDict :=
 
 
 b-let mkModuleDictName' (v : Nat) (d : ModuleDict) : String :=
-  stringConcat [String| modulePrefix, "||Dict", (showNatDecimal v)].
+  φ"${modulePrefix}||Dict${showNatDecimal v}".
 b-let mkModuleDictName (d : ModuleDict) : String := mkModuleDictName' (ModuleDictVersion d) d.
 b-let mkModuleDictNameSuc (d : ModuleDict) : String := mkModuleDictName' (suc (ModuleDictVersion d)) d.

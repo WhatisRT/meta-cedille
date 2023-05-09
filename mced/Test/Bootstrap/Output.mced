@@ -21,11 +21,8 @@ importModule Bootstrap:StringNotation.
 importModule Bootstrap:Term.
 importModule Bootstrap:Unit.
 
-let genEscapeCode (s : String) : String :=
-  stringConcat [String|"[", s, "m"].
-
-let resetCode : String :=
-  genEscapeCode "0".
+let genEscapeCode (s : String) : String := φ"[${s}m".
+let resetCode : String := genEscapeCode "0".
 
 --------------------------------------------------------------------------------
 -- Functional
@@ -70,10 +67,10 @@ let withColors8 (fg, bg : ANSI8Color) (s : String) : String :=
   stringConcat [String|toColorCode8 fg, toBGColorCode8 bg, s, resetCode].
 
 let toColorCode256 (c : Byte) : String :=
-  genEscapeCode (stringApp "38;5;" (showByte c)).
+  genEscapeCode φ"38;5;${showByte c}".
 
 let toBGColorCode256 (c : Byte) : String :=
-  genEscapeCode (stringApp "48;5;" (showByte c)).
+  genEscapeCode φ"48;5;${showByte c}".
 
 let withColor256 (c : Byte) (s : String) : String :=
   stringConcat [String|toColorCode256 c, s, resetCode].
@@ -105,11 +102,10 @@ elet debugPrint (t : LogType) (level : Nat) (m : String) : Eval Unit :=
   ifthenelse ?_ b (printLineEval m) (pureEval ?_ tt).
 
 elet showLetInfo (i : LetInfo) : String :=
-  stringConcat [String|letInfoName i, " := ", showTerm (letInfoTerm i),
-                       maybe ?_ ?_ "" (λ T : Term. stringConcat [String|" : ", showTerm T]) (letInfoType i),
-                       newline].
+  φ"${letInfoName i} := ${showTerm $ letInfoTerm i}${
+      maybe ?_ ?_ "" (λ T : Term. φ" : ${showTerm T}") $ letInfoType i}\n".
 
 elet debugPrintLetInfo : ElabLet := λ i : LetInfo.
-  debugPrint LogTypeInfo zero (stringConcat [String |"Defined: ", showLetInfo i]) >> pureEval ?_ i.
+  debugPrint LogTypeInfo zero φ"Defined: ${showLetInfo i}" >> pureEval ?_ i.
 
 endModule.

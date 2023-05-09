@@ -27,15 +27,17 @@ let showTermWithContextScheme (t : Term) : List String -> String := recursionTer
   (λ v : Var. λ con : List String. sanitizeNameScheme $ showVar con v)
   (λ s : Sort. λ _ : List String. "'SORT")
   (λ b : Binder. λ n : String. λ _, _ : Term. λ T, t : List String -> String. λ con : List String.
-    b ?String (stringConcat [String|"(lambda (", sanitizeNameScheme n, ") ", t (cons ?String n con), ")"])
-              (stringConcat [String|"(lambda (", sanitizeNameScheme n, ") ", t (cons ?String n con), ")"])
+    b ?String (φ"(lambda (${sanitizeNameScheme n}) ${t $ cons ?String n con})")
+              (φ"(lambda (${sanitizeNameScheme n}) ${t $ cons ?String n con})")
               "'PI" "'FORALL")
   (λ _ : Term. λ la : List App. λ t : List String -> String.
-   λ l : List (Product Bool (List String -> String)). λ con : List String. stringConcat
-     [String|"(", t con, stringConcat (map ?(Bool × (List String -> String)) ?String
-              (recursionProduct ?Bool ?(List String -> String) ?String
-                      (λ _ : Bool. λ t' : List String -> String. stringApp " " (t' con))) l), ")"])
-  (λ c : Char. λ _ : List String. stringConcat [String|"'", stringCons c "'"])
+   λ l : List (Bool × (List String -> String)). λ con : List String.
+     φ"(${t con}${stringConcat $
+                    map ?(Bool × (List String -> String)) ?String
+                      (recursionProduct ?Bool ?(List String -> String) ?String
+                        (λ _ : Bool. λ t' : List String -> String. φ" ${t' con}"))
+                    l})")
+  (λ c : Char. λ _ : List String. φ"'${stringCons c stringNil}'")
   (λ _ : List String. "_")
   (λ _ : Term. λ t : List String -> String. λ con : List String. "'UNQUOTE")
   t.
@@ -44,20 +46,19 @@ let showTermScheme (t : Term) : Eval String :=
   tryCompileSchemePrim (reduceMultiApp t) $ pureEval ?String (showTermWithContextScheme t [String|]).
 
 let printDefinitionScheme (def : LetInfo) : Eval String :=
-  mapEval ?String ?String (λ t : String.
-    stringConcat [String|"(define ", sanitizeNameScheme (letInfoName def), " ", t , ")"])
+  mapEval ?String ?String (λ t : String. φ"(define ${sanitizeNameScheme (letInfoName def)} ${t})")
     (showTermScheme (letInfoTerm def)).
 
 let schemeCompileDir := "Compiled/Scheme/".
 
 let genNameScheme (name : ModuleName) : String :=
-  stringConcat [String|schemeCompileDir, moduleNameToPath modName, ".ss"].
+  φ"${schemeCompileDir}${moduleNameToPath modName}.ss".
 
 let compileModulesScheme : List ModuleName -> Eval Unit :=
   compileModules printDefinitionScheme genNameScheme.
 
-runMeta ensureDirExists (stringConcat [String|schemeCompileDir, "/Bootstrap/"]).
-runMeta ensureDirExists (stringConcat [String|schemeCompileDir, "/SchemeCompiler/"]).
+runMeta ensureDirExists (φ"${schemeCompileDir}/Bootstrap/").
+runMeta ensureDirExists (φ"${schemeCompileDir}/SchemeCompiler/").
 
 runMeta compileModulesScheme
   [ModuleName| [String|"Bootstrap", "Unit"], [String|"Bootstrap", "DSum"]

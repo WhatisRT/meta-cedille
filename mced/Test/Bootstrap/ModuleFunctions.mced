@@ -191,8 +191,7 @@ elet importModule (m : Module) (l : List App) : Eval Unit :=
 elet moduleNameToPath (n : ModuleName) : String := stringConcat (intersperse ?_ "/" n).
 
 elet loadModule (n : ModuleName) (prefix : String) : Eval Unit :=
-  debugPrint LogTypeDebug zero
-     (stringConcat [String|"Loading module: ", ModuleNameToName n]) >>
+  debugPrint LogTypeDebug zero φ"Loading module: ${ModuleNameToName n}" >>
   (import $ stringApp prefix (moduleNameToPath n)).
 
 elet importModuleWithLoad (n : ModuleName) (l : List App) : Eval Unit :=

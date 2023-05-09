@@ -4,6 +4,7 @@
 
 b-let quote$stringNil : Term := sVarTerm (stringCons κs (stringCons κt (stringCons κr (stringCons κi (stringCons κn (stringCons κg (stringCons κN (stringCons κi (stringCons κl stringNil))))))))).
 b-let quote$stringCons : Term := sVarTerm (stringCons κs (stringCons κt (stringCons κr (stringCons κi (stringCons κn (stringCons κg (stringCons κC (stringCons κo (stringCons κn (stringCons κs stringNil)))))))))).
+b-let quote$stringApp : Term := sVarTerm (stringCons κs (stringCons κt (stringCons κr (stringCons κi (stringCons κn (stringCons κg (stringCons κA (stringCons κp (stringCons κp stringNil))))))))).
 
 b-let quoteChar (c : Char) : Term := charTerm c.
 
@@ -14,18 +15,28 @@ b-let quoteString (s : String) : Term :=
 
 -- Syntax
 
-b-let init$stringchar$!=doublequote=! (c : Char) : Char := c.
+b-let init$stringchar$!=doublequote=&=newline=! (c : Char) : Char := c.
+
+b-let init$stringchar$=newline=_stringchar_ (c : Char) : Char := c.
+b-let init$stringchar$=backslash=n : Char := κ
+.
 
 let init$newstring$ := stringNil : String.
 let init$newstring$_stringchar__newstring_ := stringCons : Π _ : Char Π _ : String String.
 
 --let init$singleTerm$=quote=_stringchar_=quote= := quoteChar : Π _ : Char Term.
 let init$singleTerm$=doublequote=_newstring_=doublequote= := quoteString : Π _ : String Term.
-let init$term$=doublequote=_newstring_=doublequote= := quoteString : Π _ : String Term.
+
+-- String interpolation
+
+b-let init$intstring$ : Term := quote$stringNil.
+b-let init$intstring$=dollar==lbrace=^space'^_multiTerm_=rbrace=_intstring_ (t, t' : Term) : Term :=
+  appSingle (appSingle quote$stringApp t) t'.
+b-let init$intstring$_stringchar__intstring_ (c : Char) (t : Term) : Term :=
+  appSingle (appSingle quote$stringCons (quoteChar c)) t.
+
+b-let init$singleTerm$=phi==doublequote=_intstring_=doublequote= (t : Term) : Term := t.
 
 seteval eval init stmt.
-
-b-let newline := "
-".
 
 b-let showBool (b : Bool) := ifthenelse ?String b "true" "false".

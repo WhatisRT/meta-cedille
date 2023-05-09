@@ -51,11 +51,8 @@ let constrToFunctorData (d : ConstrData) (match : List String) : Error ConstrFun
         (prodPair ?String ?ConstrFunctor (paramName p)) (constrArgToFunctor (paramType p) match))
       (ConstrDataTelescope d))
     (error ?ConstrFunctorData
-           (stringConcat [String|
-             "The final term in the constructor doesn't match! ",
-             showTerm (ConstrDataTerm d),
-             " and ",
-             showList ?String (λ s : String. s) match])).
+           (φ"The final term in the constructor doesn't match!${""} ${showTerm $ ConstrDataTerm d
+                } and ${showList ?String (λ s : String. s) match}")).
 
 let functorDataToTelescope (d : ConstrFunctorData) (t : Term) : Telescope :=
   map ?(String × ConstrFunctor) ?Param

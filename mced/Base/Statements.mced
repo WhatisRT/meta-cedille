@@ -5,4 +5,4 @@
 let init$newStmt'$assertEq^space^_multiTerm_^space^=equal=^space^_multiTerm_^space^=colon=^space^_multiTerm_=dot=
   (t, t', T : Term) : Eval Unit :=
   seqNewStmt (checkTerm Unit θ{(λ _ : Eq γ{T} γ{t} γ{t'}. tt) (refl γ{T} γ{t})})
-             (debugPrint LogTypeInfo 0 $ stringConcat [String|"Assertion: ", showTerm t, " = ", showTerm t']).
+             (debugPrint LogTypeInfo 0 φ"Assertion: ${showTerm t} = ${showTerm t'}").

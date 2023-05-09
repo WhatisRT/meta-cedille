@@ -10,18 +10,18 @@ b-let showIndex' (i : init$index') : String :=
     (stringApp "0") (stringApp "1") (stringApp "2") (stringApp "3") (stringApp "4")
     (stringApp "5") (stringApp "6") (stringApp "7") (stringApp "8") (stringApp "9").
 
-b-let showIndex (i : init$index) : String :=
+b-let showIndex (i : DBIndex) : String :=
   i ?String
-    (λ i' : init$index'. stringApp "0" (showIndex' i'))
-    (λ i' : init$index'. stringApp "1" (showIndex' i'))
-    (λ i' : init$index'. stringApp "2" (showIndex' i'))
-    (λ i' : init$index'. stringApp "3" (showIndex' i'))
-    (λ i' : init$index'. stringApp "4" (showIndex' i'))
-    (λ i' : init$index'. stringApp "5" (showIndex' i'))
-    (λ i' : init$index'. stringApp "6" (showIndex' i'))
-    (λ i' : init$index'. stringApp "7" (showIndex' i'))
-    (λ i' : init$index'. stringApp "8" (showIndex' i'))
-    (λ i' : init$index'. stringApp "9" (showIndex' i')).
+    (λ i' : DBIndex'. φ"0${showIndex' i'}")
+    (λ i' : DBIndex'. φ"1${showIndex' i'}")
+    (λ i' : DBIndex'. φ"2${showIndex' i'}")
+    (λ i' : DBIndex'. φ"3${showIndex' i'}")
+    (λ i' : DBIndex'. φ"4${showIndex' i'}")
+    (λ i' : DBIndex'. φ"5${showIndex' i'}")
+    (λ i' : DBIndex'. φ"6${showIndex' i'}")
+    (λ i' : DBIndex'. φ"7${showIndex' i'}")
+    (λ i' : DBIndex'. φ"8${showIndex' i'}")
+    (λ i' : DBIndex'. φ"9${showIndex' i'}").
 
 b-let showVar (con : List String) (v : Var) : String :=
   v ?String (λ s : String. s) (λ i : init$index. lookupDefault ?String (indexToNat i) (showIndex i) con).
@@ -41,15 +41,15 @@ b-let needsParens (t : Term) : Bool :=
     false
     (λ _ : Bool. false).
 
-b-let wrapWithParens (s : String) : String := stringConcat [String|"(", s, ")"].
+b-let wrapWithParens (s : String) : String := φ"(${s})".
 
 b-let showTermWithContext (t : Term) : List String -> String := recursionTerm ?(List String -> String)
   (λ v : Var. λ con : List String. showVar con v)
   (λ s : Sort. λ _ : List String. showSort s)
   (λ b : Binder. λ n : String. λ _, _ : Term. λ T, t : List String -> String. λ con : List String.
     ifthenelse ?String (and (stringEq n "_") (isArrow b))
-      (stringConcat [String| T con, " ", showBinderArrow b, " ", t (cons ?String n con)])
-      (stringConcat [String| showBinder b, " ", n, " : ", T con, ". ", t (cons ?String n con)]))
+      φ"${T con} ${showBinderArrow b} ${t (cons ?String n con)}"
+      φ"${showBinder b} ${n} : ${T con}. ${t (cons ?String n con)}")
   (λ _ : Term. λ la : List App. λ t : List String -> String.
    λ l : List (Product Bool (List String -> String)). λ con : List String. stringConcat
      (cons ?String (t con)
@@ -66,9 +66,9 @@ b-let showTermWithContext (t : Term) : List String -> String := recursionTerm ?(
                              (pr2 ?Bool ?(List String -> String) bs)
                              (appTerm a))
                          l la))))
-  (λ c : Char. λ _ : List String. stringConcat [String| "κ", stringCons c stringNil])
+  (λ c : Char. λ _ : List String. φ"κ${stringCons c stringNil}")
   (λ _ : List String. "_")
-  (λ _ : Term. λ t : List String -> String. λ con : List String. stringConcat [String|"γ{", t con, "}"])
+  (λ _ : Term. λ t : List String -> String. λ con : List String. φ"γ{${t con}}")
   t.
 
 b-let showTerm (t : Term) : String := showTermWithContext t (nil ?String).

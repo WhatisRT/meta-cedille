@@ -177,8 +177,7 @@ b-let moduleNameToPath (n : ModuleName) : String := stringConcat (intersperse ?S
 
 b-let loadModule (n : ModuleName) (prefix : String) : Eval Unit :=
   seqEval ?Unit ?Unit
-    (debugPrint LogTypeDebug zero
-      (stringConcat [String|"Loading module: ", ModuleNameToName n]))
+    (debugPrint LogTypeDebug zero φ"Loading module: ${ModuleNameToName n}")
     (import (stringApp prefix (moduleNameToPath n))).
 
 b-let importModuleWithLoad (n : ModuleName) (l : List App) : Eval Unit :=

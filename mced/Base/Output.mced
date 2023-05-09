@@ -70,5 +70,5 @@ let withColors256 (fg, bg : Byte) (s : String) : String :=
 --     (debugPrint LogTypeInfo (stringConcat [String |"Defined: ", showLetInfo i])) (pureEval ?LetInfo i).
 
 let debugWrap [T : *] (s : String) (x : Eval T) : Eval T :=
-  seqEval ?Unit ?T (printLineEval (stringApp "Start: " s)) $ bindEval ?T ?T x λ x' : T.
-    seqEval ?Unit ?T (printLineEval (stringApp "Done: " s)) $ pureEval ?T x'.
+  seqEval ?Unit ?T (printLineEval φ"Start: ${s}") $ bindEval ?T ?T x λ x' : T.
+  seqEval ?Unit ?T (printLineEval φ"Done:  ${s}") $ pureEval ?T x'.

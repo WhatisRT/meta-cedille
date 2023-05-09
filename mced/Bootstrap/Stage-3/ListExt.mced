@@ -6,7 +6,7 @@ b-let replicate [A : *] (a : A) (n : Nat) : List A :=
   n ?(List A) (nil ?A) (cons ?A a).
 
 b-let showList [X : *] (showX : X -> String) (l : List X) : String :=
-  stringApp "[" (stringApp (stringConcat (intersperse ?String ", " (map ?X ?String showX l))) "]").
+  φ"[${stringConcat (intersperse ?String ", " (map ?X ?String showX l))}]".
 
 b-let lookupDefault [A : *] (n : Nat) (d : A) (l : List A) : A :=
   l ?(Nat -> A)

@@ -116,7 +116,7 @@ let incUnsEqnCtx (n : Nat) : List UnsEqn -> List UnsEqn :=
 
 let showUnsEqn : UnsEqn -> String :=
   recursionTripleProduct ?Nat ?Term ?Term ?String (λ n : Nat. λ t, t' : Term.
-    stringConcat [String|showTerm t, " = ", showTerm t', " in ctx: ", showNatDecimal n]).
+    φ"${showTerm t} = ${showTerm t'} in ctx: ${showNatDecimal n}").
 
 -- given two terms, return equations by matching on their structure
 -- doesn't do any reductions
@@ -214,7 +214,7 @@ let allSolutions (l : List InferenceInfo) : Eval (List SEqn) :=
         (progressEqnsN ctx (maybeToList ?UnsEqn $ toUnsEqn i))) l.
 
 let showSolution (s : SEqn) : String :=
-  stringConcat [String| showNatDecimal $ pr1 ?Nat ?Term s, " = ", showTerm $ pr2 ?Nat ?Term s].
+  φ"${showNatDecimal $ pr1 ?Nat ?Term s} = ${showTerm $ pr2 ?Nat ?Term s}".
 
 let solveApp (app : List App) (s : List SEqn) : List App :=
   zipWithIndex ?App ?App
@@ -228,12 +228,11 @@ let solveApp (app : List App) (s : List SEqn) : List App :=
 let debugPrintElabStep (l : List InferenceInfo) : Eval Unit :=
   ifthenelse ?(Eval Unit) (isNil ?InferenceInfo l) (pureEval ?Unit tt) $
     bindEval ?(List SEqn) ?Unit (allSolutions l) λ s : List SEqn.
-    printLineEval $ stringConcat
-      [String|"  Equations: ", showList ?InferenceInfo showInferenceInfo l, newline,
-              "  Derived 1: ", showList ?UnsEqn showUnsEqn $
-                               collectMapMaybe ?InferenceInfo ?UnsEqn toUnsEqn l, newline,
-              "  Derived 2: ", showList ?UnsEqn showUnsEqn $ allUnsEqns l, newline,
-              "  Solutions: ", showList ?(Nat × Term) showSolution s, newline].
+    printLineEval φ"Equations:  ${showList ?InferenceInfo showInferenceInfo l}\n
+                    Derived 1:  ${showList ?UnsEqn showUnsEqn $
+                                    collectMapMaybe ?InferenceInfo ?UnsEqn toUnsEqn l}\n
+                    Derived 2:  ${showList ?UnsEqn showUnsEqn $ allUnsEqns l}\n
+                    Solutions:  ${showList ?(Nat × Term) showSolution s}\n".
 
 let solveAppWithErr (f : Term) (app : List App) (s : List InferenceInfo) : Eval Term :=
   bindEval ?(List App) ?Term (mapEval ?(List SEqn) ?(List App) (solveApp app) $ allSolutions s)
@@ -245,7 +244,7 @@ let solveAppWithErr (f : Term) (app : List App) (s : List InferenceInfo) : Eval 
     -- ok ?(Eval Term)
     (pureEval ?Term (appLTerm f l))
     -- (seqEval ?Unit ?Term (debugPrintElabStep s) (throwEval ?Term $ stringConcat
-    --   [String|"Could not infer all holes in: ", showTerm (appLTerm f l), "!", newline]))
+    --   [String|"Could not infer all holes in: ", showTerm (appLTerm f l), "!\n"]))
       )
     (isSolved l)).
 
@@ -253,9 +252,8 @@ let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term
   ifthenelse ?(Eval Term) (isNil ?App app)
     (pureEval ?Term (appLTerm f app)) $
     bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ e : String.
-      throwEval ?Term $ stringConcat
-        [String|"Elaboration failure: Failed to infer the type of ", showTerm f, "!", newline,
-                "Reason: ", e]))
+      throwEval ?Term
+        φ"Elaboration failure: Failed to infer the type of ${showTerm f}!\nReason: ${e}"))
       (λ T : Term.
         bindEval ?(List (App × Maybe Term)) ?Term (inferAppTypes app) (λ app' : List (App × Maybe Term).
           seqEval ?Unit ?Term
@@ -267,7 +265,7 @@ let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term
 let elabLocalInference (doDebugPrinting : Bool) (t : Term) : Eval Term :=
   seqEval ?Unit ?Term
     (ifthenelse ?(Eval Unit) doDebugPrinting
-      (printLineEval $ stringConcat [String|newline, "Elaborating: ", showTerm t, newline])
+      (printLineEval φ"\nElaborating: ${showTerm t}\n")
       (pureEval ?Unit tt))
     (applyToApp (elabLocally doDebugPrinting) t).
 

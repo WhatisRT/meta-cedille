@@ -8,6 +8,7 @@ importModule Bootstrap:Builtins.
 importModule Bootstrap:Bool.
 importModule Bootstrap:StringHelpers.
 importModule Bootstrap:Term.
+importModule Bootstrap:List.
 
 let quote$stringNil : Term := sVarTerm "stringNil".
 let quote$stringCons : Term := sVarTerm "stringCons".
@@ -19,18 +20,32 @@ let quoteString (s : String) : Term :=
     (λ c : Char. λ rec : Term. appSingle (appSingle quote$stringCons (quoteChar c)) rec)
     quote$stringNil.
 
--- Syntax
+-- Regular string syntax
 
-let init$stringchar$!=doublequote=! (c : Char) : Char := c.
+let init$stringchar$!=doublequote=&=newline=! (c : Char) : Char := c.
+
+let init$stringchar$=newline=_stringchar_ (c : Char) : Char := c.
+let init$stringchar$=backslash=n : Char := κ
+.
 
 let init$newstring$ : String := stringNil.
 let init$newstring$_stringchar__newstring_ : Char -> String -> String := stringCons.
 
 let init$singleTerm$=doublequote=_newstring_=doublequote= : String -> Term := quoteString.
-let init$term$=doublequote=_newstring_=doublequote= : String -> Term := quoteString.
 
-let newline := "
-".
+-- String interpolation
+
+let init$intstringchar$!=doublequote=! (c : Char) : Char := c.
+
+let init$intstring$ : Term := θ{stringNil}.
+let init$intstring$=dollar==lbrace=^space^_multiTerm_=rbrace=_intstring_ (t, t' : Term) : Term :=
+  θ{stringApp γ{t} γ{t'}}.
+let init$intstring$_intstringchar__intstring_ (c : Char) (t : Term) : Term :=
+  θ{stringCons γ{quoteChar c} γ{t}}.
+
+let init$singleTerm$=phi==doublequote=_intstring_=doublequote= : Term -> Term := λ t : Term. t.
+
+-- Usages
 
 elet showBool (b : Bool) := ifthenelse ?_ b "true" "false".
 

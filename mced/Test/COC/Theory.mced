@@ -153,9 +153,9 @@ let showTerm (t : Term) : String :=
   TermFold String
     (λ s : Sort. showSort s)
     (λ n : Name. showName n)
-    (λ rect, rect' : String. stringConcat [String| rect, " ", rect'])
-    (λ rect, rect' : String. stringConcat [String| "λ ", rect, " ", rect'])
-    (λ rect, rect' : String. stringConcat [String| "Π ", rect, " ", rect'])
+    (λ rect, rect' : String. φ"${rect} ${rect'}")
+    (λ rect, rect' : String. φ"λ ${rect} ${rect'}")
+    (λ rect, rect' : String. φ"Π ${rect} ${rect'}")
     t.
 
 let showErrorTerm (e : Error Term) : String :=
@@ -268,7 +268,7 @@ let matchSort (A : *) (t : Term) (f : Sort -> Error A) : Error A :=
     (λ _, _ : Term. λ _, _ : Error A. err)
     (λ _, _ : Term. λ _, _ : Error A. err)
     (λ _, _ : Term. λ _, _ : Error A. err)
-    t) (throwError A (stringApp (showTerm t) " doesn't match sort")).
+    t) (throwError A φ"${showTerm t} doesn't match sort").
 
 let matchPi (A : *) (t : Term) (f : Π _, _ : Term. Error A) : Error A :=
   (λ err : Error A. TermRec (Error A)
@@ -277,7 +277,7 @@ let matchPi (A : *) (t : Term) (f : Π _, _ : Term. Error A) : Error A :=
     (λ _, _ : Term. λ _, _ : Error A. err)
     (λ _, _ : Term. λ _, _ : Error A. err)
     (λ u, u' : Term. λ _, _ : Error A. f u u')
-    t) (throwError A (stringApp (showTerm t) " doesn't match pi")).
+    t) (throwError A φ"${showTerm t} doesn't match pi").
 
 let convertible (e : Env) (t, t' : Term) : Bool :=
   TermEq (normalize e t) (normalize e t').
@@ -296,7 +296,7 @@ let synthType (e : Env) (t : Term) : Error Term :=
               (λ x, x' : Term.
                 ifthenelse ?(Error Term) (convertible e T' x)
                   (return Term (subst x' u'))
-                  (throwError Term (stringConcat [String| showTerm T', " and ", showTerm x, " are not convertible!"]))))))
+                  (throwError Term φ"${showTerm T'} and ${showTerm x} are not convertible!")))))
     (λ u, u' : Term. λ recu, recu' : Env -> Error Term. λ e : Env. -- Lam
       bind' Term Term
         (recu e)

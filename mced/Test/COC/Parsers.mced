@@ -53,7 +53,7 @@ let init$COCStmt$let^space^_betterLet_ (i : LetInfo) : Eval Unit :=
                     (just ?Term θ{Env})))
                   (seqNewStmt
                     (modifyOtherState suc)
-                    (debugPrint LogTypeInfo 100 (stringConcat [String |"Defined: ", letInfoName i, " : ", showTerm T])))))
+                    (debugPrint LogTypeInfo 100 φ"Defined: ${letInfoName i} : ${showTerm T}"))))
           (λ s : String. throwEval ?Unit s)
           (convertAndCheckLetInfo e i))).
 

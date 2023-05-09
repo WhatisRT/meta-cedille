@@ -13,7 +13,7 @@ let init$flag$false := Λ X : * λ t : X λ f : X f : Bool.
 let modifyAndUpdateEvalOpts := λ f : Π _ : EvalOpts EvalOpts [[seqNewStmt [modifyEvalOpts f]] updateMEnv] : Π f : Π _ : EvalOpts EvalOpts [Eval Unit].
 let init$setStmt$RequireTypeAnnotations^space^_flag_ := λ b : Bool [modifyAndUpdateEvalOpts [setAnnReq b]] : Π b : Bool [Eval Unit].
 let init$setStmt$PrintInfo^space^_flag_ := λ b : Bool [modifyAndUpdateEvalOpts [setPrintInfo b]] : Π b : Bool [Eval Unit].
-let init$setStmt$PWD^space^_term_ := λ dirT : Term [[<<bindEval String> Unit> [[checkTerm String] dirT]] λ dir : String [modifyAndUpdateEvalOpts [setWorkingDir dir]]] : Π dirT : Term [Eval Unit].
+let init$setStmt$PWD^space^_multiTerm_ := λ dirT : Term [[<<bindEval String> Unit> [[checkTerm String] dirT]] λ dir : String [modifyAndUpdateEvalOpts [setWorkingDir dir]]] : Π dirT : Term [Eval Unit].
 let init$setStmt$ToggleProf := λ _ : EvalEnv λ s : EvalState [[<<bindMeta Unit> [[Product Unit] EvalState]> primToggleProf] λ x : Unit [<returnMeta [[Product Unit] EvalState]> [[<<prodPair Unit> EvalState> x] s]]] : [Eval Unit].
 let init$newStmt'$set^space^_setStmt_=dot= := λ s : [Eval Unit] s : Π s : [Eval Unit] [Eval Unit].
 let init$newStmt'$let^space^_betterLet_ := λ i : LetInfo [[<<bindEval LetInfo> Unit> [[runEvalLets' [[<cons ElabLet> checkTypeAnn] [[<cons ElabLet> moduleElab] [[<cons ElabLet> debugPrintLetInfo] <nil ElabLet>]]]] i]] letInfoToNewStmt] : Π _ : LetInfo [Eval Unit].

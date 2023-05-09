@@ -6,16 +6,16 @@
 --------------------------------------------------------------------------------
 
 let unreachableShowTerm0 (msg : String) (_ : List String) : String :=
-  stringApp "BUG: SHOW " msg.
+  φ"BUG: SHOW ${msg}".
 
 let unreachableShowTerm1 (msg : String) (_ : List String -> String) (_ : List String) : String :=
-  stringApp "BUG: SHOW " msg.
+  φ"BUG: SHOW ${msg}".
 
 let unreachableShowTerm2 (msg : String) (_, _ : List String -> String) (_ : List String) : String :=
-  stringApp "BUG: SHOW " msg.
+  φ"BUG: SHOW ${msg}".
 
 let unreachableShowTerm3 (msg : String) (_, _, _ : List String -> String) (_ : List String) : String :=
-  stringApp "BUG: SHOW " msg.
+  φ"BUG: SHOW ${msg}".
 
 let adjustEmpty (s : String) : String := ifthenelse ?String (stringEq s "") "_" s.
 
@@ -27,20 +27,18 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
     (λ s : init$const. unreachableShowTerm0 "CONST")
     (unreachableShowTerm1 "PI") (unreachableShowTerm1 "PSI") (unreachableShowTerm2 "BETA")
     (unreachableShowTerm2 "DELTA") (unreachableShowTerm1 "SIGMA")
-    (λ t, t' : List String -> String. λ con : List String.
-      stringConcat [String|"[", t con, " ", t' con, "]"])
-    (λ t, t' : List String -> String. λ con : List String.
-      stringConcat [String|"<", t con, " ", t' con, ">"])
+    (λ t, t' : List String -> String. λ con : List String. φ"[${t con} ${t' con}]")
+    (λ t, t' : List String -> String. λ con : List String. φ"<${t con} ${t' con}>")
     (λ _ : List String -> String. λ _ : String. unreachableShowTerm2 "RHO")
     (λ s : String. λ t, t' : List String -> String. λ con : List String.
-      stringConcat [String|"∀ ", adjustEmpty s, " : ", t con, " ", t' (cons ?String s con)])
+      φ"∀ ${adjustEmpty s} : ${t con} ${t' $ cons ?String s con}")
     (λ s : String. λ t, t' : List String -> String. λ con : List String.
-      stringConcat [String|"Π ", adjustEmpty s, " : ", t con, " ", t' (cons ?String s con)])
+      φ"Π ${adjustEmpty s} : ${t con} ${t' $ cons ?String s con}")
     (λ _ : String. λ _, _ : List String -> String. λ _ : List String. "BUG: SHOW IOTA")
     (λ s : String. λ t, t' : List String -> String. λ con : List String.
-      stringConcat [String|"λ ", adjustEmpty s, " : ", t con, " ", t' (cons ?String s con)])
+      φ"λ ${adjustEmpty s} : ${t con} ${t' $ cons ?String s con}")
     (λ s : String. λ t, t' : List String -> String. λ con : List String.
-      stringConcat [String|"Λ ", adjustEmpty s, " : ", t con, " ", t' (cons ?String s con)])
+      φ"Λ ${adjustEmpty s} : ${t con} ${t' $ cons ?String s con}")
     (λ _, _ : List String -> String. λ _ : String. unreachableShowTerm1 "PAIR")
     (unreachableShowTerm3 "PHI") (unreachableShowTerm2 "EQUAL") (unreachableShowTerm1 "OMEGA")
     (unreachableShowTerm2 "MU") (unreachableShowTerm1 "EPSILON")
@@ -61,25 +59,23 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
     (unreachableShowTerm2 "WriteFile")
     (unreachableShowTerm0 "CommandLine")
     (unreachableShowTerm0 "ToggleProf")
-    (λ c : Char. λ _ : List String. stringConcat [String|"κ", stringCons c stringNil])
+    (λ c : Char. λ _ : List String. φ"κ${stringCons c stringNil}")
     (unreachableShowTerm2 "CHAREQ").
 
 let showInitTerm (t : iTerm) : String := showInitTermWithContext t [String|].
 
 elet printTypeAnn : Maybe Term -> String :=
-  maybe ?_ ?_ "" (λ T : Term. stringConcat [String|" : ", showInitTerm (TermToInitTerm T)]).
+  maybe ?_ ?_ "" (λ T : Term. φ" : ${showInitTerm $ TermToInitTerm T}").
 
 elet printDefinition (def : LetInfo) : String :=
-  stringConcat [String|"let ", letInfoName def,
-                       " := ", showInitTerm (TermToInitTerm $ letInfoTerm def),
-                       printTypeAnn (letInfoType def) , "."].
+  φ"let ${letInfoName def} := ${showInitTerm $ TermToInitTerm $ letInfoTerm def
+      }${printTypeAnn $ letInfoType def}.".
 
 let bootstrapCompileDir := "Bootstrap/Compiled/".
 
 elet compileBootstrapModules (modNames : List String) : Eval Unit :=
   compileModules (λ d : LetInfo. pureEval ?_ $ printDefinition d)
-                 (λ n : ModuleName. stringConcat
-                    [String|bootstrapCompileDir, moduleNameToPath (tail ?_ n), ".mced"])
+                 (λ n : ModuleName. φ"${bootstrapCompileDir}${moduleNameToPath (tail ?_ n)}.mced")
                  (map ?_ ?_ (λ s : String. [String|"Bootstrap", s]) modNames).
 
 -- we need those definitions to compile things properly
