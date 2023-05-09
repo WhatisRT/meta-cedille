@@ -1,21 +1,21 @@
 o-let Top := = λ x : * x λ x : * x.
 
-let lambdaTermToTerm : Π _ : init$term. init$term := quote$beta (TermToInitTerm θ{λ x : *. x}).
+let lambdaTermToTerm : Π _ : iTerm. iTerm := quote$beta (TermToInitTerm θ{λ x : *. x}).
 
-let init$lambdaTerm$_string_ : Π _ : String. init$term := quote$var.
+let init$lambdaTerm$_string_ : Π _ : String. iTerm := quote$var.
 let init$lambdaTerm$=lsquare=^space'^_lambdaTerm_^space^_lambdaTerm_^space'^=rsquare=
-  (t : init$term) (t' : init$term) : init$term := quote$square t t'.
+  (t : iTerm) (t' : iTerm) : iTerm := quote$square t t'.
 let init$lambdaTerm$=lambda=^space^_string_^space'^=dot=^space'^_lambdaTerm_
-  (name : String) (t : init$term) : init$term := quote$lambda name quote$ast t.
+  (name : String) (t : iTerm) : iTerm := quote$lambda name quote$ast t.
 
 let init$lambdaStmt$let^space^_string_^space'^=colon==equal=^space'^_lambdaTerm_^space'^=dot=
-  (name : String) (t : init$term) : Eval Unit :=
+  (name : String) (t : iTerm) : Eval Unit :=
   stmtToNewStmt $ primAnnLet name (lambdaTermToTerm t) $ TermToInitTerm θ{Top}.
 
 -- TODO: FIXME
 -- let init$lambdaStmt$normalize^space^_lambdaTerm_^space'^=dot=
---   (_ : init$space) (t : init$term) (_ : init$space') : Eval Unit :=
---   seqEvalState ?init$term ?Unit (normalize' (lambdaTermToTerm t)) emptyStmt.
+--   (_ : init$space) (t : iTerm) (_ : init$space') : Eval Unit :=
+--   seqEvalState ?iTerm ?Unit (normalize' (lambdaTermToTerm t)) emptyStmt.
 
 let init$newStmt'$=lambda==minus=_lambdaStmt_ (x : Eval Unit) : Eval Unit := x.
 

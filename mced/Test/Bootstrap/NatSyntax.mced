@@ -47,7 +47,7 @@ let quoteListDec := quoteList ?Dec θ{Dec} quoteDec.
 
 --------------------------------------------------------------------------------
 
---let init$singleTerm$_binnat_ (bs : List Bool) : init$term := quote$square θ{boolListToNat} (quoteListBool bs).
+--let init$singleTerm$_binnat_ (bs : List Bool) : Term := quote$square θ{boolListToNat} (quoteListBool bs).
 let init$singleTerm$_decnat_ (ds : List Dec) : Term := θ{decListToNat γ{quoteListDec ds}}.
 
 endModule.

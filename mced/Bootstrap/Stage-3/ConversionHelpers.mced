@@ -9,7 +9,7 @@ b-let nothingTerm1 (_ : Term) := nothingTerm.
 b-let nothingTerm2 (_, _ : Term) := nothingTerm.
 b-let nothingTerm3 (_, _, _ : Term) := nothingTerm.
 
-b-let initTermToTerm (t : init$term) := t ?Term
+b-let initTermToTerm (t : iTerm) := t ?Term
   varTerm sortTerm (λ _ : init$const. sVarTerm "Char")
     nothingTerm1 nothingTerm1 nothingTerm2 nothingTerm2 nothingTerm1 appSingle appSingleE
     (λ _ : Term. λ _ : String. λ _, _ : Term. nothingTerm)
