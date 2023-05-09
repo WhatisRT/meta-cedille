@@ -4,6 +4,7 @@
 
 module Parse.Escape where
 
+import Data.Sum
 open import Class.Map
 open import Data.SimpleMap
 open import Data.Map.Char
@@ -11,6 +12,8 @@ open import Data.String using (fromList; toList)
 
 open import Prelude
 open import Prelude.Strings
+
+open import Parse.MarkedString
 
 private
   translationTable : SimpleMap String Char
@@ -37,48 +40,27 @@ private
   escapeTable : CharMap String
   escapeTable = fromListCM $ map swap translationTable
 
-  isSpecialChar : Char → Bool
-  isSpecialChar c = c ≣ '$' ∨ c ≣ '_' ∨ c ≣ '!' ∨ c ≣ '@' ∨ c ≣ '&' ∨ c ≣ '^'
-
--- accepts the head and tail of a string and returns the head of the full string without escape symbols
-unescape : Char → String → Char
-unescape c r = if ⌊ c ≟ '\\' ⌋ then (case strHead r of λ { nothing → c ; (just x) → x }) else c
-
-groupEscaped : List Char → List (List Char)
-groupEscaped = helper false
+translateMarked : MarkedString → Maybe MarkedString
+translateMarked = helper ∘ splitMulti (inj₁ '=')
   where
-    helper : Bool → List Char → List (List Char)
-    helper b [] = []
-    helper false (x ∷ l) = if ⌊ x ≟ '\\' ⌋ then helper true l else [ x ] ∷ helper false l
-    helper true (x ∷ l) = ('\\' ∷ [ x ]) ∷ helper false l
+    lookupTranslation : MarkedString → Maybe Char
+    lookupTranslation s = do
+      s' ← traverse Data.Sum.[ just , (λ _ → nothing) ] s
+      lookup (fromList s') translationTable
 
-translate : List Char → Maybe (List Char)
-translate = helper ∘ splitMulti '='
-  where
-    helper : List (List Char) → Maybe (List Char)
+    helper : List MarkedString → Maybe MarkedString
     helper [] = just []
     helper (l ∷ []) = just l
     helper (l ∷ l₁ ∷ l₂) = do
-      l' ← lookup (fromList l₁) translationTable
+      l' ← lookupTranslation l₁
       l'' ← helper l₂
-      return $ l + (if isSpecialChar l' then '\\' ∷ [ l' ] else [ l' ]) + l''
-
-translateS : String → Maybe String
-translateS s = fromList <$> (translate $ toList s)
+      return $ l + [ inj₁ l' ] + l''
 
 escapeChar : Char → List Char
 escapeChar c = maybe (λ s → "=" ++ toList s ++ "=") [ c ] $ lookup c escapeTable
 
-ruleToConstr : String → String
-ruleToConstr = fromList ∘ concat ∘ helper ∘ groupEscaped ∘ toList
-  where
-    helper : List (List Char) → List (List Char)
-    helper [] = []
-    helper (l ∷ l₁) = (case l of λ where
-      (c ∷ []) → if isSpecialChar c
-        then [ c ]
-        else escapeChar c
-      ('\\' ∷ c ∷ []) → if isSpecialChar c
-        then escapeChar c
-        else l
-      _ → l) ∷ (helper l₁)
+ruleToConstr : MarkedString → String
+ruleToConstr = fromList ∘ concat ∘ map Data.Sum.[ escapeChar , [_] ∘ markerRepresentation ]
+
+translateS : String → Maybe String
+translateS s = markedStringToString <$> (translateMarked $ convertToMarked s)

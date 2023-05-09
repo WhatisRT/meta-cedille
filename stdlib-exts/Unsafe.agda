@@ -20,8 +20,8 @@ postulate
 
 from-just : Maybe A → A
 from-just (just a) = a
-from-just nothing  = undefined
+from-just nothing  = error "from-just"
 
 from-inj₂ : A ⊎ B → B
-from-inj₂ (inj₁ a) = undefined
+from-inj₂ (inj₁ a) = error "from-inj₂"
 from-inj₂ (inj₂ b) = b

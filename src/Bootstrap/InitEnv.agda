@@ -33,8 +33,7 @@ private
   parseConstrToNonTerminals = (map fromList) ∘ parseConstrToNonTerminals' ∘ toList
     where
       parseConstrToNonTerminals' : List Char → List (List Char)
-      parseConstrToNonTerminals' =
-        takeEven ∘ (map concat) ∘ (splitMulti "_") ∘ groupEscaped -- don't split on escaped underscores!
+      parseConstrToNonTerminals' = takeEven ∘ (splitMulti '_')
         -- this also ignores ignored non-terminals automatically
 
   grammar : List String
@@ -158,14 +157,14 @@ private
     ∷ "let init$pair := λ A : * λ B : * λ a : A λ b : B Λ X : * λ p : Π _ : A Π _ : B X [[p a] b]."
     ∷ "let eval := λ x : ω init$unit x." ∷ "seteval eval init stmt." ∷ []
 
-  grammarWithChars : List String
-  grammarWithChars = grammar ++
-    map (λ c → fromList ("nameTailChar$" ++ escapeChar c)) nameTails ++
-    map (λ c → fromList ("nameInitChar$" ++ escapeChar c)) nameInits ++
-    map proj₁ definedGrammar ++
-    "char$!!" ∷ []
-
 --------------------------------------------------------------------------------
+
+grammarWithChars : List String
+grammarWithChars = grammar ++
+  map (λ c → fromList ("nameTailChar$" ++ escapeChar c)) nameTails ++
+  map (λ c → fromList ("nameInitChar$" ++ escapeChar c)) nameInits ++
+  map proj₁ definedGrammar ++
+  "char$!!" ∷ []
 
 initEnv : String
 initEnv = "let init$char := ΚChar." + Data.String.concat
@@ -173,9 +172,4 @@ initEnv = "let init$char := ΚChar." + Data.String.concat
 
 -- a map from non-terminals to their possible expansions
 parseRuleMap : SimpleMap String (List String)
-parseRuleMap = from-just $
-  traverse (λ where (fst , snd) → (fst ,_) <$> (traverse translateS $ reverse snd)) $
-    sortGrammar grammarWithChars
-
-coreGrammarGenerator : List String
-coreGrammarGenerator = from-just $ traverse translateS grammarWithChars
+parseRuleMap = map (map₂ reverse) $ sortGrammar grammarWithChars

@@ -26,6 +26,7 @@ open import Parse.MultiChar
 open import Parse.LL1
 open import Parse.Generate
 open import Parse.Escape
+open import Parse.MarkedString
 
 PTree : Set
 PTree = Tree (ℕ ⊎ Char)
@@ -62,7 +63,7 @@ ruleCaseN (Node x x₁) r cs =
   decCase just x of map (λ where (x , t , f) → ruleIdN t r (fromList x) f x₁) cs default nothing
 
 toSort : PTree → Maybe AnnTerm
-toSort x = ruleCaseN x "sort" (("*" , 0F , just ⋆) ∷ ("□" , 0F , just □) ∷ [])
+toSort x = ruleCaseN x "sort" (("=ast=" , 0F , just ⋆) ∷ ("=sq=" , 0F , just □) ∷ [])
 
 toConst : PTree → Maybe Const
 toConst x = ruleCaseN x "const" (("Char" , 0F , just CharT) ∷ [])
@@ -142,63 +143,63 @@ toTerm = helper []
 
         ("_sort_" , 1F , toSort) ∷
 
-        ("π^space^_term_" , 1F , conv1ʰ Pr1) ∷
-        ("ψ^space^_term_" , 1F , conv1ʰ Pr2) ∷
+        ("=pi=^space^_term_"  , 1F , conv1ʰ Pr1) ∷
+        ("=psi=^space^_term_" , 1F , conv1ʰ Pr2) ∷
 
-        ("β^space^_term_^space^_term_" , 2F , conv2ʰ Beta) ∷
-        ("δ^space^_term_^space^_term_" , 2F , conv2ʰ Delta) ∷
-        ("σ^space^_term_"              , 1F , conv1ʰ Sigma) ∷
+        ("=beta=^space^_term_^space^_term_"  , 2F , conv2ʰ Beta) ∷
+        ("=delta=^space^_term_^space^_term_" , 2F , conv2ʰ Delta) ∷
+        ("=sigma=^space^_term_"              , 1F , conv1ʰ Sigma) ∷
 
-        ("[^space'^_term_^space^_term_^space'^]" , 2F , conv2ʰ App) ∷
-        ("<^space'^_term_^space^_term_^space'^>" , 2F , conv2ʰ AppE) ∷
+        ("=lsquare=^space'^_term_^space^_term_^space'^=rsquare=" , 2F , conv2ʰ App) ∷
+        ("=langle=^space'^_term_^space^_term_^space'^=rangle="   , 2F , conv2ʰ AppE) ∷
 
-        ("ρ^space^_term_^space^_string_^space^" , 4F , (λ y n' y' y'' → do
+        ("=rho=^space^_term_^space^_string_^space^" , 4F , (λ y n' y' y'' → do
           t ← helper accu y
           n ← toName n'
           t' ← helper (n ∷ accu) y'
           t'' ← helper accu y''
           return $ Rho t t' t'')) ∷
 
-        ("∀^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ All) ∷
-        ("Π^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ Pi) ∷
-        ("ι^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ Iota) ∷
-        ("λ^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ Lam-A) ∷
-        ("Λ^space^_string_^space'^:^space'^_term_^space^_term_" , 3F , convᵇ LamE) ∷
+        ("=forall=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ All) ∷
+        ("=Pi=^space^_string_^space'^=colon=^space'^_term_^space^_term_"     , 3F , convᵇ Pi) ∷
+        ("=iota=^space^_string_^space'^=colon=^space'^_term_^space^_term_"   , 3F , convᵇ Iota) ∷
+        ("=lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ Lam-A) ∷
+        ("=Lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ LamE) ∷
 
-        ("{^space'^_term_^space'^,^space'^_term_^space^_string_^space'^.^space'^_term_^space'^}" , 4F , (λ y y' n y'' → do
+        ("=lbrace=^space'^_term_^space'^=comma=^space'^_term_^space^_string_^space'^=dot=^space'^_term_^space'^=rbrace=" , 4F , (λ y y' n y'' → do
           t ← helper accu y
           t' ← helper accu y'
           n ← toName n
           t'' ← helper (n ∷ accu) y''
           return $ Rho t t' t'')) ∷
 
-        ("φ^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰ Phi) ∷
-        ("=^space^_term_^space^_term_"              , 2F , conv2ʰ Eq-T) ∷
-        ("ω^space^_term_"                           , 1F , conv1ʰ M-T) ∷
-        ("μ^space^_term_^space^_term_"              , 2F , conv2ʰ Mu) ∷
-        ("ε^space^_term_"                           , 1F , conv1ʰ Epsilon) ∷
+        ("=phi=^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰ Phi) ∷
+        ("=equal=^space^_term_^space^_term_"            , 2F , conv2ʰ Eq-T) ∷
+        ("=omega=^space^_term_"                         , 1F , conv1ʰ M-T) ∷
+        ("=mu=^space^_term_^space^_term_"               , 2F , conv2ʰ Mu) ∷
+        ("=epsilon=^space^_term_"                       , 1F , conv1ʰ Epsilon) ∷
 
-        ("ζLet^space^_term_^space^_term_"                  , 2F , conv2ʰᶜ (Ev Let)) ∷
-        ("ζAnnLet^space^_term_^space^_term_^space^_term_"  , 3F , conv3ʰᶜ (Ev AnnLet)) ∷
-        ("ζSetEval^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰᶜ (Ev SetEval)) ∷
-        ("ζShellCmd^space^_term_^space^_term_"             , 2F , conv2ʰᶜ (Ev ShellCmd)) ∷
-        ("ζCheckTerm^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev CheckTerm)) ∷
-        ("ζParse^space^_term_^space^_term_^space^_term_"   , 3F , conv3ʰᶜ (Ev Parse)) ∷
-        ("ζCatchErr^space^_term_^space^_term_"             , 2F , conv2ʰ Gamma) ∷
-        ("ζNormalize^space^_term_"                         , 1F , conv1ʰ (Ev Normalize)) ∷
-        ("ζHeadNormalize^space^_term_"                     , 1F , conv1ʰ (Ev HeadNormalize)) ∷
-        ("ζInferType^space^_term_"                         , 1F , conv1ʰ (Ev InferType)) ∷
-        ("ζImport^space^_term_"                            , 1F , conv1ʰ (Ev Import)) ∷
-        ("ζGetEval"                                        , 0F , conv0ʰ (Ev GetEval)) ∷
-        ("ζPrint^space^_term_"                             , 1F , conv1ʰ (Ev Print)) ∷
-        ("ζWriteFile^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev WriteFile)) ∷
-        ("ζCommandLine"                                    , 0F , conv0ʰ (Ev CommandLine)) ∷
-        ("ζToggleProf"                                     , 0F , conv0ʰ (Ev ToggleProf)) ∷
+        ("=zeta=Let^space^_term_^space^_term_"                  , 2F , conv2ʰᶜ (Ev Let)) ∷
+        ("=zeta=AnnLet^space^_term_^space^_term_^space^_term_"  , 3F , conv3ʰᶜ (Ev AnnLet)) ∷
+        ("=zeta=SetEval^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰᶜ (Ev SetEval)) ∷
+        ("=zeta=ShellCmd^space^_term_^space^_term_"             , 2F , conv2ʰᶜ (Ev ShellCmd)) ∷
+        ("=zeta=CheckTerm^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev CheckTerm)) ∷
+        ("=zeta=Parse^space^_term_^space^_term_^space^_term_"   , 3F , conv3ʰᶜ (Ev Parse)) ∷
+        ("=zeta=CatchErr^space^_term_^space^_term_"             , 2F , conv2ʰ Gamma) ∷
+        ("=zeta=Normalize^space^_term_"                         , 1F , conv1ʰ (Ev Normalize)) ∷
+        ("=zeta=HeadNormalize^space^_term_"                     , 1F , conv1ʰ (Ev HeadNormalize)) ∷
+        ("=zeta=InferType^space^_term_"                         , 1F , conv1ʰ (Ev InferType)) ∷
+        ("=zeta=Import^space^_term_"                            , 1F , conv1ʰ (Ev Import)) ∷
+        ("=zeta=GetEval"                                        , 0F , conv0ʰ (Ev GetEval)) ∷
+        ("=zeta=Print^space^_term_"                             , 1F , conv1ʰ (Ev Print)) ∷
+        ("=zeta=WriteFile^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev WriteFile)) ∷
+        ("=zeta=CommandLine"                                    , 0F , conv0ʰ (Ev CommandLine)) ∷
+        ("=zeta=ToggleProf"                                     , 0F , conv0ʰ (Ev ToggleProf)) ∷
 
-        ("Κ_const_" , 1F , (λ z → Const-T <$> toConst z)) ∷
-        ("κ_char_" , 1F , (λ z → Char-T <$> toChar z <∣> toChar' z)) ∷
+        ("=Kappa=_const_" , 1F , (λ z → Const-T <$> toConst z)) ∷
+        ("=kappa=_char_"  , 1F , (λ z → Char-T <$> toChar z <∣> toChar' z)) ∷
 
-        ("γ^space^_term_^space^_term_" , 2F , conv2ʰ CharEq) ∷ [])
+        ("=gamma=^space^_term_^space^_term_" , 2F , conv2ʰ CharEq) ∷ [])
 
 data BootstrapStmt : Set where
   Let           : GlobalName → AnnTerm → Maybe AnnTerm → BootstrapStmt
@@ -220,28 +221,28 @@ private
   toBootstrapStmt (Node x (x' ∷ [])) =
     if x ≡ᴹ ruleId "stmt" "^space'^_stmt'_"
       then ruleCaseN x' "stmt'"
-        (("let^space^_string_^space'^:=^space'^_term_^space'^_lettail_" , 3F , λ y y' y'' →
+        (("let^space^_string_^space'^=colon==equal=^space'^_term_^space'^_lettail_" , 3F , λ y y' y'' →
           do y ← toName y; y' ← toTerm y'; y'' ← toLetTail y''; return $ Let y y' y'') ∷
-        ("seteval^space^_term_^space^_string_^space^_string_^space'^." , 3F , λ y y' y'' →
+        ("seteval^space^_term_^space^_string_^space^_string_^space'^=dot=" , 3F , λ y y' y'' →
           do y ← toTerm y; y' ← toName y'; y'' ← toName y''; return $ SetEval y y' y'') ∷ [])
       else nothing
     where
       toLetTail : PTree → Maybe (Maybe AnnTerm)
       toLetTail x = ruleCaseN x "lettail"
-        ((":^space'^_term_^space'^." , 1F , λ y → just <$> toTerm y) ∷ ("." , 0F , just nothing) ∷ [])
+        (("=colon=^space'^_term_^space'^=dot=" , 1F , λ y → just <$> toTerm y) ∷ ("=dot=" , 0F , just nothing) ∷ [])
 
   toBootstrapStmt _ = nothing
 
 module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
   preCoreGrammar : M Grammar
-  preCoreGrammar = generateCFGNonEscaped "stmt" coreGrammarGenerator
+  preCoreGrammar = generateCFG "stmt" grammarWithChars
 
   private
     parseToConstrTree : (G : Grammar) → NonTerminal G → String → M (Tree (String ⊎ Char) × String × String)
     parseToConstrTree (_ , G , (showRule , showNT)) S s = do
       (t , rest) ← parseWithInitNT showNT matchMulti show G M S s
-      return (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ showRule) t
+      return (_<$>_ {{Tree-Functor}} (Data.Sum.map₁ (ruleToConstr ∘ showRule)) t
              , strTake (S.length s ∸ S.length rest) s , rest)
 
   -- Parse the next top-level non-terminal symbol from a string, and return a
@@ -258,7 +259,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
         foldl _⟪$⟫_ (ruleToTerm x) (foldConstrTree namespace <$> x₁)
           where
             ruleToTerm : String ⊎ Char → AnnTerm
-            ruleToTerm (inj₁ x) = FreeVar (namespace + "$" + ruleToConstr x)
+            ruleToTerm (inj₁ x) = FreeVar (namespace + "$" + x)
             ruleToTerm (inj₂ y) = Char-T y
 
   -- Used for bootstrapping
@@ -274,9 +275,9 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
     where
       convertIfChar : Tree (String ⊎ Char) → Maybe PTree
       convertIfChar (Node (inj₁ x) x₁) = do
-        rest ← stripPrefix "nameInitChar$" x <∣> stripPrefix "nameTailChar$" x
-        (c , s) ← uncons rest
-        just $ Node (inj₂ $ unescape c s) []
+        rest ← translateS =<< (stripPrefix "nameInitChar$" x <∣> stripPrefix "nameTailChar$" x)
+        (c , _) ← uncons rest
+        just $ Node (inj₂ c) []
       convertIfChar (Node (inj₂ x) x₁) = nothing
 
       synTreeToℕTree : Tree (String ⊎ Char) → M PTree
@@ -290,6 +291,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
           fullRuleId : String → M (ℕ ⊎ Char)
           fullRuleId l with break (_≟ '$') (toList l) -- split at '$'
           ... | (x , []) = throwError "No '$' character found!"
-          ... | (x , _ ∷ y) = maybeToError (ruleId (fromList x) (fromList y)) ("Rule " + l + "doesn't exist!")
+          ... | (x , _ ∷ y) = maybeToError (ruleId (fromList x) (fromList y))
+                                           ("Rule " + l + " doesn't exist!")
 
       synTreeToℕTree (Node (inj₂ x) x₁) = return $ Node (inj₂ x) []

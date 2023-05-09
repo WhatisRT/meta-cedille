@@ -29,7 +29,7 @@ open import Prelude.Strings
 
 -- Grammar with show functions for rules and non-terminals
 Grammar = ∃[ n ]
-  Σ[ G ∈ CFG (Fin (suc n)) MultiChar ] (CFG.Rule G → String) × (Fin (suc n) → String)
+  Σ[ G ∈ CFG (Fin (suc n)) MultiChar ] (CFG.Rule G → MarkedString) × (Fin (suc n) → String)
 
 NonTerminal : Grammar → Set
 NonTerminal (n , _) = Fin (suc n)
@@ -91,7 +91,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
           return $ case findIndex (checkRuleNameDec $ markedStringToString name) rules of λ
             { (just x) → -, rules [ x ]%= map₂ (rule ∷_)
             ; nothing → -, (markedStringToString name , [ rule ]) ∷ rules}
-  
+
   {-# TERMINATING #-}
   generateCFG' : ∀ {n} → String → Vec (String × List MarkedString) (suc n) → M Grammar
   generateCFG' {n} start rules = do
@@ -105,7 +105,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
             ; AllRules = allFin ∘ numOfRules
             ; Rstring'' = λ {v} → ruleTable v }
           , (λ where (NT , rule) → let (NT' , rules') = lookup rules NT
-                                   in NT' + "$" + markedStringToString (lookup (fromList rules') rule))
+                       in (map inj₁ $ toList NT') + [ inj₂ NameDivider ] + lookup (fromList rules') rule)
           , proj₁ ∘ lookup rules)
       nothing → throwError $ "No non-terminal named " + start + " found!"
     where
@@ -154,15 +154,10 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
           appendIfError (markedStringToRule y) (" In: " + show y)
 
   -- The first parameter describes the non-terminal the grammar should start with
-  generateCFGNonEscaped : String → List String → M Grammar
-  generateCFGNonEscaped start l = do
-    (suc k , y) ← preParseCFG $ map convertToMarked l
-      where _ → throwError "The grammar is empty!"
-    generateCFG' start y
-
-  -- The first parameter describes the non-terminal the grammar should start with
   generateCFG : String → List String → M Grammar
-  generateCFG start l =
-    maybe (generateCFGNonEscaped start)
-      (throwError "Error while un-escaping parsing rules!")
-      (sequence $ ((_<$>_ fromListS) ∘ translate ∘ toList) <$> l)
+  generateCFG start l with sequence $ (translateMarked ∘ convertToMarked) <$> l
+  ... | just l  = do
+      (suc k , y) ← preParseCFG l
+        where _ → throwError "The grammar is empty!"
+      generateCFG' start y
+  ... | nothing = throwError "Error while un-escaping parsing rules!"

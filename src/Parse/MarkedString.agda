@@ -65,33 +65,15 @@ markerRepresentation NameDivider                = '$'
 markerRepresentation (WildcardBracket true)     = '!'
 markerRepresentation (WildcardBracket false)    = '@'
 markerRepresentation WildcardSeparator          = '&'
--- other good candidates: &*#~%
-
-escapeMarker = '\\'
+-- other good candidates: *#~%
 
 MarkedChar = Char ⊎ Marker
 MarkedString = List MarkedChar
 
 markedStringToString : MarkedString → String
-markedStringToString [] = ""
-markedStringToString (inj₁ x ∷ s) =
-  fromList (decCase x of
-    map (λ x → (x , escapeMarker ∷ [ x ])) $
-      -- if we find anything in this list, escape it
-      escapeMarker ∷ map markerRepresentation enumerateMarkers
-    default [ x ])
-    + markedStringToString s
-markedStringToString (inj₂ x ∷ s) = (fromChar $ markerRepresentation x) + markedStringToString s
+markedStringToString = fromList ∘ map λ where (inj₁ x) → x ; (inj₂ x) → markerRepresentation x
 
 convertToMarked : String → MarkedString
-convertToMarked s = helper false (toList s)
-  where
-    -- first argument is whether the current character is escaped
-    helper : Bool → List Char → MarkedString
-    helper _     []      = []
-    helper false (x ∷ l) =
-      decCase x of
-        (escapeMarker , helper true l) ∷
-        map (λ y → (markerRepresentation y , inj₂ y ∷ helper false l)) enumerateMarkers
-        default (inj₁ x ∷ helper false l)
-    helper true  (x ∷ l) = inj₁ x ∷ helper false l
+convertToMarked = map (λ x → decCase x of
+  map (λ y → (markerRepresentation y , inj₂ y)) enumerateMarkers
+  default (inj₁ x)) ∘ toList
