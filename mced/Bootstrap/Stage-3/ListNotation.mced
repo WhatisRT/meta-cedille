@@ -12,7 +12,7 @@ b-let quoteTermList (type : Term) (terms : List Term) : Term :=
 -- Syntax
 
 b-let init$termlist'$ : List Term := nil ?Term.
-b-let init$termlist'$=comma=^space'^_multiTerm__termlist'_
+b-let init$termlist'$=semicolon=^space'^_multiTerm__termlist'_
   (t : Term) (ts : List Term) : List Term :=
   cons ?Term t ts.
 

@@ -76,7 +76,7 @@ let bootstrapCompileDir := "Bootstrap/Compiled/".
 elet compileBootstrapModules (modNames : List String) : Eval Unit :=
   compileModules (λ d : LetInfo. pureEval ?_ $ printDefinition d)
                  (λ n : ModuleName. φ"${bootstrapCompileDir}${moduleNameToPath (tail ?_ n)}.mced")
-                 (map ?_ ?_ (λ s : String. [String|"Bootstrap", s]) modNames).
+                 (map ?_ ?_ (λ s : String. [String|"Bootstrap"; s]) modNames).
 
 -- we need those definitions to compile things properly
 let builtinStringNil : String := Λ X : *.

@@ -80,8 +80,8 @@ let applyToApp (f : Term -> List App -> Eval Term) (t : Term) : Eval Term :=
 let showInferenceInfo (i : InferenceInfo) : String :=
   (λ withColor : String -> String.
     stringConcat [String|
-      inferenceInfoName i, withColor " := ", showTerm $ inferenceInfoTerm i,
-      withColor " : ", showTerm $ inferenceInfoType1 i, withColor " = ",
+      inferenceInfoName i; withColor " := "; showTerm $ inferenceInfoTerm i;
+      withColor " : "; showTerm $ inferenceInfoType1 i; withColor " = ";
       maybe ?Term ?String "_" showTerm $ inferenceInfoType2 i])
 --  (withColor8 ANSI8Cyan).
   (withColor256 $ mkByte false true false true false false true false).
@@ -243,8 +243,8 @@ let solveAppWithErr (f : Term) (app : List App) (s : List InferenceInfo) : Eval 
     -- debugWrap ?Term (showBool ok) $
     -- ok ?(Eval Term)
     (pureEval ?Term (appLTerm f l))
-    -- (seqEval ?Unit ?Term (debugPrintElabStep s) (throwEval ?Term $ stringConcat
-    --   [String|"Could not infer all holes in: ", showTerm (appLTerm f l), "!\n"]))
+    -- (seqEval ?Unit ?Term (debugPrintElabStep s) (throwEval ?Term
+    --   φ"Could not infer all holes in: ${showTerm (appLTerm f l)}!\n"))
       )
     (isSolved l)).
 
@@ -278,7 +278,7 @@ let elabLetInfo (doDebugPrinting : Bool) : LetInfo -> Eval LetInfo :=
 -- let that uses this elaborator
 -- this will be added to the regular let, once it works a little better
 let init$newStmt'$elet^space^_betterLet_ (i : LetInfo) : Eval Unit :=
-  runEvalLets [ElabLet| checkTypeAnn, moduleElab, elabLetInfo false, debugPrintLetInfo] i.
+  runEvalLets [ElabLet| checkTypeAnn; moduleElab; elabLetInfo false; debugPrintLetInfo] i.
 
 updateEval.
 

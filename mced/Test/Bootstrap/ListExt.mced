@@ -49,7 +49,7 @@ elet mapHead [A : *] (f : Maybe A -> Maybe A) : List A -> List A :=
 elet initsNonEmpty [A : *] : List A -> List (A × List A) :=
   recursionList ?_ ?_
     [A × List A|]
-    (λ a : A. λ as : List A. λ rec : List (A × List A). (a ; as) ∷ rec).
+    (λ a : A. λ as : List A. λ rec : List (A × List A). (a,as) ∷ rec).
 
 elet tailsNonEmpty [A : *] (l : List A) : List (A × List A) :=
   reverse ?_ (initsNonEmpty ?_ (reverse ?_ l)).

@@ -28,7 +28,7 @@ elet letInfoTermToQuoted (i : LetInfo) : LetInfo :=
 elet addQuotedLetInfo : ElabLet :=
   liftElabLet (λ i : LetInfo. voidEval ?_ (letInfoToNewStmt (letInfoTermToQuoted i))).
 
-let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn, moduleElab, debugPrintLetInfo].
+let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn; moduleElab; debugPrintLetInfo].
 
 elet runMetaCommand (t : Term) : Eval Unit := joinEval ?_ (checkTerm (Eval Unit) t).
 
@@ -39,15 +39,15 @@ let reloadMEnv : Eval Unit := modifyEval (λ e : EvalState. e).
 elet showTypeStmt (tel : Telescope) (t : Term) : Eval Unit :=
   inContext ?_ (map ?_ ?_ (pr2 ?Bool ?PreParam) tel)
     ((inferType t >>= showTermE) >>= λ x : String.
-     printConcatEval [String|showTerm t, " : ", x]).
+     printEval φ"${showTerm t} : ${x}").
 
 elet normalizeStmt (t : Term) : Eval Unit :=
   normalize t >>= λ t' : Term.
-  printConcatEval [String|showTerm t, " normalizes to: ", showTerm t'].
+  printEval φ"${showTerm t} normalizes to: ${showTerm t'}".
 
 elet hnfStmt (t : Term) : Eval Unit :=
   headNormalize t >>= λ t' : Term.
-  printConcatEval [String|showTerm t, " head-normalizes to: ", showTerm t'].
+  printEval φ"${showTerm t} head-normalizes to: ${showTerm t'}".
 
 -- Syntax
 
@@ -77,7 +77,7 @@ let init$setStmt$ToggleProf := toggleProf.
 let init$newStmt'$set^space^_setStmt_=dot= (s : Eval Unit) := s.
 let init$newStmt'$let^space^_betterLet_ : LetInfo -> Eval Unit := letInfoToNewStmtMod.
 let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : Eval Unit :=
-  runEvalLets [ElabLet| checkTypeAnn, moduleElab, addQuotedLetInfo] i.
+  runEvalLets [ElabLet| checkTypeAnn; moduleElab; addQuotedLetInfo] i.
 let init$newStmt'$runMeta^space^_multiTerm_=dot= : Term -> Eval Unit := runMetaCommand.
 elet init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : Eval Unit :=
   modifyTermMod t >>= runEcho.

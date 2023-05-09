@@ -235,20 +235,20 @@ b-let checkTerm (T : *) (t : Term) : Eval T :=
 b-let parse (nt : String) (T : *) (text : String) : Eval (Product T String) :=
   liftMtoEval ?(Product T String) (primParse nt T text).
 b-let normalize (t : Term) : Eval Term :=
-  liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm (primNormalize (TermToInitTerm t))).
+  liftMtoEval ?Term (mapMeta ?iTerm ?Term initTermToTerm (primNormalize (TermToInitTerm t))).
 b-let headNormalize (t : Term) : Eval Term :=
-  liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm (primHeadNormalize (TermToInitTerm t))).
+  liftMtoEval ?Term (mapMeta ?iTerm ?Term initTermToTerm (primHeadNormalize (TermToInitTerm t))).
 
 -- inferType should also respect the context, use inferType below
 b-let inferTypeBasic (t : Term) : Eval Term :=
-  liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm (primInferType (TermToInitTerm t))).
+  liftMtoEval ?Term (mapMeta ?iTerm ?Term initTermToTerm (primInferType (TermToInitTerm t))).
 
 -- Importing is special, see below
 -- b-let import (s : String) : Eval Unit :=
 --   liftMtoEval ?Unit (primImport s).
 
 b-let getEval' : Eval Term :=
-  liftMtoEval ?Term (mapMeta ?init$term ?Term initTermToTerm primGetEval).
+  liftMtoEval ?Term (mapMeta ?iTerm ?Term initTermToTerm primGetEval).
 
 b-let printEval (s : String) : Eval Unit :=
   liftMtoEval ?Unit (primPrint s).
@@ -349,7 +349,7 @@ b-let Evaluator : * := Eval Unit -> M (Product Unit EvalState).
 b-let import (filename : String) : Eval Unit :=
   bindEval ?String ?Unit (mapEval ?EvalOpts ?String getWorkingDir getEvalOpts')
     (λ workingDir : String. seqNewStmt
-      (liftMtoEval ?Unit (primImport (stringConcat [String| workingDir, filename])))
+      (liftMtoEval ?Unit (primImport (stringConcat [String| workingDir; filename])))
       (bindEval ?Evaluator ?Unit (bindEval ?Term ?Evaluator getEval' (checkTerm Evaluator))
         (λ ev : Evaluator. bindEval ?EvalState ?Unit
           (liftMtoEval ?EvalState (mapMeta ?(Product Unit EvalState) ?EvalState

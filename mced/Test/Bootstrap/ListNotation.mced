@@ -18,7 +18,7 @@ elet quoteTermList (type : Term) : List Term -> Term :=
 -- Syntax
 
 let init$termlist'$ : List Term := nil ?Term.
-elet init$termlist'$=comma=^space'^_multiTerm__termlist'_
+elet init$termlist'$=semicolon=^space'^_multiTerm__termlist'_
   (t : Term) (ts : List Term) : List Term := t ∷ ts.
 
 let init$termlist$ : List Term := nil ?Term.

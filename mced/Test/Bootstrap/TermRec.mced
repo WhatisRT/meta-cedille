@@ -14,14 +14,14 @@ importModule Bootstrap:Product.
 importModule Bootstrap:Term.
 
 elet mapAppList [X, Y : *] (f : X -> Y) (l : List (Bool × X)) : List (Bool × Y) :=
-  map ?_ ?_ (recursionProduct ?_ ?_ ?_ λ b : Bool. λ x : X. b ; (f x)) l.
+  map ?_ ?_ (recursionProduct ?_ ?_ ?_ λ b : Bool. λ x : X. b, (f x)) l.
 
 elet distList [X, Y, Z : *] (l : List (TripleProduct X Y Z)) : (List (X × Y)) × (List (X × Z)) :=
   l ?((List (X × Y)) × (List (X × Z)))
-    (nil ?(X × Y) ; nil ?(X × Z))
+    (nil ?(X × Y), nil ?(X × Z))
     (recursionTripleProduct ?_ ?_ ?_ ?_ λ x : X. λ y : Y. λ z : Z.
       recursionProduct ?_ ?_ ?_ λ l : List (X × Y). λ r : List (X × Z).
-        ((x ; y) ∷ l) ; ((x ; z) ∷ r)).
+        ((x,y) ∷ l), ((x,z) ∷ r)).
 
 elet recursionTerm [X : *]
   (fvar  : Var -> X)
@@ -33,8 +33,8 @@ elet recursionTerm [X : *]
   (funq  : Term -> X -> X)
   (term  : Term) : X :=
   pr1 ?X ?Term (term ?(X × Term)
-    (λ v : Var. fvar v ; varTerm v)
-    (λ s : Sort. fsort s ; sortTerm s)
+    (λ v : Var. fvar v, varTerm v)
+    (λ s : Sort. fsort s, sortTerm s)
     (λ b : Binder. λ n : String. recursionProduct ?X ?Term ?((X × Term) -> (X × Term))
       λ T1 : X. λ T2 : Term. recursionProduct ?X ?Term ?(X × Term)
       λ t1 : X. λ t2 : Term. prodPair ?X ?_ (fbind b n T2 t2 T1 t1) (binderTerm b n T2 t2))
@@ -43,8 +43,8 @@ elet recursionTerm [X : *]
       recursionProduct ?(List (Bool × X)) ?(List (Bool × Term)) ?(X × Term)
         (λ l1 : List (Bool × X). λ l2 : List (Bool × Term).
           prodPair ?X ?Term (fapp t2 l2 t1 l1) (appLTerm t2 l2)) (distList ?Bool ?X ?Term l))
-    (λ c : Char. fchar c ; charTerm c)
-    (funk ; unknownTerm)
+    (λ c : Char. fchar c, charTerm c)
+    (funk, unknownTerm)
     (recursionProduct ?X ?Term ?(X × Term) λ u1 : X. λ u2 : Term.
       prodPair ?X ?_ (funq u2 u1) (unquoteTerm u2))).
 

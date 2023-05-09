@@ -37,11 +37,10 @@ elet mkModuleInfo (name : ModuleName) (version : Nat) (t : Telescope) : ModuleIn
 -- Everything related to the module has this prefix
 let mkModulePrefix (i : ModuleInfo) : String :=
   stringConcat [String|
-    modulePrefix, ModuleNameToName (ModuleInfoName i), showNatDecimal (ModuleInfoVersion i)].
+    modulePrefix; ModuleNameToName (ModuleInfoName i); showNatDecimal (ModuleInfoVersion i)].
 
 -- The definitions in the module have this prefix
-let mkModuleContentPrefix (i : ModuleInfo) : String :=
-  stringApp (mkModulePrefix i) "|".
+let mkModuleContentPrefix (i : ModuleInfo) : String := φ"${mkModulePrefix i}|".
 
 -- All the data about a module is collected in the Module type
 let Module := ModuleInfo × List String.
@@ -52,7 +51,7 @@ let ModuleVersion     (m : Module) : Nat         := ModuleInfoVersion (ModuleMod
 let ModuleTelescope   (m : Module) : Telescope   := ModuleInfoTelescope (ModuleModuleInfo m).
 
 elet mkModule (name : ModuleName) (version : Nat) (t : Telescope) (contents : List String) : Module :=
-  mkModuleInfo name version t ; contents.
+  mkModuleInfo name version t, contents.
 
 let mkInitModule (name : ModuleName) (version : Nat) (t : Telescope) : Module :=
   mkModule name version t [String|].
@@ -83,7 +82,7 @@ elet insertModuleDict (m : Module) (dict : ModuleDict) : ModuleDict :=
   mkModuleDict
     (suc (ModuleDictVersion dict))
     (λ n : ModuleName. ifthenelse ?_ (moduleNameEq n (ModuleModuleName m))
-                         (just ?_ (true ; m))
+                         (just ?_ (true, m))
                          (ModuleDictDict dict n)).
 let lookupModuleDict (k : ModuleName) (dict : ModuleDict) : Maybe (Bool × Module) :=
   ModuleDictDict dict k.

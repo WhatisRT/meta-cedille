@@ -41,7 +41,7 @@ let initTermToTerm (t : iTerm) := t ?Term
 -- assuming no unknowns in f and no recursive unknowns in app, infer
 -- unknowns in app and return the applied term
 
-elet telescopeFromTypeHelper (t : Term) : Telescope × Term := telNil ; t.
+elet telescopeFromTypeHelper (t : Term) : Telescope × Term := telNil, t.
 
 elet telCons  (n : String) (T : Term) := cons ?_ (mkParam false (mkPreParam n T)).
 elet telConsE (n : String) (T : Term) := cons ?_ (mkParam true  (mkPreParam n T)).

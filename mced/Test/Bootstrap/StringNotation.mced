@@ -10,15 +10,12 @@ importModule Bootstrap:StringHelpers.
 importModule Bootstrap:Term.
 importModule Bootstrap:List.
 
-let quote$stringNil : Term := sVarTerm "stringNil".
-let quote$stringCons : Term := sVarTerm "stringCons".
-
 let quoteChar (c : Char) : Term := charTerm c.
 
 let quoteString (s : String) : Term :=
   s ?Term
-    (λ c : Char. λ rec : Term. appSingle (appSingle quote$stringCons (quoteChar c)) rec)
-    quote$stringNil.
+    (λ c : Char. λ rec : Term. θ{stringCons γ{quoteChar c} γ{rec}})
+    θ{stringNil}.
 
 -- Regular string syntax
 
@@ -35,12 +32,10 @@ let init$singleTerm$=doublequote=_newstring_=doublequote= : String -> Term := qu
 
 -- String interpolation
 
-let init$intstringchar$!=doublequote=! (c : Char) : Char := c.
-
 let init$intstring$ : Term := θ{stringNil}.
 let init$intstring$=dollar==lbrace=^space^_multiTerm_=rbrace=_intstring_ (t, t' : Term) : Term :=
   θ{stringApp γ{t} γ{t'}}.
-let init$intstring$_intstringchar__intstring_ (c : Char) (t : Term) : Term :=
+let init$intstring$_stringchar__intstring_ (c : Char) (t : Term) : Term :=
   θ{stringCons γ{quoteChar c} γ{t}}.
 
 let init$singleTerm$=phi==doublequote=_intstring_=doublequote= : Term -> Term := λ t : Term. t.

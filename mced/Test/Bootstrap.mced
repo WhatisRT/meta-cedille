@@ -1,6 +1,17 @@
 -- FIXME: this breaks importing
 --set RequireTypeAnnotations true.
 
+
+-- Unload Bootstrap:ModuleFunctions.
+
+-- module Bootstrap.
+
+-- importModule Bootstrap:ModuleFunctions.
+
+-- endModule.
+
+-- runMeta compileBootstrapModules [String|"ModuleFunctions"].
+
 module Bootstrap.
 
 -- TODO: move those out of bootstrap or move things depending on this
@@ -20,8 +31,8 @@ endModule.
 runMeta ensureDirExists bootstrapCompileDir.
 
 runMeta compileBootstrapModules
-  [String|"DSum", "Product", "Sum", "Unit", "Nat", "Bool", "List", "Maybe", "Term", "MLLet",
-          "StringHelpers", "TermRec", "ListExt", "NatHelpers", "ShowTerm",
-          "StringNotation", "ListNotation", "QuoteTerm", "Quoters", "ConversionHelpers",
-          "ModuleDefinitions", "Eval", "Output", "ModuleFunctions", "Syntax",
-          "Void", "StringExt", "InfixNotations", "NatSyntax", "Binary", "TermHelpers"].
+  [String|"DSum"; "Product"; "Sum"; "Unit"; "Nat"; "Bool"; "List"; "Maybe"; "Term"; "MLLet";
+          "StringHelpers"; "TermRec"; "ListExt"; "NatHelpers"; "ShowTerm";
+          "StringNotation"; "ListNotation"; "QuoteTerm"; "Quoters"; "ConversionHelpers";
+          "ModuleDefinitions"; "Eval"; "Output"; "ModuleFunctions"; "Syntax";
+          "Void"; "StringExt"; "InfixNotations"; "NatSyntax"; "Binary"; "TermHelpers"].

@@ -11,12 +11,12 @@ elet pr1 [A, B : *] : (A × B) -> A := recursionProduct ?_ ?_ ?_ (λ a : A. λ _
 elet pr2 [A, B : *] : (A × B) -> B := recursionProduct ?_ ?_ ?_ (λ _ : A. λ b : B. b).
 
 elet productMap1 [A, B, C : *] (f : A -> C) : (A × B) -> C × B :=
-  recursionProduct ?_ ?_ ?_ (λ a : A. λ b : B. (f a) ; b).
+  recursionProduct ?_ ?_ ?_ (λ a : A. λ b : B. (f a), b).
 elet productMap2 [A, B, C : *] (f : B -> C) : (A × B) -> A × C :=
-  recursionProduct ?_ ?_ ?_ (λ a : A. λ b : B. a ; (f b)).
+  recursionProduct ?_ ?_ ?_ (λ a : A. λ b : B. a, (f b)).
 
 elet TripleProduct (A, B, C : *) : * := A × B × C.
-elet mkTripleProduct [A, B, C : *] (a : A) (b : B) (c : C) : TripleProduct A B C := a ; b ; c.
+elet mkTripleProduct [A, B, C : *] (a : A) (b : B) (c : C) : TripleProduct A B C := a, b, c.
 elet recursionTripleProduct [A, B, C, D : *] (f : A -> B -> C -> D) (x : TripleProduct A B C) : D :=
   recursionProduct ?_ ?_ ?_
     (λ a : A. λ bc : B × C. recursionProduct ?_ ?_ ?_ (λ b : B. λ c : C. f a b c) bc) x.

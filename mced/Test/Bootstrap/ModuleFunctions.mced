@@ -44,7 +44,7 @@ elet renameNamesInTermHelper (f : String -> String) (t : Term) : List String -> 
       binderTerm b n (T boundNames) (t (n ∷ boundNames)))
     (λ t : List String -> Term. λ l : List (Bool × (List String -> Term)). λ bn : List String.
       appLTerm (t bn) (map ?_ ?_
-        (recursionProduct ?_ ?_ ?_ λ b : Bool. λ tm : List String -> Term. b ; tm bn) l))
+        (recursionProduct ?_ ?_ ?_ λ b : Bool. λ tm : List String -> Term. b, tm bn) l))
     (λ c : Char. λ _ : List String. charTerm c)
     (λ _ : List String. unknownTerm)
     (λ u : List String -> Term. λ bn : List String. unquoteTerm (u bn)).
@@ -163,8 +163,8 @@ elet finishModuleDef (m : Module) (d : ModuleDict) : Eval Unit :=
     letInfoToNewStmt (mkLetInfo
       (mkModuleName m)
       (sVarTerm (mkTempModuleName m))
-      (just ?_ θ{Module})),
-    updateModuleDict m d,
+      (just ?_ θ{Module}));
+    updateModuleDict m d;
     modifyModuleState (λ s : ModuleState.
       mkModuleState (tail ?_ $ ModuleStateModuleStack s) (insertModuleDict m d))].
 

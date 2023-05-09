@@ -56,7 +56,7 @@ b-let showTermWithContext (t : Term) : List String -> String := recursionTerm ?(
            (map ?(TripleProduct Bool (List String -> String) Term) ?String
                 (recursionTripleProduct ?Bool ?(List String -> String) ?Term ?String
                   (λ b : Bool. λ s : List String -> String. λ t' : Term. stringConcat [String|
-                    ifthenelse ?String b " ?" " ",
+                    ifthenelse ?String b " ?" " ";
                     ifthenelse ?String (needsParens t') (wrapWithParens (s con)) (s con)]))
                 (zipWith ?(Product Bool (List String -> String)) ?App
                          ?(TripleProduct Bool (List String -> String) Term)

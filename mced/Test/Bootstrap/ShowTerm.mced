@@ -68,7 +68,7 @@ elet showTermWithContext : Term -> List String -> String := recursionTerm ?_
           φ"${ifthenelse ?_ b " ?" " "
               }${ifthenelse ?_ (needsParens t') (wrapWithParens (s con)) (s con)}")
         (zipWith ?_ ?_ ?_ (recursionProduct ?_ ?_ ?_
-                   λ b : Bool. λ s : List String -> String. λ a : App. b ; s ; appTerm a)
+                   λ b : Bool. λ s : List String -> String. λ a : App. b, s, appTerm a)
                  l la)))
   (λ c : Char. λ _ : List String. φ"κ${stringCons c stringNil}")
   (λ _ : List String. "_")

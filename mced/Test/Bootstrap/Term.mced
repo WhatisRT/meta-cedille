@@ -62,7 +62,7 @@ elet appLTerm (t : Term) (l : List (Bool × Term)) : Term := Λ X : *.
   λ x : X.
   λ u : X -> X. a (t ?X v s b a k x u)
                   (map ?_ ?_ (recursionProduct ?Bool ?Term ?(Bool × X)
-                    (λ b' : Bool. λ t : Term. b' ; t ?X v s b a k x u)) l).
+                    (λ b' : Bool. λ t : Term. b', t ?X v s b a k x u)) l).
 
 elet charTerm (c : Char) : Term := Λ X : *.
   λ v : Var -> X.
@@ -205,10 +205,10 @@ elet appToTerm (i : Term × InfixData) (t : Term) : Term :=
 elet MultiTerm : * := Term × List (Term × InfixData).
 
 elet singleMultiTerm (t : Term) : MultiTerm :=
-  t ; nil ?(Term × InfixData).
+  t, nil ?(Term × InfixData).
 
 elet consMultiTerm (t : Term) (i : InfixData) : MultiTerm -> MultiTerm :=
-  productMap2 ?Term ?_ ?_ $ cons ?_ (t ; i).
+  productMap2 ?Term ?_ ?_ $ cons ?_ (t, i).
 
 elet multiTermSingle : MultiTerm -> Term := pr1 ?Term ?(List (Term × InfixData)).
 
@@ -228,7 +228,7 @@ elet multiTermToTermRight (m : MultiTerm) :=
     (multiTermSingle m)
     (λ h : Term × InfixData. λ t : List (Term × InfixData). λ _ : Term. appToTerm
       (foldr ?_ ?_ (λ acc : Term × InfixData. λ x : Term × InfixData.
-        appToTerm acc (pr1 ?_ ?InfixData x) ; pr2 ?_ ?InfixData x) t h)
+        appToTerm acc (pr1 ?_ ?InfixData x), pr2 ?_ ?InfixData x) t h)
       (multiTermSingle m))
     (multiTermRest m).
 
@@ -290,12 +290,12 @@ elet init$singleTerm$_binder_^space^_params_=dot=^space^_multiTerm_ :=
 -- name, definition, type
 let LetParam := String × Term × Term.
 elet letPreParams : List LetParam -> List PreParam :=
-  map ?_ ?_ $ recursionTripleProduct ?_ ?_ ?_ ?_ λ n : String. λ _, ty : Term. n ; ty.
+  map ?_ ?_ $ recursionTripleProduct ?_ ?_ ?_ ?_ λ n : String. λ _, ty : Term. n, ty.
 elet letApp (b : Bool) (lp : LetParam) : App :=
   mkApp b (recursionTripleProduct ?_ ?_ ?_ ?_ (λ _ : String. λ def, _ : Term. def) lp).
 
 elet init$letParam$_string_^space^=equal=^space^_multiTerm_=colon=^space^_multiTerm_ :=
-  λ n : String. λ def, ty : Term. n ; def ; ty.
+  λ n : String. λ def, ty : Term. n, def, ty.
 
 elet init$letParams'$ := nil ?LetParam.
 elet init$letParams'$=comma=^space^_letParam__letParams'_ := cons ?LetParam.

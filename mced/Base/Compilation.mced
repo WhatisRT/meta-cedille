@@ -27,7 +27,7 @@ elet getModule (modName : ModuleName) : Eval Module :=
 
 -- TODO: run this automatically as part of writeDefinitionsToFile
 elet ensureDirExists (dir : String) :=
-  voidEval ?String $ shellCmd "mkdir" [String|"-p", dir].
+  voidEval ?String $ shellCmd "mkdir" [String|"-p"; dir].
 
 elet writeDefinitionsToFile (printDef : LetInfo -> Eval String)
     (fname : String) (defs : List LetInfo) : Eval Unit :=

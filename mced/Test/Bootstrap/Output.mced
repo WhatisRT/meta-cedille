@@ -61,10 +61,10 @@ let toBGColorCode8 (c : ANSI8Color) : String :=
   genEscapeCode (c ?String "40" "41" "42" "43" "44" "45" "46" "47").
 
 let withColor8 (c : ANSI8Color) (s : String) : String :=
-  stringConcat [String|toBrightColorCode8 c, s, resetCode].
+  stringConcat [String|toBrightColorCode8 c; s; resetCode].
 
 let withColors8 (fg, bg : ANSI8Color) (s : String) : String :=
-  stringConcat [String|toColorCode8 fg, toBGColorCode8 bg, s, resetCode].
+  stringConcat [String|toColorCode8 fg; toBGColorCode8 bg; s; resetCode].
 
 let toColorCode256 (c : Byte) : String :=
   genEscapeCode φ"38;5;${showByte c}".
@@ -73,10 +73,10 @@ let toBGColorCode256 (c : Byte) : String :=
   genEscapeCode φ"48;5;${showByte c}".
 
 let withColor256 (c : Byte) (s : String) : String :=
-  stringConcat [String|toColorCode256 c, s, resetCode].
+  stringConcat [String|toColorCode256 c; s; resetCode].
 
 let withColors256 (fg, bg : Byte) (s : String) : String :=
-  stringConcat [String|toColorCode256 fg, toBGColorCode256 bg, s, resetCode].
+  stringConcat [String|toColorCode256 fg; toBGColorCode256 bg; s; resetCode].
 
 --------------------------------------------------------------------------------
 -- Verbosity

@@ -10,7 +10,7 @@ b-let letInfoTermToQuoted (i : LetInfo) : LetInfo :=
 b-let addQuotedLetInfo : ElabLet :=
   liftElabLet (λ i : LetInfo. voidEval ?Unit (letInfoToNewStmt (letInfoTermToQuoted i))).
 
-b-let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn, moduleElab, debugPrintLetInfo].
+b-let letInfoToNewStmtMod := runEvalLets [ElabLet| checkTypeAnn; moduleElab; debugPrintLetInfo].
 
 b-let runMetaCommand (t : Term) : Eval Unit := joinEval ?Unit (checkTerm (Eval Unit) t).
 
@@ -21,15 +21,15 @@ b-let reloadMEnv : Eval Unit := modifyEval (λ e : EvalState. e).
 b-let showTypeStmt (tel : Telescope) (t : Term) : Eval Unit :=
   inContext ?Unit (map ?Param ?PreParam (pr2 ?Bool ?PreParam) tel)
     (bindEval ?String ?Unit (bindEval ?Term ?String (inferType t) showTermE) (λ x : String.
-      printConcatEval [String|showTerm t, " : ", x])).
+      printConcatEval [String|showTerm t; " : "; x])).
 
 b-let normalizeStmt (t : Term) : Eval Unit :=
   bindEval ?Term ?Unit (normalize t) (λ t' : Term.
-    printConcatEval [String|showTerm t, " normalizes to: ", showTerm t']).
+    printConcatEval [String|showTerm t; " normalizes to: "; showTerm t']).
 
 b-let hnfStmt (t : Term) : Eval Unit :=
   bindEval ?Term ?Unit (headNormalize t) (λ t' : Term.
-    printConcatEval [String|showTerm t, " head-normalizes to: ", showTerm t']).
+    printConcatEval [String|showTerm t; " head-normalizes to: "; showTerm t']).
 
 -- Syntax
 
@@ -59,7 +59,7 @@ b-let init$setStmt$ToggleProf := toggleProf.
 b-let init$newStmt'$set^space^_setStmt_=dot= (s : Eval Unit) := s.
 b-let init$newStmt'$let^space^_betterLet_ : LetInfo -> Eval Unit := letInfoToNewStmtMod.
 b-let init$newStmt'$qlet^space^_betterLet_ (i : LetInfo) : Eval Unit :=
-  runEvalLets [ElabLet| checkTypeAnn, moduleElab, addQuotedLetInfo] i.
+  runEvalLets [ElabLet| checkTypeAnn; moduleElab; addQuotedLetInfo] i.
 b-let init$newStmt'$runMeta^space^_multiTerm_=dot= : Term -> Eval Unit := runMetaCommand.
 b-let init$newStmt'$echo^space^_multiTerm_=dot= (t : Term) : Eval Unit :=
   bindEval ?Term ?Unit (modifyTermMod t) runEcho.

@@ -69,7 +69,7 @@ elet setWorkingDir (dir : String) : EvalOpts -> EvalOpts :=
 -- ModuleDict to be defined in the environment.
 
 let ModuleState : * := List Module × ModuleDict.
-elet mkModuleState (m : List Module) (d : ModuleDict) : ModuleState := m ; d.
+elet mkModuleState (m : List Module) (d : ModuleDict) : ModuleState := m, d.
 elet ModuleStateModuleStack (s : ModuleState) : List Module := pr1 ?_ ?ModuleDict s.
 elet ModuleStateDict (s : ModuleState) : ModuleDict := pr2 ?_ ?ModuleDict s.
 
@@ -106,7 +106,7 @@ let quoteTermInfo (i : TermInfo) : Term :=
   θ{mkTermInfo γ{quoteSourceLocation (getLocation i)} γ{quoteTerm (getDefinition i)}}.
 
 let TermInfoState : * := List (String × TermInfo).
-elet addTermInfo (n : String) (i : TermInfo) : TermInfoState -> TermInfoState := cons ?_ (n ; i).
+elet addTermInfo (n : String) (i : TermInfo) : TermInfoState -> TermInfoState := cons ?_ (n, i).
 elet lookupTermInfo (st : TermInfoState) (n : String) : Maybe TermInfo :=
   mapMaybe ?_ ?_ (pr2 ?String ?TermInfo)
     (findMaybe ?_ (λ p : String × TermInfo. stringEq (pr1 ?_ ?TermInfo p) n) st).
@@ -123,7 +123,7 @@ let emptyOtherState := zero.
 -- The additional state in the evaluator contains the ModuleState as well as the flags
 let EvalState : * := EvalOpts × ModuleState × TermInfoState × OtherState.
 elet mkEvalState (f : EvalOpts) (s : ModuleState) (i : TermInfoState) (o : OtherState) : EvalState :=
-  mkTripleProduct ?_ ?_ ?_ f s (i ; o).
+  mkTripleProduct ?_ ?_ ?_ f s (i, o).
 let getEvalOpts := pr31 ?EvalOpts ?ModuleState ?(TermInfoState × OtherState).
 let getModuleState := pr32 ?EvalOpts ?ModuleState ?(TermInfoState × OtherState).
 let getTermInfoState (s : EvalState) :=
@@ -177,7 +177,7 @@ let initEvalEnv (s : EvalState) : EvalEnv := nil ?(String × Term).
 
 let Eval : * -> * := λ T : *. EvalEnv -> EvalState -> M (T × EvalState).
 elet pureEval [T : *] (t : T) : Eval T :=
-  λ e : EvalEnv. λ s : EvalState. returnMeta ?_ (t ; s).
+  λ e : EvalEnv. λ s : EvalState. returnMeta ?_ (t, s).
 
 -- NOTE: since >>= is bound to `bindEval` globally, we get to use that notation
 elet bindEval [T, T' : *] (x : Eval T) (f : T -> Eval T') : Eval T' :=
@@ -203,11 +203,11 @@ elet voidEval [T : *] (x : Eval T) : Eval Unit :=
 
 elet liftMtoEval [T : *] (t : M T) : Eval T :=
   λ _ : EvalEnv. λ s : EvalState.
-    bindMeta ?_ ?_ t (λ x : T. returnMeta ?_ (x ; s)).
+    bindMeta ?_ ?_ t (λ x : T. returnMeta ?_ (x, s)).
 
 -- State monad functions
-elet getEval : Eval EvalState := λ _ : EvalEnv. λ s : EvalState. returnMeta ?_ (s ; s).
-elet setEval (s : EvalState) : Eval Unit := λ _ : EvalEnv. λ _ : EvalState. returnMeta ?_ (tt ; s).
+elet getEval : Eval EvalState := λ _ : EvalEnv. λ s : EvalState. returnMeta ?_ (s, s).
+elet setEval (s : EvalState) : Eval Unit := λ _ : EvalEnv. λ _ : EvalState. returnMeta ?_ (tt, s).
 elet modifyEval (f : EvalState -> EvalState) : Eval Unit :=
   getEval >>= λ s : EvalState. setEval (f s).
 
@@ -227,7 +227,7 @@ let modifyOtherState (f : OtherState -> OtherState) : Eval Unit :=
   modifyEval (λ s : EvalState. mkEvalState (getEvalOpts s) (getModuleState s) (getTermInfoState s) (f (getOtherState s))).
 
 -- Reader monad functions
-elet askEval : Eval EvalEnv := λ e : EvalEnv. λ s : EvalState. returnMeta ?_ (e ; s).
+elet askEval : Eval EvalEnv := λ e : EvalEnv. λ s : EvalState. returnMeta ?_ (e, s).
 elet readerEval [T : *] (p : EvalEnv -> T) : Eval T := mapEval ?_ ?_ p askEval.
 let localEval [T : *] (f : EvalEnv -> EvalEnv) (x : Eval T) : Eval T :=
   λ e : EvalEnv. x (f e).
@@ -364,7 +364,7 @@ let Evaluator : * := Eval Unit -> M (Unit × EvalState).
 elet import (filename : String) : Eval Unit :=
   mapEval ?_ ?_ getWorkingDir getEvalOpts' >>= λ workingDir : String.
   seqNewStmt
-    (liftMtoEval ?Unit (primImport (stringConcat [String| workingDir, filename])))
+    (liftMtoEval ?Unit (primImport (stringConcat [String| workingDir; filename])))
     ((getEval' >>= checkTerm Evaluator) >>= λ ev : Evaluator.
       liftMtoEval ?EvalState (mapMeta ?_ ?_ (pr2 ?Unit ?EvalState) (ev emptyStmt)) >>= setEval).
 

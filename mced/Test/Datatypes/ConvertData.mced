@@ -105,10 +105,10 @@ let datatypeToLet (d : DatatypeData) : Eval Unit :=
   (λ name : String -> String. λ appName : String -> Term.
     seqNewStmts $ map ?LetInfo ?(Eval Unit) (λ i : LetInfo. letInfoToNewStmtMod $ appendTelToLetInfo (DatatypeTelescope d) i)
       (app ?LetInfo [LetInfo|
-        mkLetInfo (name "F") (DatatypeF d) $ just ?Term θ{* -> *},
-        mkLetInfo (name "Functor") (DatatypeFunctor d) $ just ?Term θ{Functor γ{DatatypeF d}},
-        mkLetInfo (name "") θ{FixC γ{appName "F"}} $ just ?Term θ{*},
-        mkLetInfo (name "Constrs") θ{inC γ{appName "F"} γ{appName "Functor"}} $ just ?Term θ{AlgC γ{appName "F"} γ{appName ""}},
+        mkLetInfo (name "F") (DatatypeF d) $ just ?Term θ{* -> *};
+        mkLetInfo (name "Functor") (DatatypeFunctor d) $ just ?Term θ{Functor γ{DatatypeF d}};
+        mkLetInfo (name "") θ{FixC γ{appName "F"}} $ just ?Term θ{*};
+        mkLetInfo (name "Constrs") θ{inC γ{appName "F"} γ{appName "Functor"}} $ just ?Term θ{AlgC γ{appName "F"} γ{appName ""}};
         mkLetInfo (name "Fold")
                   (datatypeToFold (DatatypeName d) (DatatypeConstrs' d) (telescopeToApp $ DatatypeTelescope d)) $ nothing ?Term]
         (datatypeToConstrs d)))

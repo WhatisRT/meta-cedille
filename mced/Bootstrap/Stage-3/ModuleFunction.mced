@@ -147,8 +147,8 @@ b-let finishModuleDef (m : Module) (d : ModuleDict) : Eval Unit :=
     letInfoToNewStmt (mkLetInfo
       (mkModuleName m)
       (sVarTerm (mkTempModuleName m))
-      (just ?Term θ{Module})),
-    updateModuleDict m d,
+      (just ?Term θ{Module}));
+    updateModuleDict m d;
     modifyModuleState (λ s : ModuleState.
       mkModuleState (tail ?Module (ModuleStateModuleStack s)) (insertModuleDict m d))].
 
