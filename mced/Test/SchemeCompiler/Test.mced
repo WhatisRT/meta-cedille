@@ -1,10 +1,12 @@
 module SchemeCompiler:Test.
 
+importModule Bootstrap:Builtins.
+importModule Bootstrap:List.
 importModule Bootstrap:Nat.
 importModule Bootstrap:Unit.
-importModule Bootstrap:List.
+importModule SchemeCompiler:FFI.
 
-Given SchemeFFI defineSchemePrim liftScheme pureScheme bindScheme seqScheme String stringNil stringCons.
+Given SchemeFFI defineSchemePrim pureScheme bindScheme.
 
 let one   : Nat := suc zero.
 let two   : Nat := suc one.
@@ -17,8 +19,6 @@ let mul  (n, m : Nat) : Nat := m ?Nat zero (plus n).
 
 let square (n : Nat) : Nat := mul n n.
 
--- let stringTest : String := "abcde".
-
 let SchemeNat  : * := SchemeFFI Nat.
 let schemeZero : SchemeNat := defineSchemePrim ?Nat "0".
 let primSchemeSuc  : SchemeFFI (Nat -> Nat) := defineSchemePrim ?(Nat -> Nat) "(lambda (x) (+ 1 x))".
@@ -26,12 +26,12 @@ let schemeSuc  : SchemeNat -> SchemeNat := liftScheme ?Nat ?Nat primSchemeSuc.
 
 let evalNat (n : Nat) : SchemeNat := n ?SchemeNat schemeZero schemeSuc.
 
-let primSchemePrintNat : SchemeFFI (SchemeNat -> SchemeFFI Unit) :=
-  defineSchemePrim ?(SchemeNat -> SchemeFFI Unit) "(lambda (x) (display x) (newline))".
+let primSchemePrintNat : SchemeFFI (Nat -> SchemeFFI Unit) :=
+  defineSchemePrim ?(Nat -> SchemeFFI Unit) "(lambda (x) (lambda (_) (display x) (newline)))".
 
 let schemePrintNat (n : SchemeNat) : SchemeFFI Unit :=
-  bindScheme ?(SchemeNat -> SchemeFFI Unit) ?Unit primSchemePrintNat
-    (λ f : SchemeNat -> SchemeFFI Unit. f n).
+  bindScheme ?(Nat -> SchemeFFI Unit) ?Unit primSchemePrintNat
+    (λ f : Nat -> SchemeFFI Unit. bindScheme ?Nat ?Unit n f).
 
 let printSquare (n : Nat) : SchemeFFI Unit := schemePrintNat (evalNat $ square n).
 
@@ -42,6 +42,8 @@ let printSquares (l : List Nat) : SchemeFFI Unit :=
       seqScheme ?Unit ?Unit (printSquare n) x)
     l.
 
-let main (_ : Unit) : SchemeFFI Unit := printSquares [Nat|zero, one, two, three, four, five].
+-- FIXME: we need this dummy argument to not produce garbage during
+-- compilation since it computes the hnf of `main`
+let main (_ : Unit) : SchemeFFI Unit := printSquares [Nat|zero; one; two; three; four; five].
 
 endModule.

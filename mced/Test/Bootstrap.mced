@@ -1,17 +1,6 @@
 -- FIXME: this breaks importing
 --set RequireTypeAnnotations true.
 
-
--- Unload Bootstrap:ModuleFunctions.
-
--- module Bootstrap.
-
--- importModule Bootstrap:ModuleFunctions.
-
--- endModule.
-
--- runMeta compileBootstrapModules [String|"ModuleFunctions"].
-
 module Bootstrap.
 
 -- TODO: move those out of bootstrap or move things depending on this

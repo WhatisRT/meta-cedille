@@ -8,6 +8,8 @@ let sanitizeNameScheme (s : String) : String :=
     (λ c : Char. ifthenelse ?Char (charEq c κ') κ1 c)
     (stringToList s).
 
+-- if t is `defineSchemeInternal ?_ (_ s)`, produce the string `s` evaluates to,
+-- otherwise execute `def`
 let tryCompileSchemePrim (t : Term) (def : Eval String) : Eval String :=
   maybe ?Term ?(Eval String) def (matchApp ?(Eval String) def λ t' : Term. λ a : List App.
     matchVar ?(Eval String) def
@@ -52,16 +54,7 @@ let printDefinitionScheme (def : LetInfo) : Eval String :=
 let schemeCompileDir := "Compiled/Scheme/".
 
 let genNameScheme (name : ModuleName) : String :=
-  φ"${schemeCompileDir}${moduleNameToPath modName}.ss".
+  φ"${schemeCompileDir}${moduleNameToPath name}.ss".
 
 let compileModulesScheme : List ModuleName -> Eval Unit :=
   compileModules printDefinitionScheme genNameScheme.
-
-runMeta ensureDirExists (φ"${schemeCompileDir}/Bootstrap/").
-runMeta ensureDirExists (φ"${schemeCompileDir}/SchemeCompiler/").
-
-runMeta compileModulesScheme
-  [ModuleName| [String|"Bootstrap", "Unit"], [String|"Bootstrap", "DSum"]
-             , [String|"Bootstrap", "Product"], [String|"Bootstrap", "Nat"]
-             , [String|"Bootstrap", "Bool"], [String|"Bootstrap", "List"]
-             , [String|"SchemeCompiler", "Test"]].

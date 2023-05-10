@@ -6,6 +6,7 @@
 (load "Bootstrap/Nat.ss")
 (load "Bootstrap/Bool.ss")
 (load "Bootstrap/List.ss")
+(load "SchemeCompiler/FFI.ss")
 (load "SchemeCompiler/Test.ss")
 
-(main 'nil)
+((main 'nil) 'nil)

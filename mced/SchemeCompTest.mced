@@ -3,15 +3,28 @@ import Base.
 
 set PWD "Test/".
 
-import Bootstrap/Unit.
-import Bootstrap/DSum.
-import Bootstrap/Product.
-import Bootstrap/Nat.
-import Bootstrap/Bool.
-import Bootstrap/List.
-
 import SchemeFFI.
-
-import SchemeCompiler/Test.
-
 import SchemeCompiler.
+
+module SchemeComp.
+
+importModule Bootstrap:Unit.
+importModule Bootstrap:DSum.
+importModule Bootstrap:Product.
+importModule Bootstrap:Nat.
+importModule Bootstrap:Bool.
+importModule Bootstrap:List.
+
+importModule SchemeCompiler:FFI.
+importModule SchemeCompiler:Test.
+
+endModule.
+
+runMeta ensureDirExists φ"${schemeCompileDir}/Bootstrap/".
+runMeta ensureDirExists φ"${schemeCompileDir}/SchemeCompiler/".
+
+runMeta compileModulesScheme
+  [ModuleName| [String|"Bootstrap"; "Unit"]     ; [String|"Bootstrap"; "DSum"]
+             ; [String|"Bootstrap"; "Product"]  ; [String|"Bootstrap"; "Nat"]
+             ; [String|"Bootstrap"; "Bool"]     ; [String|"Bootstrap"; "List"]
+             ; [String|"SchemeCompiler"; "FFI"] ; [String|"SchemeCompiler"; "Test"]].

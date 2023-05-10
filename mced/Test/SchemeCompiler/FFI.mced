@@ -1,0 +1,13 @@
+module SchemeCompiler:FFI.
+
+importModule Bootstrap:Builtins.
+
+Given SchemeFFI pureScheme bindScheme.
+
+let seqScheme [A, B : *] (a : SchemeFFI A) (b : SchemeFFI B) : SchemeFFI B :=
+  bindScheme ?A ?B a (λ _ : A. b).
+
+let liftScheme [A, B : *] (f : SchemeFFI (A -> B)) (x : SchemeFFI A) : SchemeFFI B :=
+  bindScheme ?(A -> B) ?B f (λ f2 : A -> B. bindScheme ?A ?B x (λ x2 : A. pureScheme ?B (f2 x2))).
+
+endModule.

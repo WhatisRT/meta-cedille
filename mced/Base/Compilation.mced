@@ -43,3 +43,9 @@ elet compileModule (printDef : LetInfo -> Eval String) (genName : ModuleName -> 
 elet compileModules (printDef : LetInfo -> Eval String) (genName : ModuleName -> String)
     (modNames : List ModuleName) : Eval Unit :=
   voidEval ?_ $ sequenceEval ?_ $ map ?_ ?_ (compileModule printDef genName) modNames.
+
+-- we need those definitions to compile things properly
+let builtinStringNil : String := Λ X : *.
+  λ sc : Char -> X -> X. λ sn : X. sn.
+let builtinStringCons (c : Char) (s : String) : String := Λ X : *.
+  λ sc : Char -> X -> X. λ sn : X. sc c (s ?X sc sn).
