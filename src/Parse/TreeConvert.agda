@@ -150,8 +150,8 @@ toTerm = helper []
         ("=delta=^space^_term_^space^_term_" , 2F , conv2ʰ Delta) ∷
         ("=sigma=^space^_term_"              , 1F , conv1ʰ Sigma) ∷
 
-        ("=lsquare=^space'^_term_^space^_term_^space'^=rsquare=" , 2F , conv2ʰ App) ∷
-        ("=langle=^space'^_term_^space^_term_^space'^=rangle="   , 2F , conv2ʰ AppE) ∷
+        ("=lsquare=^space'^_term_^space^_term_^space'^=rsquare=" , 2F , conv2ʰ (App Regular)) ∷
+        ("=langle=^space'^_term_^space^_term_^space'^=rangle="   , 2F , conv2ʰ (App Erased)) ∷
 
         ("=rho=^space^_term_^space^_string_^space^" , 4F , (λ y n' y' y'' → do
           t ← helper accu y
@@ -160,11 +160,11 @@ toTerm = helper []
           t'' ← helper accu y''
           return $ Rho t t' t'')) ∷
 
-        ("=forall=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ All) ∷
-        ("=Pi=^space^_string_^space'^=colon=^space'^_term_^space^_term_"     , 3F , convᵇ Pi) ∷
+        ("=forall=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ (Pi Erased)) ∷
+        ("=Pi=^space^_string_^space'^=colon=^space'^_term_^space^_term_"     , 3F , convᵇ (Pi Regular)) ∷
         ("=iota=^space^_string_^space'^=colon=^space'^_term_^space^_term_"   , 3F , convᵇ Iota) ∷
-        ("=lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ Lam-A) ∷
-        ("=Lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ LamE) ∷
+        ("=lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ (Lam-A Regular)) ∷
+        ("=Lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ (Lam-A Erased)) ∷
 
         ("=lbrace=^space'^_term_^space'^=comma=^space'^_term_^space^_string_^space'^=dot=^space'^_term_^space'^=rbrace=" , 4F , (λ y y' n y'' → do
           t ← helper accu y

@@ -24,33 +24,30 @@ private
 
   {-# TERMINATING #-}
   toNBETerm : Term b false → Term b true
-  toNBETerm (Var-T x)      = Var-T x
-  toNBETerm (Sort-T x)     = Sort-T x
-  toNBETerm (Const-T x)    = Const-T x
-  toNBETerm (App t t₁)     = App (toNBETerm t) (toNBETerm t₁)
-  toNBETerm (AppE t t₁)    = AppE (toNBETerm t) (toNBETerm t₁)
-  toNBETerm (Lam-P x t)    = Lam-P x (toNBETerm t)
-  toNBETerm (Lam-A x t t₁) = Lam-A x (toNBETerm t) (toNBETerm t₁)
-  toNBETerm (LamE x t t₁)  = LamE x (toNBETerm t) (toNBETerm t₁)
-  toNBETerm (Pi x t t₁)    = Pi x (toNBETerm t) (toNBETerm t₁)
-  toNBETerm (All x t t₁)   = All x (toNBETerm t) (toNBETerm t₁)
-  toNBETerm (Iota x t t₁)  = Iota x (toNBETerm t) (toNBETerm t₁)
-  toNBETerm (Eq-T t t₁)    = Eq-T (toNBETerm t) (toNBETerm t₁)
-  toNBETerm (M-T t)        = M-T (toNBETerm t)
-  toNBETerm (Mu t t₁)      = Mu (toNBETerm t) (toNBETerm t₁)
-  toNBETerm (Epsilon t)    = Epsilon (toNBETerm t)
-  toNBETerm (Gamma t t₁)   = Gamma (toNBETerm t) (toNBETerm t₁)
-  toNBETerm (Ev m x)       = Ev m (mapPrimMetaArgs toNBETerm x)
-  toNBETerm (Char-T x)     = Char-T x
-  toNBETerm (CharEq t t₁)  = CharEq (toNBETerm t) (toNBETerm t₁)
-  toNBETerm (Pr1 t)        = Pr1 (toNBETerm t)
-  toNBETerm (Pr2 t)        = Pr2 (toNBETerm t)
-  toNBETerm (Beta t t')    = Beta (toNBETerm t) (toNBETerm t')
-  toNBETerm (Delta t t')   = Delta (toNBETerm t) (toNBETerm t')
-  toNBETerm (Sigma t)      = Sigma (toNBETerm t)
-  toNBETerm (Rho t t₁ t₂)  = Rho (toNBETerm t) (toNBETerm t₁) (toNBETerm t₂)
-  toNBETerm (Pair t t₁ t₂) = Pair (toNBETerm t) (toNBETerm t₁) (toNBETerm t₂)
-  toNBETerm (Phi t t₁ t₂)  = Phi (toNBETerm t) (toNBETerm t₁) (toNBETerm t₂)
+  toNBETerm (Var-T x)        = Var-T x
+  toNBETerm (Sort-T x)       = Sort-T x
+  toNBETerm (Const-T x)      = Const-T x
+  toNBETerm (App b t t₁)     = App b (toNBETerm t) (toNBETerm t₁)
+  toNBETerm (Lam-P b x t)    = Lam-P b x (toNBETerm t)
+  toNBETerm (Lam-A b x t t₁) = Lam-A b x (toNBETerm t) (toNBETerm t₁)
+  toNBETerm (Pi b x t t₁)    = Pi b x (toNBETerm t) (toNBETerm t₁)
+  toNBETerm (Iota x t t₁)    = Iota x (toNBETerm t) (toNBETerm t₁)
+  toNBETerm (Eq-T t t₁)      = Eq-T (toNBETerm t) (toNBETerm t₁)
+  toNBETerm (M-T t)          = M-T (toNBETerm t)
+  toNBETerm (Mu t t₁)        = Mu (toNBETerm t) (toNBETerm t₁)
+  toNBETerm (Epsilon t)      = Epsilon (toNBETerm t)
+  toNBETerm (Gamma t t₁)     = Gamma (toNBETerm t) (toNBETerm t₁)
+  toNBETerm (Ev m x)         = Ev m (mapPrimMetaArgs toNBETerm x)
+  toNBETerm (Char-T x)       = Char-T x
+  toNBETerm (CharEq t t₁)    = CharEq (toNBETerm t) (toNBETerm t₁)
+  toNBETerm (Pr1 t)          = Pr1 (toNBETerm t)
+  toNBETerm (Pr2 t)          = Pr2 (toNBETerm t)
+  toNBETerm (Beta t t')      = Beta (toNBETerm t) (toNBETerm t')
+  toNBETerm (Delta t t')     = Delta (toNBETerm t) (toNBETerm t')
+  toNBETerm (Sigma t)        = Sigma (toNBETerm t)
+  toNBETerm (Rho t t₁ t₂)    = Rho (toNBETerm t) (toNBETerm t₁) (toNBETerm t₂)
+  toNBETerm (Pair t t₁ t₂)   = Pair (toNBETerm t) (toNBETerm t₁) (toNBETerm t₂)
+  toNBETerm (Phi t t₁ t₂)    = Phi (toNBETerm t) (toNBETerm t₁) (toNBETerm t₂)
 
   -- add abstract variables so that the term has no free DB's
   {-# TERMINATING #-}
@@ -68,14 +65,11 @@ private
           helper i accu (FDB x)           = error "Error 1 in necessaryVars"
           helper i accu (Sort-T x)        = 0
           helper i accu (Const-T x)       = 0
-          helper i accu (App t t₁)        = helper i accu t ⊔ helper i accu t₁
-          helper i accu (AppE t t₁)       = helper i accu t ⊔ helper i accu t₁
-          helper i accu (Lam-P x t)       = helper (suc𝕀 i) accu t
-          helper i accu (Lam-A x t t₁)    = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
-          helper i accu (LamE x t t₁)     = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
+          helper i accu (App _ t t₁)      = helper i accu t ⊔ helper i accu t₁
+          helper i accu (Lam-P _ x t)     = helper (suc𝕀 i) accu t
+          helper i accu (Lam-A _ x t t₁)  = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
           helper i accu (Cont n t x)      = error "Error 2 in necessaryVars"
-          helper i accu (Pi x t t₁)       = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
-          helper i accu (All x t t₁)      = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
+          helper i accu (Pi b x t t₁)     = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
           helper i accu (Iota x t t₁)     = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
           helper i accu (Eq-T t t₁)       = helper i accu t ⊔ helper i accu t₁
           helper i accu (M-T t)           = helper i accu t
@@ -117,10 +111,9 @@ private
     toPureTerm k Γ (FDB x)       = Var (Bound (x +𝕀 fromℕ k))
     toPureTerm k Γ (Sort-T x)    = Sort-T x
     toPureTerm k Γ (Const-T x)   = Const-T x
-    toPureTerm k Γ (App t t₁)    = App (toPureTerm k Γ t) (toPureTerm k Γ t₁)
-    toPureTerm k Γ (Lam-P x t)   = Lam-P x (toPureTerm (suc k) Γ t)
-    toPureTerm k Γ (Pi x t t₁)   = Pi x (toPureTerm k Γ t) (toPureTerm (suc k) Γ t₁)
-    toPureTerm k Γ (All x t t₁)  = All x (toPureTerm k Γ t) (toPureTerm (suc k) Γ t₁)
+    toPureTerm k Γ (App b t t₁)  = App b (toPureTerm k Γ t) (toPureTerm k Γ t₁)
+    toPureTerm k Γ (Lam-P b x t) = Lam-P b x (toPureTerm (suc k) Γ t)
+    toPureTerm k Γ (Pi b x t t₁) = Pi b x (toPureTerm k Γ t) (toPureTerm (suc k) Γ t₁)
     toPureTerm k Γ (Iota x t t₁) = Iota x (toPureTerm k Γ t) (toPureTerm (suc k) Γ t₁)
     toPureTerm k Γ (Eq-T t t₁)   = Eq-T (toPureTerm k Γ t) (toPureTerm k Γ t₁)
     toPureTerm k Γ (M-T t)       = M-T (toPureTerm k Γ t)
@@ -130,7 +123,7 @@ private
     toPureTerm k Γ (Ev m x)      = Ev m (mapPrimMetaArgs (toPureTerm k Γ) x)
     toPureTerm k Γ (Char-T x)    = Char-T x
     toPureTerm k Γ (CharEq t t₁) = CharEq (toPureTerm k Γ t) (toPureTerm k Γ t₁)
-    toPureTerm k Γ (Cont n Γ' t) = Lam-P n (toPureTerm (suc k) Γ (nf' (pushAbstract (proj₁ Γ , Γ') n) t))
+    toPureTerm k Γ (Cont n Γ' t) = Lam-P Regular n (toPureTerm (suc k) Γ (nf' (pushAbstract (proj₁ Γ , Γ') n) t))
 
     convContext : Context → Context' false
     convContext (Γ , Γ') = (Γ , map (map₂ convDef) Γ')
@@ -152,13 +145,12 @@ module _ where
     dbnf Γ (FDB x)             = FDB x
     dbnf Γ (Sort-T x)          = Sort-T x
     dbnf Γ (Const-T x)         = Const-T x
-    dbnf Γ (App t t₁) with dbnf Γ t | dbnf Γ t₁
+    dbnf Γ (App b t t₁) with dbnf Γ t | dbnf Γ t₁
     ... | (Cont n Γ' x) | x₁   = dbnf (pushTerm (proj₁ Γ , Γ') n x₁) x
-    ... | x             | x₁   = App x x₁
-    dbnf Γ (Lam-P x t)         = Cont x (proj₂ Γ) t
+    ... | x             | x₁   = App b x x₁
+    dbnf Γ (Lam-P b x t)       = Cont x (proj₂ Γ) t
     dbnf Γ (Cont n Γ' t)       = error "Error in dbnf"
-    dbnf Γ (Pi x t t₁)         = Pi x (dbnf Γ t) (dbnf (pushAbstract Γ x) t₁)
-    dbnf Γ (All x t t₁)        = All x (dbnf Γ t) (dbnf (pushAbstract Γ x) t₁)
+    dbnf Γ (Pi b x t t₁)       = Pi b x (dbnf Γ t) (dbnf (pushAbstract Γ x) t₁)
     dbnf Γ (Iota x t t₁)       = Iota x (dbnf Γ t) (dbnf (pushAbstract Γ x) t₁)
     dbnf Γ (Eq-T t t₁)         = Eq-T (dbnf Γ t) (dbnf Γ t₁)
     dbnf Γ (M-T t)             = M-T (dbnf Γ t)
@@ -195,15 +187,14 @@ module _ where
     hnf' b Γ (FDB x)               = FDB x
     hnf' b Γ (Sort-T x)            = Sort-T x
     hnf' b Γ (Const-T x)           = Const-T x
-    hnf' true Γ (App t t₁) with hnf' true Γ t | hnf' false Γ t₁
+    hnf' true Γ (App b t t₁) with hnf' true Γ t | hnf' false Γ t₁
     ... | Cont n Γ' x | x₁         = hnf' true (pushTerm (proj₁ Γ , Γ') n x₁) x
-    ... | x             | x₁       = App x x₁
-    hnf' false Γ (App t t₁)        = App (hnf' false Γ t) (hnf' false Γ t₁)
-    hnf' true  Γ (Lam-P x t)       = Cont x (proj₂ Γ) t
-    hnf' false Γ (Lam-P x t)       = Lam-P x (hnf' false (pushAbstract Γ x) t)
+    ... | x             | x₁       = App b x x₁
+    hnf' false Γ (App b t t₁)      = App b (hnf' false Γ t) (hnf' false Γ t₁)
+    hnf' true  Γ (Lam-P b x t)     = Cont x (proj₂ Γ) t
+    hnf' false Γ (Lam-P b x t)     = Lam-P b x (hnf' false (pushAbstract Γ x) t)
     hnf' b Γ (Cont _ _ _)          = error "Error in hnf'"
-    hnf' b Γ (Pi x t t₁)           = Pi x (hnf' false Γ t) (hnf' false (pushAbstract Γ x) t₁)
-    hnf' b Γ (All x t t₁)          = All x (hnf' false Γ t) (hnf' false (pushAbstract Γ x) t₁)
+    hnf' b Γ (Pi b' x t t₁)        = Pi b' x (hnf' false Γ t) (hnf' false (pushAbstract Γ x) t₁)
     hnf' b Γ (Iota x t t₁)         = Iota x (hnf' false Γ t) (hnf' false (pushAbstract Γ x) t₁)
     hnf' b Γ (Eq-T t t₁)           = Eq-T (hnf' false Γ t) (hnf' false Γ t₁)
     hnf' b Γ (M-T t)               = M-T (hnf' false Γ t)

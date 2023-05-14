@@ -319,7 +319,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     y ← if n ≣ n' ∧ valid
       then return G
       else (generateCFG start $ getParserNamespace Γ n)
-    (Pi _ u u₁) ← hnfNorm Γ <$> synthType Γ t
+    (Pi Regular _ u u₁) ← hnfNorm Γ <$> synthType Γ t
       where _ → throwError "The evaluator needs to have a pi type"
     true ← return $ isLocallyClosed (Erase u) Γ
       where false → throwError "The argument type to the evaluator cannot contain local variables!"

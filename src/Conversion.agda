@@ -45,7 +45,7 @@ module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
           ... | nothing = t
 
           outermostApp : PureTerm → PureTerm × List PureTerm
-          outermostApp (App t t₁) = map₂ (t₁ ∷_) $ outermostApp t
+          outermostApp (App Regular t t₁) = map₂ (t₁ ∷_) $ outermostApp t
           {-# CATCHALL #-}
           outermostApp t = t , []
 
@@ -127,29 +127,29 @@ instance
   Quotable-AnnTerm .quoteToAnnTerm (Delta t t₁) =
     FreeVar "init$term$=delta=^space^_term_^space^_term_" ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
   Quotable-AnnTerm .quoteToAnnTerm (Sigma t) = FreeVar "init$term$=sigma=^space^_term_" ⟪$⟫ quoteToAnnTerm t
-  Quotable-AnnTerm .quoteToAnnTerm (App t t₁) =
+  Quotable-AnnTerm .quoteToAnnTerm (App Regular t t₁) =
     FreeVar "init$term$=lsquare=^space'^_term_^space^_term_^space'^=rsquare="
       ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
-  Quotable-AnnTerm .quoteToAnnTerm (AppE t t₁) =
+  Quotable-AnnTerm .quoteToAnnTerm (App Erased t t₁) =
     FreeVar "init$term$=langle=^space'^_term_^space^_term_^space'^=rangle="
       ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
   Quotable-AnnTerm .quoteToAnnTerm (Rho t t₁ t₂) =
     FreeVar "init$term$=rho=^space^_term_^space^_string_^space'^=dot=^space'^_term_^space^_term_"
       ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm (List Char ∋ "_") -- TODO: add a name to rho?
       ⟪$⟫ quoteToAnnTerm t₁ ⟪$⟫ quoteToAnnTerm t₂
-  Quotable-AnnTerm .quoteToAnnTerm (All x t t₁) =
+  Quotable-AnnTerm .quoteToAnnTerm (Pi Erased x t t₁) =
     FreeVar "init$term$=forall=^space^_string_^space'^=colon=^space'^_term_^space^_term_"
       ⟪$⟫ quoteToAnnTerm x ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
-  Quotable-AnnTerm .quoteToAnnTerm (Pi x t t₁) =
+  Quotable-AnnTerm .quoteToAnnTerm (Pi Regular x t t₁) =
     FreeVar "init$term$=Pi=^space^_string_^space'^=colon=^space'^_term_^space^_term_"
       ⟪$⟫ quoteToAnnTerm x ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
   Quotable-AnnTerm .quoteToAnnTerm (Iota x t t₁) =
     FreeVar "init$term$=iota=^space^_string_^space'^=colon=^space'^_term_^space^_term_"
       ⟪$⟫ quoteToAnnTerm x ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
-  Quotable-AnnTerm .quoteToAnnTerm (Lam-A x t t₁) =
+  Quotable-AnnTerm .quoteToAnnTerm (Lam-A Regular x t t₁) =
     FreeVar "init$term$=lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_"
       ⟪$⟫ quoteToAnnTerm x ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
-  Quotable-AnnTerm .quoteToAnnTerm (LamE x t t₁) =
+  Quotable-AnnTerm .quoteToAnnTerm (Lam-A Erased x t t₁) =
     FreeVar "init$term$=Lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_"
       ⟪$⟫ quoteToAnnTerm x ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
   Quotable-AnnTerm .quoteToAnnTerm (Pair t t₁ t₂) =

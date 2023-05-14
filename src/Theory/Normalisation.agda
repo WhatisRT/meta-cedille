@@ -18,8 +18,7 @@ hnfNorm Γ v@(Var-T x) with lookupInContext x Γ
 ... | just record { def = just x } = hnfNorm Γ $ condErase x
 ... | just _             = v -- we cannot reduce axioms
 ... | nothing            = v -- in case the lookup fails, we cannot reduce
-hnfNorm Γ (App t t₁)     = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (t ⟪$⟫ t₁)  $ stripBinder (hnfNorm Γ t)
-hnfNorm Γ (AppE t t₁)    = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (AppE t t₁) $ stripBinder (hnfNorm Γ t)
+hnfNorm Γ (App b t t₁)     = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (App b t t₁)  $ stripBinder (hnfNorm Γ t)
 hnfNorm Γ v@(CharEq _ _) = normalize Γ v -- reduce to a bool, if possible
 {-# CATCHALL #-}
 hnfNorm Γ v              = v
@@ -31,28 +30,19 @@ normalize Γ v@(Var-T x) with lookupInContext x Γ
 ... | nothing                         = v -- in case the lookup fails, we cannot reduce
 normalize Γ v@(Sort-T x)              = v
 normalize Γ v@(Const-T x)             = v
-normalize Γ (App t t₁) with hnfNorm Γ t
+normalize Γ (App b t t₁) with hnfNorm Γ t
 ... | t'                              = case stripBinder t' of λ where
     (just t'') → normalize Γ (subst t'' t₁)
-    nothing    → normalize Γ t' ⟪$⟫ normalize Γ t₁
-normalize Γ (AppE t t₁) with hnfNorm Γ t
-... | t'                              = case stripBinder t' of λ where
-    (just t'') → normalize Γ (subst t'' t₁)
-    nothing    → AppE (normalize Γ t') (normalize Γ t₁)
-normalize Γ (Lam-P n t) with normalize Γ t
-... | t''@(App t' (Var-T (Bound i)))  = if i ≣ 0 ∧ validInContext t' Γ
-  then normalize Γ (strengthen t') else Lam-P n t'' -- eta reduce here
-... | t''                             = Lam-P n t''
-normalize Γ (Lam-A n t t₁) with normalize Γ t₁
-... | t''@(App t' (Var-T (Bound i)))  = if i ≣ 0 ∧ validInContext t' Γ
-  then normalize Γ (strengthen t') else Lam-A n t t'' -- eta reduce here
-... | t''                             = Lam-A n t t''
-normalize Γ (LamE n t t₁) with normalize Γ t₁
-... | t''@(AppE t' (Var-T (Bound i))) = if i ≣ 0 ∧ validInContext t' Γ
-  then normalize Γ (strengthen t') else LamE n t t'' -- eta reduce here
-... | t''                             = LamE n t t''
-normalize Γ (Pi n t t₁)               = Pi n (normalize Γ t) (normalize Γ t₁)
-normalize Γ (All n t t₁)              = All n (normalize Γ t) (normalize Γ t₁)
+    nothing    → App b (normalize Γ t') (normalize Γ t₁)
+normalize Γ (Lam-P b n t) with normalize Γ t
+... | t''@(App _ t' (Var-T (Bound i)))  = if i ≣ 0 ∧ validInContext t' Γ
+  then normalize Γ (strengthen t') else Lam-P b n t'' -- eta reduce here
+... | t''                             = Lam-P b n t''
+normalize Γ (Lam-A b n t t₁) with normalize Γ t₁
+... | t''@(App _ t' (Var-T (Bound i)))  = if i ≣ 0 ∧ validInContext t' Γ
+  then normalize Γ (strengthen t') else Lam-A b n t t'' -- eta reduce here
+... | t''                             = Lam-A b n t t''
+normalize Γ (Pi b n t t₁)             = Pi b n (normalize Γ t) (normalize Γ t₁)
 normalize Γ (Iota n t t₁)             = Iota n (normalize Γ t) (normalize Γ t₁)
 normalize Γ (Eq-T t t₁)               = Eq-T (normalize Γ t) (normalize Γ t₁)
 normalize Γ (M-T t)                   = M-T (normalize Γ t)
