@@ -120,7 +120,7 @@ bootstrapMetaContext =
     ; namespace        = ""
     ; evaluator        = □
     ; evaluatorArgType = □
-    ; doProfiling      = false
+    ; doDebug          = []
     ; grammarValid     = false }
 
 loadFiles : MetaContext → EvalFlags → List String → IO (MetaContext × Bool)

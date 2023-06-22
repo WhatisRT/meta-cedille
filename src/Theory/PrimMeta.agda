@@ -33,7 +33,7 @@ data PrimMeta : Set where
   Print         : PrimMeta
   WriteFile     : PrimMeta
   CommandLine   : PrimMeta
-  ToggleProf    : PrimMeta
+  SetDebug      : PrimMeta
 
 private
   variable
@@ -42,7 +42,7 @@ private
 instance
   PrimMeta-Listable : Listable PrimMeta
   PrimMeta-Listable = record
-    { listing = Let ∷ AnnLet ∷ SetEval ∷ ShellCmd ∷ CheckTerm ∷ Parse ∷ Normalize ∷ HeadNormalize ∷ InferType ∷ Import ∷ GetEval ∷ Print ∷ WriteFile ∷ CommandLine ∷ ToggleProf ∷ []
+    { listing = Let ∷ AnnLet ∷ SetEval ∷ ShellCmd ∷ CheckTerm ∷ Parse ∷ Normalize ∷ HeadNormalize ∷ InferType ∷ Import ∷ GetEval ∷ Print ∷ WriteFile ∷ CommandLine ∷ SetDebug ∷ []
     ; complete = λ where
         Let           → pf 0 (here refl)
         AnnLet        → pf 1 (here refl)
@@ -58,7 +58,7 @@ instance
         Print         → pf 11 (here refl)
         WriteFile     → pf 12 (here refl)
         CommandLine   → pf 13 (here refl)
-        ToggleProf    → pf 14 (here refl)
+        SetDebug      → pf 14 (here refl)
     }
     where pf = listable-pf-helper
 
@@ -83,7 +83,7 @@ instance
   PrimMeta-Show .show Print         = "Print"
   PrimMeta-Show .show WriteFile     = "WriteFile"
   PrimMeta-Show .show CommandLine   = "CommandLine"
-  PrimMeta-Show .show ToggleProf    = "ToggleProf"
+  PrimMeta-Show .show SetDebug      = "SetDebug"
 
 primMetaArityF : PrimMeta → Fin 5
 primMetaArityF Let           = 2F
@@ -100,7 +100,7 @@ primMetaArityF GetEval       = 0F
 primMetaArityF Print         = 1F
 primMetaArityF WriteFile     = 2F
 primMetaArityF CommandLine   = 0F
-primMetaArityF ToggleProf    = 0F
+primMetaArityF SetDebug      = 1F
 
 primMetaArity : PrimMeta → ℕ
 primMetaArity m = toℕ $ primMetaArityF m
@@ -169,7 +169,7 @@ module Types {T} (tl : TermLike T) where
   primMetaSᵘ Print         = uString
   primMetaSᵘ WriteFile     = (uString , uString)
   primMetaSᵘ CommandLine   = _
-  primMetaSᵘ ToggleProf    = _
+  primMetaSᵘ SetDebug      = uStringList
 
   primMetaS : (m : PrimMeta) → primMetaArgs T m
   primMetaS m = mapPrimMetaArgs ⟦_⟧ᵗ (primMetaSᵘ m)
@@ -189,4 +189,4 @@ module Types {T} (tl : TermLike T) where
   primMetaT Print   _         = tUnit
   primMetaT WriteFile _       = tUnit
   primMetaT CommandLine _     = tStringList
-  primMetaT ToggleProf _      = tUnit
+  primMetaT SetDebug _        = tUnit

@@ -39,7 +39,7 @@ let initTermToTerm (t : iTerm) := t ?Term
     -- Zetas
     nothingTerm2 nothingTerm3 nothingTerm3 nothingTerm2 nothingTerm2
     nothingTerm3 nothingTerm1 nothingTerm1 nothingTerm1 nothingTerm1
-    nothingTerm nothingTerm1 nothingTerm2 nothingTerm nothingTerm
+    nothingTerm nothingTerm1 nothingTerm2 nothingTerm nothingTerm1
     nothingTerm2
     (λ _ : Const. sVarTerm "Char") (λ c : Char. charTerm c) nothingTerm2.
 

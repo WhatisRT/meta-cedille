@@ -259,8 +259,8 @@ b-let writeFile (fName, s : String) : Eval Unit :=
 b-let commandLine : Eval (List String) :=
   liftMtoEval ?(List String) primCommandLine.
 
-b-let toggleProf : Eval Unit :=
-  liftMtoEval ?Unit primToggleProf.
+b-let setDebug (opts : List String) : Eval Unit :=
+  liftMtoEval ?Unit (primSetDebug opts).
 
 b-let printLineEval (s : String) : Eval Unit := printEval φ"${s}\n".
 

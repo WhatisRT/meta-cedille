@@ -31,7 +31,7 @@ record MetaEnv : Set where
                         -- don't change the namespace
     evaluator : AnnTerm
     evaluatorArgType : AnnTerm -- type of arguments to the evaluator
-    doProfiling : Bool
+    doDebug : List String
 
 -- The full state of the interpreter: the context of defined values plus parsing
 -- and semantics for generating code
@@ -50,18 +50,24 @@ module _ {M : Set → Set} {{_ : Monad M}}
   getMeta : M MetaEnv
   getMeta = gets proj₂
 
-  measureTime : ∀ {A} → String → M A → M A
-  measureTime s x = do
-    record { doProfiling = true } ← getMeta
-      where _ → x
-    Prelude.measureTime s x
+  logWithType : ∀ {A} → String → String → M A → M A
+  logWithType type s x = do
+    record { doDebug = doDebug } ← getMeta
+    if null (filter (_≟ type) doDebug)
+      then x
+      else Prelude.measureTime s x
+
+  logProfile : ∀ {A} → String → M A → M A
+  logProfile = logWithType "profile"
+
+  logProfileBasic : ∀ {A} → String → M A → M A
+  logProfileBasic = logWithType "profileBasic"
 
   modify' : (MetaContext → MetaContext) → M ⊤
   modify' f = modify f >> return tt
 
   setMeta : MetaEnv → M ⊤
-  setMeta menv =
-    modify' λ { (Γ , _) → (Γ , menv) }
+  setMeta menv = modify' λ { (Γ , _) → (Γ , menv) }
 
   setContext : GlobalContext → M ⊤
   setContext Γ = modify' λ { (_ , m) → (Γ , m) }
@@ -140,12 +146,12 @@ module _ {M : Set → Set} {{_ : Monad M}}
   showPrimMetaSˢ {Print} t = "Print (" + show t + ")"
   showPrimMetaSˢ {WriteFile} (t , t₁) = "WriteFile (" + show t <+> "," <+> show t₁ + ")"
   showPrimMetaSˢ {CommandLine} _ = "CommandLine (" + "" + ")"
-  showPrimMetaSˢ {ToggleProf} _ = "ToggleProf (" + "" + ")"
+  showPrimMetaSˢ {SetDebug} _ = "SetDebug (" + "" + ")"
 
   convertPrimArgs : (m : PrimMeta) → primMetaArgs PureTerm m → M (primMetaSˢ m)
   convertPrimArgs Let (t , t₁) = do
-    t ← measureTime "Name" $ (M String ∋ unquoteFromTerm t)
-    t₁ ← measureTime ("Def:" <+> show t₁) $ (M AnnTerm ∋ unquoteFromTerm t₁)
+    t ← logProfile "Name" $ (M String ∋ unquoteFromTerm t)
+    t₁ ← logProfile ("Def:" <+> show t₁) $ (M AnnTerm ∋ unquoteFromTerm t₁)
     return (t , t₁)
   convertPrimArgs AnnLet (t , t₁ , t₂) = do
     t ← (M String ∋ unquoteFromTerm t)
@@ -189,7 +195,9 @@ module _ {M : Set → Set} {{_ : Monad M}}
     t₁ ← (M String ∋ unquoteFromTerm t₁)
     return (t , t₁)
   convertPrimArgs CommandLine _ = return _
-  convertPrimArgs ToggleProf _ = return _
+  convertPrimArgs SetDebug t = do
+    t ← (M (List String) ∋ unquoteFromTerm t)
+    return t
 
 module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   {{_ : MonadExcept M String}} {{_ : MonadState M MetaContext}} {{_ : MonadIO M}}
@@ -208,21 +216,21 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   parseAndExecute : String → M ⊤
 
   executeTerm t = do
-    t ← measureTime "HNF" ((λ Γ → hnfNormPure Γ t) <$> getContext)
-    measureTime ("execHNF:" <+> show t) (executeTerm' t)
+    t ← logProfile "HNF" ((λ Γ → hnfNormPure Γ t) <$> getContext)
+    logProfile ("execHNF:" <+> show t) (executeTerm' t)
 
   executeTerm' (Mu t t₁) = do
-    t' ← measureTime ("Mu1:" <+> show t) $ executeTerm t
-    measureTime ("Mu2:" <+> show (t₁ ⟪$⟫ t')) $ executeTerm (t₁ ⟪$⟫ t')
+    t' ← logProfile ("Mu1:" <+> show t) $ executeTerm t
+    logProfile ("Mu2:" <+> show (t₁ ⟪$⟫ t')) $ executeTerm (t₁ ⟪$⟫ t')
 
   executeTerm' (Epsilon t) = return t
 
   executeTerm' (Gamma t t') = catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm s))
 
   executeTerm' (Ev m t) = do
-    args ← measureTime "Converting arguments" $ convertPrimArgs m t
-    t' ← measureTime ("Executing:" <+> showPrimMetaSˢ {m = m} args) $ executePrimitive m args
-    measureTime "Sanity checking" $ appendIfError (checkTypePure t' $ primMetaT m t)
+    args ← logProfile "Converting arguments" $ convertPrimArgs m t
+    t' ← logProfile ("Executing:" <+> showPrimMetaSˢ {m = m} args) $ executePrimitive m args
+    logProfile "Sanity checking" $ appendIfError (checkTypePure t' $ primMetaT m t)
                   ("Bug: Result type mismatch in" <+> showPrimMetaSˢ {m = m} args + "\n"
                   + show t' <+> "doesn't have type" <+> show (primMetaT m t))
     return (Erase t')
@@ -300,9 +308,9 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   executePrimitive CommandLine _ = do
     returnQuoted =<< liftIO getArgs
 
-  executePrimitive ToggleProf _ = do
-    menv@record { doProfiling = b } ← getMeta
-    returnQuoted =<< setMeta record menv { doProfiling = not b }
+  executePrimitive SetDebug opts = do
+    menv ← getMeta
+    returnQuoted =<< setMeta record menv { doDebug = opts }
 
   executeBootstrapStmt (Let n t T) = do
     T ← case T of λ where
@@ -343,11 +351,11 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     Γ ← getContext
     m@record { evaluator = ev ; evaluatorArgType = evT } ← getMeta
     (t , parsed , rest) ← parseMeta m s
-    measureTime "TC" $
+    logProfileBasic ("Type checking parse result:" <+> parsed) $
       appendIfError (checkType t evT)
                     ("\n\nError while interpreting input: " + (shortenString 10000 $ show t)
                                       + "\nWhile parsing: " + (shortenString 10000 s))
-    measureTime ("Exec:" <+> parsed) $
+    logProfileBasic ("Execute parse result:" <+> parsed) $
       appendIfError (executeTerm (Erase (ev ⟪$⟫ t)))
                     ("\n\nError while executing input:" <+> parsed + "\n")
     return rest

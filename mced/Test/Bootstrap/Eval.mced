@@ -1,7 +1,7 @@
 module Bootstrap:Eval.
 
 Given M returnMeta bindMeta mapMeta.
-Given primLet primAnnLet primSetEval primShellCmd primCheckTerm primParse primHeadNormalize primNormalize primInferType primGetEval primPrint primWriteFile primCommandLine primToggleProf primImport catchErr.
+Given primLet primAnnLet primSetEval primShellCmd primCheckTerm primParse primHeadNormalize primNormalize primInferType primGetEval primPrint primWriteFile primCommandLine primSetDebug primImport catchErr.
 
 importModule Bootstrap:Builtins.
 importModule Bootstrap:Bool.
@@ -276,8 +276,8 @@ let writeFile (fName, s : String) : Eval Unit :=
 let commandLine : Eval (List String) :=
   liftMtoEval ?(List String) primCommandLine.
 
-let toggleProf : Eval Unit :=
-  liftMtoEval ?Unit primToggleProf.
+let setDebug (opts : List String) : Eval Unit :=
+  liftMtoEval ?Unit (primSetDebug opts).
 
 let printLineEval (s : String) : Eval Unit := printEval φ"${s}\n".
 

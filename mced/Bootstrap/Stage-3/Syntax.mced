@@ -53,7 +53,8 @@ b-let init$setStmt$PrintInfo^space^_flag_ (b : Bool) :=
 b-let init$setStmt$PWD^space^_multiTerm_ (dirT : Term) :=
   bindEval ?String ?Unit (checkTerm String dirT)
     (λ dir : String. modifyAndUpdateEvalOpts (setWorkingDir dir)).
-b-let init$setStmt$ToggleProf := toggleProf.
+b-let init$setStmt$SetDebug^space^_multiTerm_ (optsT : Term) :=
+  bindEval ?(List String) ?Unit (checkTerm (List String) optsT) setDebug.
 
 -- "native" statements in the new syntax
 b-let init$newStmt'$set^space^_setStmt_=dot= (s : Eval Unit) := s.

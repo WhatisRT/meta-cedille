@@ -34,11 +34,11 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
       φ"∀ ${adjustEmpty s} : ${t con} ${t' $ cons ?String s con}")
     (λ s : String. λ t, t' : List String -> String. λ con : List String.
       φ"Π ${adjustEmpty s} : ${t con} ${t' $ cons ?String s con}")
-    (λ _ : String. λ _, _ : List String -> String. λ _ : List String. "BUG: SHOW IOTA")
     (λ s : String. λ t, t' : List String -> String. λ con : List String.
       φ"λ ${adjustEmpty s} : ${t con} ${t' $ cons ?String s con}")
     (λ s : String. λ t, t' : List String -> String. λ con : List String.
       φ"Λ ${adjustEmpty s} : ${t con} ${t' $ cons ?String s con}")
+    (λ _ : String. λ _, _ : List String -> String. λ _ : List String. "BUG: SHOW IOTA")
     (λ _, _ : List String -> String. λ _ : String. unreachableShowTerm1 "PAIR")
     (unreachableShowTerm1 "OMEGA") (unreachableShowTerm2 "MU") (unreachableShowTerm1 "EPSILON")
         -- Zetas
@@ -56,7 +56,7 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
     (unreachableShowTerm1 "Print")
     (unreachableShowTerm2 "WriteFile")
     (unreachableShowTerm0 "CommandLine")
-    (unreachableShowTerm0 "ToggleProf")
+    (unreachableShowTerm1 "SetDebug")
     (unreachableShowTerm2 "CatchErr")
     (λ s : init$const. unreachableShowTerm0 "CONST")
     (λ c : Char. λ _ : List String. φ"κ${stringCons c stringNil}")
