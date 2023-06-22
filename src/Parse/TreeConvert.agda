@@ -153,7 +153,7 @@ toTerm = helper []
         ("=lsquare=^space'^_term_^space^_term_^space'^=rsquare=" , 2F , conv2ʰ (App Regular)) ∷
         ("=langle=^space'^_term_^space^_term_^space'^=rangle="   , 2F , conv2ʰ (App Erased)) ∷
 
-        ("=rho=^space^_term_^space^_string_^space^" , 4F , (λ y n' y' y'' → do
+        ("=rho=^space^_term_^space^_string_^space'^=dot=^space'^_term_^space^_term_" , 4F , (λ y n' y' y'' → do
           t ← helper accu y
           n ← toName n'
           t' ← helper (n ∷ accu) y'
@@ -171,7 +171,7 @@ toTerm = helper []
           t' ← helper accu y'
           n ← toName n
           t'' ← helper (n ∷ accu) y''
-          return $ Rho t t' t'')) ∷
+          return $ Pair t t' t'')) ∷
 
         ("=phi=^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰ Phi) ∷
         ("=equal=^space^_term_^space^_term_"            , 2F , conv2ʰ Eq-T) ∷

@@ -18,8 +18,16 @@ hnfNorm Γ v@(Var-T x) with lookupInContext x Γ
 ... | just record { def = just x } = hnfNorm Γ $ condErase x
 ... | just _             = v -- we cannot reduce axioms
 ... | nothing            = v -- in case the lookup fails, we cannot reduce
-hnfNorm Γ (App b t t₁)     = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (App b t t₁)  $ stripBinder (hnfNorm Γ t)
+hnfNorm Γ (App b t t₁)   = maybe (λ t' → hnfNorm Γ $ subst t' t₁) (App b t t₁) $ stripBinder (hnfNorm Γ t)
 hnfNorm Γ v@(CharEq _ _) = normalize Γ v -- reduce to a bool, if possible
+hnfNorm Γ (Pr1 t)        = hnfNorm Γ t
+hnfNorm Γ (Pr2 t)        = hnfNorm Γ t
+hnfNorm Γ (Beta _ t)     = hnfNorm Γ t
+hnfNorm Γ (Delta _ t)    = hnfNorm Γ t
+hnfNorm Γ (Sigma t)      = hnfNorm Γ t
+hnfNorm Γ (Rho _ _ t)    = hnfNorm Γ t
+hnfNorm Γ (Pair t _ _)   = hnfNorm Γ t
+hnfNorm Γ (Phi _ _ t)    = hnfNorm Γ t
 {-# CATCHALL #-}
 hnfNorm Γ v              = v
 
@@ -55,11 +63,11 @@ normalize Γ (CharEq t t₁) with normalize Γ t | normalize Γ t₁
 ... | (Char-T c) | (Char-T c')        = normalize Γ $ FreeVar $ show (c ≣ c')
 {-# CATCHALL #-}
 ... | x | x₁                          = CharEq x x₁
-normalize Γ (Pr1 t)                   = Pr1 (normalize Γ t)
-normalize Γ (Pr2 t)                   = Pr2 (normalize Γ t)
-normalize Γ (Beta t t₁)               = Beta (normalize Γ t) (normalize Γ t₁)
-normalize Γ (Delta t t₁)              = Delta (normalize Γ t) (normalize Γ t₁)
-normalize Γ (Sigma t)                 = Sigma (normalize Γ t)
-normalize Γ (Rho t t₁ t₂)             = Rho (normalize Γ t) (normalize Γ t₁) (normalize Γ t₂) -- TODO: extend Γ?
-normalize Γ (Pair t t₁ t₂)            = Pair (normalize Γ t) (normalize Γ t₁) (normalize Γ t₂) -- TODO: extend Γ?
-normalize Γ (Phi t t₁ t₂)             = Phi (normalize Γ t) (normalize Γ t₁) (normalize Γ t₂)
+normalize Γ (Pr1 t)                   = normalize Γ t
+normalize Γ (Pr2 t)                   = normalize Γ t
+normalize Γ (Beta _ t)                = normalize Γ t
+normalize Γ (Delta _ t)               = normalize Γ t
+normalize Γ (Sigma t)                 = normalize Γ t
+normalize Γ (Rho _ _ t)               = normalize Γ t
+normalize Γ (Pair t _ _)              = normalize Γ t
+normalize Γ (Phi _ _ t)               = normalize Γ t

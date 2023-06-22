@@ -139,7 +139,7 @@ module _ where
   showTermCtx l (Lam-P b n t)      = showBinderL b <+> n + "." <+> showTermCtx (n ∷ l) t
   showTermCtx l (Lam-A b n t t₁)   = showBinderL b <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
   showTermCtx l (Cont n _ t)       = "Cont" <+> n + "." <+> showTermCtx (n ∷ l) t
-  showTermCtx l (Rho t t₁ t₂)      = "ρ" <+> showTermCtx l t <+> ":" <+> showTermCtx l t₁ <+> showTermCtx l t₂
+  showTermCtx l (Rho t t₁ t₂)      = "ρ" <+> showTermCtx l t <+> ":" <+> showTermCtx ("_" ∷ l) t₁ <+> showTermCtx l t₂
   showTermCtx l (Pi b n t t₁)      = if n ≣ "_"
     then "(" + showTermCtx l t + ")" <+> proj₁ (showBinderP b) <+> showTermCtx (n ∷ l) t₁
     else proj₂ (showBinderP b) <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
@@ -164,18 +164,18 @@ Erase : AnnTerm → PureTerm b
 Erase (Var-T x)              = Var-T x
 Erase (Sort-T x)             = Sort-T x
 Erase (Const-T x)            = Const-T x
+Erase (App Regular t t₁)     = App Regular (Erase t) (Erase t₁)
+Erase (App Erased t t₁)      = Erase t
+Erase (Pi b n t t₁)          = Pi b n (Erase t) (Erase t₁)
+Erase (Iota n t t₁)          = Iota n (Erase t) (Erase t₁)
+Erase (Lam-A Regular n t t₁) = Lam-P Regular n (Erase t₁)
+Erase (Lam-A Erased n t t₁)  = strengthen (Erase t₁)
 Erase (Pr1 t)                = Erase t
 Erase (Pr2 t)                = Erase t
 Erase (Beta t t₁)            = Erase t₁
 Erase (Delta t t₁)           = Erase t₁
 Erase (Sigma t)              = Erase t
-Erase (App Regular t t₁)     = App Regular (Erase t) (Erase t₁)
-Erase (App Erased t t₁)      = Erase t
 Erase (Rho t t₁ t₂)          = Erase t₂
-Erase (Pi b n t t₁)          = Pi b n (Erase t) (Erase t₁)
-Erase (Iota n t t₁)          = Iota n (Erase t) (Erase t₁)
-Erase (Lam-A Regular n t t₁) = Lam-P Regular n (Erase t₁)
-Erase (Lam-A Erased n t t₁)  = strengthen (Erase t₁)
 Erase (Pair t t₁ t₂)         = Erase t
 Erase (Phi t t₁ t₂)          = Erase t₂
 Erase (Eq-T x x₁)            = Eq-T (Erase x) (Erase x₁)

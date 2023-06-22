@@ -155,11 +155,16 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
     compareNames _ _ = throwError "Terms are not names! If you see this message, this is a bug!"
 
     {-# NON_TERMINATING #-}
-    checkβηPure : PureTerm → PureTerm → M ⊤
-    checkβηPure t t' = appendIfError
+    checkβηPure' : ℕ → PureTerm → PureTerm → M ⊤
+    checkβηPure' 0 _ _ = throwError "checkβηPure: out of fuel"
+    checkβηPure' (suc n) t t' = appendIfError
       (tryElse (compareNames t t') $
-      compareHnfs (hnfNormPure Γ t) (hnfNormPure Γ t'))
-      ("\n\nWhile checking equality of" <+> show t <+> "and" <+> show t')
+       tryElse (pureTermBeq t t') $
+       tryElse (compareHnfs (hnfNorm Γ t) t') $
+       tryElse (compareHnfs t             (hnfNorm Γ t')) $
+                compareHnfs (hnfNorm Γ t) (hnfNorm Γ t'))
+      ("\n\nWhile checking equality of" <+> show t <+> "and" <+> show t'
+      + "\nHNFs:" <+> show (hnfNorm Γ t) <+> "and" <+> show (hnfNorm Γ t'))
       -- tryElse (compareHnfs (hnfNormPure Γ t) (hnfNormPure Γ t')) $
       -- pureTermBeq t t'
       where
@@ -171,31 +176,35 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
         compareHnfs (Var-T x) (Var-T x₁)          = beqMonadHelper x x₁ "Name"
         compareHnfs (Sort-T x) (Sort-T x₁)        = beqMonadHelper x x₁ "Sort-T"
         compareHnfs (Const-T x) (Const-T x₁)      = beqMonadHelper x x₁ "Const"
-        compareHnfs (App b t t₁) (App b' x x₁)    = beqMonadHelper b b' "Binder" >> checkβηPure t x >> checkβηPure t₁ x₁
-        compareHnfs (Lam-P b _ t) (Lam-P b' _ t₁) = beqMonadHelper b b' "Binder" >> checkβηPure t t₁
+        compareHnfs (App b t t₁) (App b' x x₁)    = beqMonadHelper b b' "Binder" >> checkβηPure' n t x >> checkβηPure' n t₁ x₁
+        compareHnfs (Lam-P b _ t) (Lam-P b' _ t₁) = beqMonadHelper b b' "Binder" >> checkβηPure' n t t₁
         compareHnfs (Pi b _ t t₁) (Pi b' _ x x₁) =
-          beqMonadHelper b b' "Binder" >> checkβηPure t x >> checkβηPure t₁ x₁
-        compareHnfs (Iota _ t t₁) (Iota _ x x₁)   = checkβηPure t x >> checkβηPure t₁ x₁
-        compareHnfs (Eq-T t t₁) (Eq-T x x₁)       = checkβηPure t x >> checkβηPure t₁ x₁
-        compareHnfs (M-T t) (M-T x)               = checkβηPure x t
-        compareHnfs (Mu t t₁) (Mu x x₁)           = checkβηPure t x >> checkβηPure t₁ x₁
-        compareHnfs (Epsilon t) (Epsilon x)       = checkβηPure t x
-        compareHnfs (Gamma t t₁) (Gamma x x₁)     = checkβηPure t x >> checkβηPure t₁ x₁
+          beqMonadHelper b b' "Binder" >> checkβηPure' n t x >> checkβηPure' n t₁ x₁
+        compareHnfs (Iota _ t t₁) (Iota _ x x₁)   = checkβηPure' n t x >> checkβηPure' n t₁ x₁
+        compareHnfs (Eq-T t t₁) (Eq-T x x₁)       = checkβηPure' n t x >> checkβηPure' n t₁ x₁
+        compareHnfs (M-T t) (M-T x)               = checkβηPure' n x t
+        compareHnfs (Mu t t₁) (Mu x x₁)           = checkβηPure' n t x >> checkβηPure' n t₁ x₁
+        compareHnfs (Epsilon t) (Epsilon x)       = checkβηPure' n t x
+        compareHnfs (Gamma t t₁) (Gamma x x₁)     = checkβηPure' n t x >> checkβηPure' n t₁ x₁
         compareHnfs t@(Ev m x) t'@(Ev m' x') with m ≟ m'
-        ... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith checkβηPure x x'
+        ... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith (checkβηPure' n) x x'
         ... | no  _    = hnfError t t'
         compareHnfs (Char-T c) (Char-T c') = beqMonadHelper c c' "Char"
-        compareHnfs (CharEq t t₁) (CharEq x x₁) = checkβηPure t x >> checkβηPure t₁ x₁
-        compareHnfs (Lam-P _ _ t) t₁ = case normalizePure Γ t of λ where
+        compareHnfs (CharEq t t₁) (CharEq x x₁) = checkβηPure' n t x >> checkβηPure' n t₁ x₁
+        -- compareHnfs (Lam-P _ _ t) t₁ = checkβηPure' n t (weakenBy 1 t₁ ⟪$⟫ BoundVar 0)
+        -- compareHnfs t (Lam-P _ _ t₁) = checkβηPure' n (weakenBy 1 t ⟪$⟫ BoundVar 0) t₁
+        compareHnfs (Lam-P _ _ t) t₁ = case normalize Γ t of λ where
           t''@(App _ t' (Var-T (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
             then (compareHnfs (strengthen t') t₁) else hnfError t'' t₁
           t'' → hnfError t'' t₁
-        compareHnfs t (Lam-P _ _ t₁) = case normalizePure Γ t₁ of λ where
+        compareHnfs t (Lam-P _ _ t₁) = case normalize Γ t₁ of λ where
           t''@(App _ t' (Var-T (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
             then (compareHnfs t (strengthen t')) else hnfError t t''
           t'' → hnfError t t''
         {-# CATCHALL #-}
         compareHnfs t t' = hnfError t t'
+
+    checkβηPure = checkβηPure' 100
 
     checkβη : AnnTerm → AnnTerm → M ⊤
     checkβη t t' = checkβηPure (Erase t) (Erase t')
@@ -297,14 +306,6 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
       ("Type mismatch in rho:" ∷ᵗ subst t₁ u₁ ∷ᵗ "should be βη-equivalent to the type of" ∷ᵗ
        t₂ ∷ᵗ ":" ∷ᵗ T₁ ∷ᵗ [])
     return $ subst t₁ u
-
-  -- synthType' tm@(All n t t₁) = do
-
-  --   case (hnfNorm Γ' u₁) of λ
-  --     { (Sort-T Ast) → return ⋆
-  --     ; v → throwErrorCtx tm $
-  --       "The type family in forall should have type ⋆, but it has type"
-  --       ∷ᵗ v ∷ᵗ "\nContext:" <+> show {{Context-Show}} Γ' ∷ᵗ [] }
 
   synthType' tm@(Pi b n t t₁) = do
     Γ ← ask
