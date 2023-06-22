@@ -26,7 +26,7 @@ open import Data.Nat hiding (_+_; _≟_) public
 open import Data.Nat.Instance public
 open import Data.Product using (_×_; _,_; proj₁; proj₂; ∃-syntax; -,_; Σ; swap; Σ-syntax; map₁; map₂; <_,_>; curry; uncurry) public
 open import Data.Product.Instance public
-open import Data.String using (String; unwords; unlines; padRight; _<+>_) public
+open import Data.String using (String; uncons; unwords; unlines; padRight; _<+>_) public
 open import Data.String.Exts public
 open import Data.String.Instance public
 open import Data.Sum using (_⊎_; inj₁; inj₂; from-inj₁; from-inj₂) public

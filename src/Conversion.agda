@@ -10,7 +10,6 @@ open import Data.String using (fromList; toList)
 open import Data.Tree
 open import Data.Tree.Instance
 open import Data.Word using (toℕ)
-open import Data.List using (uncons)
 
 open import Theory.TypeChecking
 open import Parse.TreeConvert using (toTerm; toName; toNameList)
@@ -103,9 +102,9 @@ instance
 
   private
     Quotable-Index : Quotable 𝕀
-    Quotable-Index .quoteToAnnTerm i with uncons (toList (show i))
+    Quotable-Index .quoteToAnnTerm i with uncons (show i)
     ... | nothing      = □ -- impossible
-    ... | just (x , i) = FreeVar ("init$index$" + fromList [ x ] + "_index'_") ⟪$⟫ quoteIndex' i
+    ... | just (x , i) = FreeVar ("init$index$" + fromList [ x ] + "_index'_") ⟪$⟫ quoteIndex' (toList i)
       where
         quoteIndex' : List Char → AnnTerm
         quoteIndex' [] = FreeVar "init$index'$"

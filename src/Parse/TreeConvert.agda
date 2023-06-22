@@ -8,25 +8,25 @@
 module Parse.TreeConvert where
 
 import Data.Sum
+open import Data.Fin using (fold; toℕ)
 open import Class.Map
 open import Class.Monad.Except
-open import Data.SimpleMap
 open import Data.Map.String
 open import Data.String as S using (fromList; toList; fromChar; uncons)
 open import Data.Tree
 open import Data.Tree.Instance
 open import Data.Word using (fromℕ)
+open import Data.Vec.Recursive using (_^_)
+open import Class.Listable
 
-open import Prelude
-open import Prelude.Strings
+open import Prelude hiding (_^_)
 
-open import Theory.TypeChecking
 open import Bootstrap.InitEnv
-open import Parse.MultiChar
-open import Parse.LL1
-open import Parse.Generate
 open import Parse.Escape
-open import Parse.MarkedString
+open import Parse.Generate
+open import Parse.LL1
+open import Parse.MultiChar
+open import Theory.TypeChecking
 
 PTree : Set
 PTree = Tree (ℕ ⊎ Char)
@@ -34,12 +34,10 @@ PTree = Tree (ℕ ⊎ Char)
 RuleType : Set
 RuleType = Fin 5
 
-ruleFun : Set → RuleType → Set
-ruleFun A 0F = Maybe A
-ruleFun A 1F = PTree → Maybe A
-ruleFun A 2F = PTree → PTree → Maybe A
-ruleFun A 3F = PTree → PTree → PTree → Maybe A
-ruleFun A 4F = PTree → PTree → PTree → PTree → Maybe A
+ruleFun' : ∀ {k} → Set → Fin k → Set
+ruleFun' A = fold _ (λ T → PTree → T) (Maybe A)
+
+ruleFun = ruleFun' {k = 5}
 
 ruleIdMap : StringMap (StringMap ℕ)
 ruleIdMap = mapSnd (fromListSM ∘ mapWithIndex (flip _,_)) $ fromListSM parseRuleMap
@@ -50,17 +48,14 @@ ruleId nonterm rule = inj₁ <$> (lookup rule =<< lookup nonterm ruleIdMap)
 _≡ᴹ_ : ℕ ⊎ Char → Maybe (ℕ ⊎ Char) → Bool
 x ≡ᴹ y = just x ≣ y
 
-ruleIdN : ∀ {A} → (n : RuleType) → String → String → ruleFun A n → List PTree → Maybe (ℕ ⊎ Char) × Maybe A
-ruleIdN 0F s s' f [] = (ruleId s s' , f)
-ruleIdN 1F s s' f (x₁ ∷ []) = (ruleId s s' , f x₁)
-ruleIdN 2F s s' f (x₁ ∷ x₂ ∷ []) = (ruleId s s' , f x₁ x₂)
-ruleIdN 3F s s' f (x₁ ∷ x₂ ∷ x₃ ∷ []) = (ruleId s s' , f x₁ x₂ x₃)
-ruleIdN 4F s s' f (x₁ ∷ x₂ ∷ x₃ ∷ x₄ ∷ []) = (ruleId s s' , f x₁ x₂ x₃ x₄)
-ruleIdN n s s' f _ = (ruleId s s' , nothing)
+ruleIdN : ∀ {A k} → (n : Fin k) → String → String → ruleFun' A n → List PTree → Maybe (ℕ ⊎ Char) × Maybe A
+ruleIdN 0F      s s' f []       = (ruleId s s' , f)
+ruleIdN (suc n) s s' f (x ∷ xs) = (ruleIdN n s s' (f x) xs)
+ruleIdN _       s s' _ _        = (ruleId s s' , nothing)
 
-ruleCaseN : {A : Set} → PTree → String → List (List Char × Σ[ t ∈ RuleType ] ruleFun A t) → Maybe A
+ruleCaseN : {A : Set} → PTree → String → List (String × Σ[ t ∈ RuleType ] ruleFun A t) → Maybe A
 ruleCaseN (Node x x₁) r cs =
-  decCase just x of map (λ where (x , t , f) → ruleIdN t r (fromList x) f x₁) cs default nothing
+  decCase just x of map (λ where (x , t , f) → ruleIdN t r x f x₁) cs default nothing
 
 toSort : PTree → Maybe AnnTerm
 toSort x = ruleCaseN x "sort" (("=ast=" , 0F , just ⋆) ∷ ("=sq=" , 0F , just □) ∷ [])
@@ -111,7 +106,10 @@ toTerm = helper []
   where
     helper : List String → PTree → Maybe AnnTerm
     helper accu y =
-      let conv0ʰ : (⊤ → AnnTerm) → ruleFun AnnTerm 0F
+      let ruleFun'' : ∀ {k} → Set → Fin k → Set
+          ruleFun'' A = fold _ (λ T → PTree → T) (Maybe A)
+
+          conv0ʰ : (⊤ → AnnTerm) → ruleFun AnnTerm 0F
           conv0ʰ f = f <$> (just _)
 
           conv1ʰ : (AnnTerm → AnnTerm) → ruleFun AnnTerm 1F
@@ -132,6 +130,14 @@ toTerm = helper []
           convᵇ : (String → AnnTerm → AnnTerm → AnnTerm) → ruleFun AnnTerm 3F
           convᵇ f n y y' = do n ← toName n; y ← helper accu y; y' ← helper (n ∷ accu) y'; return $ f n y y'
 
+          primRule : PrimMeta → String × Σ[ k ∈ RuleType ] ruleFun AnnTerm k
+          primRule m =
+            let convk = case_return_of_ (primMetaArityF m)
+                          (λ k → (AnnTerm ^ (toℕ k) → AnnTerm) → ruleFun AnnTerm k) λ where
+                  0F → conv0ʰ ; 1F → conv1ʰ ; 2F → conv2ʰᶜ ; 3F → conv3ʰᶜ
+                  4F → λ _ _ _ _ _ → nothing -- currently unncessary
+            in (genBuiltin' m , primMetaArityF m , convk (Ev m))
+
       in ruleCaseN y "term"
         (("_var_" , 1F , (λ x → ruleCaseN x "var"
           (("_string_" , 1F , λ n → do
@@ -143,12 +149,13 @@ toTerm = helper []
 
         ("_sort_" , 1F , toSort) ∷
 
-        ("=pi=^space^_term_"  , 1F , conv1ʰ Pr1) ∷
-        ("=psi=^space^_term_" , 1F , conv1ʰ Pr2) ∷
+        (genSimple "=pi="  1 , 1F , conv1ʰ Pr1) ∷ (genSimple "=psi=" 1 , 1F , conv1ʰ Pr2) ∷
 
-        ("=beta=^space^_term_^space^_term_"  , 2F , conv2ʰ Beta) ∷
-        ("=delta=^space^_term_^space^_term_" , 2F , conv2ʰ Delta) ∷
-        ("=sigma=^space^_term_"              , 1F , conv1ʰ Sigma) ∷
+        (genSimple "=beta="  2 , 2F , conv2ʰ Beta) ∷
+        (genSimple "=delta=" 2 , 2F , conv2ʰ Delta) ∷
+        (genSimple "=sigma=" 1 , 1F , conv1ʰ Sigma) ∷
+
+        (genSimple "=phi="   3 , 3F , conv3ʰ Phi) ∷ (genSimple "=equal=" 2 , 2F , conv2ʰ Eq-T) ∷
 
         ("=lsquare=^space'^_term_^space^_term_^space'^=rsquare=" , 2F , conv2ʰ (App Regular)) ∷
         ("=langle=^space'^_term_^space^_term_^space'^=rangle="   , 2F , conv2ʰ (App Erased)) ∷
@@ -160,11 +167,11 @@ toTerm = helper []
           t'' ← helper accu y''
           return $ Rho t t' t'')) ∷
 
-        ("=forall=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ (Pi Erased)) ∷
-        ("=Pi=^space^_string_^space'^=colon=^space'^_term_^space^_term_"     , 3F , convᵇ (Pi Regular)) ∷
-        ("=iota=^space^_string_^space'^=colon=^space'^_term_^space^_term_"   , 3F , convᵇ Iota) ∷
-        ("=lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ (Lam-A Regular)) ∷
-        ("=Lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" , 3F , convᵇ (Lam-A Erased)) ∷
+        (genBinder "=forall=" , 3F , convᵇ (Pi Erased)) ∷
+        (genBinder "=Pi="     , 3F , convᵇ (Pi Regular)) ∷
+        (genBinder "=iota="   , 3F , convᵇ Iota) ∷
+        (genBinder "=lambda=" , 3F , convᵇ (Lam-A Regular)) ∷
+        (genBinder "=Lambda=" , 3F , convᵇ (Lam-A Erased)) ∷
 
         ("=lbrace=^space'^_term_^space'^=comma=^space'^_term_^space^_string_^space'^=dot=^space'^_term_^space'^=rbrace=" , 4F , (λ y y' n y'' → do
           t ← helper accu y
@@ -173,33 +180,18 @@ toTerm = helper []
           t'' ← helper (n ∷ accu) y''
           return $ Pair t t' t'')) ∷
 
-        ("=phi=^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰ Phi) ∷
-        ("=equal=^space^_term_^space^_term_"            , 2F , conv2ʰ Eq-T) ∷
-        ("=omega=^space^_term_"                         , 1F , conv1ʰ M-T) ∷
-        ("=mu=^space^_term_^space^_term_"               , 2F , conv2ʰ Mu) ∷
-        ("=epsilon=^space^_term_"                       , 1F , conv1ʰ Epsilon) ∷
+        (genSimple "=omega="   1 , 1F , conv1ʰ M-T) ∷
+        (genSimple "=mu="      2 , 2F , conv2ʰ Mu) ∷
+        (genSimple "=epsilon=" 1 , 1F , conv1ʰ Epsilon) ∷
 
-        ("=zeta=Let^space^_term_^space^_term_"                  , 2F , conv2ʰᶜ (Ev Let)) ∷
-        ("=zeta=AnnLet^space^_term_^space^_term_^space^_term_"  , 3F , conv3ʰᶜ (Ev AnnLet)) ∷
-        ("=zeta=SetEval^space^_term_^space^_term_^space^_term_" , 3F , conv3ʰᶜ (Ev SetEval)) ∷
-        ("=zeta=ShellCmd^space^_term_^space^_term_"             , 2F , conv2ʰᶜ (Ev ShellCmd)) ∷
-        ("=zeta=CheckTerm^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev CheckTerm)) ∷
-        ("=zeta=Parse^space^_term_^space^_term_^space^_term_"   , 3F , conv3ʰᶜ (Ev Parse)) ∷
-        ("=zeta=CatchErr^space^_term_^space^_term_"             , 2F , conv2ʰ Gamma) ∷
-        ("=zeta=Normalize^space^_term_"                         , 1F , conv1ʰ (Ev Normalize)) ∷
-        ("=zeta=HeadNormalize^space^_term_"                     , 1F , conv1ʰ (Ev HeadNormalize)) ∷
-        ("=zeta=InferType^space^_term_"                         , 1F , conv1ʰ (Ev InferType)) ∷
-        ("=zeta=Import^space^_term_"                            , 1F , conv1ʰ (Ev Import)) ∷
-        ("=zeta=GetEval"                                        , 0F , conv0ʰ (Ev GetEval)) ∷
-        ("=zeta=Print^space^_term_"                             , 1F , conv1ʰ (Ev Print)) ∷
-        ("=zeta=WriteFile^space^_term_^space^_term_"            , 2F , conv2ʰᶜ (Ev WriteFile)) ∷
-        ("=zeta=CommandLine"                                    , 0F , conv0ʰ (Ev CommandLine)) ∷
-        ("=zeta=ToggleProf"                                     , 0F , conv0ʰ (Ev ToggleProf)) ∷
+        map primRule (Listable.listing PrimMeta-Listable) ++
+
+        (genBuiltin "CatchErr" 2   , 2F , conv2ʰ Gamma) ∷
 
         ("=Kappa=_const_" , 1F , (λ z → Const-T <$> toConst z)) ∷
         ("=kappa=_char_"  , 1F , (λ z → Char-T <$> toChar z <∣> toChar' z)) ∷
 
-        ("=gamma=^space^_term_^space^_term_" , 2F , conv2ʰ CharEq) ∷ [])
+        (genSimple "=gamma=" 2 , 2F , conv2ʰ CharEq) ∷ [])
 
 data BootstrapStmt : Set where
   Let           : GlobalName → AnnTerm → Maybe AnnTerm → BootstrapStmt

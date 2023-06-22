@@ -5,19 +5,34 @@
 
 module Bootstrap.InitEnv where
 
+open import Class.Listable
 open import Class.Map
-open import Data.Map.String
 open import Data.Char.Ranges
 open import Data.List using (dropWhile; takeWhile)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
 
-open import Prelude hiding (from-just)
+open import Prelude
 open import Prelude.Strings
-open import Unsafe using (from-just)
 
-open import Parse.Escape
 open import Bootstrap.SimpleInductive
+open import Parse.Escape
+open import Theory.PrimMeta
+
+inNT : String → String → String
+inNT nt rhs = nt + "$" + rhs
+
+genSimple : String → ℕ → String
+genSimple symb args = symb + concat (replicate args "^space^_term_")
+
+genBinder : String → String
+genBinder symb = symb + "^space^_string_^space'^=colon=^space'^_term_^space^_term_"
+
+genBuiltin : String → ℕ → String
+genBuiltin name = genSimple ("=zeta=" + name)
+
+genBuiltin' : PrimMeta → String
+genBuiltin' m = genBuiltin (show m) (primMetaArity m)
 
 private
   nameSymbols : List Char
@@ -46,48 +61,28 @@ private
     "var$_string_" ∷ "var$_index_" ∷
 
     "sort$=ast=" ∷ "sort$=sq=" ∷
-    "const$Char" ∷
+    "const$Char" ∷ [] ++
 
-    "term$_var_" ∷
-    "term$_sort_" ∷
-    "term$=Kappa=_const_" ∷
-    "term$=pi=^space^_term_" ∷
-    "term$=psi=^space^_term_" ∷
-    "term$=beta=^space^_term_^space^_term_" ∷
-    "term$=delta=^space^_term_^space^_term_" ∷
-    "term$=sigma=^space^_term_" ∷
-    "term$=lsquare=^space'^_term_^space^_term_^space'^=rsquare=" ∷
-    "term$=langle=^space'^_term_^space^_term_^space'^=rangle=" ∷
-    "term$=rho=^space^_term_^space^_string_^space'^=dot=^space'^_term_^space^_term_" ∷
-    "term$=forall=^space^_string_^space'^=colon=^space'^_term_^space^_term_" ∷
-    "term$=Pi=^space^_string_^space'^=colon=^space'^_term_^space^_term_" ∷
-    "term$=iota=^space^_string_^space'^=colon=^space'^_term_^space^_term_" ∷
-    "term$=lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" ∷
-    "term$=Lambda=^space^_string_^space'^=colon=^space'^_term_^space^_term_" ∷
-    "term$=lbrace=^space'^_term_^space'^=comma=^space'^_term_^space^_string_^space'^=dot=^space'^_term_^space'^=rbrace=" ∷
-    "term$=phi=^space^_term_^space^_term_^space^_term_" ∷
-    "term$=equal=^space^_term_^space^_term_" ∷
-    "term$=omega=^space^_term_" ∷ -- this is M
-    "term$=mu=^space^_term_^space^_term_" ∷
-    "term$=epsilon=^space^_term_" ∷
-    "term$=zeta=Let^space^_term_^space^_term_" ∷
-    "term$=zeta=AnnLet^space^_term_^space^_term_^space^_term_" ∷
-    "term$=zeta=SetEval^space^_term_^space^_term_^space^_term_" ∷
-    "term$=zeta=ShellCmd^space^_term_^space^_term_" ∷
-    "term$=zeta=CheckTerm^space^_term_^space^_term_" ∷
-    "term$=zeta=Parse^space^_term_^space^_term_^space^_term_" ∷
-    "term$=zeta=Normalize^space^_term_" ∷
-    "term$=zeta=HeadNormalize^space^_term_" ∷
-    "term$=zeta=InferType^space^_term_" ∷
-    "term$=zeta=CatchErr^space^_term_^space^_term_" ∷ -- this is not actually in PrimMeta
-    "term$=zeta=Import^space^_term_" ∷
-    "term$=zeta=GetEval" ∷
-    "term$=zeta=Print^space^_term_" ∷
-    "term$=zeta=WriteFile^space^_term_^space^_term_" ∷
-    "term$=zeta=CommandLine" ∷
-    "term$=zeta=ToggleProf" ∷
-    "term$=kappa=_char_" ∷ -- this constructs a Char
-    "term$=gamma=^space^_term_^space^_term_" ∷ -- charEq
+    (inNT "term" <$>
+      "_var_" ∷ "_sort_" ∷
+      genSimple "=pi="    1 ∷ genSimple "=psi=" 1 ∷ genSimple "=beta="  2 ∷ genSimple "=delta=" 2 ∷
+      genSimple "=sigma=" 1 ∷ genSimple "=phi=" 3 ∷ genSimple "=equal=" 2 ∷
+      "=lsquare=^space'^_term_^space^_term_^space'^=rsquare=" ∷
+      "=langle=^space'^_term_^space^_term_^space'^=rangle=" ∷
+      "=rho=^space^_term_^space^_string_^space'^=dot=^space'^_term_^space^_term_" ∷
+      genBinder "=forall=" ∷ genBinder "=Pi="     ∷
+      genBinder "=lambda=" ∷ genBinder "=Lambda=" ∷
+      genBinder "=iota="   ∷
+      "=lbrace=^space'^_term_^space'^=comma=^space'^_term_^space^_string_^space'^=dot=^space'^_term_^space'^=rbrace=" ∷
+
+      genSimple "=omega=" 1 ∷ genSimple "=mu=" 2 ∷ genSimple "=epsilon=" 1 ∷ -- meta monad primitives
+
+      map genBuiltin' (Listable.listing PrimMeta-Listable) ++
+      genBuiltin "CatchErr" 2 ∷
+
+      "=Kappa=_const_" ∷
+      "=kappa=_char_" ∷ -- this constructs a Char
+      genSimple "=gamma=" 2 ∷ []) ++ -- charEq
 
     "lettail$=dot=" ∷ "lettail$=colon=^space'^_term_^space'^=dot=" ∷
     []
@@ -130,32 +125,32 @@ private
 
   definedGrammar : List (String × String)
   definedGrammar =
-      ("string$_nameInitChar__string'_" , "stringCons")
-    ∷ ("string'$_nameTailChar__string'_" , "stringCons")
-    ∷ ("string'$" , "stringNil")
+    ("unit" , "∀ X : * Π _ : X X") ∷
+    ("tt" , "Λ X : * λ x : X x") ∷
+    ("string$_nameInitChar__string'_" , "stringCons") ∷
+    ("string'$_nameTailChar__string'_" , "stringCons") ∷
+    ("string'$" , "stringNil") ∷
 
-    ∷ ("err" , "init$string")
+    ("err" , "init$string") ∷
 
-    ∷ ("stmt'$let^space^_string_^space'^=colon==equal=^space'^_term_^space'^_lettail_"
-        , "λ s : init$string λ t : init$term λ lt : init$lettail
-           [[<lt ω init$unit> ζLet s t] λ T : init$term ζAnnLet s t T]")
-    ∷ ("stmt'$seteval^space^_term_^space^_string_^space^_string_^space'^=dot="
-        , "λ ev : init$term λ NT : init$string λ namespace : init$string ζSetEval ev NT namespace")
-    ∷ ("stmt'$runMeta^space^_term_^space'^=dot=" , "λ x : ω init$unit x")
-    ∷ ("stmt'$import^space^_string_^space'^=dot=" , "λ s : init$string ζImport s")
-    ∷ ("stmt'$" , "ε init$tt")
-    ∷ ("stmt$^space'^_stmt'_" , "λ x : ω init$unit x")
-    ∷ []
+    ("stmt'$let^space^_string_^space'^=colon==equal=^space'^_term_^space'^_lettail_"
+      , "λ s : init$string λ t : init$term λ lt : init$lettail
+         [[<lt ω init$unit> ζLet s t] λ T : init$term ζAnnLet s t T]") ∷
+    ("stmt'$seteval^space^_term_^space^_string_^space^_string_^space'^=dot="
+      , "λ ev : init$term λ NT : init$string λ namespace : init$string ζSetEval ev NT namespace") ∷
+    ("stmt'$runMeta^space^_term_^space'^=dot=" , "λ x : ω init$unit x") ∷
+    ("stmt'$import^space^_string_^space'^=dot=" , "λ s : init$string ζImport s") ∷
+    ("stmt'$" , "ε init$tt") ∷
+    ("stmt$^space'^_stmt'_" , "λ x : ω init$unit x") ∷
+    ("product" , "λ A : * λ B : * ∀ X : * Π _ : Π _ : A Π _ : B X X") ∷
+    ("pair" , "λ A : * λ B : * λ a : A λ b : B Λ X : * λ p : Π _ : A Π _ : B X [[p a] b]") ∷
+    []
 
   otherInit : List String
   otherInit =
-    "let init$unit := ∀ X : * Π _ : X X."
-    ∷ "let init$tt := Λ X : * λ x : X x."
-    ∷ map simpleInductive (stringListData ∷ [])
-    ++ map (λ where (n , d) → "let init$" + n + " := " + d + ".") definedGrammar
-    ++ "let init$product := λ A : * λ B : * ∀ X : * Π _ : Π _ : A Π _ : B X X."
-    ∷ "let init$pair := λ A : * λ B : * λ a : A λ b : B Λ X : * λ p : Π _ : A Π _ : B X [[p a] b]."
-    ∷ "let eval := λ x : ω init$unit x." ∷ "seteval eval init stmt." ∷ []
+    map simpleInductive (stringListData ∷ []) ++
+    map (λ where (n , d) → "let init$" + n + " := " + d + ".") definedGrammar ++
+    "let eval := λ x : ω init$unit x." ∷ "seteval eval init stmt." ∷ []
 
 --------------------------------------------------------------------------------
 

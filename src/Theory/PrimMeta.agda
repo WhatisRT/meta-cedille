@@ -1,13 +1,10 @@
 {-# OPTIONS --type-in-type #-}
 
-open import Class.Listable
-open import Data.List
-open import Data.List.Properties
-open import Data.List.Relation.Unary.Any
-open import Data.List.Relation.Unary.Any.Properties
 import Data.Vec.Recursive
 import Data.Vec.Recursive.Categorical
-open import Relation.Binary.PropositionalEquality
+open import Class.Listable
+open import Data.List.Relation.Unary.Any
+open import Data.Fin using (toℕ)
 
 open import Prelude
 open import Prelude.Nat
@@ -43,8 +40,8 @@ private
     m : PrimMeta
 
 instance
-  PrimMeta-Eq : Eq PrimMeta
-  PrimMeta-Eq = Listable.Listable→Eq record
+  PrimMeta-Listable : Listable PrimMeta
+  PrimMeta-Listable = record
     { listing = Let ∷ AnnLet ∷ SetEval ∷ ShellCmd ∷ CheckTerm ∷ Parse ∷ Normalize ∷ HeadNormalize ∷ InferType ∷ Import ∷ GetEval ∷ Print ∷ WriteFile ∷ CommandLine ∷ ToggleProf ∷ []
     ; complete = λ where
         Let           → pf 0 (here refl)
@@ -63,9 +60,10 @@ instance
         CommandLine   → pf 13 (here refl)
         ToggleProf    → pf 14 (here refl)
     }
-    where
-      pf : ∀ {A : Set} {xs} {P : A → Set} (n : ℕ) → Any P (drop n xs) → Any P xs
-      pf {xs = xs} {P} n p = subst (Any P) (take++drop n xs) (++⁺ʳ (take n xs) p)
+    where pf = listable-pf-helper
+
+  PrimMeta-Eq : Eq PrimMeta
+  PrimMeta-Eq = Listable.Listable→Eq PrimMeta-Listable
 
   PrimMeta-EqB : EqB PrimMeta
   PrimMeta-EqB = Eq→EqB
@@ -87,22 +85,25 @@ instance
   PrimMeta-Show .show CommandLine   = "CommandLine"
   PrimMeta-Show .show ToggleProf    = "ToggleProf"
 
+primMetaArityF : PrimMeta → Fin 5
+primMetaArityF Let           = 2F
+primMetaArityF AnnLet        = 3F
+primMetaArityF SetEval       = 3F
+primMetaArityF ShellCmd      = 2F
+primMetaArityF CheckTerm     = 2F
+primMetaArityF Parse         = 3F
+primMetaArityF Normalize     = 1F
+primMetaArityF HeadNormalize = 1F
+primMetaArityF InferType     = 1F
+primMetaArityF Import        = 1F
+primMetaArityF GetEval       = 0F
+primMetaArityF Print         = 1F
+primMetaArityF WriteFile     = 2F
+primMetaArityF CommandLine   = 0F
+primMetaArityF ToggleProf    = 0F
+
 primMetaArity : PrimMeta → ℕ
-primMetaArity Let           = 2
-primMetaArity AnnLet        = 3
-primMetaArity SetEval       = 3
-primMetaArity ShellCmd      = 2
-primMetaArity CheckTerm     = 2
-primMetaArity Parse         = 3
-primMetaArity Normalize     = 1
-primMetaArity HeadNormalize = 1
-primMetaArity InferType     = 1
-primMetaArity Import        = 1
-primMetaArity GetEval       = 0
-primMetaArity Print         = 1
-primMetaArity WriteFile     = 2
-primMetaArity CommandLine   = 0
-primMetaArity ToggleProf    = 0
+primMetaArity m = toℕ $ primMetaArityF m
 
 primMetaArgs : Set → PrimMeta → Set
 primMetaArgs A m = A Data.Vec.Recursive.^ (primMetaArity m)

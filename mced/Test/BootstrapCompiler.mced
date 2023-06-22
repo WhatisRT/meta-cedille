@@ -24,9 +24,9 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
   t ?(List String -> String)
     (λ v : Var. λ con : List String. showVar con v)
     (λ s : Sort. λ _ : List String. showSort s)
-    (λ s : init$const. unreachableShowTerm0 "CONST")
     (unreachableShowTerm1 "PI") (unreachableShowTerm1 "PSI") (unreachableShowTerm2 "BETA")
-    (unreachableShowTerm2 "DELTA") (unreachableShowTerm1 "SIGMA")
+    (unreachableShowTerm2 "DELTA") (unreachableShowTerm1 "SIGMA") (unreachableShowTerm3 "PHI")
+    (unreachableShowTerm2 "EQUAL")
     (λ t, t' : List String -> String. λ con : List String. φ"[${t con} ${t' con}]")
     (λ t, t' : List String -> String. λ con : List String. φ"<${t con} ${t' con}>")
     (λ _ : List String -> String. λ _ : String. unreachableShowTerm2 "RHO")
@@ -40,8 +40,7 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
     (λ s : String. λ t, t' : List String -> String. λ con : List String.
       φ"Λ ${adjustEmpty s} : ${t con} ${t' $ cons ?String s con}")
     (λ _, _ : List String -> String. λ _ : String. unreachableShowTerm1 "PAIR")
-    (unreachableShowTerm3 "PHI") (unreachableShowTerm2 "EQUAL") (unreachableShowTerm1 "OMEGA")
-    (unreachableShowTerm2 "MU") (unreachableShowTerm1 "EPSILON")
+    (unreachableShowTerm1 "OMEGA") (unreachableShowTerm2 "MU") (unreachableShowTerm1 "EPSILON")
         -- Zetas
     (unreachableShowTerm2 "Let")
     (unreachableShowTerm3 "AnnLet")
@@ -52,13 +51,14 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
     (unreachableShowTerm1 "Normalize")
     (unreachableShowTerm1 "HeadNormalize")
     (unreachableShowTerm1 "InferType")
-    (unreachableShowTerm2 "CatchErr")
     (unreachableShowTerm1 "Import")
     (unreachableShowTerm0 "GetEval")
     (unreachableShowTerm1 "Print")
     (unreachableShowTerm2 "WriteFile")
     (unreachableShowTerm0 "CommandLine")
     (unreachableShowTerm0 "ToggleProf")
+    (unreachableShowTerm2 "CatchErr")
+    (λ s : init$const. unreachableShowTerm0 "CONST")
     (λ c : Char. λ _ : List String. φ"κ${stringCons c stringNil}")
     (unreachableShowTerm2 "CHAREQ").
 

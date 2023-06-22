@@ -15,23 +15,22 @@ b-let cedilleTerm2 (s : String) (t, t' : Term) := appDouble (sVarTerm s) t t'.
 b-let cedilleTerm3 (s : String) (t, t', t'' : Term) := appSingle (appDouble (sVarTerm s) t t') t''.
 
 b-let initTermToTerm (t : iTerm) := t ?Term
-  varTerm sortTerm (λ _ : Const. sVarTerm "Char")
-    (cedilleTerm1 "π1") (cedilleTerm1 "π2") (cedilleTerm2 "β") (cedilleTerm2 "δ") (cedilleTerm1 "σ")
+  varTerm sortTerm
+    (cedilleTerm1 "π1") (cedilleTerm1 "π2") (cedilleTerm2 "β") (cedilleTerm2 "δ")
+    (cedilleTerm1 "σ") (cedilleTerm3 "φ") (cedilleTerm2 "=")
     appSingle appSingleE
     (λ t : Term. λ _ : String. λ t', t'' : Term. cedilleTerm3 "ρ" t t' t'')
-    (λ s : String. λ t, t' : Term. binderTerm forallBinder s t t')
-    (λ s : String. λ t, t' : Term. binderTerm piBinder s t t')
+    (binderTerm forallBinder) (binderTerm piBinder)
+    (binderTerm lambdaBinder) (binderTerm LambdaBinder)
     (λ _ : String. cedilleTerm2 "ι")
-    (λ s : String. λ t, t' : Term. binderTerm lambdaBinder s t t')
-    (λ s : String. λ t, t' : Term. binderTerm LambdaBinder s t t')
     (λ t, t' : Term. λ _ : String. λ _ : Term. cedilleTerm2 "ςPair" t t')
-    (cedilleTerm3 "φ") (cedilleTerm2 "=") nothingTerm1 nothingTerm2 nothingTerm1
+    nothingTerm1 nothingTerm2 nothingTerm1
     -- Zetas
     nothingTerm2 nothingTerm3 nothingTerm3 nothingTerm2 nothingTerm2
-    nothingTerm3 nothingTerm1 nothingTerm1 nothingTerm1 nothingTerm2
-    nothingTerm1 nothingTerm nothingTerm1 nothingTerm2 nothingTerm
-    nothingTerm
-    (λ c : Char. charTerm c) nothingTerm2.
+    nothingTerm3 nothingTerm1 nothingTerm1 nothingTerm1 nothingTerm1
+    nothingTerm nothingTerm1 nothingTerm2 nothingTerm nothingTerm
+    nothingTerm2
+    (λ _ : Const. sVarTerm "Char") (λ c : Char. charTerm c) nothingTerm2.
 
 -- assuming no unknowns in f and no recursive unknowns in app, infer
 -- unknowns in app and return the applied term

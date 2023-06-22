@@ -1,16 +1,19 @@
 module Class.Listable where
 
 open import Class.Equality
-
-open import Data.List
-open import Data.List.Relation.Unary.Any
-open import Data.List.Membership.Propositional
-open import Relation.Binary.PropositionalEquality
-open import Relation.Nullary
 open import Data.Fin renaming (_≟_ to _≟F_)
 open import Data.Fin.Properties using (suc-injective)
+open import Data.List
+open import Data.List.Membership.Propositional
+open import Data.List.Properties
+open import Data.List.Relation.Unary.Any
+open import Data.List.Relation.Unary.Any.Properties
+open import Data.Nat using (ℕ)
+open import Relation.Binary.PropositionalEquality
+open import Relation.Nullary
 
-index-injective : ∀ {ℓ} {A : Set ℓ} {a b} {l : List A} → (a∈l : a ∈ l) → (b∈l : b ∈ l) → index a∈l ≡ index b∈l → a ≡ b
+index-injective : ∀ {ℓ} {A : Set ℓ} {a b} {l : List A}
+                → (a∈l : a ∈ l) → (b∈l : b ∈ l) → index a∈l ≡ index b∈l → a ≡ b
 index-injective (here refl) (here refl) eq = refl
 index-injective (there a∈l) (there b∈l) eq = index-injective a∈l b∈l (suc-injective eq)
 
@@ -27,3 +30,6 @@ record Listable (A : Set) : Set where
       ... | a∈l | [ eq ] | b∈l | [ eq' ] with index a∈l ≟F index b∈l
       ... | no ¬p = no (λ where refl → ¬p (cong index (trans (sym eq) eq')))
       ... | yes p = yes (index-injective a∈l b∈l p)
+
+listable-pf-helper : ∀ {A : Set} {xs} {P : A → Set} (n : ℕ) → Any P (drop n xs) → Any P xs
+listable-pf-helper {xs = xs} {P} n p = subst (Any P) (take++drop n xs) (++⁺ʳ (take n xs) p)
