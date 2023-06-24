@@ -62,6 +62,7 @@ runMeta stmtToNewStmt (convertLetInfo (mkLetInfo (mkModuleDictName emptyModuleDi
 infix "×" := Product.
 
 -- TODO: do the quoting stuff automatically
+infixMacro T "=equal==rangle=" T' := ∀ _ : γ{T}. γ{T'}.
 infixMacro f "=dollar=" x := γ{f} γ{x}.
 
 -- Note: this requires elet until the regular let supports elaboration
