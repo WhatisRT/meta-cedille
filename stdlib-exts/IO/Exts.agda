@@ -30,6 +30,7 @@ private
   import System.Environment
   import System.Exit
   import System.IO
+  import System.IO.Unsafe
   import System.IO.Error
   import System.Process
   import Data.Text.Encoding.Error (lenientDecode)
@@ -40,6 +41,7 @@ private
 postulate
   flushStdoutPrim : Prim.IO ⊤
   getCPUTimePrim : Prim.IO ℕ
+  unsafePerformIOPrim : Prim.IO A → A
   putStrErrPrim : String → Prim.IO ⊤
   runShellCmdPrim : String → List String → Prim.IO String
   catchIOErrorPrim : Prim.IO A → (String → Prim.IO A) → Prim.IO A
@@ -47,6 +49,7 @@ postulate
 
 {-# COMPILE GHC flushStdoutPrim = hFlush stdout #-}
 {-# COMPILE GHC getCPUTimePrim = getCPUTime #-}
+{-# COMPILE GHC unsafePerformIOPrim = \ _ -> unsafePerformIO #-}
 {-# COMPILE GHC putStrErrPrim = hPutStr stderr . unpack #-}
 {-# COMPILE GHC runShellCmdPrim = \ s t -> pack <$> (readProcess (unpack s) (fmap unpack t) "") #-} -- use haskell proc
 {-# COMPILE GHC catchIOErrorPrim = \ _ a f -> catchIOError a (f . pack . show) #-}
@@ -57,6 +60,9 @@ flushStdout = lift flushStdoutPrim
 
 getCPUTime : IO ℕ
 getCPUTime = lift getCPUTimePrim
+
+unsafePerformIO : IO A → A
+unsafePerformIO = unsafePerformIOPrim ∘ run
 
 putStrErr : String → IO ⊤
 putStrErr s = lift (putStrErrPrim s)

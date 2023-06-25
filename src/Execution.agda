@@ -50,12 +50,15 @@ module _ {M : Set → Set} {{_ : Monad M}}
   getMeta : M MetaEnv
   getMeta = gets proj₂
 
+  logTypeEnabled : String → M Bool
+  logTypeEnabled type = do
+    record { doDebug = doDebug } ← getMeta
+    return $ not $ null (filter (_≟ type) doDebug)
+
   logWithType : ∀ {A} → String → String → M A → M A
   logWithType type s x = do
-    record { doDebug = doDebug } ← getMeta
-    if null (filter (_≟ type) doDebug)
-      then x
-      else Prelude.measureTime s x
+    b ← logTypeEnabled type
+    if b then Prelude.measureTime s x else x
 
   logProfile : ∀ {A} → String → M A → M A
   logProfile = logWithType "profile"
@@ -280,11 +283,13 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executePrimitive Normalize t = do
     Γ ← getContext
-    returnQuoted (normalize Γ t)
+    b ← logTypeEnabled "normalize"
+    returnQuoted (Norm.normalize b Γ t)
 
   executePrimitive HeadNormalize t = do
     Γ ← getContext
-    returnQuoted (hnfNorm Γ t)
+    b ← logTypeEnabled "headNormalize"
+    returnQuoted (Norm.hnfNorm b Γ t)
 
   executePrimitive InferType t = do
     Γ ← getContext

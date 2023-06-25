@@ -132,15 +132,15 @@ module _ where
   showTermCtx l (Pr1 t)            = "π1" <+> showTermCtx l t
   showTermCtx l (Pr2 t)            = "π2" <+> showTermCtx l t
   showTermCtx l (Beta t t₁)        = "β" <+> showTermCtx l t <+> showTermCtx l t₁
-  showTermCtx l (Delta t t₁)       = "Delta" + showTermCtx l t <+> showTermCtx l t₁
-  showTermCtx l (Sigma t)          = "ς" + showTermCtx l t
+  showTermCtx l (Delta t t₁)       = "δ" <+> showTermCtx l t <+> showTermCtx l t₁
+  showTermCtx l (Sigma t)          = "ς" <+> showTermCtx l t
   showTermCtx l (App Regular t t₁) = "[" + showTermCtx l t <+> showTermCtx l t₁ + "]"
   showTermCtx l (App Erased t t₁)  = "<" + showTermCtx l t <+> showTermCtx l t₁ + ">"
   showTermCtx l (Lam-P b n t)      = showBinderL b <+> n + "." <+> showTermCtx (n ∷ l) t
   showTermCtx l (Lam-A b n t t₁)   = showBinderL b <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
   showTermCtx l (Cont n _ t)       = "Cont" <+> n + "." <+> showTermCtx (n ∷ l) t
   showTermCtx l (Rho t t₁ t₂)      = "ρ" <+> showTermCtx l t <+> ":" <+> showTermCtx ("_" ∷ l) t₁ <+> showTermCtx l t₂
-  showTermCtx l (Pi b n t t₁)      = if n ≣ "_"
+  showTermCtx l (Pi b n t t₁)      = if n ≣ "_" ∨ n ≣ ""
     then "(" + showTermCtx l t + ")" <+> proj₁ (showBinderP b) <+> showTermCtx (n ∷ l) t₁
     else proj₂ (showBinderP b) <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
   showTermCtx l (Iota n t t₁)      = "ι" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
