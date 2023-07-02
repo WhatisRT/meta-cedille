@@ -46,23 +46,7 @@ let quote$mu := λ t : iTerm λ t' : iTerm [[init$term$=mu=^space^_term_^space^_
 
 let quote$epsilon := λ t : iTerm [init$term$=epsilon=^space^_term_ t].
 
-let quote$ZetaLet := λ t : iTerm λ t' : iTerm [[init$term$=zeta=Let^space^_term_^space^_term_ t] t'].
+let quote$constChar := init$const$CharT.
+let quote$Kappa := λ c : init$const [init$term$=Kappa=_const_ c].
 
-let quote$ZetaAnnLet := λ t : iTerm λ t' : iTerm λ t'' : iTerm [[[init$term$=zeta=AnnLet^space^_term_^space^_term_^space^_term_ t] t'] t''].
-
-let quote$ZetaSetEval := λ t : iTerm λ t' : iTerm λ t'' : iTerm [[[init$term$=zeta=SetEval^space^_term_^space^_term_^space^_term_ t] t'] t''].
-
-let quote$ZetaShellCmd := λ t : iTerm λ t' : iTerm [[init$term$=zeta=ShellCmd^space^_term_^space^_term_ t] t'].
-
-let quote$ZetaCheckTerm := λ t : iTerm λ t' : iTerm [[init$term$=zeta=CheckTerm^space^_term_^space^_term_ t] t'].
-
-let quote$ZetaNormalize := λ t : iTerm [init$term$=zeta=Normalize^space^_term_ t].
-
-let quote$ZetaHeadNormalize := λ t : iTerm [init$term$=zeta=HeadNormalize^space^_term_ t].
-
-let quote$ZetaCatchErr := λ t : iTerm λ t' : iTerm [[init$term$=zeta=CatchErr^space^_term_^space^_term_ t] t'].
-
-let quote$constChar := init$const$Char.
-let quote$Kappa := λ c : init$const init$term$=Kappa=_const_.
-
-let quote$kappa := λ c : Char [init$term$=kappa=_char_ c].
+let quote$kappa := λ c : Char [quote$Kappa [init$const$=kappa=_char_ c]].

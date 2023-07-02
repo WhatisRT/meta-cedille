@@ -24,6 +24,14 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
   t ?(List String -> String)
     (λ v : Var. λ con : List String. showVar con v)
     (λ s : Sort. λ _ : List String. showSort s)
+    (λ c : Const. c ?(List String -> String)
+                    (unreachableShowTerm0 "CONST")
+                    (λ c : Char. λ _ : List String. φ"κ${stringCons c stringNil}")
+                    (unreachableShowTerm0 "CHAREQ")
+                    (unreachableShowTerm0 "M")
+                    (unreachableShowTerm0 "bindM")
+                    (unreachableShowTerm0 "pureM")
+                    (unreachableShowTerm0 "CatchM"))
     (unreachableShowTerm1 "PI") (unreachableShowTerm1 "PSI") (unreachableShowTerm2 "BETA")
     (unreachableShowTerm2 "DELTA") (unreachableShowTerm1 "SIGMA") (unreachableShowTerm3 "PHI")
     (unreachableShowTerm2 "EQUAL")
@@ -56,11 +64,7 @@ let showInitTermWithContext (t : iTerm) : List String -> String :=
     (unreachableShowTerm1 "Print")
     (unreachableShowTerm2 "WriteFile")
     (unreachableShowTerm0 "CommandLine")
-    (unreachableShowTerm1 "SetDebug")
-    (unreachableShowTerm2 "CatchErr")
-    (λ s : init$const. unreachableShowTerm0 "CONST")
-    (λ c : Char. λ _ : List String. φ"κ${stringCons c stringNil}")
-    (unreachableShowTerm2 "CHAREQ").
+    (unreachableShowTerm1 "SetDebug").
 
 let showInitTerm (t : iTerm) : String := showInitTermWithContext t [String|].
 

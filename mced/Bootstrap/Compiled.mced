@@ -7,6 +7,10 @@ seteval eval init stmt.
 import Bootstrap/Stage-1/MetaAliases.
 import Bootstrap/Stage-1/Quote.
 
+let init$term$=kappa=_char_ := quote$kappa.
+
+seteval eval init stmt.
+
 --------------------------------------------------------------------------------
 -- Variant of bootstrapping that uses the compiler. Should be
 -- equivalent to regular bootstrapping.

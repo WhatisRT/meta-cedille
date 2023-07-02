@@ -55,7 +55,7 @@ module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       extractConstrId : PureTerm → M (ℕ ⊎ Char)
       extractConstrId (Var-T (Bound x)) = return $ inj₁ $ toℕ x
       extractConstrId (Var-T (Free x)) = throwError ("Not a constructor:" <+> x)
-      extractConstrId (Char-T c) = return $ inj₂ c
+      extractConstrId (Const-T (CharC c)) = return $ inj₂ c
       {-# CATCHALL #-}
       extractConstrId t = throwError ("Not a variable" <+> show t)
 
@@ -90,7 +90,7 @@ instance
 
   Quotable-ListChar : Quotable (List Char)
   Quotable-ListChar .quoteToAnnTerm [] = FreeVar "stringNil"
-  Quotable-ListChar .quoteToAnnTerm (c ∷ cs) = FreeVar "stringCons" ⟪$⟫ Char-T c ⟪$⟫ quoteToAnnTerm cs
+  Quotable-ListChar .quoteToAnnTerm (c ∷ cs) = FreeVar "stringCons" ⟪$⟫ Const-T (CharC c) ⟪$⟫ quoteToAnnTerm cs
 
   Quotable-String : Quotable String
   Quotable-String .quoteToAnnTerm = quoteToAnnTerm ∘ toList
@@ -110,6 +110,10 @@ instance
         quoteIndex' [] = FreeVar "init$index'$"
         quoteIndex' (x ∷ xs) = FreeVar ("init$index'$" + fromList [ x ] + "_index'_") ⟪$⟫ quoteIndex' xs
 
+  Quotable-Const : Quotable Const
+  Quotable-Const .quoteToAnnTerm (CharC c) = FreeVar "init$const$=kappa=_char_" ⟪$⟫ Const-T (CharC c)
+  Quotable-Const .quoteToAnnTerm c         = FreeVar ("init$const$" + show c)
+
   Quotable-AnnTerm : Quotable AnnTerm
   Quotable-AnnTerm .quoteToAnnTerm (Var-T (Bound x)) = FreeVar "init$term$_var_"
     ⟪$⟫ (FreeVar "init$var$_index_" ⟪$⟫ quoteToAnnTerm x)
@@ -117,8 +121,8 @@ instance
     ⟪$⟫ (FreeVar "init$var$_string_" ⟪$⟫ quoteToAnnTerm x)
   Quotable-AnnTerm .quoteToAnnTerm (Sort-T Ast) = FreeVar "init$term$_sort_" ⟪$⟫ FreeVar "init$sort$=ast="
   Quotable-AnnTerm .quoteToAnnTerm (Sort-T Sq) = FreeVar "init$term$_sort_" ⟪$⟫ FreeVar "init$sort$=sq="
-  Quotable-AnnTerm .quoteToAnnTerm (Const-T CharT) =
-    FreeVar "init$term$=Kappa=_const_" ⟪$⟫ FreeVar "init$const$Char"
+  Quotable-AnnTerm .quoteToAnnTerm (Const-T c) =
+    FreeVar "init$term$=Kappa=_const_" ⟪$⟫ quoteToAnnTerm c
   Quotable-AnnTerm .quoteToAnnTerm (Pr1 t) = FreeVar "init$term$=pi=^space^_term_" ⟪$⟫ quoteToAnnTerm t
   Quotable-AnnTerm .quoteToAnnTerm (Pr2 t) = FreeVar "init$term$=psi=^space^_term_" ⟪$⟫ quoteToAnnTerm t
   Quotable-AnnTerm .quoteToAnnTerm (Beta t t₁) =
@@ -166,12 +170,7 @@ instance
       ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
   Quotable-AnnTerm .quoteToAnnTerm (Epsilon t) =
     FreeVar "init$term$=epsilon=^space^_term_" ⟪$⟫ quoteToAnnTerm t
-  Quotable-AnnTerm .quoteToAnnTerm (Gamma t t₁) =
-    FreeVar "init$term$=zeta=CatchErr^space^_term_^space^_term_" ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
   Quotable-AnnTerm .quoteToAnnTerm (Ev x x₁) = □ -- TODO
-  Quotable-AnnTerm .quoteToAnnTerm (Char-T x) = FreeVar "init$term$=kappa=_char_" ⟪$⟫ Char-T x
-  Quotable-AnnTerm .quoteToAnnTerm (CharEq t t₁) =
-    FreeVar "init$term$=gamma=^space^_term_^space^_term_" ⟪$⟫ quoteToAnnTerm t ⟪$⟫ quoteToAnnTerm t₁
 
   Quotable-PureTerm : Quotable PureTerm
   Quotable-PureTerm .quoteToAnnTerm t = □ -- TODO

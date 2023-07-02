@@ -34,4 +34,5 @@ let primWriteFile := λ fName : String λ s : String ζWriteFile fName s.
 let primCommandLine := ζCommandLine.
 let primSetDebug := λ s : init$stringList ζSetDebug s.
 
-let catchErr := Λ X : * λ run : [M X] λ catch : Π _ : String [M X] ζCatchErr run catch : ∀ X : * Π _ : [M X] Π _ : Π _ : init$err [M X] [M X].
+let catchErr := Λ X : * λ run : [M X] λ catch : Π _ : String [M X] [[<ΚCatchM X> run] catch]
+  : ∀ X : * Π _ : [M X] Π _ : Π _ : init$err [M X] [M X].

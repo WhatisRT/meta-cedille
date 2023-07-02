@@ -80,6 +80,9 @@ readFileError : String → IO (String ⊎ String)
 readFileError name =
   catchIOError (inj₂ <$> readFileUtf8 name) (return ∘ inj₁)
 
+unsafeDebugLog : String → A → A
+unsafeDebugLog s x = unsafePerformIO (IO.putStr (s ++ "\n") >> return x)
+
 module _ {a} {M : Set a -> Set a} {{_ : Monad M}} {{_ : MonadIO M}} where
 
   printTimeStamp : M ⊤

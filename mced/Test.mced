@@ -7,6 +7,8 @@ import BootstrapTest.
 import BootstrapCompiler.
 import Bootstrap.
 
+import SchemeCompiler.
+
 import ErrorMonad.
 
 import LambdaCalc.

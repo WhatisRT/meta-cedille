@@ -6,6 +6,7 @@ module Theory.Terms where
 
 open import Prelude
 open import Prelude.Nat
+open import Unsafe
 
 open import Theory.Names public
 open import Theory.TermLike
@@ -34,7 +35,8 @@ data Term : @0 Bool → @0 Bool → Set where
   Var-T   : Name → Term a b
   FDB     : 𝕀 → Term a true
   Sort-T  : Sort → Term a b
-  Const-T : Const → Term a b
+  Const-T : Const → Term a false
+  Const-N : Const → ℕ → Term a true
   App     : BinderType a → Term a b → Term a b → Term a b
   Lam-P   : BinderType false → String → Term false b → Term false b
   Lam-A   : BinderType true  → String → Term true b → Term true b → Term true b
@@ -45,10 +47,7 @@ data Term : @0 Bool → @0 Bool → Set where
   M-T     : Term a b → Term a b
   Mu      : Term a b → Term a b → Term a b
   Epsilon : Term a b → Term a b
-  Gamma   : Term a b → Term a b → Term a b
   Ev      : (m : PrimMeta) → primMetaArgs (Term a b) m → Term a b
-  Char-T  : Char → Term a b
-  CharEq  : Term a b → Term a b → Term a b
   Pr1     : Term true b → Term true b
   Pr2     : Term true b → Term true b
   Beta    : Term true b → Term true b → Term true b -- proves first arg eq, erase to second arg
@@ -58,6 +57,26 @@ data Term : @0 Bool → @0 Bool → Set where
   Pair    : Term true b → Term true b → Term true b → Term true b
   Phi     : Term true b → Term true b → Term true b → Term true b
   -- there is a let binding here, which is probably unnecessary
+
+pattern App-R t t'    = App Regular t t'
+pattern App-E t t'    = App Erased  t t'
+pattern Char-T c      = Const-T (CharC c)
+pattern Char-T' c     = Const-N (CharC c) _
+pattern App2 t t' t'' = App-R (App-R t t') t''
+pattern CharEq-T t t' = App2 (Const-T CharEq) t t'
+pattern M-T' t        = App-R (Const-T MM) t
+pattern MuM-T t t'    = App2 (Const-T MuM) t t'
+pattern EpsilonM-T t  = App-R (Const-T EpsilonM) t
+pattern CatchM-T t t' = App2 (Const-T CatchM) t t'
+
+infixr 0 _⟪→⟫_ _⟪⇒⟫_
+
+pattern _⟪→⟫_ t t' = Pi Regular "" t t'
+pattern _⟪⇒⟫_ t t' = Pi Erased  "" t t'
+
+Const-T' : Const → Term a b
+Const-T' {b = false} c = Const-T c
+Const-T' {b = true}  c = Const-N c 0
 
 PureTerm : @0 Bool → Set
 PureTerm = Term false
@@ -72,7 +91,7 @@ module _ where
   Term-TermLike : TermLike (Term a b)
   Term-TermLike .Var             = Var-T
   Term-TermLike .SortC           = Sort-T
-  Term-TermLike ._⟪$⟫_           = App Regular
+  Term-TermLike ._⟪$⟫_           = App-R
   Term-TermLike {a} {b} .byUniformFold f = helper 0
     where
       helper : 𝕀 → Term a b → Term a b
@@ -80,7 +99,8 @@ module _ where
       helper k v@(FDB _)          = v
       helper k v@(Var-T (Free _)) = v
       helper k v@(Sort-T x)       = v
-      helper k v@(Const-T x)      = v
+      helper k (Const-T x)        = Const-T x
+      helper k (Const-N x n)      = Const-N x n
       helper k (App b t t₁)       = App b (helper k t) (helper k t₁)
       helper k (Lam-P b x t)      = Lam-P b x (helper (suc𝕀 k) t)
       helper k (Lam-A b x t t₁)   = Lam-A b x (helper k t) (helper (suc𝕀 k) t₁)
@@ -91,10 +111,7 @@ module _ where
       helper k (M-T t)            = M-T (helper k t)
       helper k (Mu t t₁)          = Mu (helper k t) (helper k t₁)
       helper k (Epsilon t)        = Epsilon (helper k t)
-      helper k (Gamma t t₁)       = Gamma (helper k t) (helper k t₁)
       helper k (Ev m args)        = Ev m (mapPrimMetaArgs (helper k) args)
-      helper k (Char-T c)         = Char-T c
-      helper k (CharEq t t')      = CharEq (helper k t) (helper k t')
       helper k (Pr1 t)            = Pr1 (helper k t)
       helper k (Pr2 t)            = Pr2 (helper k t)
       helper k (Beta t t')        = Beta (helper k t) (helper k t')
@@ -125,51 +142,69 @@ module _ where
 
   {-# TERMINATING #-}
   showTermCtx : List String → Term a b → String
-  showTermCtx l (Var-T x)          = showVar l x
-  showTermCtx l (FDB x)            = "FDB" <+> show x
-  showTermCtx l (Sort-T x)         = show x
-  showTermCtx l (Const-T x)        = show x
-  showTermCtx l (Pr1 t)            = "π1" <+> showTermCtx l t
-  showTermCtx l (Pr2 t)            = "π2" <+> showTermCtx l t
-  showTermCtx l (Beta t t₁)        = "β" <+> showTermCtx l t <+> showTermCtx l t₁
-  showTermCtx l (Delta t t₁)       = "δ" <+> showTermCtx l t <+> showTermCtx l t₁
-  showTermCtx l (Sigma t)          = "ς" <+> showTermCtx l t
-  showTermCtx l (App Regular t t₁) = "[" + showTermCtx l t <+> showTermCtx l t₁ + "]"
-  showTermCtx l (App Erased t t₁)  = "<" + showTermCtx l t <+> showTermCtx l t₁ + ">"
-  showTermCtx l (Lam-P b n t)      = showBinderL b <+> n + "." <+> showTermCtx (n ∷ l) t
-  showTermCtx l (Lam-A b n t t₁)   = showBinderL b <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
-  showTermCtx l (Cont n _ t)       = "Cont" <+> n + "." <+> showTermCtx (n ∷ l) t
-  showTermCtx l (Rho t t₁ t₂)      = "ρ" <+> showTermCtx l t <+> ":" <+> showTermCtx ("_" ∷ l) t₁ <+> showTermCtx l t₂
-  showTermCtx l (Pi b n t t₁)      = if n ≣ "_" ∨ n ≣ ""
+  showTermCtx l (Var-T x)        = showVar l x
+  showTermCtx l (FDB x)          = "FDB" <+> show x
+  showTermCtx l (Sort-T x)       = show x
+  showTermCtx l (Const-T x)      = show x
+  showTermCtx l (Const-N x n)    = "NBE" + show x + show n
+  showTermCtx l (Pr1 t)          = "π1" <+> showTermCtx l t
+  showTermCtx l (Pr2 t)          = "π2" <+> showTermCtx l t
+  showTermCtx l (Beta t t₁)      = "β" <+> showTermCtx l t <+> showTermCtx l t₁
+  showTermCtx l (Delta t t₁)     = "δ" <+> showTermCtx l t <+> showTermCtx l t₁
+  showTermCtx l (Sigma t)        = "ς" <+> showTermCtx l t
+  showTermCtx l (App-R t t₁)     = "[" + showTermCtx l t <+> showTermCtx l t₁ + "]"
+  showTermCtx l (App-E t t₁)     = "<" + showTermCtx l t <+> showTermCtx l t₁ + ">"
+  showTermCtx l (Lam-P b n t)    = showBinderL b <+> n + "." <+> showTermCtx (n ∷ l) t
+  showTermCtx l (Lam-A b n t t₁) = showBinderL b <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
+  showTermCtx l (Cont n _ t)     = "Cont" <+> n + "." <+> showTermCtx (n ∷ l) t
+  showTermCtx l (Rho t t₁ t₂)    = "ρ" <+> showTermCtx l t <+> ":" <+> showTermCtx ("_" ∷ l) t₁ <+> showTermCtx l t₂
+  showTermCtx l (Pi b n t t₁)    = if n ≣ "_" ∨ n ≣ ""
     then "(" + showTermCtx l t + ")" <+> proj₁ (showBinderP b) <+> showTermCtx (n ∷ l) t₁
     else proj₂ (showBinderP b) <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
-  showTermCtx l (Iota n t t₁)      = "ι" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
-  showTermCtx l (Pair t t₁ t₂)     = "{" + showTermCtx l t + "," + showTermCtx l t₁ <+> "." <+> showTermCtx l t₂ + "}"
-  showTermCtx l (Phi t t₁ t₂)      = "φ" <+> showTermCtx l t <+> showTermCtx l t₁ <+> showTermCtx l t₂
-  showTermCtx l (Eq-T t t₁)        = "(=" <+> showTermCtx l t <+> showTermCtx l t₁ + ")"
-  showTermCtx l (M-T t)            = "M" <+> showTermCtx l t
-  showTermCtx l (Mu t t₁)          = "μ" <+> showTermCtx l t <+> showTermCtx l t₁
-  showTermCtx l (Epsilon t)        = "ε" <+> showTermCtx l t
-  showTermCtx l (Gamma t t₁)       = "Γ" <+> showTermCtx l t <+> showTermCtx l t₁
-  showTermCtx l (Ev m args)        = "Ev" <+> show m <+> primMetaArgs-Show (showTermCtx l) args
-  showTermCtx l (Char-T c)         = "'" + show c + "'"
-  showTermCtx l (CharEq t t')      = "CharEq" <+> showTermCtx l t <+> showTermCtx l t'
+  showTermCtx l (Iota n t t₁)    = "ι" <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
+  showTermCtx l (Pair t t₁ t₂)   = "{" + showTermCtx l t + "," + showTermCtx l t₁ <+> "." <+> showTermCtx l t₂ + "}"
+  showTermCtx l (Phi t t₁ t₂)    = "φ" <+> showTermCtx l t <+> showTermCtx l t₁ <+> showTermCtx l t₂
+  showTermCtx l (Eq-T t t₁)      = "(=" <+> showTermCtx l t <+> showTermCtx l t₁ + ")"
+  showTermCtx l (M-T t)          = "M" <+> showTermCtx l t
+  showTermCtx l (Mu t t₁)        = "μ" <+> showTermCtx l t <+> showTermCtx l t₁
+  showTermCtx l (Epsilon t)      = "ε" <+> showTermCtx l t
+  showTermCtx l (Ev m args)      = "Ev" <+> show m <+> primMetaArgs-Show (showTermCtx l) args
 
 instance
   Term-Show : Show (Term a b)
   Term-Show {a} {b} = record { show = showTermCtx [] }
 
+evalConst : (Term a b → Term a b) → Term a b → Term a b
+evalConst reduce v@(CharEq-T t t') with reduce t | reduce t'
+... | Char-T c | Char-T c' = reduce $ Var $ Free $ show (c ≣ c')
+... | _        | _         = v
+evalConst reduce t = t
+
+evalConst' : (Term a b → Term a b) → Const → Term a b
+evalConst' reduce CharEq with reduce (BoundVar 0) | reduce (BoundVar 1)
+... | Char-T  c | Char-T  c' = reduce $ Var $ Free $ show (c ≣ c')
+... | Char-T' c | Char-T' c' = reduce $ Var $ Free $ show (c ≣ c')
+... | t         | t'         = (Const-T' CharEq) ⟪$⟫ t ⟪$⟫ t'
+evalConst' reduce MM         = (Const-T' MM) ⟪$⟫ reduce (BoundVar 0)
+evalConst' reduce MuM        = (Const-T' MuM) ⟪$⟫ reduce (BoundVar 1) ⟪$⟫ reduce (BoundVar 0)
+evalConst' reduce EpsilonM   = (Const-T' EpsilonM) ⟪$⟫ reduce (BoundVar 0)
+evalConst' reduce CatchM     = (Const-T' CatchM) ⟪$⟫ reduce (BoundVar 1) ⟪$⟫ reduce (BoundVar 0)
+evalConst' reduce c          = Const-T' c
+
 {-# TERMINATING #-}
-Erase : AnnTerm → PureTerm b
+Erase : Term true b → PureTerm b
 Erase (Var-T x)              = Var-T x
+Erase (FDB x)                = FDB x
 Erase (Sort-T x)             = Sort-T x
 Erase (Const-T x)            = Const-T x
-Erase (App Regular t t₁)     = App Regular (Erase t) (Erase t₁)
-Erase (App Erased t t₁)      = Erase t
+Erase (Const-N x n)          = Const-N x n
+Erase (App-R t t₁)           = App-R (Erase t) (Erase t₁)
+Erase (App-E t t₁)           = Erase t
 Erase (Pi b n t t₁)          = Pi b n (Erase t) (Erase t₁)
 Erase (Iota n t t₁)          = Iota n (Erase t) (Erase t₁)
 Erase (Lam-A Regular n t t₁) = Lam-P Regular n (Erase t₁)
 Erase (Lam-A Erased n t t₁)  = strengthen (Erase t₁)
+Erase (Cont n Γ x)           = error "Erase cont"
 Erase (Pr1 t)                = Erase t
 Erase (Pr2 t)                = Erase t
 Erase (Beta t t₁)            = Erase t₁
@@ -182,10 +217,7 @@ Erase (Eq-T x x₁)            = Eq-T (Erase x) (Erase x₁)
 Erase (M-T t)                = M-T (Erase t)
 Erase (Mu t t₁)              = Mu (Erase t) (Erase t₁)
 Erase (Epsilon t)            = Epsilon (Erase t)
-Erase (Gamma t t₁)           = Gamma (Erase t) (Erase t₁)
 Erase (Ev m args)            = Ev m (mapPrimMetaArgs Erase args)
-Erase (Char-T c)             = Char-T c
-Erase (CharEq x x₁)          = CharEq (Erase x) (Erase x₁)
 
 condErase : AnnTerm → Term a false
 condErase {false} t = Erase t

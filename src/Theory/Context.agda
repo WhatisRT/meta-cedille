@@ -1,12 +1,11 @@
-open import Prelude
-open import Theory.Terms
-
 module Theory.Context where
 
+open import Prelude
 open import Prelude.Nat
+open import Theory.Terms
 
-open import Data.HSTrie
 open import Class.Map
+open import Data.HSTrie
 open import Data.Word using (toℕ; fromℕ)
 
 record Def : Set where
@@ -81,10 +80,7 @@ validInContext {a} = helper 0
     helper k (M-T t)            Γ = helper k t Γ
     helper k (Mu t t₁)          Γ = helper k t Γ ∧ helper k t₁ Γ
     helper k (Epsilon t)        Γ = helper k t Γ
-    helper k (Gamma t t₁)       Γ = helper k t Γ ∧ helper k t₁ Γ
     helper k (Ev m t)           Γ = primMetaArgsAnd $ mapPrimMetaArgs (λ x → helper k x Γ) t
-    helper k (Char-T c)         Γ = true
-    helper k (CharEq t t₁)      Γ = helper k t Γ ∧ helper k t₁ Γ
     helper k (Pr1 t)            Γ = helper k t Γ
     helper k (Pr2 t)            Γ = helper k t Γ
     helper k (Beta t t₁)        Γ = helper k t Γ ∧ helper k t₁ Γ

@@ -60,15 +60,22 @@ ruleCaseN (Node x x₁) r cs =
 toSort : PTree → Maybe AnnTerm
 toSort x = ruleCaseN x "sort" (("=ast=" , 0F , just ⋆) ∷ ("=sq=" , 0F , just □) ∷ [])
 
-toConst : PTree → Maybe Const
-toConst x = ruleCaseN x "const" (("Char" , 0F , just CharT) ∷ [])
-
 toChar : PTree → Maybe Char
 toChar (Node (inj₁ x) x₁) = nothing
 toChar (Node (inj₂ y) x₁) = just y
 
 toChar' : PTree → Maybe Char
 toChar' x = ruleCaseN x "char" (("!!" , 1F , toChar) ∷ [])
+
+toConst : PTree → Maybe Const
+toConst x = ruleCaseN x "const" $
+  ("CharT"         , 0F , just CharT) ∷
+  ("=kappa=_char_" , 1F , (λ z → CharC <$> toChar z <∣> toChar' z)) ∷
+  ("CharEq"        , 0F , just CharEq) ∷
+  ("MM"            , 0F , just MM) ∷
+  ("MuM"           , 0F , just MuM) ∷
+  ("EpsilonM"      , 0F , just EpsilonM) ∷
+  ("CatchM"        , 0F , just CatchM) ∷ []
 
 toName : PTree → Maybe String
 toName (Node x (y ∷ y' ∷ [])) = (λ y → fromChar y +_) <$₂> toChar y , toName y'
@@ -186,12 +193,7 @@ toTerm = helper []
 
         map primRule (Listable.listing PrimMeta-Listable) ++
 
-        (genBuiltin "CatchErr" 2   , 2F , conv2ʰ Gamma) ∷
-
-        ("=Kappa=_const_" , 1F , (λ z → Const-T <$> toConst z)) ∷
-        ("=kappa=_char_"  , 1F , (λ z → Char-T <$> toChar z <∣> toChar' z)) ∷
-
-        (genSimple "=gamma=" 2 , 2F , conv2ʰ CharEq) ∷ [])
+        ("=Kappa=_const_" , 1F , (λ z → Const-T <$> toConst z)) ∷ [])
 
 data BootstrapStmt : Set where
   Let           : GlobalName → AnnTerm → Maybe AnnTerm → BootstrapStmt
@@ -252,7 +254,7 @@ module _ {M} {{_ : Monad M}} {{_ : MonadExcept M String}} where
           where
             ruleToTerm : String ⊎ Char → AnnTerm
             ruleToTerm (inj₁ x) = FreeVar (namespace + "$" + x)
-            ruleToTerm (inj₂ y) = Char-T y
+            ruleToTerm (inj₂ y) = Const-T (CharC y)
 
   -- Used for bootstrapping
   {-# TERMINATING #-} -- cannot just use sequence in synTreetoℕtree because of the char special case

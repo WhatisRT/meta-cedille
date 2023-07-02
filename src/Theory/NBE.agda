@@ -11,6 +11,7 @@ open import Theory.Context
 open import Theory.Names
 open import Theory.PrimMeta
 open import Theory.Terms
+open import Theory.TermLike
 
 private
   variable b : Bool
@@ -26,7 +27,7 @@ private
   toNBETerm : Term b false → Term b true
   toNBETerm (Var-T x)        = Var-T x
   toNBETerm (Sort-T x)       = Sort-T x
-  toNBETerm (Const-T x)      = Const-T x
+  toNBETerm (Const-T x)      = Const-N x (constArity x)
   toNBETerm (App b t t₁)     = App b (toNBETerm t) (toNBETerm t₁)
   toNBETerm (Lam-P b x t)    = Lam-P b x (toNBETerm t)
   toNBETerm (Lam-A b x t t₁) = Lam-A b x (toNBETerm t) (toNBETerm t₁)
@@ -36,10 +37,7 @@ private
   toNBETerm (M-T t)          = M-T (toNBETerm t)
   toNBETerm (Mu t t₁)        = Mu (toNBETerm t) (toNBETerm t₁)
   toNBETerm (Epsilon t)      = Epsilon (toNBETerm t)
-  toNBETerm (Gamma t t₁)     = Gamma (toNBETerm t) (toNBETerm t₁)
   toNBETerm (Ev m x)         = Ev m (mapPrimMetaArgs toNBETerm x)
-  toNBETerm (Char-T x)       = Char-T x
-  toNBETerm (CharEq t t₁)    = CharEq (toNBETerm t) (toNBETerm t₁)
   toNBETerm (Pr1 t)          = Pr1 (toNBETerm t)
   toNBETerm (Pr2 t)          = Pr2 (toNBETerm t)
   toNBETerm (Beta t t')      = Beta (toNBETerm t) (toNBETerm t')
@@ -64,7 +62,7 @@ private
           helper i accu (Var-T (Free x))  = 0
           helper i accu (FDB x)           = error "Error 1 in necessaryVars"
           helper i accu (Sort-T x)        = 0
-          helper i accu (Const-T x)       = 0
+          helper i accu (Const-N _ _)     = 0
           helper i accu (App _ t t₁)      = helper i accu t ⊔ helper i accu t₁
           helper i accu (Lam-P _ x t)     = helper (suc𝕀 i) accu t
           helper i accu (Lam-A _ x t t₁)  = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
@@ -75,10 +73,7 @@ private
           helper i accu (M-T t)           = helper i accu t
           helper i accu (Mu t t₁)         = helper i accu t ⊔ helper i accu t₁
           helper i accu (Epsilon t)       = helper i accu t
-          helper i accu (Gamma t t₁)      = helper i accu t ⊔ helper i accu t₁
           helper i accu (Ev m x)          = primMetaArgsMax $ mapPrimMetaArgs (helper i accu) x
-          helper i accu (Char-T x)        = 0
-          helper i accu (CharEq t t₁)     = helper i accu t ⊔ helper i accu t₁
           helper i accu (Pr1 t)           = helper i accu t
           helper i accu (Pr2 t)           = helper i accu t
           helper i accu (Beta t t')       = helper i accu t ⊔ helper i accu t'
@@ -110,7 +105,8 @@ private
     toPureTerm k Γ (Var-T x)     = Var-T x
     toPureTerm k Γ (FDB x)       = Var (Bound (x +𝕀 fromℕ k))
     toPureTerm k Γ (Sort-T x)    = Sort-T x
-    toPureTerm k Γ (Const-T x)   = Const-T x
+    toPureTerm k Γ (Const-N x 0) = Const-T x
+    toPureTerm k Γ (Const-N x _) = error "toPureTerm Const-N"
     toPureTerm k Γ (App b t t₁)  = App b (toPureTerm k Γ t) (toPureTerm k Γ t₁)
     toPureTerm k Γ (Lam-P b x t) = Lam-P b x (toPureTerm (suc k) Γ t)
     toPureTerm k Γ (Pi b x t t₁) = Pi b x (toPureTerm k Γ t) (toPureTerm (suc k) Γ t₁)
@@ -119,10 +115,7 @@ private
     toPureTerm k Γ (M-T t)       = M-T (toPureTerm k Γ t)
     toPureTerm k Γ (Mu t t₁)     = Mu (toPureTerm k Γ t) (toPureTerm k Γ t₁)
     toPureTerm k Γ (Epsilon t)   = Epsilon (toPureTerm k Γ t)
-    toPureTerm k Γ (Gamma t t₁)  = Gamma (toPureTerm k Γ t) (toPureTerm k Γ t₁)
     toPureTerm k Γ (Ev m x)      = Ev m (mapPrimMetaArgs (toPureTerm k Γ) x)
-    toPureTerm k Γ (Char-T x)    = Char-T x
-    toPureTerm k Γ (CharEq t t₁) = CharEq (toPureTerm k Γ t) (toPureTerm k Γ t₁)
     toPureTerm k Γ (Cont n Γ' t) = Lam-P Regular n (toPureTerm (suc k) Γ (nf' (pushAbstract (proj₁ Γ , Γ') n) t))
 
     convContext : Context → Context' false
@@ -144,7 +137,8 @@ module _ where
     dbnf Γ (Var-T x)           = lookup' Γ x
     dbnf Γ (FDB x)             = FDB x
     dbnf Γ (Sort-T x)          = Sort-T x
-    dbnf Γ (Const-T x)         = Const-T x
+    dbnf Γ (Const-N x 0)       = evalConst' (dbnf Γ) x
+    dbnf Γ (Const-N x (suc k)) = Cont "" (proj₂ Γ) (Const-N x k)
     dbnf Γ (App b t t₁) with dbnf Γ t | dbnf Γ t₁
     ... | (Cont n Γ' x) | x₁   = dbnf (pushTerm (proj₁ Γ , Γ') n x₁) x
     ... | x             | x₁   = App b x x₁
@@ -156,12 +150,7 @@ module _ where
     dbnf Γ (M-T t)             = M-T (dbnf Γ t)
     dbnf Γ (Mu t t₁)           = Mu (dbnf Γ t) (dbnf Γ t₁)
     dbnf Γ (Epsilon t)         = Epsilon (dbnf Γ t)
-    dbnf Γ (Gamma t t₁)        = Gamma (dbnf Γ t) (dbnf Γ t₁)
     dbnf Γ (Ev m x)            = Ev m (mapPrimMetaArgs (dbnf Γ) x)
-    dbnf Γ (Char-T x)          = Char-T x
-    dbnf Γ (CharEq t t₁) with dbnf Γ t | dbnf Γ t₁
-    ... | Char-T c | Char-T c₁ = dbnf Γ $ Var $ Free $ show (c ≣ c₁)
-    ... | t        | t₁        = CharEq t t₁
 
   module C = Conv dbnf convDef
   open C using (nf) public
@@ -179,33 +168,30 @@ module _ where
     -- Whether to reduce
     {-# NON_TERMINATING #-}
     hnf' : Bool → Context' false → Term false true → Term false true
-    hnf' true Γ (Var-T x) with lookupInContext' Γ x
-    ... | just y                   = hnf' true Γ y
-    ... | nothing                  = Var-T x
-    hnf' false Γ (Var-T (Bound x)) = lookup' Γ (Bound x)
-    hnf' false Γ (Var-T (Free x))  = Var-T (Free x)
-    hnf' b Γ (FDB x)               = FDB x
-    hnf' b Γ (Sort-T x)            = Sort-T x
-    hnf' b Γ (Const-T x)           = Const-T x
-    hnf' true Γ (App b t t₁) with hnf' true Γ t | hnf' false Γ t₁
-    ... | Cont n Γ' x | x₁         = hnf' true (pushTerm (proj₁ Γ , Γ') n x₁) x
-    ... | x             | x₁       = App b x x₁
-    hnf' false Γ (App b t t₁)      = App b (hnf' false Γ t) (hnf' false Γ t₁)
-    hnf' true  Γ (Lam-P b x t)     = Cont x (proj₂ Γ) t
-    hnf' false Γ (Lam-P b x t)     = Lam-P b x (hnf' false (pushAbstract Γ x) t)
-    hnf' b Γ (Cont _ _ _)          = error "Error in hnf'"
-    hnf' b Γ (Pi b' x t t₁)        = Pi b' x (hnf' false Γ t) (hnf' false (pushAbstract Γ x) t₁)
-    hnf' b Γ (Iota x t t₁)         = Iota x (hnf' false Γ t) (hnf' false (pushAbstract Γ x) t₁)
-    hnf' b Γ (Eq-T t t₁)           = Eq-T (hnf' false Γ t) (hnf' false Γ t₁)
-    hnf' b Γ (M-T t)               = M-T (hnf' false Γ t)
-    hnf' b Γ (Mu t t₁)             = Mu (hnf' false Γ t) (hnf' false Γ t₁)
-    hnf' b Γ (Epsilon t)           = Epsilon (hnf' false Γ t)
-    hnf' b Γ (Gamma t t₁)          = Gamma (hnf' false Γ t) (hnf' false Γ t₁)
-    hnf' b Γ (Ev m x)              = Ev m (mapPrimMetaArgs (hnf' false Γ) x)
-    hnf' b Γ (Char-T x)            = Char-T x
-    hnf' b Γ (CharEq t t₁) with hnf' b Γ t | hnf' b Γ t₁
-    ... | Char-T c | Char-T c₁     = hnf' b Γ $ Var $ Free $ show (c ≣ c₁)
-    ... | t        | t₁            = CharEq t t₁
+    hnf' true Γ v@(Var-T x) with lookupInContext' Γ x
+    ... | just y                       = hnf' true Γ y
+    ... | nothing                      = Var-T x
+    hnf' false Γ v@(Var-T (Bound x))   = lookup' Γ (Bound x)
+    hnf' false Γ v@(Var-T (Free x))    = v
+    hnf' b Γ v@(FDB x)                 = v
+    hnf' b Γ v@(Sort-T x)              = v
+    hnf' true  Γ v@(Const-N x 0)       = evalConst' (hnf' true Γ) x
+    hnf' true  Γ v@(Const-N x (suc k)) = Cont "" (proj₂ Γ) (Const-N x k)
+    hnf' false Γ v@(Const-N x _)       = v
+    hnf' true Γ v@(App b t t₁) with hnf' true Γ t | hnf' false Γ t₁
+    ... | Cont n Γ' x | x₁             = hnf' true (pushTerm (proj₁ Γ , Γ') n x₁) x
+    ... | x           | x₁             = App b x x₁
+    hnf' false Γ v@(App b t t₁)        = App b (hnf' false Γ t) (hnf' false Γ t₁)
+    hnf' true  Γ v@(Lam-P b x t)       = Cont x (proj₂ Γ) t
+    hnf' false Γ v@(Lam-P b x t)       = Lam-P b x (hnf' false (pushAbstract Γ x) t)
+    hnf' b Γ (Cont _ _ _)              = error "Error in hnf'"
+    hnf' b Γ (Pi b' x t t₁)            = Pi b' x (hnf' false Γ t) (hnf' false (pushAbstract Γ x) t₁)
+    hnf' b Γ (Iota x t t₁)             = Iota x (hnf' false Γ t) (hnf' false (pushAbstract Γ x) t₁)
+    hnf' b Γ (Eq-T t t₁)               = Eq-T (hnf' false Γ t) (hnf' false Γ t₁)
+    hnf' b Γ (M-T t)                   = M-T (hnf' false Γ t)
+    hnf' b Γ (Mu t t₁)                 = Mu (hnf' false Γ t) (hnf' false Γ t₁)
+    hnf' b Γ (Epsilon t)               = Epsilon (hnf' false Γ t)
+    hnf' b Γ (Ev m x)                  = Ev m (mapPrimMetaArgs (hnf' false Γ) x)
 
     hnf = hnf' true
 

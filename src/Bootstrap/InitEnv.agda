@@ -60,11 +60,12 @@ private
     map (λ c → fromList ("index$" ++ [ c ] ++ "_index'_")) digits ++
     "var$_string_" ∷ "var$_index_" ∷
 
-    "sort$=ast=" ∷ "sort$=sq=" ∷
-    "const$Char" ∷ [] ++
+    "sort$=ast="  ∷ "sort$=sq=" ∷
+    "const$CharT" ∷ "const$=kappa=_char_" ∷ "const$CharEq"   ∷
+    "const$MM"    ∷ "const$MuM"           ∷ "const$EpsilonM" ∷ "const$CatchM" ∷
 
     (inNT "term" <$>
-      "_var_" ∷ "_sort_" ∷
+      "_var_" ∷ "_sort_" ∷ "=Kappa=_const_" ∷
       genSimple "=pi="    1 ∷ genSimple "=psi=" 1 ∷ genSimple "=beta="  2 ∷ genSimple "=delta=" 2 ∷
       genSimple "=sigma=" 1 ∷ genSimple "=phi=" 3 ∷ genSimple "=equal=" 2 ∷
       "=lsquare=^space'^_term_^space^_term_^space'^=rsquare=" ∷
@@ -77,12 +78,7 @@ private
 
       genSimple "=omega=" 1 ∷ genSimple "=mu=" 2 ∷ genSimple "=epsilon=" 1 ∷ -- meta monad primitives
 
-      map genBuiltin' (Listable.listing PrimMeta-Listable) ++
-      genBuiltin "CatchErr" 2 ∷
-
-      "=Kappa=_const_" ∷
-      "=kappa=_char_" ∷ -- this constructs a Char
-      genSimple "=gamma=" 2 ∷ []) ++ -- charEq
+      map genBuiltin' (Listable.listing PrimMeta-Listable)) ++
 
     "lettail$=dot=" ∷ "lettail$=colon=^space'^_term_^space'^=dot=" ∷
     []
@@ -103,7 +99,7 @@ private
   stringData : InductiveData
   stringData =
     ("init$string"
-    , ("stringCons" , (Other "ΚChar" ∷ Self ∷ [])) ∷ ("stringNil" , []) ∷ []) -- capital kappa
+    , ("stringCons" , (Other "init$char" ∷ Self ∷ [])) ∷ ("stringNil" , []) ∷ []) -- capital kappa
 
   stringListData : InductiveData
   stringListData =
@@ -112,7 +108,7 @@ private
 
   charDataConstructor : Char → String → String
   charDataConstructor c prefix =
-    "let " + prefix + fromList (escapeChar c) + " := κ" + show c + "."
+    "let " + prefix + fromList (escapeChar c) + " := Κκ" + show c + "."
 
   nameInitConstrs : List String
   nameInitConstrs = map (flip charDataConstructor "init$nameInitChar$") nameInits
@@ -162,7 +158,7 @@ grammarWithChars = grammar ++
   "char$!!" ∷ []
 
 initEnv : String
-initEnv = "let init$char := ΚChar." + Data.String.concat
+initEnv = "let init$char := ΚCharT." + Data.String.concat
   (map simpleInductive initEnvConstrs ++ nameInitConstrs ++ nameTailConstrs ++ otherInit)
 
 -- a map from non-terminals to their possible expansions

@@ -228,7 +228,11 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executeTerm' (Epsilon t) = return t
 
-  executeTerm' (Gamma t t') = catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm s))
+  executeTerm' (EpsilonM-T t) = executeTerm' (Epsilon t)
+  executeTerm' (MuM-T t t₁) = executeTerm' (Mu t t₁)
+
+  executeTerm' (CatchM-T t t') =
+    catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm s))
 
   executeTerm' (Ev m t) = do
     args ← logProfile "Converting arguments" $ convertPrimArgs m t

@@ -66,10 +66,7 @@ private
       helper k n (M-T t)       = helper k n t
       helper k n (Mu t t₁)     = helper k n t ∧ helper k n t₁
       helper k n (Epsilon t)   = helper k n t
-      helper k n (Gamma t t₁)  = helper k n t ∧ helper k n t₁
       helper k n (Ev m t)      = primMetaArgsAnd $ mapPrimMetaArgs (helper k n) t
-      helper k n (Char-T c)    = false
-      helper k n (CharEq t t₁) = helper k n t ∧ helper k n t₁
 
 TCErrorMsg : Set
 TCErrorMsg = List (String ⊎ AnnTerm)
@@ -135,12 +132,9 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
   pureTermBeq (M-T t)       (M-T x)         = pureTermBeq x t
   pureTermBeq (Mu t t₁)     (Mu x x₁)       = pureTermBeq t x >> pureTermBeq t₁ x₁
   pureTermBeq (Epsilon t)   (Epsilon x)     = pureTermBeq t x
-  pureTermBeq (Gamma t t₁)  (Gamma x x₁)    = pureTermBeq t x >> pureTermBeq t₁ x₁
   pureTermBeq (Ev m t) (Ev m' x) with m ≟ m'
   ... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith pureTermBeq t x
   ... | no  _    = throwError $ show m <+> "and" <+> show m' <+> "aren't equal!"
-  pureTermBeq (Char-T c) (Char-T c') = beqMonadHelper c c' "Char"
-  pureTermBeq (CharEq t t₁) (CharEq x x₁) = pureTermBeq t x >> pureTermBeq t₁ x₁
   {-# CATCHALL #-}
   pureTermBeq t t' =
     throwError $ "The terms" <+> show t <+> "and" <+> show t' <+> "aren't equal!"
@@ -174,7 +168,7 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
 
         compareHnfs : PureTerm → PureTerm → M ⊤
         compareHnfs (Var-T x) (Var-T x₁)          = beqMonadHelper x x₁ "Name"
-        compareHnfs (Sort-T x) (Sort-T x₁)        = beqMonadHelper x x₁ "Sort-T"
+        compareHnfs (Sort-T x) (Sort-T x₁)        = beqMonadHelper x x₁ "Sort"
         compareHnfs (Const-T x) (Const-T x₁)      = beqMonadHelper x x₁ "Const"
         compareHnfs (App b t t₁) (App b' x x₁)    = beqMonadHelper b b' "Binder" >> checkβηPure' n t x >> checkβηPure' n t₁ x₁
         compareHnfs (Lam-P b _ t) (Lam-P b' _ t₁) = beqMonadHelper b b' "Binder" >> checkβηPure' n t t₁
@@ -185,12 +179,9 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
         compareHnfs (M-T t) (M-T x)               = checkβηPure' n x t
         compareHnfs (Mu t t₁) (Mu x x₁)           = checkβηPure' n t x >> checkβηPure' n t₁ x₁
         compareHnfs (Epsilon t) (Epsilon x)       = checkβηPure' n t x
-        compareHnfs (Gamma t t₁) (Gamma x x₁)     = checkβηPure' n t x >> checkβηPure' n t₁ x₁
         compareHnfs t@(Ev m x) t'@(Ev m' x') with m ≟ m'
         ... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith (checkβηPure' n) x x'
         ... | no  _    = hnfError t t'
-        compareHnfs (Char-T c) (Char-T c') = beqMonadHelper c c' "Char"
-        compareHnfs (CharEq t t₁) (CharEq x x₁) = checkβηPure' n t x >> checkβηPure' n t₁ x₁
         -- compareHnfs (Lam-P _ _ t) t₁ = checkβηPure' n t (weakenBy 1 t₁ ⟪$⟫ BoundVar 0)
         -- compareHnfs t (Lam-P _ _ t₁) = checkβηPure' n (weakenBy 1 t ⟪$⟫ BoundVar 0) t₁
         compareHnfs (Lam-P _ _ t) t₁ = case normalize Γ t of λ where
@@ -245,7 +236,18 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
   synthType' tm@(Sort-T Ast) = return □
   synthType' tm@(Sort-T Sq) = throwError1 tm "Cannot synthesize type for the kind □"
 
-  synthType' tm@(Const-T CharT) = return ⋆
+  synthType' tm@(Const-T CharT)     = return ⋆
+  synthType' tm@(Const-T (CharC c)) = return $ Const-T CharT
+  synthType' tm@(Const-T CharEq)    = return $ Const-T CharT ⟪→⟫ Const-T CharT ⟪→⟫ FreeVar "Bool"
+  synthType' tm@(Const-T MM)        = return $ ⋆ ⟪→⟫ ⋆
+  synthType' tm@(Const-T MuM)       = return $
+    Pi Erased  "X" ⋆ $ Pi Erased  "Y" ⋆ $
+    M-T (BoundVar 1) ⟪→⟫ (BoundVar 2 ⟪→⟫ M-T (BoundVar 2)) ⟪→⟫ M-T (BoundVar 2)
+  synthType' tm@(Const-T EpsilonM)  = return $
+    Pi Erased "X" ⋆ $ BoundVar 0 ⟪→⟫ M-T (BoundVar 1)
+  synthType' tm@(Const-T CatchM)    = return $
+    Pi Erased  "X" ⋆ $
+    M-T (BoundVar 0) ⟪→⟫ (FreeVar "init$err" ⟪→⟫ M-T (BoundVar 2)) ⟪→⟫ M-T (BoundVar 2)
 
   synthType' tm@(Pr1 t) = do
     T ← synthType' t
@@ -424,30 +426,6 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
         ("The arguments for primitive" <+> show m <+> "have incorrect types!" ∷ᵗ []))
       T (primMetaS m)
     return $ M-T $ primMetaT m t
-
-  synthType' tm@(Gamma t t₁) = do
-    Γ ← ask
-    T ← synthType' t
-    T₁ ← synthType' t₁
-    (M-T u) ← hnfNormM T
-      where t → throwErrorCtx tm $
-             "The first term in CatchErr needs to have type 'M t' for some 't', but it has type" ∷ᵗ t ∷ᵗ []
-    appendIfError' (checkβη Γ T₁ (Pi Regular "" (FreeVar "init$err") (weakenBy 1 $ M-T u))) tm
-      ("The second term supplied to CatchErr has type" ∷ᵗ T₁ ∷ᵗ
-       ", while it should have type 'init$err → M" ∷ᵗ u ∷ᵗ [])
-    return $ M-T u
-
-  synthType' tm@(Char-T c) = return (Const-T CharT)
-  synthType' tm@(CharEq t t') = do
-    T ← synthType' t
-    T' ← synthType' t'
-    (Const-T CharT) ← hnfNormM T
-      where v → throwErrorCtx tm $
-             "The first term in CharEq needs to have type Char, but it has type" ∷ᵗ v ∷ᵗ []
-    (Const-T CharT) ← hnfNormM T'
-      where v → throwErrorCtx tm $
-             "The second term in CharEq needs to have type Char, but it has type" ∷ᵗ v ∷ᵗ []
-    return $ FreeVar "Bool"
 
 synthType : ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ → Context → AnnTerm → M AnnTerm
 synthType Γ t = do

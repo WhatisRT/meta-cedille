@@ -1,5 +1,5 @@
-let Char := init$char.
-let primCharEq := λ c : Char λ c' : Char γ c c'.
+let Char := ΚCharT.
+let primCharEq := ΚCharEq.
 let charEq := primCharEq.
 
 let init$char$!! := λ c : Char c.
