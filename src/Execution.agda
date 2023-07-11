@@ -219,7 +219,8 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   parseAndExecute : String → M ⊤
 
   executeTerm t = do
-    t ← logProfile "HNF" ((λ Γ → hnfNormPure Γ t) <$> getContext)
+    b ← logTypeEnabled "headNormalizeNBE"
+    t ← logProfile "HNF" ((λ Γ → (if b then hnfNormPureLog else hnfNormPure) Γ t) <$> getContext)
     logProfile ("execHNF:" <+> show t) (executeTerm' t)
 
   executeTerm' (Mu t t₁) = do

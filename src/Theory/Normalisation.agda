@@ -4,7 +4,7 @@ module Theory.Normalisation where
 open import Prelude
 open import Prelude.Nat
 
-open import Theory.NBE using () renaming (nf to normalizePure; hnf to hnfNormPure) public
+open import Theory.NBE using () renaming (nf to normalizePure; hnf to hnfNormPure; hnfLog to hnfNormPureLog) public
 open import Theory.Terms
 open import Theory.Context
 open import Theory.TermLike

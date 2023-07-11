@@ -1,3 +1,4 @@
+{-# OPTIONS --type-in-type #-}
 -- Based on NBE.Felgenhauer in lambda-n-ways
 
 module Theory.NBE where
@@ -158,10 +159,15 @@ module _ where
   genExtra : Context → PureTerm false → PureTerm true
   genExtra Γ t = dbnf (C.convContext Γ) $ toNBETerm t
 
-module _ where
+module _ (doLog : Bool) where
   private
     convDef : Def → Maybe (Term false true)
     convDef record { def = def } = toNBETerm ∘ Erase <$> def
+
+    log : Context' false → Term false true → Term false true → Term false true
+    log Γ t t' = if doLog
+      then unsafePerformIO (putStr (show (proj₂ Γ) <+> ":" <+> show t <+> "~>" <+> show t' + "\n") >> return t')
+      else t'
 
     open Lookup convDef
 
@@ -169,21 +175,21 @@ module _ where
     {-# NON_TERMINATING #-}
     hnf' : Bool → Context' false → Term false true → Term false true
     hnf' true Γ v@(Var-T x) with lookupInContext' Γ x
-    ... | just y                       = hnf' true Γ y
+    ... | just y                       = log Γ v $ hnf' true Γ y
     ... | nothing                      = Var-T x
-    hnf' false Γ v@(Var-T (Bound x))   = lookup' Γ (Bound x)
+    hnf' false Γ v@(Var-T (Bound x))   = log Γ v $ lookup' Γ (Bound x)
     hnf' false Γ v@(Var-T (Free x))    = v
     hnf' b Γ v@(FDB x)                 = v
     hnf' b Γ v@(Sort-T x)              = v
-    hnf' true  Γ v@(Const-N x 0)       = evalConst' (hnf' true Γ) x
-    hnf' true  Γ v@(Const-N x (suc k)) = Cont "" (proj₂ Γ) (Const-N x k)
+    hnf' true  Γ v@(Const-N x 0)       = log Γ v $ evalConst' (hnf' true Γ) x
+    hnf' true  Γ v@(Const-N x (suc k)) = log Γ v $ Cont "" (proj₂ Γ) (Const-N x k)
     hnf' false Γ v@(Const-N x _)       = v
     hnf' true Γ v@(App b t t₁) with hnf' true Γ t | hnf' false Γ t₁
-    ... | Cont n Γ' x | x₁             = hnf' true (pushTerm (proj₁ Γ , Γ') n x₁) x
+    ... | Cont n Γ' x | x₁             = log (pushTerm (proj₁ Γ , Γ') n x₁) v $ hnf' true (pushTerm (proj₁ Γ , Γ') n x₁) x
     ... | x           | x₁             = App b x x₁
-    hnf' false Γ v@(App b t t₁)        = App b (hnf' false Γ t) (hnf' false Γ t₁)
-    hnf' true  Γ v@(Lam-P b x t)       = Cont x (proj₂ Γ) t
-    hnf' false Γ v@(Lam-P b x t)       = Lam-P b x (hnf' false (pushAbstract Γ x) t)
+    hnf' false Γ v@(App b t t₁)        = log Γ v $ App b (hnf' false Γ t) (hnf' false Γ t₁)
+    hnf' true  Γ v@(Lam-P b x t)       = log Γ v $ Cont x (proj₂ Γ) t
+    hnf' false Γ v@(Lam-P b x t)       = log Γ v $ Lam-P b x (hnf' false (pushAbstract Γ x) t)
     hnf' b Γ (Cont _ _ _)              = error "Error in hnf'"
     hnf' b Γ (Pi b' x t t₁)            = Pi b' x (hnf' false Γ t) (hnf' false (pushAbstract Γ x) t₁)
     hnf' b Γ (Iota x t t₁)             = Iota x (hnf' false Γ t) (hnf' false (pushAbstract Γ x) t₁)
@@ -195,4 +201,7 @@ module _ where
 
     hnf = hnf' true
 
-  open Conv hnf convDef using () renaming (nf to hnf) public
+  open Conv hnf convDef using () renaming (nf to hnf') public
+
+hnf    = hnf' false
+hnfLog = hnf' true
