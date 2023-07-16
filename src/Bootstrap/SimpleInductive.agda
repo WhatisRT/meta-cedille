@@ -1,7 +1,5 @@
 module Bootstrap.SimpleInductive where
 
-open import Data.List using (applyUpTo)
-
 open import Prelude
 
 data ConstrData' : Set where

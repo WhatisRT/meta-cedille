@@ -7,35 +7,20 @@
 
 module Theory.TypeChecking where
 
-import Data.Product
-
-open import Data.HSTrie
 open import Class.Map
-open import Class.Monad.Reader
 open import Class.Monad.Except
-open import Data.Word using (toℕ; fromℕ)
+open import Class.Monad.Reader
+open import Data.HSTrie
 open import Data.Sum using (map₁)
-open import Monads.Except
 open import Monads.ExceptT
 
 open import Prelude hiding (map₁)
 open import Prelude.Nat
 
-open import Theory.Names public
-open import Theory.TermLike public
-open import Theory.PrimMeta public
-open import Theory.Terms hiding (PureTerm) public
-import Theory.NBE as NBE
 open import Theory.Context public
-open import Theory.Normalisation public
 open import Theory.NBE using (genExtra)
-
-module _ {a b : Bool} where
-  open Types (Term-TermLike {a} {b}) public
-
--- instance
---   _ = ExceptT-Monad
---   _ = ExceptT-MonadExcept
+open import Theory.Normalisation public
+open import Theory.Terms hiding (PureTerm) public
 
 PureTerm : Set
 PureTerm = Theory.Terms.PureTerm false
@@ -50,10 +35,10 @@ private
   checkFree = helper 0
     where
       helper : 𝕀 → Name → PureTerm → Bool
-      helper k n (Var-T (Bound x)) = case n of λ where
+      helper k n (BoundVar x)  = case n of λ where
         (Bound x₁) → x ≣ (k +𝕀 x₁)
         (Free x₁) → false
-      helper k n (Var-T (Free x)) = case n of λ where
+      helper k n (FreeVar x)   = case n of λ where
         (Bound x₁) → false
         (Free x₁) → x ≣ x₁
       helper k n (Sort-T x)    = false
@@ -120,7 +105,7 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
 
   {-# TERMINATING #-}
   pureTermBeq : PureTerm → PureTerm → M ⊤
-  pureTermBeq (Var-T x)     (Var-T x₁)      = beqMonadHelper x x₁ "Name"
+  pureTermBeq (Var x)       (Var x₁)        = beqMonadHelper x x₁ "Name"
   pureTermBeq (Sort-T x)    (Sort-T x₁)     = beqMonadHelper x x₁ "Sort"
   pureTermBeq (Const-T x)   (Const-T x₁)    = beqMonadHelper x x₁ "Const"
   pureTermBeq (App b t t₁)  (App b' x x₁)   = beqMonadHelper b b' "Binder" >> pureTermBeq t x >> pureTermBeq t₁ x₁
@@ -141,7 +126,7 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
 
   module _ (Γ : Context) where
     compareNames : PureTerm → PureTerm → M ⊤
-    compareNames (Var-T x) (Var-T x₁) =
+    compareNames (Var x) (Var x₁) =
       if x ≣ x₁
         then return tt
         else throwError "Names not equal! If you see this message, this is a bug!"
@@ -167,7 +152,7 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
           throwError $ "The terms" <+> show t <+> "and" <+> show t' <+> "aren't equal!"
 
         compareHnfs : PureTerm → PureTerm → M ⊤
-        compareHnfs (Var-T x) (Var-T x₁)          = beqMonadHelper x x₁ "Name"
+        compareHnfs (Var x) (Var x₁)              = beqMonadHelper x x₁ "Name"
         compareHnfs (Sort-T x) (Sort-T x₁)        = beqMonadHelper x x₁ "Sort"
         compareHnfs (Const-T x) (Const-T x₁)      = beqMonadHelper x x₁ "Const"
         compareHnfs (App b t t₁) (App b' x x₁)    = beqMonadHelper b b' "Binder" >> checkβηPure' n t x >> checkβηPure' n t₁ x₁
@@ -185,11 +170,11 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
         -- compareHnfs (Lam-P _ _ t) t₁ = checkβηPure' n t (weakenBy 1 t₁ ⟪$⟫ BoundVar 0)
         -- compareHnfs t (Lam-P _ _ t₁) = checkβηPure' n (weakenBy 1 t ⟪$⟫ BoundVar 0) t₁
         compareHnfs (Lam-P _ _ t) t₁ = case normalize Γ t of λ where
-          t''@(App _ t' (Var-T (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
+          t''@(App _ t' (Var (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
             then (compareHnfs (strengthen t') t₁) else hnfError t'' t₁
           t'' → hnfError t'' t₁
         compareHnfs t (Lam-P _ _ t₁) = case normalize Γ t₁ of λ where
-          t''@(App _ t' (Var-T (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
+          t''@(App _ t' (Var (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
             then (compareHnfs t (strengthen t')) else hnfError t t''
           t'' → hnfError t t''
         {-# CATCHALL #-}
@@ -226,15 +211,15 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
   {-# TERMINATING #-}
   synthType' : AnnTerm → M AnnTerm
 
-  synthType' tm@(Var-T x) = do
+  synthType' tm@(Var x) = do
     Γ ← ask
     case (lookupTypeInContext x Γ) of λ
       { (just T) → return T
       ; nothing → throwErrorCtx tm
         (("Lookup failed:" <+> show x + "\nIn context:" <+> show {{Context-Show}} Γ) ∷ᵗ []) }
 
-  synthType' tm@(Sort-T Ast) = return □
-  synthType' tm@(Sort-T Sq) = throwError1 tm "Cannot synthesize type for the kind □"
+  synthType' ⋆ = return □
+  synthType' □ = throwError1 □ "Cannot synthesize type for the kind □"
 
   synthType' tm@(Const-T CharT)     = return ⋆
   synthType' tm@(Const-T (CharC c)) = return $ Const-T CharT
@@ -263,7 +248,7 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
 
   synthType' tm@(Beta t t₁) = do
     T ← synthType' (Eq-T t t)
-    (Sort-T Ast) ← hnfNormM T
+    ⋆ ← hnfNormM T
       where _ → throwError1 tm "Equality type does not have the right type. Is this a bug?"
     return $ Eq-T t t
 
@@ -330,13 +315,13 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
   synthType' tm@(Iota n t t₁) = do
     Γ ← ask
     u ← synthType' t
-    (Sort-T Ast) ← hnfNormM u
+    ⋆ ← hnfNormM u
       where v → throwErrorCtx tm $
              "The type of the parameter type in iota should be ⋆, but it has type" ∷ᵗ v ∷ᵗ []
     let Γ' = pushType Γ (n , t)
     u₁ ← local (λ _ → Γ') $ synthType' t₁
     case (hnfNorm Γ' u₁) of λ
-      { (Sort-T Ast) → return ⋆
+      { ⋆ → return ⋆
       ; v → throwErrorCtx tm $
         "The type family in iota should have type ⋆, but it has type"
         ∷ᵗ v ∷ᵗ "\nContext:" <+> show {{Context-Show}} Γ' ∷ᵗ [] }
@@ -362,7 +347,7 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
        (subst t₂ t) ∷ᵗ "should be βη-equivalent to the type" ∷ᵗ u₁ ∷ᵗ [])
     let res = Iota "" u t₂
     u₂ ← synthType' res
-    (Sort-T Ast) ← hnfNormM u₂
+    ⋆ ← hnfNormM u₂
       where _ → throwError1 tm
              "The resulting iota type of the dependent intersection doesn't have type star. Is this a Bug?"
     return res
@@ -389,7 +374,7 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
 
   synthType' tm@(M-T t) = do
     T ← synthType' t
-    (Sort-T Ast) ← hnfNormM T
+    ⋆ ← hnfNormM T
       where v → throwErrorCtx tm $
              "M can only be applied to terms of type ∗, but it was applied to a term of type" ∷ᵗ v ∷ᵗ []
     return ⋆

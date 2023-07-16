@@ -8,8 +8,8 @@ open import Prelude
 open import Prelude.Nat
 open import Unsafe
 
+open import Theory.Const public
 open import Theory.Names public
-open import Theory.TermLike
 open import Theory.PrimMeta public
 
 private variable a b : Bool
@@ -32,7 +32,7 @@ instance
 
 -- the second bool decides whether to have the NBE constructors
 data Term : @0 Bool → @0 Bool → Set where
-  Var-T   : Name → Term a b
+  Var     : Name → Term a b
   FDB     : 𝕀 → Term a true
   Sort-T  : Sort → Term a b
   Const-T : Const → Term a false
@@ -70,13 +70,22 @@ pattern EpsilonM-T t  = App-R (Const-T EpsilonM) t
 pattern CatchM-T t t' = App2 (Const-T CatchM) t t'
 
 infixr 0 _⟪→⟫_ _⟪⇒⟫_
+infixl -1 _⟪$⟫_
 
 pattern _⟪→⟫_ t t' = Pi Regular "" t t'
 pattern _⟪⇒⟫_ t t' = Pi Erased  "" t t'
+pattern _⟪$⟫_ t t' = App-R t t'
 
-Const-T' : Const → Term a b
-Const-T' {b = false} c = Const-T c
-Const-T' {b = true}  c = Const-N c 0
+pattern ⋆ = Sort-T Ast
+pattern □ = Sort-T Sq
+
+pattern BoundVar x = Var (Bound x)
+pattern FreeVar x  = Var (Free x)
+
+module _ {a b : Bool} where
+  module P = Types {Term a b} FreeVar ⋆ _⟪$⟫_
+
+open P public
 
 PureTerm : @0 Bool → Set
 PureTerm = Term false
@@ -84,50 +93,62 @@ PureTerm = Term false
 AnnTerm : Set
 AnnTerm = Term true false
 
-module _ where
-  open TermLike
+Const-T' : Const → Term a b
+Const-T' {b = false} c = Const-T c
+Const-T' {b = true}  c = Const-N c 0
 
+stripBinder : Term a b → Maybe (Term a b)
+stripBinder (Pi _ _ t' t'')  = just t''
+stripBinder (Iota _ t' t'')  = just t''
+stripBinder (Lam-P _ _ t')   = just t'
+stripBinder (Lam-A _ _ _ t') = just t'
+stripBinder _                = nothing
+
+private
   {-# TERMINATING #-}
-  Term-TermLike : TermLike (Term a b)
-  Term-TermLike .Var             = Var-T
-  Term-TermLike .SortC           = Sort-T
-  Term-TermLike ._⟪$⟫_           = App-R
-  Term-TermLike {a} {b} .byUniformFold f = helper 0
+  byUniformFold : (𝕀 → 𝕀 → Term a b) → Term a b → Term a b
+  byUniformFold {a = a} {b} f = helper 0
     where
       helper : 𝕀 → Term a b → Term a b
-      helper k (Var-T (Bound x))  = f k x
-      helper k v@(FDB _)          = v
-      helper k v@(Var-T (Free _)) = v
-      helper k v@(Sort-T x)       = v
-      helper k (Const-T x)        = Const-T x
-      helper k (Const-N x n)      = Const-N x n
-      helper k (App b t t₁)       = App b (helper k t) (helper k t₁)
-      helper k (Lam-P b x t)      = Lam-P b x (helper (suc𝕀 k) t)
-      helper k (Lam-A b x t t₁)   = Lam-A b x (helper k t) (helper (suc𝕀 k) t₁)
-      helper k v@(Cont _ _ _)     = v
-      helper k (Pi b x t t₁)      = Pi b x (helper k t) (helper (suc𝕀 k) t₁)
-      helper k (Iota x t t₁)      = Iota x (helper k t) (helper (suc𝕀 k) t₁)
-      helper k (Eq-T t t₁)        = Eq-T (helper k t) (helper k t₁)
-      helper k (M-T t)            = M-T (helper k t)
-      helper k (Mu t t₁)          = Mu (helper k t) (helper k t₁)
-      helper k (Epsilon t)        = Epsilon (helper k t)
-      helper k (Ev m args)        = Ev m (mapPrimMetaArgs (helper k) args)
-      helper k (Pr1 t)            = Pr1 (helper k t)
-      helper k (Pr2 t)            = Pr2 (helper k t)
-      helper k (Beta t t')        = Beta (helper k t) (helper k t')
-      helper k (Delta t t')       = Delta (helper k t) (helper k t')
-      helper k (Sigma t)          = Sigma (helper k t)
-      helper k (Rho t t₁ t₂)      = Rho (helper k t) (helper (suc𝕀 k) t₁) (helper k t₂)
-      helper k (Pair t t₁ t₂)     = Pair (helper k t) (helper k t₁) (helper (suc𝕀 k) t₂)
-      helper k (Phi t t₁ t₂)      = Phi (helper k t) (helper k t₁) (helper k t₂)
-  Term-TermLike .stripBinder (Pi _ _ t' t'')  = just t''
-  Term-TermLike .stripBinder (Iota _ t' t'')  = just t''
-  Term-TermLike .stripBinder (Lam-P _ _ t')   = just t'
-  Term-TermLike .stripBinder (Lam-A _ _ _ t') = just t'
-  Term-TermLike .stripBinder _                = nothing
+      helper k (Var (Bound x))  = f k x
+      helper k v@(FDB _)        = v
+      helper k v@(Var (Free _)) = v
+      helper k v@(Sort-T x)     = v
+      helper k (Const-T x)      = Const-T x
+      helper k (Const-N x n)    = Const-N x n
+      helper k (App b t t₁)     = App b (helper k t) (helper k t₁)
+      helper k (Lam-P b x t)    = Lam-P b x (helper (suc𝕀 k) t)
+      helper k (Lam-A b x t t₁) = Lam-A b x (helper k t) (helper (suc𝕀 k) t₁)
+      helper k v@(Cont _ _ _)   = v
+      helper k (Pi b x t t₁)    = Pi b x (helper k t) (helper (suc𝕀 k) t₁)
+      helper k (Iota x t t₁)    = Iota x (helper k t) (helper (suc𝕀 k) t₁)
+      helper k (Eq-T t t₁)      = Eq-T (helper k t) (helper k t₁)
+      helper k (M-T t)          = M-T (helper k t)
+      helper k (Mu t t₁)        = Mu (helper k t) (helper k t₁)
+      helper k (Epsilon t)      = Epsilon (helper k t)
+      helper k (Ev m args)      = Ev m (mapPrimMetaArgs (helper k) args)
+      helper k (Pr1 t)          = Pr1 (helper k t)
+      helper k (Pr2 t)          = Pr2 (helper k t)
+      helper k (Beta t t')      = Beta (helper k t) (helper k t')
+      helper k (Delta t t')     = Delta (helper k t) (helper k t')
+      helper k (Sigma t)        = Sigma (helper k t)
+      helper k (Rho t t₁ t₂)    = Rho (helper k t) (helper (suc𝕀 k) t₁) (helper k t₂)
+      helper k (Pair t t₁ t₂)   = Pair (helper k t) (helper k t₁) (helper (suc𝕀 k) t₂)
+      helper k (Phi t t₁ t₂)    = Phi (helper k t) (helper k t₁) (helper k t₂)
 
-module _ {a b : Bool} where
-  open TermLike (Term-TermLike {a} {b}) public
+  modifyIndices : 𝕀 → Term a b → Term a b
+  modifyIndices n = byUniformFold λ k x → BoundVar $ if x <𝕀 k then x else pred𝕀 (x +𝕀 n)
+
+weakenBy : 𝕀 → Term a b → Term a b
+weakenBy i = modifyIndices (suc𝕀 i)
+
+strengthen : Term a b → Term a b
+strengthen = modifyIndices 0
+
+-- substitute the first unbound variable in t with t'
+subst : Term a b → Term a b → Term a b
+subst t t' = strengthen $ byUniformFold
+  (λ k x → if k ≣ x then weakenBy (suc𝕀 k) t' else BoundVar x) t
 
 module _ where
 
@@ -142,7 +163,7 @@ module _ where
 
   {-# TERMINATING #-}
   showTermCtx : List String → Term a b → String
-  showTermCtx l (Var-T x)        = showVar l x
+  showTermCtx l (Var x)          = showVar l x
   showTermCtx l (FDB x)          = "FDB" <+> show x
   showTermCtx l (Sort-T x)       = show x
   showTermCtx l (Const-T x)      = show x
@@ -193,7 +214,7 @@ evalConst' reduce c          = Const-T' c
 
 {-# TERMINATING #-}
 Erase : Term true b → PureTerm b
-Erase (Var-T x)              = Var-T x
+Erase (Var x)                = Var x
 Erase (FDB x)                = FDB x
 Erase (Sort-T x)             = Sort-T x
 Erase (Const-T x)            = Const-T x

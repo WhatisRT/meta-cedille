@@ -5,17 +5,17 @@
 
 module Conversion where
 
+open import Prelude
+open import Prelude.Strings
+
 open import Class.Monad.Except
 open import Data.String using (fromList; toList)
 open import Data.Tree
 open import Data.Tree.Instance
 open import Data.Word using (toℕ)
 
-open import Theory.TypeChecking
 open import Parse.TreeConvert using (toTerm; toName; toNameList)
-
-open import Prelude
-open import Prelude.Strings
+open import Theory.TypeChecking
 
 module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
 
@@ -53,11 +53,11 @@ module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
       ... | t' , ts = Node t' $ map (buildConstructorTree Γ) $ reverse ts
 
       extractConstrId : PureTerm → M (ℕ ⊎ Char)
-      extractConstrId (Var-T (Bound x)) = return $ inj₁ $ toℕ x
-      extractConstrId (Var-T (Free x)) = throwError ("Not a constructor:" <+> x)
+      extractConstrId (Var (Bound x))     = return $ inj₁ $ toℕ x
+      extractConstrId (Var (Free x))      = throwError ("Not a constructor:" <+> x)
       extractConstrId (Const-T (CharC c)) = return $ inj₂ c
       {-# CATCHALL #-}
-      extractConstrId t = throwError ("Not a variable" <+> show t)
+      extractConstrId t                   = throwError ("Not a variable" <+> show t)
 
       extractConstrIdTree : Tree PureTerm → M (Tree (ℕ ⊎ Char))
       extractConstrIdTree (Node x y) = do
@@ -115,9 +115,9 @@ instance
   Quotable-Const .quoteToAnnTerm c         = FreeVar ("init$const$" + show c)
 
   Quotable-AnnTerm : Quotable AnnTerm
-  Quotable-AnnTerm .quoteToAnnTerm (Var-T (Bound x)) = FreeVar "init$term$_var_"
+  Quotable-AnnTerm .quoteToAnnTerm (Var (Bound x)) = FreeVar "init$term$_var_"
     ⟪$⟫ (FreeVar "init$var$_index_" ⟪$⟫ quoteToAnnTerm x)
-  Quotable-AnnTerm .quoteToAnnTerm (Var-T (Free x)) = FreeVar "init$term$_var_"
+  Quotable-AnnTerm .quoteToAnnTerm (Var (Free x)) = FreeVar "init$term$_var_"
     ⟪$⟫ (FreeVar "init$var$_string_" ⟪$⟫ quoteToAnnTerm x)
   Quotable-AnnTerm .quoteToAnnTerm (Sort-T Ast) = FreeVar "init$term$_sort_" ⟪$⟫ FreeVar "init$sort$=ast="
   Quotable-AnnTerm .quoteToAnnTerm (Sort-T Sq) = FreeVar "init$term$_sort_" ⟪$⟫ FreeVar "init$sort$=sq="

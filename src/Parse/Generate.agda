@@ -7,25 +7,25 @@
 
 module Parse.Generate where
 
+open import Prelude
+open import Prelude.Strings
+
+import Data.List.NonEmpty as NE
+import Data.Nat.Properties as ℕ
+import Relation.Binary.Construct.Flip as Flip
+import Relation.Binary.Construct.On   as On
+open NE using (List⁺; _∷_)
 open import Class.Monad.Except
 open import Data.Fin.Map
 open import Data.List.Sort
-import Data.Nat.Properties as ℕ
-import Data.List.NonEmpty as NE
-open NE using (List⁺; _∷_)
 open import Data.String using (toList; fromChar; uncons) renaming (fromList to fromListS)
 open import Data.Vec using (Vec; lookup; fromList; []; _∷_; _[_]%=_)
 open import Data.Vec.Exts
-import Relation.Binary.Construct.Flip as Flip
-import Relation.Binary.Construct.On   as On
 
 open import Parse.LL1
 open import Parse.MarkedString
 open import Parse.MultiChar
 open import Parse.Escape
-
-open import Prelude
-open import Prelude.Strings
 
 -- Grammar with show functions for rules and non-terminals
 Grammar = ∃[ n ]

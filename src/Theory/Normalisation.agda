@@ -4,10 +4,9 @@ module Theory.Normalisation where
 open import Prelude
 open import Prelude.Nat
 
+open import Theory.Context
 open import Theory.NBE using () renaming (nf to normalizePure; hnf to hnfNormPure; hnfLog to hnfNormPureLog) public
 open import Theory.Terms
-open import Theory.Context
-open import Theory.TermLike
 
 private variable
   A : Set
@@ -35,7 +34,7 @@ module Norm (doLog : Bool) where
   hnfNorm normalize : Context → Term a false → Term a false
 
   {-# NON_TERMINATING #-}
-  hnfNorm Γ v@(Var-T x) with lookupInContext x Γ
+  hnfNorm Γ v@(Var x) with lookupInContext x Γ
   ... | just record { def = just x } = log v x $ hnfNorm Γ $ condErase x
   ... | just _                = v -- we cannot reduce axioms
   ... | nothing               = v -- in case the lookup fails, we cannot reduce
@@ -56,7 +55,7 @@ module Norm (doLog : Bool) where
   hnfNorm Γ v                 = v
 
   {-# NON_TERMINATING #-}
-  normalize Γ v@(Var-T x) with lookupInContext x Γ
+  normalize Γ v@(Var x) with lookupInContext x Γ
   ... | just record { def = just x }     = log v x $ normalize Γ $ condErase x
   ... | just _                           = v -- we cannot reduce axioms
   ... | nothing                          = v -- in case the lookup fails, we cannot reduce
@@ -67,11 +66,11 @@ module Norm (doLog : Bool) where
       (just t'') → log v (subst t'' t₁) $ normalize Γ (subst t'' t₁)
       nothing    → App b (normalize Γ t') (normalize Γ t₁)
   normalize Γ v@(Lam-P b n t) with normalize Γ t
-  ... | t''@(App _ t' (Var-T (Bound i))) = if i ≣ 0 ∧ validInContext t' Γ
+  ... | t''@(App _ t' (Var (Bound i)))   = if i ≣ 0 ∧ validInContext t' Γ
     then log v (strengthen t') $ normalize Γ (strengthen t') else Lam-P b n t'' -- eta reduce here
   ... | t''                              = Lam-P b n t''
   normalize Γ v@(Lam-A b n t t₁) with normalize Γ t₁
-  ... | t''@(App _ t' (Var-T (Bound i))) = if i ≣ 0 ∧ validInContext t' Γ
+  ... | t''@(App _ t' (Var (Bound i)))   = if i ≣ 0 ∧ validInContext t' Γ
     then log v (strengthen t') $ normalize Γ (strengthen t') else Lam-A b n t t'' -- eta reduce here
   ... | t''                              = Lam-A b n t t''
   normalize Γ (Pi b n t t₁)              = Pi b n (normalize Γ t) (normalize Γ t₁)

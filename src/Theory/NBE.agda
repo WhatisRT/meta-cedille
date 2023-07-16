@@ -9,10 +9,7 @@ open import Unsafe using (error)
 
 open import Data.Word using (toℕ; fromℕ)
 open import Theory.Context
-open import Theory.Names
-open import Theory.PrimMeta
 open import Theory.Terms
-open import Theory.TermLike
 
 private
   variable b : Bool
@@ -26,7 +23,7 @@ private
 
   {-# TERMINATING #-}
   toNBETerm : Term b false → Term b true
-  toNBETerm (Var-T x)        = Var-T x
+  toNBETerm (Var x)          = Var x
   toNBETerm (Sort-T x)       = Sort-T x
   toNBETerm (Const-T x)      = Const-N x (constArity x)
   toNBETerm (App b t t₁)     = App b (toNBETerm t) (toNBETerm t₁)
@@ -59,30 +56,30 @@ private
       necessaryVars = toℕ ∘ helper 0 0
         where
           helper : 𝕀 → ℕ → Term b true → 𝕀
-          helper i accu (Var-T (Bound x)) = suc𝕀 x -𝕀 i
-          helper i accu (Var-T (Free x))  = 0
-          helper i accu (FDB x)           = error "Error 1 in necessaryVars"
-          helper i accu (Sort-T x)        = 0
-          helper i accu (Const-N _ _)     = 0
-          helper i accu (App _ t t₁)      = helper i accu t ⊔ helper i accu t₁
-          helper i accu (Lam-P _ x t)     = helper (suc𝕀 i) accu t
-          helper i accu (Lam-A _ x t t₁)  = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
-          helper i accu (Cont n t x)      = error "Error 2 in necessaryVars"
-          helper i accu (Pi b x t t₁)     = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
-          helper i accu (Iota x t t₁)     = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
-          helper i accu (Eq-T t t₁)       = helper i accu t ⊔ helper i accu t₁
-          helper i accu (M-T t)           = helper i accu t
-          helper i accu (Mu t t₁)         = helper i accu t ⊔ helper i accu t₁
-          helper i accu (Epsilon t)       = helper i accu t
-          helper i accu (Ev m x)          = primMetaArgsMax $ mapPrimMetaArgs (helper i accu) x
-          helper i accu (Pr1 t)           = helper i accu t
-          helper i accu (Pr2 t)           = helper i accu t
-          helper i accu (Beta t t')       = helper i accu t ⊔ helper i accu t'
-          helper i accu (Delta t t')      = helper i accu t ⊔ helper i accu t'
-          helper i accu (Sigma t)         = helper i accu t
-          helper i accu (Rho t t₁ t₂)     = helper i accu t ⊔ helper (suc𝕀 i) accu t₁ ⊔ helper i accu t₂
-          helper i accu (Pair t t₁ t₂)    = helper i accu t ⊔ helper i accu t₁ ⊔ helper (suc𝕀 i) accu t₂
-          helper i accu (Phi t t₁ t₂)     = helper i accu t ⊔ helper i accu t₁ ⊔ helper i accu t₂
+          helper i accu (Var (Bound x))  = suc𝕀 x -𝕀 i
+          helper i accu (Var (Free x))   = 0
+          helper i accu (FDB x)          = error "Error 1 in necessaryVars"
+          helper i accu (Sort-T x)       = 0
+          helper i accu (Const-N _ _)    = 0
+          helper i accu (App _ t t₁)     = helper i accu t ⊔ helper i accu t₁
+          helper i accu (Lam-P _ x t)    = helper (suc𝕀 i) accu t
+          helper i accu (Lam-A _ x t t₁) = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
+          helper i accu (Cont n t x)     = error "Error 2 in necessaryVars"
+          helper i accu (Pi b x t t₁)    = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
+          helper i accu (Iota x t t₁)    = helper i accu t ⊔ helper (suc𝕀 i) accu t₁
+          helper i accu (Eq-T t t₁)      = helper i accu t ⊔ helper i accu t₁
+          helper i accu (M-T t)          = helper i accu t
+          helper i accu (Mu t t₁)        = helper i accu t ⊔ helper i accu t₁
+          helper i accu (Epsilon t)      = helper i accu t
+          helper i accu (Ev m x)         = primMetaArgsMax $ mapPrimMetaArgs (helper i accu) x
+          helper i accu (Pr1 t)          = helper i accu t
+          helper i accu (Pr2 t)          = helper i accu t
+          helper i accu (Beta t t')      = helper i accu t ⊔ helper i accu t'
+          helper i accu (Delta t t')     = helper i accu t ⊔ helper i accu t'
+          helper i accu (Sigma t)        = helper i accu t
+          helper i accu (Rho t t₁ t₂)    = helper i accu t ⊔ helper (suc𝕀 i) accu t₁ ⊔ helper i accu t₂
+          helper i accu (Pair t t₁ t₂)   = helper i accu t ⊔ helper i accu t₁ ⊔ helper (suc𝕀 i) accu t₂
+          helper i accu (Phi t t₁ t₂)    = helper i accu t ⊔ helper i accu t₁ ⊔ helper i accu t₂
 
   pushTerm : Context' b → String → Term b true → Context' b
   pushTerm (Γ , Γ') n t = (Γ , (n , just t) ∷ Γ')
@@ -103,7 +100,7 @@ private
               (convDef : Def → Maybe (Term false true)) where
     {-# TERMINATING #-}
     toPureTerm : ℕ → Context' false → Term false true → Term false false
-    toPureTerm k Γ (Var-T x)     = Var-T x
+    toPureTerm k Γ (Var x)       = Var x
     toPureTerm k Γ (FDB x)       = Var (Bound (x +𝕀 fromℕ k))
     toPureTerm k Γ (Sort-T x)    = Sort-T x
     toPureTerm k Γ (Const-N x 0) = Const-T x
@@ -135,7 +132,7 @@ module _ where
 
     {-# NON_TERMINATING #-}
     dbnf : Context' false → PureTerm true → PureTerm true
-    dbnf Γ (Var-T x)           = lookup' Γ x
+    dbnf Γ (Var x)             = lookup' Γ x
     dbnf Γ (FDB x)             = FDB x
     dbnf Γ (Sort-T x)          = Sort-T x
     dbnf Γ (Const-N x 0)       = evalConst' (dbnf Γ) x
@@ -174,11 +171,11 @@ module _ (doLog : Bool) where
     -- Whether to reduce
     {-# NON_TERMINATING #-}
     hnf' : Bool → Context' false → Term false true → Term false true
-    hnf' true Γ v@(Var-T x) with lookupInContext' Γ x
+    hnf' true Γ v@(Var x) with lookupInContext' Γ x
     ... | just y                       = log Γ v $ hnf' true Γ y
-    ... | nothing                      = Var-T x
-    hnf' false Γ v@(Var-T (Bound x))   = log Γ v $ lookup' Γ (Bound x)
-    hnf' false Γ v@(Var-T (Free x))    = v
+    ... | nothing                      = Var x
+    hnf' false Γ v@(Var (Bound x))     = log Γ v $ lookup' Γ (Bound x)
+    hnf' false Γ v@(Var (Free x))      = v
     hnf' b Γ v@(FDB x)                 = v
     hnf' b Γ v@(Sort-T x)              = v
     hnf' true  Γ v@(Const-N x 0)       = log Γ v $ evalConst' (hnf' true Γ) x

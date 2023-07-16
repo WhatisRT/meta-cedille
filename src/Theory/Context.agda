@@ -67,28 +67,28 @@ validInContext {a} = helper 0
   where
     -- instead of modifying the context here, we just count how many variables we would have added if we did
     helper : 𝕀 → Term a false → Context → Bool
-    helper k (Var-T (Bound x))  Γ = x <𝕀 (fromℕ (localContextLength Γ) +𝕀 k)
-    helper k (Var-T n@(Free x)) Γ = maybe (λ _ → true) false $ lookupInContext n Γ
-    helper k (Sort-T x)         Γ = true
-    helper k (Const-T x)        Γ = true
-    helper k (App _ t t₁)       Γ = helper k t Γ ∧ helper k t₁ Γ
-    helper k (Lam-P _ _ t)      Γ = helper (suc𝕀 k) t Γ
-    helper k (Lam-A _ _ t t₁)   Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
-    helper k (Pi _ _ t t₁)      Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
-    helper k (Iota _ t t₁)      Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
-    helper k (Eq-T t t₁)        Γ = helper k t Γ ∧ helper k t₁ Γ
-    helper k (M-T t)            Γ = helper k t Γ
-    helper k (Mu t t₁)          Γ = helper k t Γ ∧ helper k t₁ Γ
-    helper k (Epsilon t)        Γ = helper k t Γ
-    helper k (Ev m t)           Γ = primMetaArgsAnd $ mapPrimMetaArgs (λ x → helper k x Γ) t
-    helper k (Pr1 t)            Γ = helper k t Γ
-    helper k (Pr2 t)            Γ = helper k t Γ
-    helper k (Beta t t₁)        Γ = helper k t Γ ∧ helper k t₁ Γ
-    helper k (Delta t t₁)       Γ = helper k t Γ ∧ helper k t₁ Γ
-    helper k (Sigma t)          Γ = helper k t Γ
-    helper k (Rho t t₁ t₂)      Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ ∧ helper k t₂ Γ
-    helper k (Pair t t₁ t₂)     Γ = helper k t Γ ∧ helper k t₁ Γ ∧ helper (suc𝕀 k) t₂ Γ
-    helper k (Phi t t₁ t₂)      Γ = helper k t Γ ∧ helper k t₁ Γ ∧ helper k t₂ Γ
+    helper k (Var (Bound x))  Γ = x <𝕀 (fromℕ (localContextLength Γ) +𝕀 k)
+    helper k (Var n@(Free x)) Γ = maybe (λ _ → true) false $ lookupInContext n Γ
+    helper k (Sort-T x)       Γ = true
+    helper k (Const-T x)      Γ = true
+    helper k (App _ t t₁)     Γ = helper k t Γ ∧ helper k t₁ Γ
+    helper k (Lam-P _ _ t)    Γ = helper (suc𝕀 k) t Γ
+    helper k (Lam-A _ _ t t₁) Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
+    helper k (Pi _ _ t t₁)    Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
+    helper k (Iota _ t t₁)    Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ
+    helper k (Eq-T t t₁)      Γ = helper k t Γ ∧ helper k t₁ Γ
+    helper k (M-T t)          Γ = helper k t Γ
+    helper k (Mu t t₁)        Γ = helper k t Γ ∧ helper k t₁ Γ
+    helper k (Epsilon t)      Γ = helper k t Γ
+    helper k (Ev m t)         Γ = primMetaArgsAnd $ mapPrimMetaArgs (λ x → helper k x Γ) t
+    helper k (Pr1 t)          Γ = helper k t Γ
+    helper k (Pr2 t)          Γ = helper k t Γ
+    helper k (Beta t t₁)      Γ = helper k t Γ ∧ helper k t₁ Γ
+    helper k (Delta t t₁)     Γ = helper k t Γ ∧ helper k t₁ Γ
+    helper k (Sigma t)        Γ = helper k t Γ
+    helper k (Rho t t₁ t₂)    Γ = helper k t Γ ∧ helper (suc𝕀 k) t₁ Γ ∧ helper k t₂ Γ
+    helper k (Pair t t₁ t₂)   Γ = helper k t Γ ∧ helper k t₁ Γ ∧ helper (suc𝕀 k) t₂ Γ
+    helper k (Phi t t₁ t₂)    Γ = helper k t Γ ∧ helper k t₁ Γ ∧ helper k t₂ Γ
 
 isLocallyClosed : PureTerm false → Context → Bool
 isLocallyClosed t (Γ , _) = validInContext t (Γ , [])

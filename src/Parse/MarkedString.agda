@@ -6,11 +6,11 @@
 
 module Parse.MarkedString where
 
+open import Prelude
+
 open import Class.Listable
 open import Data.List.Relation.Unary.Any using (here; there)
 open import Data.String using (fromList; fromChar; toList)
-
-open import Prelude
 
 data Marker : Set where
   NonTerminalBracket : Bool → Marker

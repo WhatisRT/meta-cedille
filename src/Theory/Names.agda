@@ -1,14 +1,10 @@
 module Theory.Names where
 
-import Agda.Builtin.Nat using (_+_; _-_; _==_)
-
-import Data.Product
+open import Prelude
+open import Prelude.Nat
 
 open import Data.Word using (Word64; toℕ; fromℕ)
 open import Data.Word64.Exts
-
-open import Prelude
-open import Prelude.Nat
 
 GlobalName : Set
 GlobalName = String

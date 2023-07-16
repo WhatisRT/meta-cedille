@@ -5,15 +5,15 @@
 
 module Bootstrap.InitEnv where
 
+open import Prelude
+open import Prelude.Strings
+
 open import Class.Listable
 open import Class.Map
 open import Data.Char.Ranges
 open import Data.List using (dropWhile; takeWhile)
 open import Data.SimpleMap
 open import Data.String using (fromList; toList)
-
-open import Prelude
-open import Prelude.Strings
 
 open import Bootstrap.SimpleInductive
 open import Parse.Escape

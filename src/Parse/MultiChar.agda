@@ -4,9 +4,9 @@
 
 module Parse.MultiChar where
 
-import Data.List.NonEmpty as NE
-
 open import Prelude
+
+import Data.List.NonEmpty as NE
 
 parseCharMatcher : String → Maybe Char
 parseCharMatcher s with uncons s

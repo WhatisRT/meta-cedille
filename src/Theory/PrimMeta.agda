@@ -8,7 +8,6 @@ open import Data.Fin using (toℕ)
 
 open import Prelude
 open import Prelude.Nat
-open import Theory.TermLike
 open import Theory.Names
 
 module Theory.PrimMeta where
@@ -133,9 +132,10 @@ primMetaArgsMax = Data.Vec.Recursive.foldr {P = const 𝕀} 0 id (const _⊔𝕀
 primMetaArgsProd : primMetaArgs Set m → Set
 primMetaArgsProd = Data.Vec.Recursive.foldr {P = const Set} ⊤ id (const _×_) _
 
-module Types {T} (tl : TermLike T) where
-  open TermLike tl
+module Types {T} (FreeVar : String → T) (⋆ : T) (appT : T → T → T) where
+  infixl -1 _⟪$⟫_
   private
+    _⟪$⟫_ = appT
     tString tTerm tStringList tProduct : T
     tString     = FreeVar "init$string"
     tStringList = FreeVar "init$stringList"

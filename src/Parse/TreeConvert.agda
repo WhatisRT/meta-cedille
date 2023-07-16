@@ -7,26 +7,26 @@
 
 module Parse.TreeConvert where
 
+open import Prelude hiding (_^_)
+
 import Data.Sum
-open import Data.Fin using (fold; toℕ)
+open import Class.Listable
 open import Class.Map
 open import Class.Monad.Except
+open import Data.Fin using (fold; toℕ)
 open import Data.Map.String
 open import Data.String as S using (fromList; toList; fromChar; uncons)
 open import Data.Tree
 open import Data.Tree.Instance
-open import Data.Word using (fromℕ)
 open import Data.Vec.Recursive using (_^_)
-open import Class.Listable
-
-open import Prelude hiding (_^_)
+open import Data.Word using (fromℕ)
 
 open import Bootstrap.InitEnv
 open import Parse.Escape
 open import Parse.Generate
 open import Parse.LL1
 open import Parse.MultiChar
-open import Theory.TypeChecking
+open import Theory.Terms
 
 PTree : Set
 PTree = Tree (ℕ ⊎ Char)
@@ -150,9 +150,9 @@ toTerm = helper []
           (("_string_" , 1F , λ n → do
             n' ← toName n
             return $ case findIndexList (n' ≣_) accu of λ where
-              (just x) → BoundVar $ fromℕ x
+              (just x) → BoundVar (fromℕ x)
               nothing  → FreeVar n') ∷
-          ("_index_" , 1F , (λ n → BoundVar ∘ fromℕ <$> toIndex n)) ∷ []))) ∷
+          ("_index_" , 1F , (λ n → (λ n' → BoundVar (fromℕ n')) <$> toIndex n)) ∷ []))) ∷
 
         ("_sort_" , 1F , toSort) ∷
 

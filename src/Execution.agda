@@ -373,8 +373,8 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   parseAndExecute s = do
     record { evaluator = evaluator } ← getMeta
     rest ← case evaluator of λ where
-      (Sort-T □) → parseAndExecuteBootstrap s
-      _          → parseAndExecute' s
+      □ → parseAndExecuteBootstrap s
+      _ → parseAndExecute' s
     if strNull rest then return _ else parseAndExecute rest
 
 module ExecutionMonad where

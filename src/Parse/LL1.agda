@@ -10,14 +10,13 @@
 
 module Parse.LL1 where
 
+open import Prelude
+
 import Data.String as S
 open import Class.Monad.Except
 open import Data.List using (boolDropWhile)
-open import Data.String using (fromList; toList; uncons)
 open import Data.Sum using (isInj₁)
 open import Data.Tree
-
-open import Prelude
 
 record CFG (V : Set) (MultiChar : Set) : Set₁ where
   field

@@ -4,14 +4,14 @@
 
 module Parse.Escape where
 
-import Data.Sum
+open import Prelude
+open import Prelude.Strings
+
+import Data.Sum as S
 open import Class.Map
 open import Data.SimpleMap
 open import Data.Map.Char
 open import Data.String using (fromList; toList)
-
-open import Prelude
-open import Prelude.Strings
 
 open import Parse.MarkedString
 
@@ -45,7 +45,7 @@ translateMarked = helper ∘ splitMulti (inj₁ '=')
   where
     lookupTranslation : MarkedString → Maybe Char
     lookupTranslation s = do
-      s' ← traverse Data.Sum.[ just , (λ _ → nothing) ] s
+      s' ← traverse S.[ just , (λ _ → nothing) ] s
       lookup (fromList s') translationTable
 
     helper : List MarkedString → Maybe MarkedString
@@ -60,7 +60,7 @@ escapeChar : Char → List Char
 escapeChar c = maybe (λ s → "=" ++ toList s ++ "=") [ c ] $ lookup c escapeTable
 
 ruleToConstr : MarkedString → String
-ruleToConstr = fromList ∘ concat ∘ map Data.Sum.[ escapeChar , [_] ∘ markerRepresentation ]
+ruleToConstr = fromList ∘ concat ∘ map S.[ escapeChar , [_] ∘ markerRepresentation ]
 
 translateS : String → Maybe String
 translateS s = markedStringToString <$> (translateMarked $ convertToMarked s)
