@@ -63,6 +63,7 @@ private
     "sort$=ast="  ∷ "sort$=sq=" ∷
     "const$CharT" ∷ "const$=kappa=_char_" ∷ "const$CharEq"   ∷
     "const$MM"    ∷ "const$MuM"           ∷ "const$EpsilonM" ∷ "const$CatchM" ∷
+    "const$Fix"   ∷
 
     (inNT "term" <$>
       "_var_" ∷ "_sort_" ∷ "=Kappa=_const_" ∷

@@ -233,6 +233,9 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
   synthType' tm@(Const-T CatchM)    = return $
     Pi Erased  "X" ⋆ $
     M-T (BoundVar 0) ⟪→⟫ (FreeVar "init$err" ⟪→⟫ M-T (BoundVar 2)) ⟪→⟫ M-T (BoundVar 2)
+  synthType' tm@(Const-T Fix)       = return $
+    Pi Erased  "X" ⋆ $
+    (BoundVar 0 ⟪→⟫ BoundVar 1) ⟪→⟫ FreeVar "Top"
 
   synthType' tm@(Pr1 t) = do
     T ← synthType' t

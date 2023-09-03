@@ -38,8 +38,9 @@ module Norm (doLog : Bool) where
   ... | just record { def = just x } = log v x $ hnfNorm Γ $ condErase x
   ... | just _                = v -- we cannot reduce axioms
   ... | nothing               = v -- in case the lookup fails, we cannot reduce
-  hnfNorm Γ v@(Const-T x)     = evalConst' (hnfNorm Γ) x
   hnfNorm Γ v@(CharEq-T t t') = evalConst (hnfNorm Γ) v
+  hnfNorm Γ v@(Fix-T _)       = log v (evalConst (hnfNorm Γ) v) (hnfNorm Γ (evalConst (hnfNorm Γ) v))
+  hnfNorm Γ v@(Fix-T' _ _)    = log v (evalConst (hnfNorm Γ) v) (hnfNorm Γ (evalConst (hnfNorm Γ) v))
   hnfNorm Γ v@(App b t t₁)    = maybe
     (λ t' → log v (subst t' t₁) $ hnfNorm Γ $ subst t' t₁)
     (App b t t₁) $ stripLambdas b (hnfNorm Γ t)
@@ -61,6 +62,8 @@ module Norm (doLog : Bool) where
   ... | nothing                          = v -- in case the lookup fails, we cannot reduce
   normalize Γ v@(Sort-T x)               = v
   normalize Γ v@(Const-T x)              = evalConst' (normalize Γ) x
+  normalize Γ v@(CharEq-T t t') = evalConst (hnfNorm Γ) v
+  normalize Γ v@(Fix-T t)       = evalConst (hnfNorm Γ) v
   normalize Γ v@(App b t t₁) with hnfNorm Γ t
   ... | t'                               = case stripLambdas b t' of λ where
       (just t'') → log v (subst t'' t₁) $ normalize Γ (subst t'' t₁)

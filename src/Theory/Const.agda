@@ -27,6 +27,7 @@ data Const : Set where
   CharC  : Char → Const
   CharEq : Const
   MM MuM EpsilonM CatchM : Const
+  Fix : Const
 
 instance
   Const-EqB : EqB Const
@@ -37,6 +38,7 @@ instance
   Const-EqB ._≣_ MuM       MuM        = true
   Const-EqB ._≣_ EpsilonM  EpsilonM   = true
   Const-EqB ._≣_ CatchM    CatchM     = true
+  Const-EqB ._≣_ Fix       Fix        = true
   Const-EqB ._≣_ _ _                  = false
 
   Const-Show : Show Const
@@ -47,6 +49,7 @@ instance
   Const-Show .show MuM       = "MuM"
   Const-Show .show EpsilonM  = "EpsilonM"
   Const-Show .show CatchM    = "CatchM"
+  Const-Show .show Fix       = "Fix"
 
 private variable
   A B C : Set
@@ -60,6 +63,7 @@ constArityF MM        = 1F
 constArityF MuM       = 2F
 constArityF EpsilonM  = 1F
 constArityF CatchM    = 2F
+constArityF Fix       = 1F
 
 constArity : Const → ℕ
 constArity = toℕ ∘ constArityF

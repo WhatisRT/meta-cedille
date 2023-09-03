@@ -68,6 +68,8 @@ pattern M-T' t        = App-R (Const-T MM) t
 pattern MuM-T t t'    = App2 (Const-T MuM) t t'
 pattern EpsilonM-T t  = App-R (Const-T EpsilonM) t
 pattern CatchM-T t t' = App2 (Const-T CatchM) t t'
+pattern Fix-T t       = App-R (Const-T Fix) t
+pattern Fix-T' t t'   = App-R (App-E (Const-T Fix) t) t'
 
 infixr 0 _⟪→⟫_ _⟪⇒⟫_
 infixl -1 _⟪$⟫_
@@ -199,6 +201,8 @@ evalConst : (Term a b → Term a b) → Term a b → Term a b
 evalConst reduce v@(CharEq-T t t') with reduce t | reduce t'
 ... | Char-T c | Char-T c' = reduce $ Var $ Free $ show (c ≣ c')
 ... | _        | _         = v
+evalConst reduce v@(Fix-T t) = reduce t ⟪$⟫ Fix-T t
+evalConst reduce v@(Fix-T' _ t) = reduce t ⟪$⟫ Fix-T t
 evalConst reduce t = t
 
 evalConst' : (Term a b → Term a b) → Const → Term a b
@@ -210,6 +214,7 @@ evalConst' reduce MM         = (Const-T' MM) ⟪$⟫ reduce (BoundVar 0)
 evalConst' reduce MuM        = (Const-T' MuM) ⟪$⟫ reduce (BoundVar 1) ⟪$⟫ reduce (BoundVar 0)
 evalConst' reduce EpsilonM   = (Const-T' EpsilonM) ⟪$⟫ reduce (BoundVar 0)
 evalConst' reduce CatchM     = (Const-T' CatchM) ⟪$⟫ reduce (BoundVar 1) ⟪$⟫ reduce (BoundVar 0)
+evalConst' reduce Fix        = reduce (BoundVar 0 ⟪$⟫ Const-T' Fix)
 evalConst' reduce c          = Const-T' c
 
 {-# TERMINATING #-}

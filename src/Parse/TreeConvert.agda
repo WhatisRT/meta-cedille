@@ -75,7 +75,8 @@ toConst x = ruleCaseN x "const" $
   ("MM"            , 0F , just MM) ∷
   ("MuM"           , 0F , just MuM) ∷
   ("EpsilonM"      , 0F , just EpsilonM) ∷
-  ("CatchM"        , 0F , just CatchM) ∷ []
+  ("CatchM"        , 0F , just CatchM) ∷
+  ("Fix"           , 0F , just Fix) ∷ []
 
 toName : PTree → Maybe String
 toName (Node x (y ∷ y' ∷ [])) = (λ y → fromChar y +_) <$₂> toChar y , toName y'
