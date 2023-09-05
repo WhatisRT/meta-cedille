@@ -289,12 +289,16 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   executePrimitive Normalize t = do
     Γ ← getContext
     b ← logTypeEnabled "normalize"
-    returnQuoted (Norm.normalize b Γ t)
+    e ← logTypeEnabled "erase"
+    if b ∧ e then liftIO (putStrLn (show $ Norm.normalize b Γ (Erase t))) else return _
+    returnQuoted (Norm.normalize (b ∧ not e) Γ t)
 
   executePrimitive HeadNormalize t = do
     Γ ← getContext
     b ← logTypeEnabled "headNormalize"
-    returnQuoted (Norm.hnfNorm b Γ t)
+    e ← logTypeEnabled "erase"
+    if b ∧ e then liftIO (putStrLn (show $ Norm.hnfNorm b Γ (Erase t))) else return _
+    returnQuoted (Norm.hnfNorm (b ∧ not e) Γ t)
 
   executePrimitive InferType t = do
     Γ ← getContext

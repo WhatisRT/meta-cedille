@@ -25,17 +25,23 @@ stripLambdas b       t                       = nothing
 
 module Norm (doLog : Bool) where
 
-  log : Term a false → Term b false → A → A
-  log t t' x = if doLog
-    then unsafePerformIO (putStr (show t <+> "~>" <+> show t' + "\n") >> return x)
+  logS : String → A → A
+  logS s x = if doLog
+    then unsafePerformIO (putStr s >> return x)
     else x
+
+  log : Term a false → Term b false → A → A
+  log t t' x = logS (show t <+> "~>" <+> show t' + "\n") x
+
+  logN : Term a false → A → A
+  logN t x = logS ("Cannot reduce:" <+> show t + "\n") x
 
   -- something in is head normal form, if its outermost constructor is not one of the following: Var-A (if the lookup fails), App, AppE
   hnfNorm normalize : Context → Term a false → Term a false
 
   {-# NON_TERMINATING #-}
   hnfNorm Γ v@(Var x) with lookupInContext x Γ
-  ... | just record { def = just x } = log v x $ hnfNorm Γ $ condErase x
+  ... | just record { def = just x } = let x' = condErase x in log v x' $ hnfNorm Γ x'
   ... | just _                = v -- we cannot reduce axioms
   ... | nothing               = v -- in case the lookup fails, we cannot reduce
   hnfNorm Γ v@(CharEq-T t t') = evalConst (hnfNorm Γ) v
@@ -43,7 +49,7 @@ module Norm (doLog : Bool) where
   hnfNorm Γ v@(Fix-T' _ _)    = log v (evalConst (hnfNorm Γ) v) (hnfNorm Γ (evalConst (hnfNorm Γ) v))
   hnfNorm Γ v@(App b t t₁)    = maybe
     (λ t' → log v (subst t' t₁) $ hnfNorm Γ $ subst t' t₁)
-    (App b t t₁) $ stripLambdas b (hnfNorm Γ t)
+    (logN v v) $ stripLambdas b (hnfNorm Γ t)
   hnfNorm Γ v@(Pr1 t)         = log v t $ hnfNorm Γ t
   hnfNorm Γ v@(Pr2 t)         = log v t $ hnfNorm Γ t
   hnfNorm Γ v@(Beta _ t)      = log v t $ hnfNorm Γ t
@@ -57,7 +63,7 @@ module Norm (doLog : Bool) where
 
   {-# NON_TERMINATING #-}
   normalize Γ v@(Var x) with lookupInContext x Γ
-  ... | just record { def = just x }     = log v x $ normalize Γ $ condErase x
+  ... | just record { def = just x }     = let x' = condErase x in log v x' $ normalize Γ x'
   ... | just _                           = v -- we cannot reduce axioms
   ... | nothing                          = v -- in case the lookup fails, we cannot reduce
   normalize Γ v@(Sort-T x)               = v
