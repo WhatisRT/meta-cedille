@@ -41,7 +41,7 @@ let fetchFromGitHub = nixpkgs.fetchFromGitHub;
       ];
       buildPhase = ''
         cd src
-        agda --ghc --ghc-flag=-O2 --ghc-flag=-j$NIX_BUILD_CORES meta-cedille.agda
+        agda --ghc --ghc-flag=-O2 --ghc-flag=-j$NIX_BUILD_CORES --ghc-flag=-with-rtsopts=-A64m --ghc-flag=-rtsopts meta-cedille.agda
         cd ..'';
       installPhase = ''
         mkdir $out && mkdir $out/bin && mkdir $out/share
