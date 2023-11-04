@@ -1,8 +1,9 @@
 module Class.Monad where
 
-open import Class.Functor
-open import Data.Unit.Polymorphic
 open import Category.Monad renaming (RawMonad to Monad) public
+open import Class.Functor
+open import Data.Bool
+open import Data.Unit.Polymorphic
 
 open Monad {{...}} using (return; _>>=_; _=<<_; _>>_; _>=>_; _<=<_) public
 
@@ -11,6 +12,10 @@ module _ {a} {M : Set a → Set a} {{m : Monad M}} where
   instance
     _ = Monad.rawIApplicative m
     monadFunctor = Monad.rawFunctor m
+
+  infix 0 mif_then_
+  mif_then_ : Bool → M ⊤ → M ⊤
+  mif b then x = if b then x else return _
 
   void : ∀ {A} → M A → M ⊤
   void x = x >> return tt

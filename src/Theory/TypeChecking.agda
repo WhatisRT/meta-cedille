@@ -18,8 +18,8 @@ open import Prelude hiding (map₁)
 open import Prelude.Nat
 
 open import Theory.Context public
+open import Theory.Evaluation public
 open import Theory.NBE using (genExtra)
-open import Theory.Normalisation public
 open import Theory.Terms hiding (PureTerm) public
 
 PureTerm : Set
@@ -136,16 +136,17 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
     {-# NON_TERMINATING #-}
     checkβηPure' : ℕ → PureTerm → PureTerm → M ⊤
     checkβηPure' 0 _ _ = throwError "checkβηPure: out of fuel"
-    checkβηPure' (suc n) t t' = appendIfError
-      (tryElse (compareNames t t') $
-       tryElse (pureTermBeq t t') $
-       tryElse (compareHnfs (hnfNorm Γ t) t') $
-       tryElse (compareHnfs t             (hnfNorm Γ t')) $
-                compareHnfs (hnfNorm Γ t) (hnfNorm Γ t'))
-      ("\n\nWhile checking equality of" <+> show t <+> "and" <+> show t'
-      + "\nHNFs:" <+> show (hnfNorm Γ t) <+> "and" <+> show (hnfNorm Γ t'))
-      -- tryElse (compareHnfs (hnfNormPure Γ t) (hnfNormPure Γ t')) $
-      -- pureTermBeq t t'
+    checkβηPure' (suc n) t₁ t₂ = do
+      t₁' ← hnfNorm false Γ t₁
+      t₂' ← hnfNorm false Γ t₂
+      appendIfError
+        (tryElse (compareNames t₁ t₂) $
+         tryElse (pureTermBeq t₁  t₂) $
+         tryElse (compareHnfs t₁' t₂) $
+         tryElse (compareHnfs t₁  t₂') $
+                  compareHnfs t₁' t₂')
+        ("\n\nWhile checking equality of" <+> show t₁ <+> "and" <+> show t₂
+        + "\nHNFs:" <+> show t₁' <+> "and" <+> show t₂')
       where
         hnfError : PureTerm → PureTerm → M ⊤
         hnfError t t' =
@@ -169,14 +170,14 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
         ... | no  _    = hnfError t t'
         -- compareHnfs (Lam-P _ _ t) t₁ = checkβηPure' n t (weakenBy 1 t₁ ⟪$⟫ BoundVar 0)
         -- compareHnfs t (Lam-P _ _ t₁) = checkβηPure' n (weakenBy 1 t ⟪$⟫ BoundVar 0) t₁
-        compareHnfs (Lam-P _ _ t) t₁ = case normalize Γ t of λ where
-          t''@(App _ t' (Var (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
-            then (compareHnfs (strengthen t') t₁) else hnfError t'' t₁
-          t'' → hnfError t'' t₁
-        compareHnfs t (Lam-P _ _ t₁) = case normalize Γ t₁ of λ where
-          t''@(App _ t' (Var (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
-            then (compareHnfs t (strengthen t')) else hnfError t t''
-          t'' → hnfError t t''
+        compareHnfs (Lam-P _ _ t) t₁ = do
+          t''@(App _ t' (Var (Bound i))) ← normalize false Γ t
+            where t'' → hnfError t'' t₁
+          if i ≣ 0 ∧ validInContext t' Γ then compareHnfs (strengthen t') t₁ else hnfError t'' t₁
+        compareHnfs t (Lam-P _ _ t₁) = do
+          t''@(App _ t' (Var (Bound i))) ← normalize false Γ t₁
+            where t'' → hnfError t t''
+          if i ≣ 0 ∧ validInContext t' Γ then compareHnfs t (strengthen t') else hnfError t t''
         {-# CATCHALL #-}
         compareHnfs t t' = hnfError t t'
 
@@ -206,7 +207,7 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
   hnfNormM : AnnTerm → M AnnTerm
   hnfNormM t = do
     Γ ← ask
-    return $ hnfNorm Γ t
+    hnfNorm false Γ t
 
   {-# TERMINATING #-}
   synthType' : AnnTerm → M AnnTerm
@@ -240,13 +241,13 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
   synthType' tm@(Pr1 t) = do
     T ← synthType' t
     (Iota _ u u₁) ← hnfNormM T
-      where _ → throwError1 tm "Term does not normalize to an iota term"
+      where _ → throwError1 tm "Term does not reduce to an iota term"
     return u
 
   synthType' tm@(Pr2 t) = do
     T ← synthType' t
     (Iota _ u u₁) ← hnfNormM T
-      where _ → throwError1 tm "Term does not normalize to an iota term"
+      where _ → throwError1 tm "Term does not reduce to an iota term"
     return $ subst u₁ (Pr1 t)
 
   synthType' tm@(Beta t t₁) = do
@@ -260,9 +261,11 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
     T ← synthType' t₁
     (Eq-T u u₁) ← hnfNormM T
       where _ → throwError1 tm "The second argument of a delta needs to be of an eq type"
+    u'  ← normalize false Γ $ Erase u
+    u₁' ← normalize false Γ $ Erase u₁
     appendIfError'
-      (pureTermBeq (normalizePure Γ $ Erase u) (Lam-P Regular "" $ Lam-P Regular "" $ BoundVar 1) >>
-       pureTermBeq (normalizePure Γ $ Erase u₁) (Lam-P Regular "" $ Lam-P Regular "" $ BoundVar 0))
+      (pureTermBeq u'  (Lam-P Regular "" $ Lam-P Regular "" $ BoundVar 1) >>
+       pureTermBeq u₁' (Lam-P Regular "" $ Lam-P Regular "" $ BoundVar 0))
       tm ("This equality cannot be used for the delta term:" ∷ᵗ u ∷ᵗ "=" ∷ᵗ u₁ ∷ᵗ [])
     return t
 
@@ -323,11 +326,11 @@ module _ ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M Context ⦄ ⦃ _ : MonadExce
              "The type of the parameter type in iota should be ⋆, but it has type" ∷ᵗ v ∷ᵗ []
     let Γ' = pushType Γ (n , t)
     u₁ ← local (λ _ → Γ') $ synthType' t₁
-    case (hnfNorm Γ' u₁) of λ
-      { ⋆ → return ⋆
-      ; v → throwErrorCtx tm $
-        "The type family in iota should have type ⋆, but it has type"
-        ∷ᵗ v ∷ᵗ "\nContext:" <+> show {{Context-Show}} Γ' ∷ᵗ [] }
+    ⋆ ← hnfNorm false Γ' u₁
+      where v → throwErrorCtx tm $
+                  "The type family in iota should have type ⋆, but it has type"
+                  ∷ᵗ v ∷ᵗ "\nContext:" <+> show {{Context-Show}} Γ' ∷ᵗ []
+    return ⋆
 
   synthType' tm@(Lam-A b n t t₁) = do
     false ← return (b ≣ Erased ∧ checkFree (Bound 0) (Erase t₁))

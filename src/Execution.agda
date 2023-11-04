@@ -90,7 +90,8 @@ module _ {M : Set → Set} {{_ : Monad M}}
   unquoteFromTerm : ∀ {A} ⦃ _ : Unquote A ⦄ → PureTerm → M A
   unquoteFromTerm t = do
     Γ ← getContext
-    catchError (unquoteConstrs Γ $ normalizePure Γ t)
+    t ← normalize false Γ t
+    catchError (unquoteConstrs Γ t)
                (λ e → throwError $ "Error while unquoting" <+> show t + ":\n" + e)
 
   -- Typecheck a term and return its type
@@ -220,7 +221,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executeTerm t = do
     b ← logTypeEnabled "headNormalizeNBE"
-    t ← logProfile "HNF" ((λ Γ → (if b then hnfNormPureLog else hnfNormPure) Γ t) <$> getContext)
+    t ← logProfile "HNF" (getContext >>= λ Γ → hnfNorm b Γ t)
     logProfile ("execHNF:" <+> show t) (executeTerm' t)
 
   executeTerm' (Mu t t₁) = do
@@ -290,15 +291,15 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     Γ ← getContext
     b ← logTypeEnabled "normalize"
     e ← logTypeEnabled "erase"
-    if b ∧ e then liftIO (putStrLn (show $ Norm.normalize b Γ (Erase t))) else return _
-    returnQuoted (Norm.normalize (b ∧ not e) Γ t)
+    mif b ∧ e then normalize b Γ (Erase t) >>= liftIO ∘ putStrLn ∘ show
+    normalize (b ∧ not e) Γ t >>= returnQuoted
 
   executePrimitive HeadNormalize t = do
     Γ ← getContext
     b ← logTypeEnabled "headNormalize"
     e ← logTypeEnabled "erase"
-    if b ∧ e then liftIO (putStrLn (show $ Norm.hnfNorm b Γ (Erase t))) else return _
-    returnQuoted (Norm.hnfNorm (b ∧ not e) Γ t)
+    mif b ∧ e then hnfNorm b Γ (Erase t) >>= liftIO ∘ putStrLn ∘ show
+    hnfNorm (b ∧ not e) Γ t >>= returnQuoted
 
   executePrimitive InferType t = do
     Γ ← getContext
@@ -314,10 +315,10 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     returnQuoted =<< MetaEnv.evaluator <$> getMeta
 
   executePrimitive Print s = do
-    returnQuoted =<< (liftIO (putStr s >> flushStdout >> return tt))
+    returnQuoted =<< liftIO (putStr s >> flushStdout >> return tt)
 
   executePrimitive WriteFile (fName , contents) = do
-    returnQuoted =<< (liftIO $ writeFile fName contents)
+    returnQuoted =<< liftIO (writeFile fName contents)
 
   executePrimitive CommandLine _ = do
     returnQuoted =<< liftIO getArgs
@@ -332,8 +333,8 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
       nothing  → inferType t
     addDef n (record { def = just t ; type = T; extra = nothing })
     menv@record { namespace = namespace } ← getMeta
-    if strTake (strLength namespace) n ≣ namespace
-      then setMeta record menv { grammarValid = false } else return _
+    mif strTake (strLength namespace) n ≣ namespace
+      then setMeta record menv { grammarValid = false }
 
   executeBootstrapStmt (SetEval t n start) = do
     Γ ← getContext
@@ -341,17 +342,17 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     y ← if n ≣ n' ∧ valid
       then return G
       else (generateCFG start $ getParserNamespace Γ n)
-    (Pi Regular _ u u₁) ← hnfNorm Γ <$> synthType Γ t
+    (Pi Regular _ u u₁) ← hnfNorm false Γ =<< synthType Γ t
       where _ → throwError "The evaluator needs to have a pi type"
-    true ← return $ isLocallyClosed (Erase u) Γ
+    true ← return $ isLocallyClosed u Γ
       where false → throwError "The argument type to the evaluator cannot contain local variables!"
-    case (hnfNorm Γ u₁) of λ where
-      (M-T _) → do
-        -- take the least normalized term that's locally free
-        t' ∷ _ ← return $ boolFilter (λ t → isLocallyClosed (Erase t) Γ) (t ∷ hnfNorm Γ t ∷ [])
-          where _ → throwError "The evaluator needs to normalize to a term without local variables!"
-        setMeta record menv { grammar = y ; namespace = n ; grammarValid = true ; evaluator = t' ; evaluatorArgType = u }
-      _       → throwError "The evaluator needs to return a M type"
+    (M-T _) ← hnfNorm false Γ u₁
+      where _ → throwError "The evaluator needs to return a M type"
+    -- take the least normalized term that's locally free
+    x ← hnfNorm false Γ t
+    t' ∷ _ ← return $ boolFilter (λ t → isLocallyClosed t Γ) (t ∷ x ∷ [])
+      where _ → throwError "The evaluator needs to normalize to a term without local variables!"
+    setMeta record menv { grammar = y ; namespace = n ; grammarValid = true ; evaluator = t' ; evaluatorArgType = u }
 
   executeBootstrapStmt Empty = return _
 
@@ -379,7 +380,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     rest ← case evaluator of λ where
       □ → parseAndExecuteBootstrap s
       _ → parseAndExecute' s
-    if strNull rest then return _ else parseAndExecute rest
+    mif not (strNull rest) then parseAndExecute rest
 
 module ExecutionMonad where
   open import Monads.ExceptT

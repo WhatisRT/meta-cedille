@@ -90,5 +90,5 @@ validInContext {a} = helper 0
     helper k (Pair t t₁ t₂)   Γ = helper k t Γ ∧ helper k t₁ Γ ∧ helper (suc𝕀 k) t₂ Γ
     helper k (Phi t t₁ t₂)    Γ = helper k t Γ ∧ helper k t₁ Γ ∧ helper k t₂ Γ
 
-isLocallyClosed : PureTerm false → Context → Bool
+isLocallyClosed : ∀ {a} → Term a false → Context → Bool
 isLocallyClosed t (Γ , _) = validInContext t (Γ , [])
