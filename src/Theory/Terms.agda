@@ -179,7 +179,9 @@ module _ where
   showTermCtx l (App-E t t₁)     = "<" + showTermCtx l t <+> showTermCtx l t₁ + ">"
   showTermCtx l (Lam-P b n t)    = showBinderL b <+> n + "." <+> showTermCtx (n ∷ l) t
   showTermCtx l (Lam-A b n t t₁) = showBinderL b <+> n <+> ":" <+> showTermCtx l t + "." <+> showTermCtx (n ∷ l) t₁
-  showTermCtx l (Cont n _ t)     = "Cont" <+> n + "." <+> showTermCtx (n ∷ l) t
+  showTermCtx l (Cont n Γ t)     = "Cont" <+> n + "." <+> show Γ + ":" <+> showTermCtx (n ∷ l) t
+    where instance showTerm : Show (Term _ _)
+                   showTerm .show = showTermCtx l
   showTermCtx l (Rho t t₁ t₂)    = "ρ" <+> showTermCtx l t <+> ":" <+> showTermCtx ("_" ∷ l) t₁ <+> showTermCtx l t₂
   showTermCtx l (Pi b n t t₁)    = if n ≣ "_" ∨ n ≣ ""
     then "(" + showTermCtx l t + ")" <+> proj₁ (showBinderP b) <+> showTermCtx (n ∷ l) t₁

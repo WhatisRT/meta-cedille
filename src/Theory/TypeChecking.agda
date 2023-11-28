@@ -92,7 +92,7 @@ insertInGlobalContext n d Γ =
     else (inj₂ $ insert n (toEfficientDef d Γ) Γ)
   where
     toEfficientDef : Def → GlobalContext → Def
-    toEfficientDef d@(≔ x) Γ = record d { extra = just $ genExtra (globalToContext Γ) $ Erase x }
+    toEfficientDef d@(≔ x) Γ = record d { extra = just $ genExtra false (globalToContext Γ) $ Erase x }
     toEfficientDef d Γ = d
 
 module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where

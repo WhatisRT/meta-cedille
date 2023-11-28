@@ -15,9 +15,11 @@ open import Class.Monad.IO
 open import Class.Monad.State
 open import Data.HSTrie
 
+import Theory.Terms
 open import Conversion
 open import Parse.Generate
 open import Parse.TreeConvert
+open import Theory.NBE
 open import Theory.TypeChecking
 
 open StringErr
@@ -212,7 +214,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   {-# NON_TERMINATING #-}
   -- Execute a term of type M t for some t
-  executeTerm executeTerm' : PureTerm → M PureTerm
+  executeTerm executeTerm' : Theory.Terms.PureTerm true → M (Theory.Terms.PureTerm true)
   executeBootstrapStmt : BootstrapStmt → M ⊤
   executePrimitive : (m : PrimMeta) → primMetaSˢ m → M AnnTerm
   -- Parse and execute a string
@@ -220,8 +222,9 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   parseAndExecute : String → M ⊤
 
   executeTerm t = do
-    b ← logTypeEnabled "headNormalizeNBE"
-    t ← logProfile "HNF" (getContext >>= λ Γ → hnfNorm b Γ t)
+    b ← logTypeEnabled "evalMeta"
+    Γ ← C.convContext false <$> getContext
+    t ← logProfile "HNF" (return $ hnfExec b Γ t)
     logProfile ("execHNF:" <+> show t) (executeTerm' t)
 
   executeTerm' (Mu t t₁) = do
@@ -230,19 +233,18 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
 
   executeTerm' (Epsilon t) = return t
 
-  executeTerm' (EpsilonM-T t) = executeTerm' (Epsilon t)
-  executeTerm' (MuM-T t t₁) = executeTerm' (Mu t t₁)
+  executeTerm' (App2 (Const-N CatchM 0) t t') =
+    catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ toNBETerm (quoteToPureTerm s)))
 
-  executeTerm' (CatchM-T t t') =
-    catchError (executeTerm t) (λ s → executeTerm (t' ⟪$⟫ quoteToPureTerm s))
-
-  executeTerm' (Ev m t) = do
-    args ← logProfile "Converting arguments" $ convertPrimArgs m t
+  executeTerm' u@(Ev m t) = do
+    Γ ← C.convContext false <$> getContext
+    let x = mapPrimMetaArgs (toPureTerm false (length (proj₂ Γ)) Γ) t
+    args ← logProfile "Converting arguments" $ convertPrimArgs m x
     t' ← logProfile ("Executing:" <+> showPrimMetaSˢ {m = m} args) $ executePrimitive m args
-    logProfile "Sanity checking" $ appendIfError (checkTypePure t' $ primMetaT m t)
+    logProfile "Sanity checking" $ appendIfError (checkTypePure t' $ primMetaT m x)
                   ("Bug: Result type mismatch in" <+> showPrimMetaSˢ {m = m} args + "\n"
                   + show t' <+> "doesn't have type" <+> show (primMetaT m t))
-    return (Erase t')
+    return (Erase (toNBETerm t'))
 
   {-# CATCHALL #-}
   executeTerm' t =
@@ -331,7 +333,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
     T ← case T of λ where
       (just T) → checkType t T >> return T
       nothing  → inferType t
-    addDef n (record { def = just t ; type = T; extra = nothing })
+    addDef n (record { def = just t ; type = T ; extra = nothing })
     menv@record { namespace = namespace } ← getMeta
     mif strTake (strLength namespace) n ≣ namespace
       then setMeta record menv { grammarValid = false }
@@ -371,7 +373,7 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
                     ("\n\nError while interpreting input: " + (shortenString 10000 $ show t)
                                       + "\nWhile parsing: " + (shortenString 10000 s))
     logProfileBasic ("Execute parse result:" <+> parsed) $
-      appendIfError (executeTerm (Erase (ev ⟪$⟫ t)))
+      appendIfError (executeTerm (Erase $ toNBETerm (ev ⟪$⟫ t)))
                     ("\n\nError while executing input:" <+> parsed + "\n")
     return rest
 

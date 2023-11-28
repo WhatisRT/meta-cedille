@@ -44,7 +44,8 @@ module _ {M : Set → Set} ⦃ _ : Monad M ⦄ ⦃ _ : MonadReader M EvalInfo �
       where true → return $ Theory.NBE.hnfLog Γ t
     return $ Theory.NBE.hnf Γ t
   -- no log here
-  EvalNBE .normalize Γ t = return $ Theory.NBE.nf Γ t
+  EvalNBE .normalize Γ t =
+    (λ b -> Theory.NBE.nf b Γ t) <$> reader doLog
 
   EvalNaive : Eval (Term a false) M
   EvalNaive .hnf       Γ t = reader doLog >>= λ l → return $ Theory.Normalisation.Norm.hnfNorm   l Γ t

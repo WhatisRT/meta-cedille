@@ -14,6 +14,9 @@ open import Data.String.Instance
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary
 
+showList : ∀ {a} {A : Set a} -> (A -> String) -> List A -> String
+showList showA l = "[" + concat (intersperse "," (map showA l)) + "]"
+
 instance
   List-Eq : ∀ {A} {{_ : Eq A}} -> Eq (List A)
   List-Eq {A} = record { _≟_ = ≡-dec _≟_ }
@@ -39,9 +42,6 @@ instance
 
   List-Show : ∀ {a} {A : Set a} {{_ : Show A}} -> Show (List A)
   List-Show = record { show = showList show }
-    where
-      showList : ∀ {a} {A : Set a} -> (A -> String) -> List A -> String
-      showList showA l = "[" + concat (intersperse "," (map showA l)) + "]"
 
   List-Monad : ∀ {a} -> Monad {a} List
   List-Monad = record { _>>=_ = λ l f -> concat (map f l) ; return = λ a -> Data.List.[ a ] }
