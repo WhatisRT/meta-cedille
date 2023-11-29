@@ -1,5 +1,6 @@
 module Class.Monad.Except where
 
+open import Data.Sum
 open import Class.Monad
 open import Class.Monoid
 open import Data.Maybe
@@ -24,5 +25,9 @@ record MonadExcept (M : Set a → Set a) {{_ : Monad M}} (E : Set a) : Set (suc 
 
   tryElse : M A → M A → M A
   tryElse x y = catchError x λ _ → y
+
+  liftExcept : E ⊎ A → M A
+  liftExcept (inj₁ e) = throwError e
+  liftExcept (inj₂ a) = return a
 
 open MonadExcept {{...}} public

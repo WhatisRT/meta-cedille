@@ -13,67 +13,66 @@ open import Data.String using (fromList; toList)
 open import Data.Tree
 open import Data.Tree.Instance
 open import Data.Word using (toℕ)
+open import Monads.Except
 
 open import Parse.TreeConvert using (toTerm; toName; toNameList)
 open import Theory.TypeChecking
 
-module _ {M : Set → Set} {{_ : Monad M}} {{_ : MonadExcept M String}} where
+record Unquote (A : Set) : Set where
+  field
+    conversionFunction : Tree (ℕ ⊎ Char) → Maybe A
+    nameOfA            : String
 
-  record Unquote (A : Set) : Set where
-    field
-      conversionFunction : Tree (ℕ ⊎ Char) → Maybe A
-      nameOfA            : String
+open Unquote {{...}} public
 
-  open Unquote {{...}} public
+{-# TERMINATING #-}
+unquoteConstrs : {A : Set} ⦃ _ : Unquote A ⦄ → Context → PureTerm → Except String A
+unquoteConstrs Γ t = do
+  t' ← appendIfError (extractConstrIdTree $ buildConstructorTree Γ t)
+                     ("\nError while converting term" <+> show t
+                     <+> "to a tree of constructors of a" <+> nameOfA <+> "!")
+  maybeToError (conversionFunction t') ("Error while converting to" <+> nameOfA + ". Term:"
+                                       <+> show t + "\nTree:\n" + show {{Tree-Show}} t')
+  where
+    findOutermostConstructor : PureTerm → PureTerm × List PureTerm
+    findOutermostConstructor = outermostApp ∘ stripBinders
+      where
+        stripBinders : PureTerm → PureTerm
+        stripBinders t with stripBinder t
+        ... | just x = stripBinders x
+        ... | nothing = t
 
-  {-# TERMINATING #-}
-  unquoteConstrs : {A : Set} ⦃ _ : Unquote A ⦄ → Context → PureTerm → M A
-  unquoteConstrs Γ t = do
-    t' ← appendIfError (extractConstrIdTree $ buildConstructorTree Γ t)
-                       ("\nError while converting term" <+> show t
-                       <+> "to a tree of constructors of a" <+> nameOfA <+> "!")
-    maybeToError (conversionFunction t') ("Error while converting to" <+> nameOfA + ". Term:"
-                                         <+> show t + "\nTree:\n" + show {{Tree-Show}} t')
-    where
-      findOutermostConstructor : PureTerm → PureTerm × List PureTerm
-      findOutermostConstructor = outermostApp ∘ stripBinders
-        where
-          stripBinders : PureTerm → PureTerm
-          stripBinders t with stripBinder t
-          ... | just x = stripBinders x
-          ... | nothing = t
+        outermostApp : PureTerm → PureTerm × List PureTerm
+        outermostApp (App Regular t t₁) = map₂ (t₁ ∷_) $ outermostApp t
+        {-# CATCHALL #-}
+        outermostApp t = t , []
 
-          outermostApp : PureTerm → PureTerm × List PureTerm
-          outermostApp (App Regular t t₁) = map₂ (t₁ ∷_) $ outermostApp t
-          {-# CATCHALL #-}
-          outermostApp t = t , []
+    buildConstructorTree : Context → PureTerm → Tree PureTerm
+    buildConstructorTree Γ t with findOutermostConstructor t
+    ... | t' , ts = Node t' $ map (buildConstructorTree Γ) $ reverse ts
 
-      buildConstructorTree : Context → PureTerm → Tree PureTerm
-      buildConstructorTree Γ t with findOutermostConstructor t
-      ... | t' , ts = Node t' $ map (buildConstructorTree Γ) $ reverse ts
+    extractConstrId : PureTerm → Except String (ℕ ⊎ Char)
+    extractConstrId (Var (Bound x))     = return $ inj₁ $ toℕ x
+    extractConstrId (Var (Free x))      = throwError ("Not a constructor:" <+> x)
+    extractConstrId (Const-T (CharC c)) = return $ inj₂ c
+    {-# CATCHALL #-}
+    extractConstrId t                   = throwError ("Not a variable" <+> show t)
 
-      extractConstrId : PureTerm → M (ℕ ⊎ Char)
-      extractConstrId (Var (Bound x))     = return $ inj₁ $ toℕ x
-      extractConstrId (Var (Free x))      = throwError ("Not a constructor:" <+> x)
-      extractConstrId (Const-T (CharC c)) = return $ inj₂ c
-      {-# CATCHALL #-}
-      extractConstrId t                   = throwError ("Not a variable" <+> show t)
+    extractConstrIdTree : Tree PureTerm → Except String (Tree (ℕ ⊎ Char))
+    extractConstrIdTree (Node x y) = do
+      x' ← extractConstrId x
+      y' ← sequence (map extractConstrIdTree y)
+      return $ Node x' y'
 
-      extractConstrIdTree : Tree PureTerm → M (Tree (ℕ ⊎ Char))
-      extractConstrIdTree (Node x y) = do
-        x' ← extractConstrId x
-        y' ← sequence (map extractConstrIdTree y)
-        return $ Node x' y'
+instance
+  Unquote-Term : Unquote AnnTerm
+  Unquote-Term = record { conversionFunction = toTerm ; nameOfA = "term" }
 
-  instance
-    Unquote-Term : Unquote AnnTerm
-    Unquote-Term = record { conversionFunction = toTerm ; nameOfA = "term" }
+  Unquote-String : Unquote String
+  Unquote-String = record { conversionFunction = toName ; nameOfA = "string" }
 
-    Unquote-String : Unquote String
-    Unquote-String = record { conversionFunction = toName ; nameOfA = "string" }
-
-    Unquote-StringList : Unquote (List String)
-    Unquote-StringList = record { conversionFunction = toNameList ; nameOfA = "string list" }
+  Unquote-StringList : Unquote (List String)
+  Unquote-StringList = record { conversionFunction = toNameList ; nameOfA = "string list" }
 
 record Quotable (A : Set) : Set₁ where
   field

@@ -93,7 +93,7 @@ module _ {M : Set → Set} {{_ : Monad M}}
   unquoteFromTerm t = do
     Γ ← getContext
     t ← normalize false Γ t
-    catchError (unquoteConstrs Γ t)
+    catchError (liftExcept $ unquoteConstrs Γ t)
                (λ e → throwError $ "Error while unquoting" <+> show t + ":\n" + e)
 
   -- Typecheck a term and return its type
