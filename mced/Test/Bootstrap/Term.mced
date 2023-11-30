@@ -227,8 +227,8 @@ elet multiTermToTermRight (m : MultiTerm) :=
   recursionList ?_ ?_
     (multiTermSingle m)
     (λ h : Term × InfixData. λ t : List (Term × InfixData). λ _ : Term. appToTerm
-      (foldr ?_ ?_ (λ acc : Term × InfixData. λ x : Term × InfixData.
-        appToTerm acc (pr1 ?_ ?InfixData x), pr2 ?_ ?InfixData x) t h)
+      (foldr ?_ ?(Term × InfixData) (λ x : Term × InfixData. λ acc : Term × InfixData.
+        appToTerm acc (pr1 ?_ ?InfixData x), pr2 ?_ ?InfixData x) (reverse ?_ t) h)
       (multiTermSingle m))
     (multiTermRest m).
 

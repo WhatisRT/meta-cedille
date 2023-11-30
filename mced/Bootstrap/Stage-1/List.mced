@@ -53,10 +53,6 @@ let app := Λ X : * λ l1 : [List X] λ l2 : [List X]
 let snoc := Λ X : * λ x : X λ xs : [List X] [[<app X> xs] [<pureList X> x]]
   : ∀ X : * Π _ : X Π _ : [List X] [List X].
 
-let reverse := Λ X : * λ l : [List X]
-  [[<l [List X]> <nil X>] λ x : X λ rec : [List X] [[<snoc X> x] rec]]
-  : ∀ X : * Π _ : [List X] [List X].
-
 let filter := Λ X : * λ f : Π _ : X Bool λ l : [List X]
   [[<l [List X]> <nil X>]
     λ x : X λ rec : [List X] [[[<ifthenelse [List X]> [f x]] [[<cons X> x] rec]] rec]]
@@ -67,7 +63,16 @@ let foldl := Λ A : * Λ B : * λ f : (Π _ : B Π _ : A B) λ l : [List A]
   λ b : B b]
   λ a : A λ rec : Π _ : B B λ b : B [[f [rec b]] a]].
 
-let foldr := Λ A : * Λ B : * λ f : (Π _ : B Π _ : A B) λ l : [List A] [[<<foldl A> B> f] [<reverse A> l]].
+let foldr := Λ A : * Λ B : * λ f : (Π _ : A Π _ : B B) λ l : [List A] λ b : B
+  [[<l B> b] λ a : A λ rec : B [[f a] rec]].
+
+let reverseAcc := Λ X : * λ l : [List X]
+  [[<l Π _ : [List X] [List X]>
+    λ acc : [List X] acc]
+    λ x : X λ rec : Π _ : [List X] [List X] λ acc : [List X] [rec [[<cons X> x] acc]]].
+
+let reverse := Λ X : * λ l : [List X] [[<reverseAcc X> l] <nil X>]
+  : ∀ X : * Π _ : [List X] [List X].
 
 let scanl := Λ A : * Λ B : * λ f : (Π _ : B Π _ : A B) λ b : B
   [[<<recursionList A> [List B]>

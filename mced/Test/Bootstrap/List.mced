@@ -36,9 +36,6 @@ elet app [X : *] (l1, l2 : List X) : List X :=
 
 elet snoc [X : *] (x : X) (xs : List X) : List X := app ?_ xs (pureList ?_ x).
 
-elet reverse [X : *] (l : List X) : List X :=
-  l ?(List X) [X|] (λ x : X. λ rec : List X. snoc ?_ x rec).
-
 elet filter [X : *] (f : X -> Bool) (l : List X) : List X :=
   l ?(List X) [X|]
     (λ x : X. λ rec : List X. ifthenelse ?_ (f x) (x ∷ rec) rec).
@@ -46,7 +43,15 @@ elet filter [X : *] (f : X -> Bool) (l : List X) : List X :=
 elet foldl [A, B : *] (f : B -> A -> B) (l : List A) : B -> B :=
   l ?(B -> B) (λ b : B. b) (λ a : A. λ rec : B -> B. λ b : B. f (rec b) a).
 
-elet foldr [A, B : *] (f : B -> A -> B) (l : List A) : B -> B := foldl ?_ ?_ f $ reverse ?_ l.
+elet foldr [A, B : *] (f : A -> B -> B) (l : List A) (b : B) : B :=
+  l ?B b (λ a : A. λ rec : B. f a rec).
+
+let reverseAcc [X : *] (l : List X) : List X -> List X :=
+  l ?(List X -> List X)
+    (λ acc : List X. acc)
+    (λ x : X. λ rec : List X -> List X. λ acc : List X. rec (cons ?X x acc)).
+
+let reverse [X : *] (l : List X) : List X := reverseAcc ?X l [X|].
 
 elet scanl [A, B : *] (f : B -> A -> B) (b : B) : List A -> List B :=
   recursionList ?_ ?_

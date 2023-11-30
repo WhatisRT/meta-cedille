@@ -239,10 +239,10 @@ let multiTermToTermRight := λ m : MultiTerm
     λ h : [[Product Term] InfixData] λ t : [List [[Product Term] InfixData]] λ _ : Term
       [[appToTerm
         [[[<<foldr [[Product Term] InfixData]> [[Product Term] InfixData]>
-          λ acc : [[Product Term] InfixData] λ x : [[Product Term] InfixData]
+          λ x : [[Product Term] InfixData] λ acc : [[Product Term] InfixData]
             [[<<prodPair Term> InfixData>
               [[appToTerm acc] [<<pr1 Term> InfixData> x]]]
-              [<<pr2 Term> InfixData> x]]] t] h]]
+              [<<pr2 Term> InfixData> x]]] [<reverse [[Product Term] InfixData]> t]] h]]
         [multiTermSingle m]]]
     [multiTermRest m]].
 

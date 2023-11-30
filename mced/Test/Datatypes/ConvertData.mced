@@ -56,12 +56,12 @@ let datatypeToAlgTerms (name : String) (apply : List App) (constrs : List Constr
 -- Convert the algebra corresponding to a single constructor to a proper constructor
 let convertAlgToConstr (name : String) (type : Term) (d : ConstrFunctorData) (alg : Term) : Term :=
   foldWithLambdas (functorDataToTelescope d type) $ foldr ?(Term -> Term) ?Term
-    (λ acc : Term. λ f : Term -> Term. f acc)
-    (recursionList ?(String × ConstrFunctor) ?(List (Term -> Term))
+    (λ f : Term -> Term. f)
+    (reverse ?(Term -> Term) (recursionList ?(String × ConstrFunctor) ?(List (Term -> Term))
       [Term -> Term | λ t : Term. θ{removeUnit ?γ{type} γ{t}}]
       (λ p : CFParam. λ ps : List CFParam. λ rec : List (Term -> Term).
         cons ?(Term -> Term) (λ t : Term. θ{γ{curryHelper name type p ps} γ{t} γ{natToVar $ length ?CFParam ps}}) rec)
-      d)
+      d))
     alg.
 
 let datatypeToConstrs (d : DatatypeData) : List LetInfo :=
