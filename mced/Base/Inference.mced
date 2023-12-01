@@ -249,7 +249,7 @@ let solveAppWithErr (f : Term) (app : List App) (s : List InferenceInfo) : Eval 
     (isSolved l)).
 
 let elabLocally (doDebugPrinting : Bool) (f : Term) (app : List App) : Eval Term :=
-  ifthenelse ?(Eval Term) (isNil ?App app)
+  ifthenelse ?(Eval Term) (isSolved app)
     (pureEval ?Term (appLTerm f app)) $
     bindEval ?Term ?Term (catchEval ?Term (inferType f) (λ e : String.
       throwEval ?Term
@@ -284,9 +284,7 @@ updateEval.
 
 -- Issues:
 --
--- there's no reduction
---
--- don't do anything on terms that don't contain holes
+-- sometimes breaks when used with modules
 
 elet inferenceTest1 := λ x : Nat × Term. pr1 ?_ ?_ x.
 elet inferenceTest1' := λ x : Nat × Term. pr1 ?_ ?_ $ x.
