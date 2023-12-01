@@ -56,5 +56,20 @@ let schemeCompileDir := "Compiled/Scheme/".
 let genNameScheme (name : ModuleName) : String :=
   φ"${schemeCompileDir}${moduleNameToPath name}.ss".
 
+elet writeDefinitionsToFile' (printDef : LetInfo -> Eval String)
+    (fname : String) (defs : List LetInfo) : Eval Unit :=
+  traverseEval ?_ ?_ printDef defs >>= λ defs' : List String.
+    writeFile fname (stringConcat $ intersperse ?_ "\n" defs').
+
+elet compileModule' (printDef : LetInfo -> Eval String) (genName : ModuleName -> String)
+    (modName : ModuleName) : Eval Unit :=
+  evalWithProgress ?_ (φ"Compiling: ${ModuleNameToName modName}")
+                      (φ"Compiled:  ${ModuleNameToName modName}\n")
+    ((getModule modName >>= moduleToLetInfos) >>= writeDefinitionsToFile' printDef (genName modName)).
+
+elet compileModules' (printDef : LetInfo -> Eval String) (genName : ModuleName -> String)
+    (modNames : List ModuleName) : Eval Unit :=
+  voidEval ?_ $ sequenceEval ?_ $ map ?_ ?_ (compileModule' printDef genName) modNames.
+
 let compileModulesScheme : List ModuleName -> Eval Unit :=
-  compileModules printDefinitionScheme genNameScheme.
+  compileModules' printDefinitionScheme genNameScheme.
