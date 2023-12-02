@@ -1,0 +1,22 @@
+let Iota := λ X : * λ P : Π _ : X * ι x : X [P x].
+
+let iPair := Λ X : * Λ P : Π _ : X * λ x : X λ p : [P x] λ eq : (= p x)
+  { x , (φ eq p x) y. [P y] }.
+
+let iPr1 := Λ X : * Λ P : Π _ : X * λ x : [[Iota X] P] π x.
+let iPr2 := Λ X : * Λ P : Π _ : X * λ x : [[Iota X] P] ψ x.
+
+let iotaMono := λ F : Π _ : * * λ FP : Π X : * Π _ : [F X] *
+  λ monoF : [Mono F]
+  λ monoFP : ∀ Y1 : * ∀ Y2 : * Π c : [[Cast Y1] Y2] Π y : [F Y1]
+    [[Cast [[FP Y1] y]] [[FP Y2] [<<<elimCast [F Y1]> [F Y2]> [<<monoF Y1> Y2> c]> y]]]
+  Λ Y1 : * Λ Y2 : * λ c : [[Cast Y1] Y2]
+  <<<<intrCast [[Iota [F Y1]] [FP Y1]]> [[Iota [F Y2]] [FP Y2]]>
+    λ y : [[Iota [F Y1]] [FP Y1]]
+      { [<<<elimCast [F Y1]> [F Y2]> [<<monoF Y1> Y2> c]> π y]
+      , ([<<<elimCast [[FP Y1] π y]>
+                      [[FP Y2] [<<<elimCast [F Y1]> [F Y2]> [<<monoF Y1> Y2> c]> π y]]>
+                      [[<<monoFP Y1> Y2> c] π y]> ψ y]) x. [[FP Y2] x] }>
+    λ y : [[Iota [F Y1]] [FP Y1]] β y y>.
+
+let UEq := Λ X : * Λ Y : * λ x : X λ y : Y (= x y).

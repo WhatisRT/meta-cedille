@@ -7,6 +7,10 @@ seteval eval init stmt.
 import Bootstrap/Stage-1/MetaAliases.
 import Bootstrap/Stage-1/Quote.
 
+import Bootstrap/Stage-1/View.
+import Bootstrap/Stage-1/Iota.
+import Bootstrap/Stage-1/Rec.
+
 let init$term$=kappa=_char_ := quote$kappa.
 
 seteval eval init stmt.

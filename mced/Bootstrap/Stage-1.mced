@@ -10,6 +10,10 @@ import Bootstrap/Stage-1/String.
 import Bootstrap/Stage-1/MetaAliases.
 import Bootstrap/Stage-1/Quote.
 
+import Bootstrap/Stage-1/View.
+import Bootstrap/Stage-1/Iota.
+import Bootstrap/Stage-1/Rec.
+
 import Bootstrap/Stage-1/DSum.
 import Bootstrap/Stage-1/Product.
 import Bootstrap/Stage-1/Sum.

@@ -1,0 +1,29 @@
+--------------------------------------------------------------------------------
+-- Rec
+
+let Rec := λ F : (Π _ : * *) ∀ X : * ∀ _ : [[Cast [F X]] X] X.
+
+let recLB := λ F : (Π _ : * *) Λ X : * Λ c : [[Cast [F X]] X]
+  <<<<intrCast [Rec F]> X> (λ x : [Rec F] <<x X> c>)> λ x : [Rec F] β x x>
+  : Π F : (Π _ : * *) ∀ X : * ∀ _ : [[Cast [F X]] X] [[Cast [Rec F]] X].
+
+let recGLB := λ F : (Π _ : * *) Λ Y : * Λ u : (∀ X : * ∀ _ : [[Cast [F X]] X] [[Cast Y] X])
+  <<<<intrCast Y> [Rec F]>
+    (λ y : Y Λ X : * Λ c : [[Cast [F X]] X] [<<<elimCast Y> X> <<u X> c>> y])> λ y : Y β y y>
+  : Π F : (Π _ : * *) ∀ Y : * ∀ _ : (∀ X : * ∀ _ : [[Cast [F X]] X] [[Cast Y] X]) [[Cast Y] [Rec F]].
+
+let recRoll := λ F : (Π _ : * *) Λ mono : [Mono F]
+  <<[recGLB F] [F [Rec F]]>
+    Λ X : * Λ c : [[Cast [F X]] X]
+      <<<<<castTrans [F [Rec F]]> [F X]> X> [<<mono [Rec F]> X> <<[recLB F] X> c>]> c>>.
+
+let roll := λ F : (Π _ : * *) Λ mono : [Mono F]
+  <<<elimCast [F [Rec F]]> [Rec F]> <[recRoll F] mono>>
+  : Π F : (Π _ : * *) ∀ mono : [Mono F] Π _ : [F [Rec F]] [Rec F].
+
+let recUnroll := λ F : (Π _ : * *) Λ mono : [Mono F]
+  <<[recLB F] [F [Rec F]]> [<<mono [F [Rec F]]> [Rec F]> <[recRoll F] mono>]>.
+
+let unroll := λ F : (Π _ : * *) Λ mono : [Mono F]
+  <<<elimCast [Rec F]> [F [Rec F]]> <[recUnroll F] mono>>
+  : Π F : (Π _ : * *) ∀ mono : [Mono F] Π _ : [Rec F] [F [Rec F]].

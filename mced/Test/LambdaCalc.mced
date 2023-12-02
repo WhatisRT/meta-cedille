@@ -1,5 +1,3 @@
-o-let Top := = λ x : * x λ x : * x.
-
 let lambdaTermToTerm : Π _ : iTerm. iTerm := quote$beta (TermToInitTerm θ{λ x : *. x}).
 
 let init$lambdaTerm$_string_ : Π _ : String. iTerm := quote$var.

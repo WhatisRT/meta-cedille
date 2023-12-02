@@ -1,0 +1,51 @@
+let beta := Λ X : * λ x : X β x x.
+
+-- let beta := Λ X : * Λ Y : * Λ x : X λ y : X β x y
+--   : ∀ X : * ∀ Y : * ∀ x : X Π _ : X = x x.
+
+let idTop := λ x : * x.
+let Top := = idTop idTop.
+
+let intrTop := β idTop idTop : Top.
+let toTop := Λ T : * λ t : T β idTop t : ∀ T : * Π _ : T Top.
+
+let conv := Λ S : * Λ T : * Λ s : S λ t : T Λ eq : (= s t) φ eq s t.
+
+let View := λ T : * λ t : Top ι x : T (= x t) : Π T : * Π _ : Top *.
+
+let intrView := Λ T : * λ t1 : Top Λ t2 : T Λ t : (= t2 t1)
+  { φ t t2 t1 , (β t1 t1) x . (= x t1) }
+  : ∀ T : * Π t1 : Top ∀ t2 : T ∀ _ : (= t2 t1) [[View T] t1].
+
+let elimView := Λ T : * λ t : Top Λ v : [[View T] t] φ (ψ v) (π v) t
+  : ∀ T : * Π t : Top ∀ _ : [[View T] t] T.
+
+let elimViewTest := β idTop idTop
+  : = elimView idTop.
+
+let eqView := Λ T : * Λ t : Top Λ v : [[View T] t] ρ (ψ v) x. (= t x) (β t idTop)
+  : ∀ T : * ∀ t : Top ∀ v : [[View T] t] (= t v).
+
+let selfView := Λ T : * λ t : T <<[<intrView T> β idTop t] t> β t idTop>
+  : ∀ T : * Π t : T [[View T] β idTop t].
+
+let extView := Λ S : * Λ T : * λ t : Top Λ v : Π x : S [[View T] β idTop [t x]]
+  <<[<intrView (Π _ : S T)> t] (λ x : S <[<elimView T> β idTop [t x]] [v x]>)> β t t>
+  : ∀ S : * ∀ T : * Π t : Top ∀ _ : (Π x : S [[View T] β idTop [t x]]) [[View (Π _ : S T)] t].
+
+let Cast := λ S : * λ T : * [[View Π _ : S T] intrTop]
+  : Π S : * Π T : * *.
+
+let intrCast := Λ S : * Λ T : * Λ t : (Π _ : S T) Λ t' : (Π x : S = [t x] x)
+ <[<<extView S> T> intrTop] (λ x : S <<[<intrView T> β idTop x] [t x]> [t' x]>)>
+  : ∀ S : * ∀ T : * ∀ t : (Π _ : S T) ∀ _ : (Π x : S = [t x] x) [[Cast S] T].
+
+let elimCast := Λ S : * Λ T : * [<elimView Π _ : S T> intrTop]
+  : ∀ S : * ∀ T : * ∀ _ : [[Cast S] T] Π _ : S T.
+
+let castTrans := Λ S : * Λ T : * Λ U : * Λ c1 : [[Cast S] T] Λ c2 : [[Cast T] U]
+  <<<<intrCast S> U> λ x : S [<<<elimCast T> U> c2> [<<<elimCast S> T> c1> x]]> <beta S>>
+ : ∀ S : * ∀ T : * ∀ U : * ∀ c1 : [[Cast S] T] ∀ c2 : [[Cast T] U] [[Cast S] U].
+
+let Mono := λ F : (Π _ : * *) ∀ X : * ∀ Y : * Π _ : [[Cast X] Y] [[Cast [F X]] [F Y]]
+  : Π F : (Π _ : * *) *.
