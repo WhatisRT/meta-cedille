@@ -20,6 +20,7 @@ open import Prelude.Nat
 open import Theory.Context public
 open import Theory.Evaluation public
 open import Theory.NBE using (genExtra)
+import Theory.Normalisation as N
 open import Theory.Terms hiding (PureTerm) public
 
 PureTerm : Set
@@ -136,17 +137,14 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
     {-# NON_TERMINATING #-}
     checkβηPure' : ℕ → PureTerm → PureTerm → M ⊤
     checkβηPure' 0 _ _ = throwError "checkβηPure: out of fuel"
-    checkβηPure' (suc n) t₁ t₂ = do
-      t₁' ← hnfNorm false Γ t₁
-      t₂' ← hnfNorm false Γ t₂
-      appendIfError
-        (tryElse (compareNames t₁ t₂) $
-         tryElse (pureTermBeq t₁  t₂) $
-         tryElse (compareHnfs t₁' t₂) $
-         tryElse (compareHnfs t₁  t₂') $
-                  compareHnfs t₁' t₂')
-        ("\n\nWhile checking equality of" <+> show t₁ <+> "and" <+> show t₂
-        + "\nHNFs:" <+> show t₁' <+> "and" <+> show t₂')
+    checkβηPure' (suc n) t t' = appendIfError
+      (tryElse (compareNames t t') $
+       tryElse (pureTermBeq t t') $
+       tryElse (compareHnfs (N.hnfNorm Γ t) t') $
+       tryElse (compareHnfs t             (N.hnfNorm Γ t')) $
+                compareHnfs (N.hnfNorm Γ t) (N.hnfNorm Γ t'))
+      ("\n\nWhile checking equality of" <+> show t <+> "and" <+> show t'
+      + "\nHNFs:" <+> show (N.hnfNorm Γ t) <+> "and" <+> show (N.hnfNorm Γ t'))
       where
         hnfError : PureTerm → PureTerm → M ⊤
         hnfError t t' =
@@ -170,14 +168,14 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
         ... | no  _    = hnfError t t'
         -- compareHnfs (Lam-P _ _ t) t₁ = checkβηPure' n t (weakenBy 1 t₁ ⟪$⟫ BoundVar 0)
         -- compareHnfs t (Lam-P _ _ t₁) = checkβηPure' n (weakenBy 1 t ⟪$⟫ BoundVar 0) t₁
-        compareHnfs (Lam-P _ _ t) t₁ = do
-          t''@(App _ t' (Var (Bound i))) ← normalize false Γ t
-            where t'' → hnfError t'' t₁
-          if i ≣ 0 ∧ validInContext t' Γ then compareHnfs (strengthen t') t₁ else hnfError t'' t₁
-        compareHnfs t (Lam-P _ _ t₁) = do
-          t''@(App _ t' (Var (Bound i))) ← normalize false Γ t₁
-            where t'' → hnfError t t''
-          if i ≣ 0 ∧ validInContext t' Γ then compareHnfs t (strengthen t') else hnfError t t''
+        compareHnfs (Lam-P _ _ t) t₁ = case N.normalize Γ t of λ where
+          t''@(App _ t' (Var (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
+            then (compareHnfs (strengthen t') t₁) else hnfError t'' t₁
+          t'' → hnfError t'' t₁
+        compareHnfs t (Lam-P _ _ t₁) = case N.normalize Γ t₁ of λ where
+          t''@(App _ t' (Var (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
+            then (compareHnfs t (strengthen t')) else hnfError t t''
+          t'' → hnfError t t''
         {-# CATCHALL #-}
         compareHnfs t t' = hnfError t t'
 
