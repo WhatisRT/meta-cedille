@@ -1,0 +1,68 @@
+let Parse (A,E : *) : * := List Char -> Sum E (List Char × A).
+
+elet parseString [A,E : *] (p : Parse A E) (emptyErr : E) (s : String) : Sum E A :=
+  p (stringToList s) ?(Sum E A)
+    (λ e : E. inl ?E ?A e)
+    (λ res : List Char × A. ifthenelse ?_ (isNil ?_ (pr1 ?_ ?_ res))
+      (inr ?E ?A (pr2 ?_ ?_ res))
+      (inl ?E ?A emptyErr)).
+
+elet pureParse [A,E : *] (a : A) : Parse A E :=
+  λ l : List Char. inr ?E ?_ (l, a).
+
+elet bindParse [A,B,E : *] (x : Parse A E) (f : A -> Parse B E) : Parse B E :=
+  λ s : List Char. x s ?(Sum E (List Char × B))
+    (inl ?E ?(List Char × B))
+    (λ res : List Char × A. f (pr2 ?_ ?_ res) (pr1 ?_ ?_ res)).
+
+elet seqParse [A,B,E : *] (x : Parse A E) (y : Parse B E) : Parse B E :=
+  bindParse ?_ ?_ ?_ x (λ _ : A. y).
+
+elet mapParse [A,B,E : *] (f : A -> B) (p : Parse A E) : Parse B E :=
+  bindParse ?_ ?_ ?_ p (λ a : A. pureParse ?_ ?E (f a)).
+
+elet catchParse [A,E : *] (p1 : Parse A E) (p2 : E -> Parse A E) : Parse A E :=
+  λ l : List Char. p1 l ?(Sum E (List Char × A))
+    (λ e : E. p2 e l)
+    (λ res : List Char × A. inr ?E ?_ res).
+
+-- precondition: p must consume at least one character
+elet many [A,E : *] (p : Parse A E) : Parse (List A) E :=
+  λ l : List Char. ψ fuel = suc (length ?_ l) : Nat. fueledFix ?_ fuel (pureParse ?_ ?E [A|])
+    (λ many : Parse (List A) E. catchParse ?_ ?_
+      (bindParse ?_ ?_ ?_ p    λ a  : A.
+       bindParse ?_ ?_ ?_ many λ as : List A.
+       pureParse ?_ ?E (a ∷ as))
+      (λ _ : E. pureParse ?_ ?E [A|]))
+    l.
+
+elet sepBy [A, E : *] (sep : Parse Unit E) (p : Parse A E) : Parse (List A) E :=
+  bindParse ?_ ?_ ?_ p λ a : A.
+  bindParse ?_ ?_ ?_ (many ?_ ?_ (seqParse ?_ ?_ ?_ sep p)) λ as : List A.
+  pureParse ?_ ?E (a ∷ as).
+
+elet parseOneOf [A,E : *] (matchNotFoundErr : E) (map : List (List Char × A)) : Parse A E :=
+  λ l : List Char. recursionList' ?_ ?_
+    (inl ?_ ?(List Char × A) matchNotFoundErr)
+    (λ m : List Char × A. λ rec : Sum E (List Char × A).
+      ifthenelse ?_ (isPrefixL ?_ charEq (pr1 ?_ ?_ m) l)
+        (inr ?E ?_ (drop ?_ (length ?Char (pr1 ?_ ?_ m)) l, pr2 ?_ ?_ m))
+        rec)
+    map.
+
+elet parseOneOf' [A,E : *] (matchNotFoundErr : E) (m : List (String × A)) : Parse A E :=
+  parseOneOf ?_ ?_ matchNotFoundErr (map ?_ ?_ (productMap1 ?_ ?A ?_ stringToList) m).
+
+elet consume [E : *] (err : E) (s : String) : Parse Unit E :=
+  parseOneOf' ?_ ?_ err [String × Unit| (s, tt)].
+
+--------------------------------------------------------------------------------
+-- Specific parsers
+
+elet parseDigit : Parse Dec Unit :=
+  parseOneOf' ?_ ?_ tt [String × Dec|
+    ("0", Dec0); ("1", Dec1); ("2", Dec2); ("3", Dec3); ("4", Dec4);
+    ("5", Dec5); ("6", Dec6); ("7", Dec7); ("8", Dec8); ("9", Dec9)].
+
+elet parseNat : Parse Nat Unit :=
+  mapParse ?_ ?_ ?_ decListToNat $ many ?_ ?_ parseDigit.

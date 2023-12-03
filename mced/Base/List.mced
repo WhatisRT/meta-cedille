@@ -1,0 +1,29 @@
+elet tails [A : *] : List A -> List (List A) :=
+  recursionList ?_ ?_
+    [List A|[A|]]
+    (λ a : A. λ as : List A. λ rec : List (List A). (a ∷ as) ∷ rec).
+
+elet span [A : *] (P : A -> Bool) (l : List A) : List A × List A :=
+  recursionList ?_ ?_ ([A|], [A|])
+    (λ a : A. λ as : List A. λ rec : List A × List A.
+      ifthenelse ?_ (P a)
+        (productMap1 ?_ ?(List A) ?_ (cons ?_ a) rec)
+        ([A|], cons ?_ a as))
+    l.
+
+elet break [A : *] (P : A -> Bool) : List A -> List A × List A :=
+  span ?_ (λ a : A. not (P a)).
+
+elet linesBy [A : *] (P : A -> Bool) (l : List A) : List (List A) :=
+  ψ fuel = suc (length ?_ l) : Nat. fueledFix ?_ fuel (λ _ : List A. [List A|])
+    (λ linesBy : List A -> List (List A). λ l : List A. ψ x = break ?_ P l : List A × List A.
+      ifthenelse ?_ (isNil ?_ (pr2 ?_ ?_ x))
+        [List A|pr1 ?_ ?_ x]
+        (pr1 ?_ ?_ x ∷ linesBy (tail ?_ $ pr2 ?_ ?_ x)))
+    l.
+
+elet isPrefixL [A : *] (eq : A -> A -> Bool) (p, l : List A) : Bool :=
+  listEq ?_ eq p (take ?_ (length ?_ p) l).
+
+elet all (l : List Bool) : Bool :=
+  foldl ?_ ?_ and l true.

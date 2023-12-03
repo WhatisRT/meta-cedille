@@ -1,0 +1,6 @@
+elet sum (l : List Nat) : Nat := foldl ?_ ?_ add l 0.
+
+elet max (m, n : Nat) : Nat :=
+  ifthenelse ?_ (natLeq m n)
+    n
+    m.

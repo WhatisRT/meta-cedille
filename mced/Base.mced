@@ -8,3 +8,8 @@ import ReduceMultiApp.
 import Inference.
 
 import Compilation.
+
+import List.
+import Nat.
+import String.
+import Parse.

@@ -1,0 +1,10 @@
+let newline : Char := init$stringchar$=backslash=n.
+
+elet lines (s : String) : List String :=
+  map ?_ ?_ stringFromList (linesBy ?Char (charEq newline) (stringToList s)).
+
+elet readLines (filename : String) : Eval (List String) :=
+  mapEval ?_ ?_ lines (readFile filename).
+
+elet showProduct [A, B : *] (showA : A -> String) (showB : B -> String) : (A × B) -> String :=
+  recursionProduct ?_ ?_ ?_ (λ a : A. λ b : B. φ"(${showA a},${showB b})").
