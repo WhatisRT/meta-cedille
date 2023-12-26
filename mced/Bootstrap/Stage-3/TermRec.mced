@@ -10,8 +10,7 @@ b-let mapAppList [X, Y : *] (f : X -> Y) (l : List (Product Bool X)) : List (Pro
 
 b-let distList [X, Y, Z : *]
   : List (TripleProduct X Y Z) -> Product (List (Product X Y)) (List (Product X Z)) :=
-  λ l : List (TripleProduct X Y Z).
-  l ?(Product (List (Product X Y)) (List (Product X Z)))
+  recursionList' ?(TripleProduct X Y Z) ?(Product (List (Product X Y)) (List (Product X Z)))
     (prodPair ?(List (Product X Y)) ?(List (Product X Z)) (nil ?(Product X Y)) (nil ?(Product X Z)))
     (recursionTripleProduct ?X ?Y ?Z
       ?(Product (List (Product X Y)) (List (Product X Z))

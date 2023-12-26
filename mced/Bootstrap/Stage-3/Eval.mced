@@ -166,8 +166,8 @@ b-let mapEval [T, T' : *] (f : T -> T') (t : Eval T) : Eval T' :=
   bindEval ?T ?T' t (λ x : T. pureEval ?T' (f x)).
 b-let seqEval [T, T' : *] (t : Eval T) (t' : Eval T') : Eval T' :=
   bindEval ?T ?T' t (λ _ : T. t').
-b-let sequenceEval [T : *] (l : List (Eval T)) : Eval (List T) :=
-  l ?(Eval (List T))
+b-let sequenceEval [T : *] : List (Eval T) -> Eval (List T) :=
+  recursionList' ?(Eval T) ?(Eval (List T))
     (pureEval ?(List T) (nil ?T))
     (λ x : Eval T. λ rec : Eval (List T). bindEval ?T ?(List T) x
       λ x' : T. mapEval ?(List T) ?(List T) (cons ?T x') rec).
@@ -229,7 +229,7 @@ b-let annLet (n : String) (t, T : Term) : Eval Unit :=
 b-let setMEnv (eval : Term) (NT, ns : String) : Eval Unit :=
   liftMtoEval ?Unit (primSetEval (TermToInitTerm eval) NT ns).
 b-let shellCmd (cmd : String) (args : List String) : Eval String :=
-  liftMtoEval ?String (primShellCmd cmd args).
+  liftMtoEval ?String (primShellCmd cmd (listStringToStringList args)).
 b-let checkTerm (T : *) (t : Term) : Eval T :=
   liftMtoEval ?T (primCheckTerm T (TermToInitTerm t)).
 b-let parse (nt : String) (T : *) (text : String) : Eval (Product T String) :=
@@ -257,10 +257,11 @@ b-let writeFile (fName, s : String) : Eval Unit :=
   liftMtoEval ?Unit (primWriteFile fName s).
 
 b-let commandLine : Eval (List String) :=
-  liftMtoEval ?(List String) primCommandLine.
+  mapEval ?init$stringList ?(List String) stringListToListString
+    (liftMtoEval ?init$stringList primCommandLine).
 
 b-let setDebug (opts : List String) : Eval Unit :=
-  liftMtoEval ?Unit (primSetDebug opts).
+  liftMtoEval ?Unit (primSetDebug (listStringToStringList opts)).
 
 b-let printLineEval (s : String) : Eval Unit := printEval φ"${s}\n".
 
@@ -318,9 +319,9 @@ b-let letInfoToNewStmt (i : LetInfo) : Eval Unit :=
 b-let ElabLet : * := LetInfo -> Eval LetInfo.
 
 b-let runEvalLets' : List ElabLet -> ElabLet :=
-  recursionList ?ElabLet ?ElabLet
+  recursionList' ?ElabLet ?ElabLet
     (pureEval ?LetInfo)
-    (λ el : ElabLet. λ _ : List ElabLet. λ rec : ElabLet.
+    (λ el : ElabLet. λ rec : ElabLet.
       λ i : LetInfo. bindEval ?LetInfo ?LetInfo (el i) rec).
 
 b-let runEvalLets (els : List ElabLet) (i : LetInfo) : Eval Unit :=

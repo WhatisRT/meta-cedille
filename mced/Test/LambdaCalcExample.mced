@@ -1,5 +1,3 @@
-λ-let ycomb := λ t. [λ x. [t [x x]] λ x. [t [x x]]].
-
 λ-let cZero := λ z. λ f. z.
 λ-let cSuc := λ n. λ z. λ f. [f [[n z] f]].
 

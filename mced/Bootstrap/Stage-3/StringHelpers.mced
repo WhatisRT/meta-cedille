@@ -5,16 +5,23 @@
 b-let stringToList (s : String) : List Char :=
   s ?(List Char) (λ c : Char. λ rec : List Char. cons ?Char c rec) (nil ?Char).
 
-b-let stringFromList (s : List Char) : String :=
-  s ?String stringNil stringCons.
+b-let stringFromList : List Char -> String :=
+  recursionList' ?Char ?String stringNil stringCons.
 
 b-let stringApp (s, s' : String) : String :=
   s ?String stringCons s'.
 
-b-let stringConcat (l : List String) : String :=
-  l ?String stringNil stringApp.
+b-let stringConcat : List String -> String :=
+  recursionList' ?String ?String stringNil stringApp.
 
 -- Equality
 
 b-let stringEq (s, s' : String) : Bool :=
   listEq ?Char charEq (stringToList s) (stringToList s').
+
+b-let listStringToStringList : List String -> init$stringList :=
+  recursionList' ?String ?init$stringList
+    stringListNil stringListCons.
+
+b-let stringListToListString (s : init$stringList) : List String :=
+  s ?(List String) (nil ?String) (cons ?String).

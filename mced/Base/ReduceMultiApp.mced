@@ -11,16 +11,17 @@ let reduceMultiApp : Term -> Term :=
       (λ t1 : Term. λ app1 : List App.
         ψ reduceAppL = map ?App ?App $ productMap2 ?Bool ?Term ?Term reduceMultiApp
                       : List App -> List App.
-        ψ t          = appLTerm (reduceMultiApp t1) (reduceAppL app1) : Term. matchTerm ?Term
+        ψ t1r        = reduceMultiApp t1 : Term.
+        ψ app1r      = reduceAppL app1 : List App.
+        ψ t          = appLTerm t1r app1r : Term. matchTerm ?Term
           (λ _ : Var. t)
           (λ _ : Sort. t)
           (λ _ : Binder. λ _ : String. λ _, _ : Term. t)
-          (λ t2 : Term. λ app2 : List App.
-            reduceMultiApp $ appLTerm t2 (reduceAppL $ app ?App app2 app1))
+          (λ t2 : Term. λ app2 : List App. appLTerm t2 (app ?App app2 app1r))
           (λ _ : Char. t)
           t
           (λ _ : Term. t)
-          t1)
+          t1r)
       charTerm
       unknownTerm
       (λ t : Term. unquoteTerm (reduceMultiApp t)).

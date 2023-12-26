@@ -234,9 +234,9 @@ let multiTermRest := <<pr2 Term> [List [[Product Term] InfixData]]>
 --     : Π _ : MultiTerm Term.
 
 let multiTermToTermRight := λ m : MultiTerm
-  [[[<<recursionList [[Product Term] InfixData]> Term>
+  [[[<<matchList' [[Product Term] InfixData]> Term>
     [multiTermSingle m]]
-    λ h : [[Product Term] InfixData] λ t : [List [[Product Term] InfixData]] λ _ : Term
+    λ h : [[Product Term] InfixData] λ t : [List [[Product Term] InfixData]]
       [[appToTerm
         [[[<<foldr [[Product Term] InfixData]> [[Product Term] InfixData]>
           λ x : [[Product Term] InfixData] λ acc : [[Product Term] InfixData]

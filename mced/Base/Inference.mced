@@ -54,10 +54,9 @@ let isSolved (l : List App) : Bool :=
   isNil ?App (filter ?App (λ a : App. isUnknown $ appTerm a) l).
 
 let sequenceRecApp (recapp : List (Bool × Eval Term)) : Eval (List App) :=
-  sequenceEval ?App $
-    map ?(Bool × Eval Term) ?(Eval App)
-      (recursionProduct ?Bool ?(Eval Term) ?(Eval App) λ b : Bool. λ t : Eval Term.
-        mapEval ?Term ?App (mkApp b) t)
+  traverseEval ?(Bool × Eval Term) ?App
+    (recursionProduct ?Bool ?(Eval Term) ?(Eval App) λ b : Bool. λ t : Eval Term.
+      mapEval ?Term ?App (mkApp b) t)
     recapp.
 
 -- apply f to all applications in a term
@@ -172,8 +171,8 @@ let tryHNFEqn : UnsEqn -> Eval UnsEqn :=
     pureEval ?UnsEqn $ mkUnsEqn' eqnC t1 t2.
 
 -- partition equations into solved and unsolved
-let partitionSolved (ctx : Nat) (eqns : List UnsEqn) : List SEqn × List UnsEqn :=
-  eqns ?(List SEqn × List UnsEqn)
+let partitionSolved (ctx : Nat) : List UnsEqn -> List SEqn × List UnsEqn :=
+  recursionList' ?UnsEqn ?(List SEqn × List UnsEqn)
     (prodPair ?(List SEqn) ?(List UnsEqn) [SEqn|] [UnsEqn|])
     (λ eq : UnsEqn. λ rec : List SEqn × List UnsEqn.
       maybe ?SEqn ?(List SEqn × List UnsEqn)

@@ -333,10 +333,9 @@ elet letInfoToNewStmt (i : LetInfo) : Eval Unit :=
 
 let ElabLet : * := LetInfo -> Eval LetInfo.
 
-elet runEvalLets' : List ElabLet -> ElabLet := recursionList ?_ ?_
+elet runEvalLets' : List ElabLet -> ElabLet := recursionList' ?_ ?_
   (pureEval ?LetInfo)
-  (λ el : ElabLet. λ _ : List ElabLet. λ rec : ElabLet.
-    λ i : LetInfo. el i >>= rec).
+  (λ el : ElabLet. λ rec : ElabLet. λ i : LetInfo. el i >>= rec).
 
 elet runEvalLets (els : List ElabLet) (i : LetInfo) : Eval Unit :=
   runEvalLets' els i >>= letInfoToNewStmt.

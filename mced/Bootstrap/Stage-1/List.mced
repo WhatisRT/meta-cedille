@@ -28,14 +28,20 @@ let recursionList' := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : X X λ
   [[<l X> rn] rc]
   : ∀ A : * ∀ X : * Π rn : X Π rc : Π _ : A Π _ : X X Π l : [List A] X.
 
-let length := Λ X : * λ l : [List X]
-  [[<l Nat> zero] λ x : X λ n : Nat [suc n]]
+let matchList' := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : [List A] X
+  [[<<recursionList A> X> rn] λ a : A λ as : [List A] λ _ : X [[rc a] as]]
+  : ∀ A : * ∀ X : * Π _ : X Π _ : Π _ : A Π _ : [List A] X Π _ : [List A] X.
+
+--------------------------------------------------------------------------------
+
+let length := Λ X : *
+  [[<<recursionList' X> Nat> zero] λ x : X λ n : Nat [suc n]]
   : ∀ X : * Π _ : [List X] Nat.
 
 let nilLength := Λ X : * β zero zero : ∀ X : * = zero [<length X> <nil X>].
 
-let isNil := Λ X : * λ l : [List X]
-  [[<l Bool> true] λ _ : X λ _ : Bool false]
+let isNil := Λ X : *
+  [[<<matchList' X> Bool> true] λ _ : X λ _ : [List X] false]
   : ∀ X : * Π _ : [List X] Bool.
 
 let listEq := Λ X : * λ eqX : Π _ : X Π _ : X Bool
@@ -47,27 +53,27 @@ let listEq := Λ X : * λ eqX : Π _ : X Π _ : X Bool
 let pureList := Λ X : * λ x : X [[<cons X> x] <nil X>] : ∀ X : * Π _ : X [List X].
 
 let app := Λ X : * λ l1 : [List X] λ l2 : [List X]
-  [[<l1 [List X]> l2] λ x : X λ rec : [List X] [[<cons X> x] rec]]
+  [[[<<recursionList' X> [List X]> l2] λ x : X λ rec : [List X] [[<cons X> x] rec]] l1]
   : ∀ X : * Π _ : [List X] Π _ : [List X] [List X].
 
 let snoc := Λ X : * λ x : X λ xs : [List X] [[<app X> xs] [<pureList X> x]]
   : ∀ X : * Π _ : X Π _ : [List X] [List X].
 
-let filter := Λ X : * λ f : Π _ : X Bool λ l : [List X]
-  [[<l [List X]> <nil X>]
+let filter := Λ X : * λ f : Π _ : X Bool
+  [[<<recursionList' X> [List X]> <nil X>]
     λ x : X λ rec : [List X] [[[<ifthenelse [List X]> [f x]] [[<cons X> x] rec]] rec]]
   : ∀ X : * Π f : Π _ : X Bool Π _ : [List X] [List X].
 
-let foldl := Λ A : * Λ B : * λ f : (Π _ : B Π _ : A B) λ l : [List A]
-  [[<l Π _ : B B>
+let foldl := Λ A : * Λ B : * λ f : (Π _ : B Π _ : A B)
+  [[<<recursionList' A> Π _ : B B>
   λ b : B b]
   λ a : A λ rec : Π _ : B B λ b : B [[f [rec b]] a]].
 
 let foldr := Λ A : * Λ B : * λ f : (Π _ : A Π _ : B B) λ l : [List A] λ b : B
-  [[<l B> b] λ a : A λ rec : B [[f a] rec]].
+  [[[<<recursionList' A> B> b] λ a : A λ rec : B [[f a] rec]] l].
 
-let reverseAcc := Λ X : * λ l : [List X]
-  [[<l Π _ : [List X] [List X]>
+let reverseAcc := Λ X : *
+  [[<<recursionList' X> Π _ : [List X] [List X]>
     λ acc : [List X] acc]
     λ x : X λ rec : Π _ : [List X] [List X] λ acc : [List X] [rec [[<cons X> x] acc]]].
 
@@ -79,8 +85,8 @@ let scanl := Λ A : * Λ B : * λ f : (Π _ : B Π _ : A B) λ b : B
   [<pureList B> b]]
   λ a : A λ as : [List A] λ rec : [List B] [[<cons B> [[[<<foldl A> B> f] [[<cons A> a] as]] b]] rec]].
 
-let map := Λ X : * Λ Y : * λ f : Π _ : X Y λ l : [List X]
-  [[<l [List Y]> <nil Y>] λ x : X λ rec : [List Y] [[<cons Y> [f x]] rec]].
+let map := Λ X : * Λ Y : * λ f : Π _ : X Y
+  [[<<recursionList' X> [List Y]> <nil Y>] λ x : X λ rec : [List Y] [[<cons Y> [f x]] rec]].
 
 let intersperse :=
   Λ X : * λ x : X λ l : [List X] [[[<<recursionList X> [List X]> <nil X>]

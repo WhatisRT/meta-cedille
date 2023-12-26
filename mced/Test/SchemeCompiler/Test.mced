@@ -36,9 +36,9 @@ let schemePrintNat (n : SchemeNat) : SchemeFFI Unit :=
 let printSquare (n : Nat) : SchemeFFI Unit := schemePrintNat (evalNat $ square n).
 
 let printSquares (l : List Nat) : SchemeFFI Unit :=
-  recursionList ?Nat ?(SchemeFFI Unit)
+  recursionList' ?Nat ?(SchemeFFI Unit)
     (pureScheme ?Unit tt)
-    (λ n : Nat. λ _ : List Nat. λ x : SchemeFFI Unit.
+    (λ n : Nat. λ x : SchemeFFI Unit.
       seqScheme ?Unit ?Unit (printSquare n) x)
     l.
 

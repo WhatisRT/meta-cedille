@@ -6,7 +6,7 @@ module COC:Conversion.
 
 Given MCTerm MCSVar MCAst MCSq MCLambda MCPi MCApp natToVar indexToNat init$index.
 Given MCVar MCSort Binder String stringCons stringNil stringEq Char.
-Given List cons nil reverse Product Bool true false ifthenelse pr1 pr2.
+Given List cons nil recursionList' reverse Product Bool true false ifthenelse pr1 pr2.
 Given TripleProduct mkTripleProduct pr31 pr32 pr33.
 Given LetInfo letInfoName letInfoTerm letInfoType.
 Given Maybe just nothing maybe bindMaybe mapMaybe.
@@ -15,8 +15,8 @@ importModule DatatypesTest:Nat.
 importModule DatatypesTest:NatConversions.
 importModule COC:Theory.
 
-let findMaybe [A : *] (pred : A -> Bool) (l : List A) : Maybe Nat :=
-  l ?(Maybe Nat)
+let findMaybe [A : *] (pred : A -> Bool) : List A -> Maybe Nat :=
+  recursionList' ?A ?(Maybe Nat)
     (nothing ?Nat)
     (λ a : A. λ rec : Maybe Nat. ifthenelse ?(Maybe Nat) (pred a) (just ?Nat zero) (mapMaybe ?Nat ?Nat succ rec)).
 
@@ -36,14 +36,15 @@ let toCOCTerm (t : MCTerm) : Maybe Term :=
             (just ?Term (Pi x x'))
             (nothing ?Term)) (t' (cons ?String n l))) (t l))
     (λ t : List String -> Maybe Term. λ app : List (Product Bool (List String -> Maybe Term)). λ l : List String.
-      (reverse ?(Product Bool (List String -> Maybe Term)) app) ?(Maybe Term)
+      recursionList' ?(Product Bool (List String -> Maybe Term)) ?(Maybe Term)
         (t l)
         (λ a : Product Bool (List String -> Maybe Term). λ rec : Maybe Term.
           maybe ?Term ?(Maybe Term) (nothing ?Term)
             (λ x : Term. ifthenelse ?(Maybe Term) (pr1 ?Bool ?(List String -> Maybe Term) a)
               (nothing ?Term)
               (maybe ?Term ?(Maybe Term) (nothing ?Term)
-                (λ x' : Term. just ?Term (App x' x)) rec)) (pr2 ?Bool ?(List String -> Maybe Term) a l)))
+                (λ x' : Term. just ?Term (App x' x)) rec)) (pr2 ?Bool ?(List String -> Maybe Term) a l))
+        (reverse ?(Product Bool (List String -> Maybe Term)) app))
     (λ _ : Char. λ _ : List String. nothing ?Term)
     (λ _ : List String. nothing ?Term)
     (λ _ : List String -> Maybe Term. λ _ : List String. nothing ?Term) -- nothing on unquote

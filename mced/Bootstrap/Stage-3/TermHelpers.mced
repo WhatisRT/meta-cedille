@@ -19,9 +19,9 @@ let indexToIndex' (i : DBIndex) : DBIndex' :=
 
 let digitListToIndex' (l : List Dec) : DBIndex' := foldl ?Dec ?DBIndex' consDecToIndex' l init$index'$.
 let digitListToIndex : List Dec -> DBIndex :=
-  recursionList ?Dec ?DBIndex
+  matchList' ?Dec ?DBIndex
     (init$index$0_index'_ init$index'$)
-    (λ d : Dec. λ ds : List Dec. λ _ : DBIndex. consDecToIndex (digitListToIndex' ds) d).
+    (λ d : Dec. λ ds : List Dec. consDecToIndex (digitListToIndex' ds) d).
 
 let natToIndex (n : Nat) : DBIndex := digitListToIndex $ natToDecList n.
 let natToVar (n : Nat) : Term := varTerm $ init$var$_index_ $ natToIndex n.

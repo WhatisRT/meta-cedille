@@ -9,17 +9,17 @@ b-let showList [X : *] (showX : X -> String) (l : List X) : String :=
   φ"[${stringConcat (intersperse ?String ", " (map ?X ?String showX l))}]".
 
 b-let lookupDefault [A : *] (n : Nat) (d : A) (l : List A) : A :=
-  l ?(Nat -> A)
+  recursionList' ?A ?(Nat -> A)
     (λ _ : Nat. d)
     (λ a : A. λ rec : Nat -> A.
       recursionNat ?A a (λ k : Nat. λ _ : A. rec k))
-    n.
+    l n.
 
-b-let head [A : *] (l : List A) : Maybe A :=
-  l ?(Maybe A) (nothing ?A) (λ a : A. λ _ : Maybe A. just ?A a).
+b-let head [A : *] : List A -> Maybe A :=
+  matchList' ?A ?(Maybe A) (nothing ?A) (λ a : A. λ _  : List A. just ?A a).
 
-b-let tail [A : *] (l : List A) : List A :=
-  recursionList ?A ?(List A) [A|] (λ a : A. λ l' : List A. λ _ : List A. l') l.
+b-let tail [A : *] : List A -> List A :=
+  matchList' ?A ?(List A) [A|]          (λ _ : A. λ as : List A. as).
 
 b-let findMaybe [A : *] (P : A -> Bool) (l : List A) : Maybe A :=
   head ?A (filter ?A P l).
@@ -34,8 +34,8 @@ b-let maybeToList [A : *] : Maybe A -> List A :=
   maybe ?A ?(List A) [A|] (λ a : A. [A|a]).
 
 b-let mapHead [A : *] (f : Maybe A -> Maybe A) : List A -> List A :=
-  recursionList ?A ?(List A) (maybeToList ?A (f (nothing ?A)))
-    (λ a : A. λ as, _ : List A. app ?A (maybeToList ?A (f (just ?A a))) as).
+  matchList' ?A ?(List A) (maybeToList ?A (f (nothing ?A)))
+    (λ a : A. λ as : List A. app ?A (maybeToList ?A (f (just ?A a))) as).
 
 b-let initsNonEmpty [A : *] (l : List A) : List (Product A (List A)) :=
   recursionList ?A ?(List (Product A (List A)))
@@ -60,13 +60,14 @@ b-let countToZeroExc (n : Nat) :=
     n.
 
 b-let zipWith [A, B, C : *] (f : A -> B -> C) (l : List A) (l' : List B) : List C :=
-  l ?(List B -> List C)
+  recursionList' ?A ?(List B -> List C)
     (λ _ : List B. [C|])
     (λ a : A. λ rec : List B -> List C.
-      recursionList ?B ?(List C) [C|] (λ b : B. λ bs : List B. λ _ : List C. cons ?C (f a b) (rec bs)))
-    l'.
+      matchList' ?B ?(List C) [C|] (λ b : B. λ bs : List B. cons ?C (f a b) (rec bs)))
+    l l'.
 
-b-let zip [A, B : *] (l : List A) (l' : List B) : List (Product A B) := zipWith ?A ?B ?(Product A B) (prodPair ?A ?B) l l'.
+b-let zip [A, B : *] (l : List A) (l' : List B) : List (Product A B) :=
+  zipWith ?A ?B ?(Product A B) (prodPair ?A ?B) l l'.
 
 b-let zipWith3 [A, B, C, D : *] (f : A -> B -> C -> D) (l : List A) (l' : List B) (l'' : List C) : List D :=
   zipWith ?A ?(Product B C) ?D (λ a : A. λ bc : Product B C. f a (pr1 ?B ?C bc) (pr2 ?B ?C bc)) l (zip ?B ?C l' l'').
@@ -80,8 +81,8 @@ b-let zipWith4 [A, B, C, D, E : *] (f : A -> B -> C -> D -> E)
     (λ a : A. λ bcd : TripleProduct B C D.
       f a (pr31 ?B ?C ?D bcd) (pr32 ?B ?C ?D bcd) (pr33 ?B ?C ?D bcd)) l (zip3 ?B ?C ?D l' l'' l''').
 
-b-let concat [A : *] (l : List (List A)) : List A :=
-  l ?(List A) [A|] (λ l' : List A. λ rec : List A. app ?A l' rec).
+b-let concat [A : *] : List (List A) -> List A :=
+  recursionList' ?(List A) ?(List A) [A|] (λ l' : List A. λ rec : List A. app ?A l' rec).
 
 b-let drop [A : *] (n : Nat) (l : List A) : List A :=
   n ?(List A) l (tail ?A).
