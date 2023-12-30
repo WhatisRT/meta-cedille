@@ -38,6 +38,7 @@ elet showVar (con : List String) (v : Var) : String :=
 let showSort (s : Sort) : String := s ?String "*" "□".
 let showBinder (b : Binder) : String := b ?String "λ" "Λ" "Π" "∀".
 
+let emptyName       (n : String) : Bool   := or (stringEq n "") (stringEq n "_").
 let isArrow         (b : Binder) : Bool   := b ?Bool false false true true.
 let showBinderArrow (b : Binder) : String :=
   b ?String "λ is not an arrow!" "Λ is not an arrow!" "->" "=>".
@@ -58,7 +59,7 @@ elet showTermWithContext : Term -> List String -> String := recursionTerm ?_
   (λ v : Var. λ con : List String. showVar con v)
   (λ s : Sort. λ _ : List String. showSort s)
   (λ b : Binder. λ n : String. λ _, _ : Term. λ T, t : List String -> String. λ con : List String.
-    ifthenelse ?_ (and (stringEq n "_") (isArrow b))
+    ifthenelse ?_ (and (isArrow b) (emptyName n))
       φ"${T con} ${showBinderArrow b} ${t (n ∷ con)}"
       φ"${showBinder b} ${n} : ${T con}. ${t (n ∷ con)}")
   (λ _ : Term. λ la : List App. λ t : List String -> String.
