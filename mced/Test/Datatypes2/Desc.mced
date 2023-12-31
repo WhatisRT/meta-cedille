@@ -73,8 +73,11 @@ elet CDescToCastApp (S, T, cast : Term) (c : CDesc) : List App :=
     (cArgTelTerm S (CDescAs c))
     (CDescAs c).
 
+elet castCtorApp (S, T, cast : Term) (t : Term) (c : CDesc) : Term :=
+  appLTerm t $ CDescToCastApp S T cast c.
+
 elet castCtor (S, T, cast : Term) (t : Term) (c : CDesc) : Term :=
-  foldWithLambdas (cArgTelTerm S (CDescAs c)) $ appLTerm t $ CDescToCastApp S T cast c.
+  foldWithLambdas (cArgTelTerm S (CDescAs c)) $ castCtorApp S T cast t c.
 
 elet castCtorPi (S, T, cast : Term) (t : List App -> Term) (c : CDesc) : Term :=
   foldWithPi (cArgTelTerm S (CDescAs c)) $ t $ CDescToCastApp S T cast c.

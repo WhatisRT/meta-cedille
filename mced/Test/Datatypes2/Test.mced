@@ -34,4 +34,6 @@ runMeta DefineLR NatDesc.
 
 runMeta DefineRecLR "P" "x" NatDesc.
 
-recTestNatLR
+runMeta DefineCastLRtoLR' "P" "x" NatDesc.
+
+runMeta DefineLRCtors "P" "x" NatDesc.

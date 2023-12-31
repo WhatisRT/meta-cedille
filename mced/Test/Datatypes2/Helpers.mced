@@ -19,6 +19,12 @@ elet applyTelescope (t : Term) (tel : Telescope) : Term :=
   appLTerm t (telescopeToApp tel).
 
 elet telNames : Telescope -> List Name := map ?_ ?_ paramName.
+elet telTypes : Telescope -> List Term := map ?_ ?_ paramType.
 
 elet naryFun (l : List Term) (t : Term) : Term :=
   recursionList' ?_ ?_ t (λ t' : Term. λ acc : Term. θ{γ{t'} -> γ{acc}}) l.
+
+elet var (n : Name) : Term := sVarTerm n.
+
+elet mkIPair (A, P, a, p : Term) : Term :=
+  θ{iPair ?γ{A} ?γ{P} γ{a} γ{p} (beta ?γ{A} γ{a})}.
