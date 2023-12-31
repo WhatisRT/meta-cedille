@@ -1,0 +1,37 @@
+--------------------------------------------------------------------------------
+-- Tests
+
+elet NatDesc : Desc := "TestNat" , [CDesc|"tZero" , [ADesc|]; "tSuc" , [ADesc|θ{λ R : *. R}, θ{monoId}]].
+
+echo showTerm $ DescToF "X" "R" NatDesc.
+echo showList ?LetInfo showLetInfo $ DescToFCtors "X" "R" NatDesc.
+echo showTerm $ DescToWkIndF "R" "r" "P" NatDesc.
+echo showList ?LetInfo showLetInfo $ DescToWkIndCtors "R" "P" NatDesc.
+
+runMeta DefineF     "X" "R" NatDesc.
+runMeta DefineFCtors "X" "R" NatDesc.
+runMeta DefineWkIndF "R" "r" "P" NatDesc.
+runMeta DefineWkIndCtors "R" "P" NatDesc.
+
+runMeta DefineMonoF "X" "A" "B" "c" "x" NatDesc.
+runMeta DefineMonoWkIndF "X" "A" "B" "c" "x" "y" "z" NatDesc.
+
+runMeta DefineFI "R" NatDesc.
+runMeta DefineMonoFI NatDesc.
+
+runMeta DefineTy NatDesc.
+runMeta DefineRoll NatDesc.
+runMeta DefineUnroll NatDesc.
+
+runMeta DefineCtors NatDesc.
+
+runMeta DefineRec "P" "x" NatDesc.
+runMeta DefineCtorFs "P" "x" NatDesc.
+
+runMeta DefineLRP "P" "x" NatDesc.
+
+runMeta DefineLR NatDesc.
+
+runMeta DefineRecLR "P" "x" NatDesc.
+
+recTestNatLR

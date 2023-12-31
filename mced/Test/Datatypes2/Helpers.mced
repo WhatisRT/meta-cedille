@@ -1,0 +1,24 @@
+let castIota [A : *] [P : A -> *] : Cast (Iota A P) A :=
+  intrCast ?(Iota A P) ?A ?(iPr1 ?A ?P) ?(beta ?(Iota A P)).
+
+let Name := String.
+
+elet mkNames (n : Name) (k : Nat) : List Name :=
+  map ?_ ?_ (λ i : Nat. φ"${n}${showNatDecimal i}") (upTo k).
+
+elet appNsU (t : Term) (ns : List Name) :=
+  appLTerm t $ map ?_ ?_ (λ n : Name. mkAppU $ sVarTerm n) ns.
+
+elet defineMulti (l : List LetInfo) : Eval Unit :=
+  voidEval ?_ $ traverseEval ?_ ?_ letInfoToNewStmt l.
+
+elet mkLetInfoWithTel (n : String) (tel : Telescope) (t : Term) (mty : Maybe Term) :=
+  appendTelToLetInfo tel $ mkLetInfo n t mty.
+
+elet applyTelescope (t : Term) (tel : Telescope) : Term :=
+  appLTerm t (telescopeToApp tel).
+
+elet telNames : Telescope -> List Name := map ?_ ?_ paramName.
+
+elet naryFun (l : List Term) (t : Term) : Term :=
+  recursionList' ?_ ?_ t (λ t' : Term. λ acc : Term. θ{γ{t'} -> γ{acc}}) l.
