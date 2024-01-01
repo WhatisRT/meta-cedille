@@ -1,39 +1,32 @@
 --------------------------------------------------------------------------------
+-- Test helpers
+
+elet DefineTy' : Desc -> Eval Unit := DefineTy "A" "B" "c" "Q" "P" "R" "r" "x" "y" "z".
+
+elet recAD : ADesc := (θ{λ R : *. R}, θ{monoId}).
+elet constAD (t : Term) : ADesc := (θ{λ _ : *. γ{t}}, θ{monoConst ?γ{t}}).
+
+let monoList : Mono ListC := Λ X, Y : *. λ c : Cast X Y.
+  extCast ?(ListC X) ?(ListC Y) ?(indList ?X ?(λ l : ListC X. View (ListC Y) (beta' ?(ListC X) l))
+    (selfView ?(ListC Y) (nilC ?Y))
+    (λ x : X. λ xs : ListC X. λ pxs : View (ListC Y) (beta' ?(ListC X) xs).
+      selfView ?(ListC Y)
+        (consC ?Y (elimCast ?X ?Y ?c x) (elimView ?(ListC Y) (beta' ?(ListC X) xs) ?pxs)))).
+
+--------------------------------------------------------------------------------
 -- Tests
 
-elet NatDesc : Desc := "TestNat" , [CDesc|"tZero" , [ADesc|]; "tSuc" , [ADesc|θ{λ R : *. R}, θ{monoId}]].
+elet TNatDesc : Desc := "TNat" , [CDesc|"tZero" , [ADesc|]; "tSuc" , [ADesc|recAD]].
+runMeta DefineTy' TNatDesc.
 
-echo showTerm $ DescToF "X" "R" NatDesc.
-echo showList ?LetInfo showLetInfo $ DescToFCtors "X" "R" NatDesc.
-echo showTerm $ DescToWkIndF "R" "r" "P" NatDesc.
-echo showList ?LetInfo showLetInfo $ DescToWkIndCtors "R" "P" NatDesc.
+elet TNatListDesc : Desc := "TNatList" , [CDesc|"tNatNil" , [ADesc|]; "tNatCons" , [ADesc|constAD θ{Nat}; recAD]].
+runMeta DefineTy' TNatListDesc.
 
-runMeta DefineF     "X" "R" NatDesc.
-runMeta DefineFCtors "X" "R" NatDesc.
-runMeta DefineWkIndF "R" "r" "P" NatDesc.
-runMeta DefineWkIndCtors "R" "P" NatDesc.
+elet T1Desc : Desc := "T1" , [CDesc|"t11" , [ADesc|]; "t12" , [ADesc|recAD; recAD]].
+runMeta DefineTy' T1Desc.
 
-runMeta DefineMonoF "X" "A" "B" "c" "x" NatDesc.
-runMeta DefineMonoWkIndF "X" "A" "B" "c" "x" "y" "z" NatDesc.
+elet T2Desc : Desc := "T2" , [CDesc|"t21" , [ADesc|constAD θ{Nat}]; "t22" , [ADesc|recAD; recAD]].
+runMeta DefineTy' T2Desc.
 
-runMeta DefineFI "R" NatDesc.
-runMeta DefineMonoFI NatDesc.
-
-runMeta DefineTy NatDesc.
-runMeta DefineRoll NatDesc.
-runMeta DefineUnroll NatDesc.
-
-runMeta DefineCtors NatDesc.
-
-runMeta DefineRec "P" "x" NatDesc.
-runMeta DefineCtorFs "P" "x" NatDesc.
-
-runMeta DefineLRP "P" "x" NatDesc.
-
-runMeta DefineLR NatDesc.
-
-runMeta DefineRecLR "P" "x" NatDesc.
-
-runMeta DefineCastLRtoLR' "P" "x" NatDesc.
-
-runMeta DefineLRCtors "P" "x" NatDesc.
+elet T3Desc : Desc := "T3" , [CDesc|"t31" , [ADesc|]; "t32" , [ADesc|θ{List}, θ{monoList}]].
+runMeta DefineTy' T3Desc.

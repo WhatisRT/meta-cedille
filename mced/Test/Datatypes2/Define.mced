@@ -13,8 +13,8 @@ elet FTel (qn, rn : Name) (d : Desc) : Telescope :=
 elet DescToF (qn, rn : Name) (d : Desc) : Term :=
   lambdaTerm rn θ{*} $ foldWithPi (FTel qn rn d) (var qn).
 
-elet DefineF (qn, rn : Name) (d : Desc) : Eval Unit :=
-  letInfoToNewStmt (mkLetInfo (FName d) (DescToF qn rn d) (just ?_ θ{* -> *})).
+elet DescToFLI (qn, rn : Name) (d : Desc) : LetInfo :=
+  mkLetInfo (FName d) (DescToF qn rn d) (just ?_ θ{* -> *}).
 
 --------------------------------------------------------------------------------
 -- F Constructors
@@ -27,9 +27,6 @@ elet DescToFCtor (qn, rn : Name) (d : Desc) (c : CDesc) : LetInfo :=
 
 elet DescToFCtors (qn, rn : Name) (d : Desc) : List LetInfo :=
   map ?_ ?_ (DescToFCtor qn rn d) (DescCs d).
-
-elet DefineFCtors (qn, rn : Name) (d : Desc) : Eval Unit :=
-  defineMulti $ DescToFCtors qn rn d.
 
 --------------------------------------------------------------------------------
 -- WkIndF
@@ -45,8 +42,8 @@ elet WkIndTel (rn, pn : Name) (d : Desc) : Telescope :=
 elet DescToWkIndF (rn, rn', pn : Name) (d : Desc) : Term :=
   foldWithPi (WkIndTel rn pn d) θ{γ{var pn} γ{var rn'}}.
 
-elet DefineWkIndF (rn, rn', pn : Name) (d : Desc) : Eval Unit :=
-  letInfoToNewStmt $ mkLetInfoWithTel (WkIndFName d)
+elet WkIndFLI (rn, rn', pn : Name) (d : Desc) : LetInfo :=
+  mkLetInfoWithTel (WkIndFName d)
     [Param|(false, rn, θ{*}); (false, rn', θ{γ{FTerm d} γ{var rn}})]
     (DescToWkIndF rn rn' pn d) (just ?_ θ{*}).
 
@@ -61,9 +58,6 @@ elet DescToWkIndCtor (rn, pn : Name) (d : Desc) (c : CDesc) : LetInfo :=
 
 elet DescToWkIndCtors (rn, pn : Name) (d : Desc) : List LetInfo :=
   map ?_ ?_ (DescToWkIndCtor rn pn d) (DescCs d).
-
-elet DefineWkIndCtors (rn, pn : Name) (d : Desc) : Eval Unit :=
-  defineMulti $ DescToWkIndCtors rn pn d.
 
 --------------------------------------------------------------------------------
 -- Mono F
@@ -83,8 +77,8 @@ elet DescToMonoPf (qn, an, bn, cn, xn : Name) (d : Desc) : Term :=
     foldWithLambdas ftel $ appLTerm (var xn) $
       mkAppE (var qn) ∷ castApp an bn cn (telNames (tail ?_ ftel)) d.
 
-elet DefineMonoF (qn, an, bn, cn, xn : Name) (d : Desc) : Eval Unit :=
-  letInfoToNewStmt $ mkLetInfo (MonoFName d)
+elet MonoFLI (qn, an, bn, cn, xn : Name) (d : Desc) : LetInfo :=
+  mkLetInfo (MonoFName d)
     (DescToMonoPf qn an bn cn xn d)
     (just ?_ θ{Mono γ{FTerm d}}).
 
@@ -107,8 +101,8 @@ elet DescToMonoWkIndPf (pn, an, bn, cn, xn, yn, zn : Name) (d : Desc) : Term :=
       mkAppE (lambdaTerm zn θ{γ{FTerm d} γ{var an}} $ θ{γ{var pn} γ{elimMono $ var zn}}) ∷
       castApp an bn cn (telNames (tail ?_ ftel)) d.
 
-elet DefineMonoWkIndF (pn, an, bn, cn, xn, yn, zn : Name) (d : Desc) : Eval Unit :=
-  letInfoToNewStmt $ mkLetInfo (MonoWkIndFName d)
+elet MonoWkIndFLI (pn, an, bn, cn, xn, yn, zn : Name) (d : Desc) : LetInfo :=
+  mkLetInfo (MonoWkIndFName d)
     (DescToMonoWkIndPf pn an bn cn xn yn zn d)
     (just ?_ θ{MonoD γ{FTerm d} γ{WkIndFTerm d} γ{MonoFTerm d}}).
 
@@ -118,13 +112,13 @@ elet DefineMonoWkIndF (pn, an, bn, cn, xn, yn, zn : Name) (d : Desc) : Eval Unit
 elet FIName (d : Desc) : Name := φ"${DescName d}FI".
 elet FITerm (d : Desc) : Term := var (FIName d).
 
-elet DefineFI (rn : Name) (d : Desc) : Eval Unit :=
-  letInfoToNewStmt $ mkLetInfoWithTel (FIName d) [Param|(false, rn, θ{*})]
+elet FILI (rn : Name) (d : Desc) : LetInfo :=
+  mkLetInfoWithTel (FIName d) [Param|(false, rn, θ{*})]
     θ{Iota (γ{FTerm d} γ{var rn}) (γ{WkIndFTerm d} γ{var rn})}
     (just ?_ θ{*}).
 
-elet DefineMonoFI (d : Desc) : Eval Unit :=
-  letInfoToNewStmt $ mkLetInfo φ"mono${DescName d}FI"
+elet MonoFILI (d : Desc) : LetInfo :=
+  mkLetInfo φ"mono${DescName d}FI"
     θ{iotaMono γ{FTerm d} γ{WkIndFTerm d} γ{MonoFTerm d} γ{MonoWkIndFTerm d}}
     (just ?_ θ{Mono γ{FITerm d}}).
 
@@ -137,18 +131,16 @@ elet TyTerm (d : Desc) : Term := var (TyName d).
 elet RollName (d : Desc) : Name := φ"roll${TyName d}".
 elet RollTerm (d : Desc) : Term := var (RollName d).
 
-elet DefineTy (d : Desc) : Eval Unit :=
-  letInfoToNewStmt $ mkLetInfo (TyName d)
-    θ{Rec γ{FITerm d}}
-    (just ?_ θ{*}).
+elet TyLI (d : Desc) : LetInfo :=
+  mkLetInfo (TyName d) θ{Rec γ{FITerm d}} (just ?_ θ{*}).
 
-elet DefineRoll (d : Desc) : Eval Unit :=
-  letInfoToNewStmt $ mkLetInfo (RollName d)
+elet RollLI (d : Desc) : LetInfo :=
+  mkLetInfo (RollName d)
     θ{roll γ{FITerm d} ?γ{var φ"mono${DescName d}FI"}}
     (just ?_ θ{γ{FITerm d} γ{TyTerm d} -> γ{TyTerm d}}).
 
-elet DefineUnroll (d : Desc) : Eval Unit :=
-  letInfoToNewStmt $ mkLetInfo φ"unroll${TyName d}"
+elet UnrollLI (d : Desc) : LetInfo :=
+  mkLetInfo φ"unroll${TyName d}"
     θ{unroll γ{FITerm d} ?γ{var φ"mono${DescName d}FI"}}
     (just ?_ θ{γ{TyTerm d} -> γ{FITerm d} γ{TyTerm d}}).
 
@@ -167,19 +159,16 @@ elet DescToCtor (d : Desc) (c : CDesc) : LetInfo :=
 elet DescToCtors (d : Desc) : List LetInfo :=
   map ?_ ?_ (DescToCtor d) (DescCs d).
 
-elet DefineCtors (d : Desc) : Eval Unit :=
-  defineMulti $ DescToCtors d.
-
 --------------------------------------------------------------------------------
 -- LR
 
 elet RecName (d : Desc) : Name := φ"${DescName d}Rec".
 elet RecTerm (d : Desc) : Term := var (RecName d).
 
-elet DefineRec (pn, xn : Name) (d : Desc) : Eval Unit :=
+elet RecLI (pn, xn : Name) (d : Desc) : LetInfo :=
   ψ ns  = mkNames "A" (length ?_ (DescCs d)) : List Name.
   ψ tel = map ?_ ?_ (λ n : Name. (false, "", var n)) ns : Telescope.
-  letInfoToNewStmt $ mkLetInfoWithTel (RecName d)
+  mkLetInfoWithTel (RecName d)
     ((false, pn, θ{γ{TyTerm d} -> *}) ∷ (false, xn, TyTerm d) ∷
       map ?_ ?_ (λ n : Name. (false, n, θ{*})) ns)
     (foldWithPi tel $ foldWithPi tel $ θ{γ{var pn} γ{var xn}})
@@ -202,18 +191,15 @@ elet DescToCtorF (pn, xn : Name) (d : Desc) (c : CDesc) : LetInfo :=
 elet DescToCtorFs (pn, xn : Name) (d : Desc) : List LetInfo :=
   map ?_ ?_ (DescToCtorF pn xn d) (DescCs d).
 
-elet DefineCtorFs (pn, xn : Name) (d : Desc) : Eval Unit :=
-  defineMulti $ DescToCtorFs pn xn d.
-
 elet ctorFTerms (pn : Name) (d : Desc) : List Term :=
   map ?_ ?_ (λ c : CDesc. var φ"${CDescName c}RecF") (DescCs d).
 
 elet LRPName (d : Desc) : Name := φ"${DescName d}LRP".
 elet LRPTerm (d : Desc) : Term := var (LRPName d).
 
-elet DefineLRP (pn, xn : Name) (d : Desc) : Eval Unit :=
+elet LRPLI (pn, xn : Name) (d : Desc) : LetInfo :=
   ψ ctorFApp = map ?_ ?_ (λ t : Term. mkAppU θ{γ{t} γ{var pn}}) (ctorFTerms pn d) : List App.
-  letInfoToNewStmt $ mkLetInfoWithTel (LRPName d) [Param|(false, xn, TyTerm d)]
+  mkLetInfoWithTel (LRPName d) [Param|(false, xn, TyTerm d)]
     (forallTerm pn θ{γ{TyTerm d} -> *} $ appLTerm (RecTerm d) $
       mkAppU (var pn) ∷ mkAppU (var xn) ∷ ctorFApp)
     (just ?_ θ{*}).
@@ -221,8 +207,8 @@ elet DefineLRP (pn, xn : Name) (d : Desc) : Eval Unit :=
 elet LRName (d : Desc) : Name := φ"${DescName d}LR".
 elet LRTerm (d : Desc) : Term := var (LRName d).
 
-elet DefineLR (d : Desc) : Eval Unit :=
-  letInfoToNewStmt $ mkLetInfo (LRName d)
+elet LRLI (d : Desc) : LetInfo :=
+  mkLetInfo (LRName d)
     θ{Iota γ{TyTerm d} γ{var φ"${DescName d}LRP"}}
     (just ?_ θ{*}).
 
@@ -232,6 +218,9 @@ elet DefineLR (d : Desc) : Eval Unit :=
 elet ctorFsTel (pn : Name) (d : Desc) : Telescope :=
   map ?_ ?_ (λ c : CDesc. (false, φ"${CDescName c}X", θ{γ{CtorFTerm c} γ{var pn}})) (DescCs d).
 
+elet ctorFsTel' (d : Desc) : Telescope :=
+  map ?_ ?_ (λ c : CDesc. (false, φ"${CDescName c}X", var φ"${CDescName c}LR")) (DescCs d).
+
 elet LR'Term2 (pn, xn : Name) (d : Desc) : Term :=
   lambdaTerm xn (TyTerm d) $ appLTerm (RecTerm d) $
       map ?_ ?_ mkAppU $ var pn ∷ var xn ∷ telTypes (ctorFsTel pn d).
@@ -239,8 +228,8 @@ elet LR'Term2 (pn, xn : Name) (d : Desc) : Term :=
 elet LR'Term (pn, xn : Name) (d : Desc) : Term :=
   θ{Iota γ{TyTerm d} γ{LR'Term2 pn xn d}}.
 
-elet DefineCastLRtoLR' (pn, xn : Name) (d : Desc) : Eval Unit :=
-  letInfoToNewStmt $ mkLetInfoWithTel φ"${DescName d}CastLRtoLR'" [Param|(true, pn, θ{γ{TyTerm d} -> *})]
+elet CastLRtoLR'LI (pn, xn : Name) (d : Desc) : LetInfo :=
+  mkLetInfoWithTel φ"${DescName d}CastLRtoLR'" [Param|(true, pn, θ{γ{TyTerm d} -> *})]
     θ{intrCast ?γ{LRTerm d} ?γ{LR'Term pn xn d}
       ?γ{lambdaTerm xn (LRTerm d) $ mkIPair (TyTerm d) (LR'Term2 pn xn d)
         θ{iPr1 ?γ{TyTerm d} ?γ{LRPTerm d} γ{var xn}} θ{iPr2 ?γ{TyTerm d} ?γ{LRPTerm d} γ{var xn} ?γ{var pn}}}
@@ -263,21 +252,66 @@ elet DescToLRCtor (pn, xn : Name) (d : Desc) (c : CDesc) : LetInfo :=
 elet DescToLRCtors (pn, xn : Name) (d : Desc) : List LetInfo :=
   map ?_ ?_ (DescToLRCtor pn xn d) (DescCs d).
 
-elet DefineLRCtors (pn, xn : Name) (d : Desc) : Eval Unit :=
-  defineMulti $ DescToLRCtors pn xn d.
+elet convCtorTel (T : Term) (t : List App -> Term) (c : CDesc) : Term :=
+  ψ tel = cArgTelTerm T (CDescAs c) : Telescope.
+  foldWithLambdas tel $ t $ map ?_ ?_ (λ n : Name. mkAppU $ var n) $ telNames tel.
+
+elet RollLRLI (xn : Name) (d : Desc) : LetInfo :=
+  ψ genPr = λ n : Name. λ a : List App.
+      lambdaTerm xn θ{γ{FITerm d} γ{LRTerm d}} $ appLTerm (var n) $
+        app ?_ [App| mkAppE θ{γ{FTerm d} γ{LRTerm d}}
+                   ; mkAppE θ{γ{WkIndFTerm d} γ{LRTerm d}}
+                   ; mkAppU (var xn)] a
+        : Name -> List App -> Term.
+  ψ a = mkAppE (LRTerm d) ∷ map ?_ ?_ mkAppU $ telTypes (ctorFsTel' d) : List App.
+  mkLetInfo φ"roll${DescName d}LR"
+    θ{intrCast ?(γ{FITerm d} γ{LRTerm d}) ?γ{LRTerm d}
+      ?γ{genPr "iPr1" a}
+      ?γ{genPr "iPr2" (mkAppE (lambdaTerm xn θ{γ{FTerm d} γ{LRTerm d}}
+          θ{UEq ?γ{LRTerm d} ?(γ{FTerm d} γ{LRTerm d}) γ{appLTerm (var xn) a} γ{var xn}}) ∷
+          map ?_ ?_ (λ c : CDesc. mkAppU $ convCtorTel (LRTerm d)
+            (λ ap : List App. θ{beta ?(γ{FTerm d} γ{LRTerm d}) γ{appLTerm (var φ"${CDescName c}F") (mkAppE (LRTerm d) ∷ ap)}}) c) (DescCs d))}}
+    (just ?_ θ{Cast (γ{FITerm d} γ{LRTerm d}) γ{LRTerm d}}).
+
+elet ToLRLI (d : Desc) : LetInfo :=
+  mkLetInfo φ"to${DescName d}LR"
+    θ{recLB γ{FITerm d} ?γ{LRTerm d} ?γ{var φ"roll${DescName d}LR"}}
+    (just ?_ θ{Cast γ{TyTerm d} γ{LRTerm d}}).
 
 --------------------------------------------------------------------------------
 -- Induction types
 
 --------------------------------------------------------------------------------
--- Induction
+-- Induction schemes
 
-elet DefineRecLR (pn, xn : Name) (d : Desc) : Eval Unit :=
+elet RecLRName (d : Desc) : Name := φ"rec${DescName d}LR".
+elet RecLRTerm (d : Desc) : Term := var (RecLRName d).
+
+elet RecLRLI (pn, xn : Name) (d : Desc) : LetInfo :=
   ψ tel = zipWithIndex ?_ ?_ (λ i : Nat. λ t : Term. (false, φ"a${showNatDecimal i}", θ{γ{t} γ{var pn}}))
     (ctorFTerms pn d) : Telescope.
   ψ a = [App|mkAppE $ TyTerm d; mkAppE $ var φ"${DescName d}LRP"; mkAppU $ var xn] : List App.
-  letInfoToNewStmt $ mkLetInfoWithTel φ"rec${DescName d}LR"
+  mkLetInfoWithTel φ"rec${DescName d}LR"
     ((true, pn, θ{γ{TyTerm d} -> *}) ∷ (false, xn, LRTerm d) ∷ tel)
     (appLTerm θ{iPr2} $ app ?App a $ mkAppE (var pn) ∷
       map ?_ ?_ (λ n : Name. mkAppU $ var n) (telNames tel))
     (just ?_ $ foldWithPi tel θ{γ{var pn} γ{appLTerm θ{iPr1} a}}).
+
+--------------------------------------------------------------------------------
+-- Define All
+
+elet DefineTy (an, bn, cn, pn, qn, rn, rn', xn, yn, zn : Name) (d : Desc) : Eval Unit :=
+  defineMulti $ concat ?_ [List LetInfo
+    | [LetInfo| DescToFLI qn rn d ]
+    ; DescToFCtors qn rn d
+    ; [LetInfo| WkIndFLI rn rn' pn d ]
+    ; DescToWkIndCtors rn pn d
+    ; [LetInfo| MonoFLI qn an bn cn xn d ; MonoWkIndFLI pn an bn cn xn yn zn d
+              ; FILI rn d ; MonoFILI d ; TyLI d ; RollLI d ; UnrollLI d ]
+    ; DescToCtors d
+    ; [LetInfo| RecLI pn xn d ]
+    ; DescToCtorFs pn xn d
+    ; [LetInfo| LRPLI pn xn d ; LRLI d ; CastLRtoLR'LI pn xn d ]
+    ; DescToLRCtors pn xn d
+    ; [LetInfo| RollLRLI xn d ; ToLRLI d ; RecLRLI pn xn d ]
+    ].
