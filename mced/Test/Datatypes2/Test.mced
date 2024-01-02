@@ -6,12 +6,32 @@ elet DefineTy' : Desc -> Eval Unit := DefineTy "A" "B" "c" "Q" "P" "R" "r" "x" "
 elet recAD : ADesc := (θ{λ R : *. R}, θ{monoId}).
 elet constAD (t : Term) : ADesc := (θ{λ _ : *. γ{t}}, θ{monoConst ?γ{t}}).
 
+--------------------------------------------------------------------------------
+-- List helpers
+
 let monoList : Mono ListC := Λ X, Y : *. λ c : Cast X Y.
   extCast ?(ListC X) ?(ListC Y) ?(indList ?X ?(λ l : ListC X. View (ListC Y) (beta' ?(ListC X) l))
     (selfView ?(ListC Y) (nilC ?Y))
     (λ x : X. λ xs : ListC X. λ pxs : View (ListC Y) (beta' ?(ListC X) xs).
       selfView ?(ListC Y)
         (consC ?Y (elimCast ?X ?Y ?c x) (elimView ?(ListC Y) (beta' ?(ListC X) xs) ?pxs)))).
+
+elet indHelperList/conv [AP, A : *] [c : Cast AP A] : List AP -> List A :=
+  elimCast ?_ ?_ ?(monoList ?AP ?A c).
+
+elet indHelperList [AP, A : *] [P : A -> *] [P' : List A -> *]
+  (pn : P' [A|]) (pc : Π t : A. P t -> Π ts : List A. P' ts -> P' (cons ?A t ts))
+  (convP1 : Cast AP A) (convP2 : Π t : AP. P (elimCast ?AP ?A ?convP1 t))
+  : Π l : List AP. P' (indHelperList/conv ?AP ?A ?convP1 l) :=
+  ψ convN = usubst ?(List A) ?(indHelperList/conv ?AP ?A ?convP1 [AP|]) ?[A|]
+      ?(beta ?(List A) [A|]) ?P' : P' [A|] -> P' (indHelperList/conv ?AP ?A ?convP1 [AP|]).
+  indList ?AP ?(λ l : List AP. P' (indHelperList/conv ?AP ?A ?convP1 l))
+    (convN pn)
+    (λ t : AP. λ ts : List AP. λ p' : P' (indHelperList/conv ?AP ?A ?convP1 ts).
+     usubst ?(List A) ?(indHelperList/conv ?AP ?A ?convP1 (cons ?AP t ts))
+       ?(cons ?A (elimCast ?AP ?A ?convP1 t) (indHelperList/conv ?AP ?A ?convP1 ts))
+       ?(beta ?(List A) (indHelperList/conv ?AP ?A ?convP1 $ cons ?AP t ts)) ?P' $
+       pc (elimCast ?AP ?A ?convP1 t) (convP2 t) (indHelperList/conv ?AP ?A ?convP1 ts) p').
 
 --------------------------------------------------------------------------------
 -- Tests
@@ -30,3 +50,21 @@ runMeta DefineTy' T2Desc.
 
 elet T3Desc : Desc := "T3" , [CDesc|"t31" , [ADesc|]; "t32" , [ADesc|θ{List}, θ{monoList}]].
 runMeta DefineTy' T3Desc.
+
+
+elet t32RecFPf/R (P : T3 -> *) (A, B : *) (x : T3) : * := T3Rec P x A B.
+
+elet t32RecFPf/conv [P : T3 -> *] [A, B : *] : List (Iota T3 (t32RecFPf/R P A B)) -> List T3 :=
+  ψ R = t32RecFPf/R P A B : T3 -> *.
+  λ t : List (Iota T3 R).
+  elimCast ?(List (Iota T3 R)) ?(List T3) ?(monoList ?(Iota T3 R) ?T3 $ castIota ?T3 ?R) t.
+
+elet t32RecFPf [P : T3 -> *] [P' : List T3 -> *] (p : Π l : List T3. P' l -> P (t32 l))
+  (p'n : P' [T3|]) (p'c : Π t : T3. P t -> Π ts : List T3. P' ts -> P' (cons ?T3 t ts))
+  : t32RecF P :=
+  Λ A, B : *. λ r : List (Iota T3 (t32RecFPf/R P A B)). λ a : A. λ b : B.
+    p (t32RecFPf/conv ?P ?A ?B r)
+      (indHelperList ?_ ?_ ?P ?P' p'n p'c
+        (castIota ?T3 ?(t32RecFPf/R P A B))
+        (λ t : Iota T3 (t32RecFPf/R P A B). iPr2 ?_ ?(t32RecFPf/R P A B) t a b a b)
+        r).
