@@ -28,3 +28,8 @@ elet var (n : Name) : Term := sVarTerm n.
 
 elet mkIPair (A, P, a, p : Term) : Term :=
   θ{iPair ?γ{A} ?γ{P} γ{a} γ{p} (beta ?γ{A} γ{a})}.
+
+infix "⊎" := Sum.
+
+elet recursionTripleSum [A, B, C, D : *] (a : A -> D) (b : B -> D) (c : C -> D) (x : A ⊎ B ⊎ C) : D :=
+  recursionSum ?_ ?_ ?_ a (recursionSum ?_ ?_ ?_ b c) x.

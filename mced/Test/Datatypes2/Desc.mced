@@ -1,24 +1,38 @@
 --------------------------------------------------------------------------------
--- Descriptions of simple datatypes
+-- Descriptions of inductive datatypes
 --------------------------------------------------------------------------------
 
--- module Datatypes2:Desc.
-
--- importModule Bootstrap:Product.
--- importModule Bootstrap:String.
-
--- Given String stringNil stringCons.
--- Given Term quoteAst appLTerm binderTerm lambdaBinder App sVarTerm.
--- Given List nil cons.
+-- Currently missing:
+-- - Parameters
+-- - Indices
+-- - PIs in constructors
+-- - Function arguments to constructors
 
 --------------------------------------------------------------------------------
--- Argument description, taking the name of a recursive type
+-- Argument description
 
-let ADesc := Term × Term.
+let ADesc := Term         -- non-recursive
+           ⊎ Unit         -- recursive, not nested
+           ⊎ Term × Term. -- recursive, nested
 
-let ADescTy (a : ADesc) := pr1 ?Term ?Term a.
+let adNonRec (t : Term)       : ADesc := inl ?Term ?(Unit ⊎ Term × Term) t.
+let adRecNN                   : ADesc := inr ?Term ?(Unit ⊎ Term × Term) (inl ?Unit ?(Term × Term) tt).
+let adRecN (ts : Term × Term) : ADesc := inr ?Term ?(Unit ⊎ Term × Term) (inr ?Unit ?(Term × Term) ts).
+
+elet TyConst (T : *) : * -> * := λ _ : *. T.
+elet TyId : * -> * := λ R : *. R.
+
+elet ADescTy : ADesc -> Term := recursionTripleSum ?_ ?_ ?_ ?_
+  (λ t : Term. θ{TyConst γ{t}})
+  (λ _ : Unit. θ{TyId})
+  (pr1 ?Term ?Term).
+
 let ADescF (a : ADesc) (t : Term) : Term := θ{γ{ADescTy a} γ{t}}.
-let ADescMono (a : ADesc) := pr2 ?Term ?Term a.
+
+elet ADescMono : ADesc -> Term := recursionTripleSum ?_ ?_ ?_ ?_
+  (λ t : Term. θ{monoConst ?γ{t}})
+  (λ _ : Unit. θ{monoId})
+  (pr2 ?Term ?Term).
 
 --------------------------------------------------------------------------------
 -- Constructor description
