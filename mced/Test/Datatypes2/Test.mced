@@ -39,15 +39,31 @@ runMeta DefineTy' TNatDesc.
 elet TNatListDesc : Desc := "TNatList" , [CDesc|"tNatNil" , [ADesc|]; "tNatCons" , [ADesc|adNonRec θ{Nat}; adRecNN]].
 runMeta DefineTy' TNatListDesc.
 
-elet T1Desc : Desc := "T1" , [CDesc|"t11" , [ADesc|]; "t12" , [ADesc|adRecNN; adRecNN]].
+elet T1Desc : Desc := "T1" , [CDesc|"t11", [ADesc|]; "t12", [ADesc|adRecNN; adRecNN]].
 runMeta DefineTy' T1Desc.
 
-elet T2Desc : Desc := "T2" , [CDesc|"t21" , [ADesc|adNonRec θ{Nat}]; "t22" , [ADesc|adRecNN; adRecNN]].
+elet T2Desc : Desc := "T2" , [CDesc|"t21", [ADesc|adNonRec θ{Nat}]; "t22", [ADesc|adRecNN; adRecNN]].
 runMeta DefineTy' T2Desc.
 
-elet T3Desc : Desc := "T3" , [CDesc|"t31" , [ADesc|]; "t32" , [ADesc|adRecN (θ{List}, θ{monoList})]].
-runMeta DefineTy' T3Desc.
+let t21RecFPf [P : T2 -> *] (p : Π n : Nat. P (t21 n)) : t21RecF P :=
+  Λ A, B : *. λ n : Nat. λ a : A. λ b : B. p n.
 
+let t22RecFPf [P : T2 -> *] (p : Π t : T2. P t -> Π t' : T2. P t' -> P (t22 t t')) : t22RecF P :=
+  Λ A, B : *. λ t : Iota T2 (λ x : T2. T2Rec P x A B). λ t' : Iota T2 (λ x : T2. T2Rec P x A B).
+  λ a : A. λ b : B. p
+    (iPr1 ?T2 ?(λ x : T2. T2Rec P x A B) t)  (iPr2 ?T2 ?(λ x : T2. T2Rec P x A B) t a b a b)
+    (iPr1 ?T2 ?(λ x : T2. T2Rec P x A B) t') (iPr2 ?T2 ?(λ x : T2. T2Rec P x A B) t' a b a b).
+
+elet indT2 [P : T2 -> *]
+           (p1 : Π n : Nat. P (t21 n)) (p2 : Π t : T2. P t -> Π t' : T2. P t' -> P (t22 t t'))
+           (t : T2) : P t :=
+  recT2LR ?P (elimCast ?T2 ?T2LR ?toT2LR t)
+    (t21RecFPf ?P p1) (t22RecFPf ?P p2)
+    (t21RecFPf ?P p1) (t22RecFPf ?P p2).
+
+
+elet T3Desc : Desc := "T3" , [CDesc|"t31", [ADesc|]; "t32", [ADesc|adRecN (θ{List}, θ{monoList})]].
+runMeta DefineTy' T3Desc.
 
 elet t31RecFPf [P : T3 -> *] (p : P t31) : t31RecF P :=
   Λ A, B : *. λ a : A. λ b : B. p.
@@ -75,3 +91,19 @@ elet indT3 [P : T3 -> *] [P' : List T3 -> *] (p1 : P t31) (p2 : Π l : List T3. 
   recT3LR ?P (elimCast ?T3 ?T3LR ?toT3LR t)
     (t31RecFPf ?P p1) (t32RecFPf ?P ?P' p2 p'n p'c)
     (t31RecFPf ?P p1) (t32RecFPf ?P ?P' p2 p'n p'c).
+
+-- Non-strictly positive type
+
+let T4Ty (X : *) : * := (X -> Bool) -> Bool.
+
+elet monoT4Ty : Mono T4Ty :=
+  Λ X, Y : *. λ c : Cast X Y. intrCast ?(T4Ty X) ?(T4Ty Y)
+    ?(λ x : T4Ty X. λ y : Y -> Bool. x $ elimCast
+      ?(Y -> Bool)
+      ?(X -> Bool)
+      ?(antiArr ?(λ Z : *. Z) ?(λ _ : *. Bool) monoId (antiConst ?Bool) ?X ?Y c)
+      y)
+    ?(beta ?(T4Ty X)).
+
+elet T4Desc : Desc := "T4" , [CDesc|"t4", [ADesc|adRecN (θ{T4Ty}, θ{monoT4Ty})]].
+runMeta DefineTy' T4Desc.
