@@ -2,6 +2,7 @@
 -- Test helpers
 
 elet DefineTy' : Desc -> Eval Unit := DefineTy "A" "B" "c" "Q" "P" "R" "r" "x" "y" "z".
+elet DefineInd' : Desc -> Eval Unit := DefineInd "h" "P" "x".
 
 --------------------------------------------------------------------------------
 -- List helpers
@@ -35,32 +36,23 @@ elet indHelperList [AP, A : *] [P : A -> *] [P' : List A -> *]
 
 elet TNatDesc : Desc := "TNat" , [CDesc|"tZero" , [ADesc|]; "tSuc" , [ADesc|adRecNN]].
 runMeta DefineTy' TNatDesc.
+runMeta DefineInd' TNatDesc.
 
 elet TNatListDesc : Desc := "TNatList" , [CDesc|"tNatNil" , [ADesc|]; "tNatCons" , [ADesc|adNonRec θ{Nat}; adRecNN]].
 runMeta DefineTy' TNatListDesc.
+runMeta DefineInd' TNatListDesc.
 
 elet T1Desc : Desc := "T1" , [CDesc|"t11", [ADesc|]; "t12", [ADesc|adRecNN; adRecNN]].
 runMeta DefineTy' T1Desc.
+runMeta DefineInd' T1Desc.
+
+-- golden test
+elet indT1' [P : T1 -> *] (ht11 : P t11) (ht12 : Π a0 : T1. P a0 -> Π a1 : T1. P a1 -> P (t12 a0 a1))
+            : Π x : T1. P x := indT1 ?P ht11 ht12.
 
 elet T2Desc : Desc := "T2" , [CDesc|"t21", [ADesc|adNonRec θ{Nat}]; "t22", [ADesc|adRecNN; adRecNN]].
 runMeta DefineTy' T2Desc.
-
-let t21RecFPf [P : T2 -> *] (p : Π n : Nat. P (t21 n)) : t21RecF P :=
-  Λ A, B : *. λ n : Nat. λ a : A. λ b : B. p n.
-
-let t22RecFPf [P : T2 -> *] (p : Π t : T2. P t -> Π t' : T2. P t' -> P (t22 t t')) : t22RecF P :=
-  Λ A, B : *. λ t : Iota T2 (λ x : T2. T2Rec P x A B). λ t' : Iota T2 (λ x : T2. T2Rec P x A B).
-  λ a : A. λ b : B. p
-    (iPr1 ?T2 ?(λ x : T2. T2Rec P x A B) t)  (iPr2 ?T2 ?(λ x : T2. T2Rec P x A B) t a b a b)
-    (iPr1 ?T2 ?(λ x : T2. T2Rec P x A B) t') (iPr2 ?T2 ?(λ x : T2. T2Rec P x A B) t' a b a b).
-
-elet indT2 [P : T2 -> *]
-           (p1 : Π n : Nat. P (t21 n)) (p2 : Π t : T2. P t -> Π t' : T2. P t' -> P (t22 t t'))
-           (t : T2) : P t :=
-  recT2LR ?P (elimCast ?T2 ?T2LR ?toT2LR t)
-    (t21RecFPf ?P p1) (t22RecFPf ?P p2)
-    (t21RecFPf ?P p1) (t22RecFPf ?P p2).
-
+runMeta DefineInd' T2Desc.
 
 elet T3Desc : Desc := "T3" , [CDesc|"t31", [ADesc|]; "t32", [ADesc|adRecN (θ{List}, θ{monoList})]].
 runMeta DefineTy' T3Desc.

@@ -7,6 +7,8 @@
 -- - Indices
 -- - PIs in constructors
 -- - Function arguments to constructors
+-- - Recursion schemes
+-- - Match schemes
 
 --------------------------------------------------------------------------------
 -- Argument description
@@ -28,6 +30,15 @@ elet ADescTy : ADesc -> Term := recursionTripleSum ?_ ?_ ?_ ?_
   (pr1 ?Term ?Term).
 
 let ADescF (a : ADesc) (t : Term) : Term := θ{γ{ADescTy a} γ{t}}.
+
+-- TODO: P' should come from ADesc
+-- Variations of Π n : T. (P n) -> ...
+elet ADescP (a : ADesc) (n : Name) (t, P, P', r : Term) : Term :=
+  piTerm n θ{γ{ADescTy a} γ{t}} $ recursionTripleSum ?_ ?_ ?_ ?_
+    (λ _  : Term. r)
+    (λ _  : Unit. θ{γ{P} γ{var n} -> γ{r}})
+    (λ ts : Term × Term. θ{γ{P'} γ{var n} -> γ{r}})
+    a.
 
 elet ADescMono : ADesc -> Term := recursionTripleSum ?_ ?_ ?_ ?_
   (λ t : Term. θ{monoConst ?γ{t}})
