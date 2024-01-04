@@ -57,25 +57,7 @@ runMeta DefineInd' T2Desc.
 elet T3Desc : Desc := "T3" , [CDesc|"t31", [ADesc|]; "t32", [ADesc|adRecN (θ{List}, θ{monoList})]].
 runMeta DefineTy' T3Desc.
 
-elet t31RecFPf [P : T3 -> *] (p : P t31) : t31RecF P :=
-  Λ A, B : *. λ a : A. λ b : B. p.
-
-
-elet t32RecFPf/R (P : T3 -> *) (A, B : *) (x : T3) : * := T3Rec P x A B.
-
-elet t32RecFPf/conv [P : T3 -> *] [A, B : *] : List (Iota T3 (t32RecFPf/R P A B)) -> List T3 :=
-  ψ R = t32RecFPf/R P A B : T3 -> *.
-  indHelperList/conv ?(Iota T3 R) ?T3 ?(castIota ?T3 ?R).
-
-elet t32RecFPf [P : T3 -> *] [P' : List T3 -> *] (p : Π l : List T3. P' l -> P (t32 l))
-  (p'n : P' [T3|]) (p'c : Π t : T3. P t -> Π ts : List T3. P' ts -> P' (cons ?T3 t ts))
-  : t32RecF P :=
-  Λ A, B : *. λ r : List (Iota T3 (t32RecFPf/R P A B)). λ a : A. λ b : B.
-    p (t32RecFPf/conv ?P ?A ?B r)
-      (indHelperList ?_ ?_ ?P ?P' p'n p'c
-        (castIota ?T3 ?(t32RecFPf/R P A B))
-        (λ t : Iota T3 (t32RecFPf/R P A B). iPr2 ?_ ?(t32RecFPf/R P A B) t a b a b)
-        r).
+runMeta DefineIndPfs "h" "P" "X" T3Desc.
 
 elet indT3 [P : T3 -> *] [P' : List T3 -> *] (p1 : P t31) (p2 : Π l : List T3. P' l -> P (t32 l))
   (p'n : P' [T3|]) (p'c : Π t : T3. P t -> Π ts : List T3. P' ts -> P' (cons ?T3 t ts))

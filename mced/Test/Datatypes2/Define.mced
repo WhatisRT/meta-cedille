@@ -281,6 +281,8 @@ elet ToLRLI (d : Desc) : LetInfo :=
 --------------------------------------------------------------------------------
 -- Induction proofs
 
+elet PListPTel (d : Desc) : Telescope := [Param|(true, "PList", θ{List γ{TyTerm d} -> *})].
+
 elet PListHTel (P : Term) (d : Desc) : Telescope :=
   ψ P' = var "PList" : Term.
   [Param|(false, "p'n", θ{γ{P'} (nil ?γ{TyTerm d})})
@@ -288,14 +290,24 @@ elet PListHTel (P : Term) (d : Desc) : Telescope :=
                    -> γ{piTerm "pc2" θ{List γ{TyTerm d}} θ{γ{P'} γ{var "pc2"}
                    -> γ{P'} (cons ?γ{TyTerm d} γ{var "pc1"} γ{var "pc2"})}}})].
 
-elet ADescAdd (d : Desc) (P : Term) : ADesc -> Telescope :=
+elet ADescAddP (d : Desc) : ADesc -> Telescope :=
+  recursionTripleSum ?_ ?_ ?_ ?_
+    (λ _ : Term. [Param|])
+    (λ _ : Unit. [Param|])
+    (λ _ : Term × Term. PListPTel d).
+
+elet mkPTel (pn : Name) (d : Desc) (c : CDesc) : Telescope :=
+  ψ additional = concat ?_ $ map ?_ ?_ (ADescAddP d) (CDescAs c) : Telescope.
+  (true, pn, θ{γ{TyTerm d} -> *}) ∷ additional.
+
+elet ADescAddH (d : Desc) (P : Term) : ADesc -> Telescope :=
   recursionTripleSum ?_ ?_ ?_ ?_
     (λ _ : Term. [Param|])
     (λ _ : Unit. [Param|])
     (λ _ : Term × Term. PListHTel P d).
 
 elet mkHTel (pn : Name) (d : Desc) (c : CDesc) : Telescope :=
-  ψ additional = concat ?_ $ map ?_ ?_ (ADescAdd d (var pn)) (CDescAs c) : Telescope.
+  ψ additional = concat ?_ $ map ?_ ?_ (ADescAddH d (var pn)) (CDescAs c) : Telescope.
   ψ t = foldl ?_ ?_
           (λ acc : Term. λ a : Nat × ADesc.
             ADescP (pr2 ?_ ?_ a) φ"a${showNatDecimal $ pr1 ?_ ?_ a}" (TyTerm d) (var pn) (var "PList") acc)
@@ -317,17 +329,24 @@ elet DescToIndPf/genLam (d : Desc) (P : Term) (recApp : List App) : ADesc -> Ter
     (λ _  : Unit. recTy)
     (λ ts : Term × Term. θ{γ{pr1 ?Term ?Term ts} γ{recTy}}).
 
-elet DescToIndPf/genApp (d : Desc) (P : Term) (recApp, recApp' : List App) (n : Name) : ADesc -> List App :=
+elet DescToIndPf/genApp (d : Desc) (P : Term) (recApp, recApp', extraHs : List App) (n : Name)
+  : ADesc -> List App :=
   ψ genIotaArgs = DescToIndPf/genIotaArgs d P recApp : Term × Term.
-  ψ genPr = λ t : Term. λ a : List App. appLTerm t $
-    mkAppE (pr1 ?_ ?_ genIotaArgs) ∷ mkAppE (pr2 ?_ ?_ genIotaArgs) ∷ a
+  ψ genIotaArgs1 = pr1 ?_ ?_ genIotaArgs : Term.
+  ψ genIotaArgs2 = pr2 ?_ ?_ genIotaArgs : Term.
+  ψ genPr = λ t : Term. λ a : List App. appLTerm t $ mkAppE genIotaArgs1 ∷ mkAppE genIotaArgs2 ∷ a
     : Term -> List App -> Term.
+  ψ convRec = λ n' : Name. genPr θ{iPr2} (mkAppU (var n') ∷ app ?_ recApp' recApp') : Name -> Term.
+  ψ iota = θ{Iota γ{genIotaArgs1} γ{genIotaArgs2}} : Term.
+  ψ cIota = θ{castIota ?γ{genIotaArgs1} ?γ{genIotaArgs2}} : Term.
+  ψ convApp = θ{indHelperList/conv ?γ{iota} ?γ{TyTerm d} ?γ{cIota} γ{var n}} : Term.
+  ψ convPf = θ{γ{appLTerm θ{indHelperList ?γ{iota} ?γ{TyTerm d} ?γ{P} ?PList} extraHs}
+    γ{cIota} γ{lambdaTerm "xi" iota $ convRec "xi"} γ{var n}} : Term.
   recursionTripleSum ?_ ?_ ?_ ?_
     (λ t : Term. [App|mkAppU $ var n])
     (λ _ : Unit. [App| mkAppU $ genPr θ{iPr1} [App|mkAppU $ var n]
-                     ; mkAppU $ genPr θ{iPr2} (mkAppU (var n) ∷ app ?_ recApp' recApp')])
-    (λ _ : Term × Term. [App| mkAppU $ θ{□}
-                            ; mkAppU $ θ{□}]).
+                     ; mkAppU $ convRec n])
+    (λ _ : Term × Term. [App|mkAppU convApp; mkAppU convPf]).
 
 elet DescToIndPf (hn, pn, xn : Name) (d : Desc) (c : CDesc) : LetInfo :=
   ψ pTel = [Param|] : Telescope.
@@ -336,13 +355,14 @@ elet DescToIndPf (hn, pn, xn : Name) (d : Desc) (c : CDesc) : LetInfo :=
   ψ recApp = map ?_ ?_ (λ k : Nat. mkAppU $ var φ"A${showNatDecimal k}") cNums : List App.
   ψ recTel' = map ?_ ?_ (λ k : Nat. (false, φ"a${showNatDecimal k}", var φ"A${showNatDecimal k}")) cNums : Telescope.
   mkLetInfoWithTel φ"${CDescName c}RecFPf"
-    (concat ?Param [Telescope|[Param|(true, pn, θ{γ{TyTerm d} -> *})]; pTel; mkHTel pn d c])
+    (app ?Param (mkPTel pn d c) (mkHTel pn d c))
     (foldWithLambdas recTel $
      foldWithLambdas (zipWithIndex ?_ ?_ (λ k : Nat. λ a : ADesc.
        (false, φ"x${showNatDecimal k}", DescToIndPf/genLam d (var pn) recApp a)) (CDescAs c)) $
      foldWithLambdas recTel' $
      appLTerm (var φ"h${CDescName c}") (concat ?App $ zipWithIndex ?_ ?_
-       (λ k : Nat. DescToIndPf/genApp d (var pn) recApp (telescopeToApp recTel') φ"x${showNatDecimal k}") (CDescAs c)))
+       (λ k : Nat. DescToIndPf/genApp d (var pn) recApp (telescopeToApp recTel')
+         (telescopeToApp (PListHTel (var pn) d)) φ"x${showNatDecimal k}") (CDescAs c)))
     (just ?_ θ{γ{var φ"${CDescName c}RecF"} γ{var pn}}).
 
 elet DescToIndPfs (hn, pn, xn : Name) (d : Desc) : List LetInfo :=
