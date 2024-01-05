@@ -296,8 +296,11 @@ elet ADescAddP (d : Desc) : ADesc -> Telescope :=
     (λ _ : Unit. [Param|])
     (λ _ : Term × Term. PListPTel d).
 
+elet mkPTel' (d : Desc) (c : CDesc) : Telescope :=
+  concat ?_ $ map ?_ ?_ (ADescAddP d) (CDescAs c).
+
 elet mkPTel (pn : Name) (d : Desc) (c : CDesc) : Telescope :=
-  ψ additional = concat ?_ $ map ?_ ?_ (ADescAddP d) (CDescAs c) : Telescope.
+  ψ additional = mkPTel' d c : Telescope.
   (true, pn, θ{γ{TyTerm d} -> *}) ∷ additional.
 
 elet ADescAddH (d : Desc) (P : Term) : ADesc -> Telescope :=
@@ -390,14 +393,19 @@ elet RecLRLI (pn, xn : Name) (d : Desc) : LetInfo :=
 elet genIndScheme (d : Desc) (P, x : Term) (a : List App) : Term :=
   appLTerm (RecLRTerm d) (mkAppE P ∷ mkAppU x ∷ app ?_ a a).
 
-elet DefineIndScheme/genPfApp (P : Term) (c : CDesc) : Term :=
-  θ{γ{var φ"${CDescName c}RecFPf"} ?γ{P} γ{var φ"h${CDescName c}"}}.
+elet DefineIndScheme/genPfApp (pn : Name) (d : Desc) (c : CDesc) : Term :=
+  ψ pApp = telescopeToApp $ (true, pn, θ{γ{TyTerm d} -> *}) ∷ mkPTel' d c : List App.
+  ψ genExtraApp = λ a : ADesc. telescopeToApp (ADescAddH d (var pn) a) : ADesc -> List App.
+  ψ extra = concat ?_ $ map ?_ ?_ genExtraApp (CDescAs c) : List App.
+  appLTerm (var φ"${CDescName c}RecFPf") $
+    concat ?_ [List App|pApp; [App| mkAppU $ var φ"h${CDescName c}"]; extra].
 
 elet DefineIndScheme (pn, xn : Name) (d : Desc) : LetInfo :=
+  ψ pTel = (true, pn, θ{γ{TyTerm d} -> *}) ∷ concat ?_ (map ?_ ?_ (mkPTel' d) (DescCs d)) : Telescope.
   ψ hTel = concat ?_ $ map ?_ ?_ (mkHTel pn d) (DescCs d) : Telescope.
-  ψ pfApp = map ?_ ?_ (λ c : CDesc. mkAppU $ DefineIndScheme/genPfApp (var pn) c) (DescCs d) : List App.
+  ψ pfApp = map ?_ ?_ (λ c : CDesc. mkAppU $ DefineIndScheme/genPfApp pn d c) (DescCs d) : List App.
   mkLetInfoWithTel φ"ind${DescName d}"
-    (app ?Param (cons ?Param (true, pn, θ{γ{TyTerm d} -> *}) hTel) [Param|(false, xn, TyTerm d)])
+    (app ?Param (app ?Param pTel hTel) [Param|(false, xn, TyTerm d)])
     (appLTerm (var φ"rec${DescName d}LR") $
       (mkAppE (var pn)) ∷ (mkAppU θ{elimCast ?γ{TyTerm d} ?γ{LRTerm d} ?γ{var φ"to${DescName d}LR"} γ{var xn}}) ∷
       app ?App pfApp pfApp)

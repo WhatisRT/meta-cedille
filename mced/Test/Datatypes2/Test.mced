@@ -47,8 +47,8 @@ runMeta DefineTy' T1Desc.
 runMeta DefineInd' T1Desc.
 
 -- golden test
-elet indT1' [P : T1 -> *] (ht11 : P t11) (ht12 : Π a0 : T1. P a0 -> Π a1 : T1. P a1 -> P (t12 a0 a1))
-            : Π x : T1. P x := indT1 ?P ht11 ht12.
+elet indT1' : ∀ P : T1 -> *. P t11 -> Π a0 : T1. P a0 -> Π a1 : T1. P a1 -> P (t12 a0 a1)
+           -> Π x : T1. P x := indT1.
 
 elet T2Desc : Desc := "T2" , [CDesc|"t21", [ADesc|adNonRec θ{Nat}]; "t22", [ADesc|adRecNN; adRecNN]].
 runMeta DefineTy' T2Desc.
@@ -56,15 +56,7 @@ runMeta DefineInd' T2Desc.
 
 elet T3Desc : Desc := "T3" , [CDesc|"t31", [ADesc|]; "t32", [ADesc|adRecN (θ{List}, θ{monoList})]].
 runMeta DefineTy' T3Desc.
-
-runMeta DefineIndPfs "h" "P" "X" T3Desc.
-
-elet indT3 [P : T3 -> *] [P' : List T3 -> *] (p1 : P t31) (p2 : Π l : List T3. P' l -> P (t32 l))
-  (p'n : P' [T3|]) (p'c : Π t : T3. P t -> Π ts : List T3. P' ts -> P' (cons ?T3 t ts))
-  (t : T3) : P t :=
-  recT3LR ?P (elimCast ?T3 ?T3LR ?toT3LR t)
-    (t31RecFPf ?P p1) (t32RecFPf ?P ?P' p2 p'n p'c)
-    (t31RecFPf ?P p1) (t32RecFPf ?P ?P' p2 p'n p'c).
+runMeta DefineInd' T3Desc.
 
 -- Non-strictly positive type
 

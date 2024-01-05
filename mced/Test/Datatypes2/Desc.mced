@@ -9,6 +9,7 @@
 -- - Function arguments to constructors
 -- - Recursion schemes
 -- - Match schemes
+-- - Nested types (other than List)
 
 --------------------------------------------------------------------------------
 -- Argument description
