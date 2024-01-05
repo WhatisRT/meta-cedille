@@ -2,8 +2,9 @@
 -- Descriptions of inductive datatypes
 --------------------------------------------------------------------------------
 
+-- FIXME: prevent name clashes!
+
 -- Currently missing:
--- - Parameters
 -- - Indices
 -- - PIs in constructors
 -- - Function arguments to constructors
@@ -58,6 +59,9 @@ let CDesc := Name × List ADesc.
 elet CDescName (d : CDesc) : Name := pr1 ?_ ?(List ADesc) d.
 elet CDescAs (d : CDesc) : List ADesc := pr2 ?_ ?(List ADesc) d.
 
+--------------------------------------------------------------------------------
+-- cArgTel variants: the telescope of arguments to a constructor
+
 elet cArgTelTerm (t : Term) (as : List ADesc) : Telescope :=
   zipWithIndex ?_ ?_
     (λ k : Nat. λ ad : ADesc. false, φ"a${showNatDecimal k}", ADescF ad t)
@@ -75,19 +79,16 @@ elet CDescToTy' (qn, rn : Name) (as : List ADesc) : Term :=
 elet CDescToTy (qn, rn : Name) (d : CDesc) : Term :=
   foldWithPi (cArgTel rn d) (sVarTerm qn).
 
-elet appCtor (rn : Name) (d : CDesc) : Term :=
-  applyTelescope (sVarTerm φ"${CDescName d}F") ((true, rn, θ{*}) ∷ cArgTel rn d).
-
-elet CDescToTyP (rn, pn : Name) (d : CDesc) : Term :=
-  foldWithPi (cArgTel rn d) θ{γ{sVarTerm pn} γ{appCtor rn d}}.
-
 --------------------------------------------------------------------------------
 -- Datatype description
 
-let Desc := Name × List CDesc.
+let Desc := Name
+          × Telescope   -- parameters
+          × List CDesc. -- constructors
 
-elet DescName (d : Desc) : Name := pr1 ?_ ?(List CDesc) d.
-elet DescCs (d : Desc) : List CDesc := pr2 ?_ ?(List CDesc) d.
+elet DescName (d : Desc) : Name := pr1 ?_ ?(Telescope × List CDesc) d.
+elet DescTel (d : Desc) : Telescope := pr1 ?Telescope ?(List CDesc) $ pr2 ?_ ?(Telescope × List CDesc) d.
+elet DescCs (d : Desc) : List CDesc := pr2 ?Telescope ?(List CDesc) $ pr2 ?_ ?(Telescope × List CDesc) d.
 
 --------------------------------------------------------------------------------
 -- castCtor: convert a term of type F1 R -> ... -> Fn R -> X to F1 S -> ... -> Fn S -> X

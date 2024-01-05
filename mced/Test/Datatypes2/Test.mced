@@ -33,15 +33,24 @@ elet indHelperList [AP, A : *] [c : Cast AP A] [P : A -> *] (Pc : Π t : AP. P (
 --------------------------------------------------------------------------------
 -- Tests
 
-elet TNatDesc : Desc := "TNat" , [CDesc|"tZero" , [ADesc|]; "tSuc" , [ADesc|adRecNN]].
+elet TNatDesc : Desc := "TNat", [Param|], [CDesc|"tZero", [ADesc|]; "tSuc", [ADesc|adRecNN]].
 runMeta DefineTy' TNatDesc.
 runMeta DefineInd' TNatDesc.
 
-elet TNatListDesc : Desc := "TNatList" , [CDesc|"tNatNil" , [ADesc|]; "tNatCons" , [ADesc|adNonRec θ{Nat}; adRecNN]].
+elet TNatListDesc : Desc := "TNatList", [Param|], [CDesc|"tNatNil", [ADesc|]; "tNatCons", [ADesc|adNonRec θ{Nat}; adRecNN]].
 runMeta DefineTy' TNatListDesc.
 runMeta DefineInd' TNatListDesc.
 
-elet T1Desc : Desc := "T1" , [CDesc|"t11", [ADesc|]; "t12", [ADesc|adRecNN; adRecNN]].
+elet TProdDesc : Desc := "TProd", [Param|(false, "F1", θ{*}); (false, "F2", θ{*})],
+  [CDesc|"tPair", [ADesc|adNonRec θ{F1}; adNonRec θ{F2}]].
+runMeta DefineTy' TProdDesc.
+runMeta DefineInd' TProdDesc.
+
+elet TListDesc : Desc := "TList", [Param|(false, "F", θ{*})], [CDesc|"tNil", [ADesc|]; "tCons" , [ADesc|adNonRec θ{F}; adRecNN]].
+runMeta DefineTy' TListDesc.
+runMeta DefineInd' TListDesc.
+
+elet T1Desc : Desc := "T1", [Param|], [CDesc|"t11", [ADesc|]; "t12", [ADesc|adRecNN; adRecNN]].
 runMeta DefineTy' T1Desc.
 runMeta DefineInd' T1Desc.
 
@@ -49,11 +58,11 @@ runMeta DefineInd' T1Desc.
 elet indT1Test : ∀ P : T1 -> *. P t11 -> (Π a0 : T1. P a0 -> Π a1 : T1. P a1 -> P (t12 a0 a1))
               -> Π x : T1. P x := indT1.
 
-elet T2Desc : Desc := "T2" , [CDesc|"t21", [ADesc|adNonRec θ{Nat}]; "t22", [ADesc|adRecNN; adRecNN]].
+elet T2Desc : Desc := "T2", [Param|], [CDesc|"t21", [ADesc|adNonRec θ{Nat}]; "t22", [ADesc|adRecNN; adRecNN]].
 runMeta DefineTy' T2Desc.
 runMeta DefineInd' T2Desc.
 
-elet T3Desc : Desc := "T3" , [CDesc|"t31", [ADesc|]; "t32", [ADesc|adRecN (θ{List}, θ{monoList})]].
+elet T3Desc : Desc := "T3", [Param|], [CDesc|"t31", [ADesc|]; "t32", [ADesc|adRecN (θ{List}, θ{monoList})]].
 runMeta DefineTy' T3Desc.
 runMeta DefineInd' T3Desc.
 
@@ -70,5 +79,5 @@ elet monoT4Ty : Mono T4Ty :=
       y)
     ?(beta ?(T4Ty X)).
 
-elet T4Desc : Desc := "T4" , [CDesc|"t4", [ADesc|adRecN (θ{T4Ty}, θ{monoT4Ty})]].
+elet T4Desc : Desc := "T4", [Param|], [CDesc|"t4", [ADesc|adRecN (θ{T4Ty}, θ{monoT4Ty})]].
 runMeta DefineTy' T4Desc.
