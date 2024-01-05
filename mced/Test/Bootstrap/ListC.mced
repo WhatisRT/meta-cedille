@@ -1,0 +1,124 @@
+module Bootstrap:ListC.
+
+importModule Bootstrap:Mono.
+
+Given beta idTop Top intrTop.
+Given Cast intrCast elimCast Mono.
+Given Iota iPair iPr1 iPr2 iotaMono UEq.
+Given Rec recLB roll unroll.
+
+let ListF (A, R : *) : * := ∀ X : *. X -> (A -> R -> X) -> X.
+
+elet monoListF' [A : *] : Mono (ListF A) :=
+  ConvMono (λ X, R : *. X -> (A -> R -> X) -> X) $ Λ Z : *.
+    antiSum1 ?(λ X, R : *. X) ?(λ X, R : *. (A -> R -> X) -> X) ?Z (monoConst ?Z) $
+    antiSum1 ?(λ X, R : *. A -> R -> X) ?(λ X, R : *. X) ?Z
+      (antiArr ?_ ?_ (monoConst ?A) (antiArr ?_ ?(λ R : *. Z) monoId (monoConst ?Z)))
+      (monoConst ?Z).
+
+elet monoListF [A : *] : Mono (ListF A) :=
+  antiSum ?(λ X, R : *. X) ?(λ X, R : *. A -> R -> X)
+    (Λ X : *. monoConst ?X)
+    (Λ X : *. antiArr ?_ ?_ (monoConst ?A) (antiArr ?_ ?(λ R : *. X) monoId (monoConst ?X))).
+
+let nilF  [A, R : *]                  : ListF A R := Λ X : *. λ n : X. λ c : A -> R -> X. n.
+let consF [A, R : *] (a : A) (as : R) : ListF A R := Λ X : *. λ n : X. λ c : A -> R -> X. c a as.
+
+
+let WkIndListF (A, R : *) (l : ListF A R) : * := ∀ P : ListF A R -> *.
+  P (nilF ?A ?R) -> (Π a : A. Π l : R. P (consF ?A ?R a l)) -> P l.
+
+let monoWkIndListF [A : *] : MonoD (ListF A) (WkIndListF A) (monoListF ?A)
+  := Λ R1, R2 : *. λ c : Cast R1 R2. λ n : ListF A R1.
+  intrCast ?(WkIndListF A R1 n) ?(WkIndListF A R2 (elimCast ?(ListF A R1) ?(ListF A R2) ?(monoListF ?A ?R1 ?R2 c) n))
+    ?(λ m : WkIndListF A R1 n. Λ P : ListF A R2 -> *.
+      λ z : P (nilF ?A ?R2). λ s : Π a : A. Π k : R2. P (consF ?A ?R2 a k).
+      m ?(λ y : ListF A R1. P (elimCast ?(ListF A R1) ?(ListF A R2) ?(monoListF ?A ?R1 ?R2 c) y))
+        z (λ a : A. λ m : R1. s a (elimCast ?R1 ?R2 ?c m)))
+    ?(λ m : WkIndListF A R1 n. beta ?(WkIndListF A R1 n) m).
+
+
+let nilWkIndListF [A, R : *] : WkIndListF A R (nilF ?A ?R) :=
+  Λ P : ListF A R -> *. λ n : P (nilF ?A ?R). λ c : Π a : A. Π l : R. P (consF ?A ?R a l). n.
+
+let consWkIndListF [A, R : *] (a : A) (r : R) : WkIndListF A R (consF ?A ?R a r) :=
+  Λ P : ListF A R -> *. λ n : P (nilF ?A ?R). λ c : Π a : A. Π l : R. P (consF ?A ?R a l). c a r.
+
+let ListFI (A, R : *) := Iota (ListF A R) (WkIndListF A R).
+
+let monoListFI [A : *] : Mono (ListFI A) := iotaMono (ListF A) (WkIndListF A) (monoListF ?A) (monoWkIndListF ?A).
+
+let ListC (A : *) := Rec (ListFI A).
+
+let rollList   [A : *] : ListFI A (ListC A) -> ListC A := roll   (ListFI A) ?(monoListFI ?A).
+let unrollList [A : *] : ListC A -> ListFI A (ListC A) := unroll (ListFI A) ?(monoListFI ?A).
+
+let nilC [A : *] : ListC A := rollList ?A (iPair ?(ListF A (ListC A)) ?(WkIndListF A (ListC A))
+  (nilF ?A ?(ListC A)) (nilWkIndListF ?A ?(ListC A)) (beta ?(ListF A (ListC A)) (nilF ?A ?(ListC A)))).
+
+let consC [A : *] (a : A) (r : ListC A) : ListC A := rollList ?A (iPair ?(ListF A (ListC A)) ?(WkIndListF A (ListC A))
+  (consF ?A ?(ListC A) a r) (consWkIndListF ?A ?(ListC A) a r) (beta ?(ListF A (ListC A)) (consF ?A ?(ListC A) a r))).
+
+
+
+
+let ListRec (A : *) (P : ListC A -> *) (x : ListC A) (N, C : *) : * :=
+  N -> C -> N -> C -> P x.
+
+let ListN (A : *) (P : ListC A -> *) : * :=
+  ∀ N, C : *. N -> C -> P (nilC ?A).
+
+let ListC' (A : *) (P : ListC A -> *) : * :=
+  ∀ N, C : *. Π a : A. Π r : Iota (ListC A) (λ x : ListC A. ListRec A P x N C).
+  N -> C -> P (consC ?A a (iPr1 ?(ListC A) ?(λ x : ListC A. ListRec A P x N C) r)).
+
+let ListCLR (A : *) := λ n : ListC A. ∀ P : ListC A -> *. ListRec A P n (ListN A P) (ListC' A P).
+
+let ListLR (A : *) := Iota (ListC A) (ListCLR A).
+
+let recLRList [A : *] [P : ListC A -> *] (z : ListN A P) (s : ListC' A P) (n : ListLR A)
+  : ListN A P -> ListC' A P -> P (iPr1 ?(ListC A) ?(ListCLR A) n) :=
+  iPr2 ?(ListC A) ?(ListCLR A) n ?P z s.
+
+let nilLR [A : *] : ListLR A := iPair ?(ListC A) ?(ListCLR A)
+  (nilC ?A) (Λ P : ListC A -> *. λ z : ListN A P. λ s : ListC' A P. z ?(ListN A P) ?(ListC' A P))
+            (beta ?(ListC A) (nilC ?A)).
+
+let consLR [A : *] (a : A) (r : ListLR A) : ListLR A := iPair ?(ListC A) ?(ListCLR A)
+  (consC ?A a (iPr1 ?(ListC A) ?(ListCLR A) r))
+  (Λ P : ListC A -> *. λ z : ListN A P. λ s : ListC' A P.
+    s ?(ListN A P) ?(ListC' A P) a
+      (iPair ?(ListC A) ?(λ x : ListC A. ListRec A P x (ListN A P) (ListC' A P))
+            (iPr1 ?(ListC A) ?(ListCLR A) r) (iPr2 ?(ListC A) ?(ListCLR A) r ?P)
+            (beta ?(ListC A) (iPr1 ?(ListC A) ?(ListCLR A) r))))
+  (beta ?(ListC A) (consC ?A a (iPr1 ?(ListC A) ?(ListCLR A) r))).
+
+let rollListLR [A : *] : Cast (ListFI A (ListLR A)) (ListLR A) := intrCast ?(ListFI A (ListLR A)) ?(ListLR A)
+  ?(λ n : ListFI A (ListLR A). iPr1 ?(ListF A (ListLR A)) ?(WkIndListF A (ListLR A)) n ?(ListLR A) (nilLR ?A) (consLR ?A))
+  ?(λ n : ListFI A (ListLR A). iPr2 ?(ListF A (ListLR A)) ?(WkIndListF A (ListLR A)) n ?(λ x : ListF A (ListLR A).
+                               UEq ?(ListLR A) ?(ListF A (ListLR A)) (x ?(ListLR A) (nilLR ?A) (consLR ?A)) x)
+                             (beta ?(ListF A (ListLR A)) (nilF ?A ?(ListLR A)))
+                             (λ a : A. λ k : ListLR A. beta ?(ListF A (ListLR A)) (consF ?A ?(ListLR A) a k))).
+
+let toList [A : *] : Cast (ListC A) (ListLR A) := recLB (ListFI A) ?(ListLR A) ?(rollListLR ?A).
+
+let indListN [A : *] [P : ListC A -> *] (p : P (nilC ?A)) : ListN A P :=
+  Λ N, C : *. λ _ : N. λ _ : C. p.
+
+let indListC [A : *] [P : ListC A -> *] (p : Π a : A. Π r : ListC A. P r -> P (consC ?A a r)) : ListC' A P :=
+  Λ N, C : *. λ a : A. λ n : Iota (ListC A) (λ x : ListC A. ListRec A P x N C). λ z : N. λ s : C.
+    p a (iPr1 ?(ListC A) ?(λ x : ListC A. ListRec A P x N C) n) (iPr2 ?(ListC A) ?(λ x : ListC A. ListRec A P x N C) n z s z s).
+
+let indList [A : *] [P : ListC A -> *]
+  (pn : P (nilC ?A)) (pc : Π a : A. Π r : ListC A. P r -> P (consC ?A a r)) (l : ListC A) : P l :=
+  recLRList ?A ?P (indListN ?A ?P pn) (indListC ?A ?P pc)
+            (elimCast ?(ListC A) ?(ListLR A) ?(toList ?A) l) (indListN ?A ?P pn) (indListC ?A ?P pc).
+
+let recList [A, X : *] (n : X) (c : A -> ListC A -> X -> X) : ListC A -> X :=
+  indList ?A ?(λ _ : ListC A. X) n c.
+
+let matchList [A, X : *] (n : X) (c : A -> ListC A -> X) (l : ListC A) : X :=
+  iPr1 ?(ListF A (ListC A)) ?(WkIndListF A (ListC A)) (unrollList ?A l)
+    ?X n c.
+
+endModule.

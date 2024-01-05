@@ -1,0 +1,108 @@
+module Bootstrap:Mono.
+
+Given beta idTop Top intrTop.
+Given Cast intrCast elimCast Mono.
+Given Iota iPair iPr1 iPr2 iotaMono UEq.
+Given Rec recLB roll unroll.
+
+let monoConst [Z : *] : Mono (λ _ : *. Z) := Λ X, Y : *. λ c : Cast X Y.
+  intrCast ?Z ?Z ?(λ z : Z. z) ?(beta ?Z).
+
+let monoId : Mono (λ Z : *. Z) := Λ X, Y : *. λ c : Cast X Y.
+  intrCast ?X ?Y ?(λ x : X. elimCast ?X ?Y ?c x) ?(beta ?X).
+
+let MonoD (F : * -> *) (FP : Π X : *. F X -> *) (monoF : Mono F) :=
+  ∀ Y1, Y2 : *. Π c : Cast Y1 Y2. Π y : F Y1.
+    Cast (FP Y1 y) (FP Y2 (elimCast ?(F Y1) ?(F Y2) ?(monoF ?Y1 ?Y2 c) y)).
+
+let iotaMono' (F : * -> *) (FP : Π X : *. F X -> *) (monoF : Mono F) (monoFP : MonoD F FP monoF)
+  : Mono (λ X : *. Iota (F X) (FP X))
+  := iotaMono F FP monoF monoFP.
+
+let monoSum [F1, F2 : * -> * -> *]
+            (mono1 : ∀ X : *. Mono (F1 X))
+            (mono2 : ∀ X : *. Mono (F2 X))
+            : Mono (λ R : *. ∀ X : *. (F1 X R -> X) -> (F2 X R -> X) -> X) :=
+  Λ X, Y : *. λ c : Cast X Y. intrCast
+    ?(∀ Z : *. (F1 Z X -> Z) -> (F2 Z X -> Z) -> Z)
+    ?(∀ Z : *. (F1 Z Y -> Z) -> (F2 Z Y -> Z) -> Z)
+    ?(λ x : ∀ Z : *. (F1 Z X -> Z) -> (F2 Z X -> Z) -> Z.
+      Λ Z : *. λ f1 : F1 Z Y -> Z. λ f2 : F2 Z Y -> Z.
+        x ?Z (λ a : F1 Z X. f1 (elimCast ?(F1 Z X) ?(F1 Z Y) ?(mono1 ?Z ?X ?Y c) a))
+             (λ a : F2 Z X. f2 (elimCast ?(F2 Z X) ?(F2 Z Y) ?(mono2 ?Z ?X ?Y c) a)))
+    ?(beta ?(∀ Z : *. (F1 Z X -> Z) -> (F2 Z X -> Z) -> Z)).
+
+let Anti (F : * -> *) : * := ∀ X, Y : *. Cast X Y -> Cast (F Y) (F X).
+
+let AntiD (F : * -> *) (FP : Π X : *. F X -> *) (anti : Anti F) :=
+  ∀ Y1, Y2 : *. Π c : Cast Y1 Y2. Π y : F Y2.
+    Cast (FP Y2 y) (FP Y1 (elimCast ?(F Y2) ?(F Y1) ?(anti ?Y1 ?Y2 c) y)).
+
+let antiArr [F, G : * -> *] (mono : Mono F) (anti : Anti G) : Anti (λ X : *. F X -> G X) :=
+  Λ X, Y : *. λ c : Cast X Y.
+  intrCast ?(F Y -> G Y) ?(F X -> G X)
+    ?(λ f : F Y -> G Y. λ x : F X.
+      elimCast ?(G Y) ?(G X) ?(anti ?X ?Y c) (f (elimCast ?(F X) ?(F Y) ?(mono ?X ?Y c) x)))
+    ?(beta ?(F Y -> G Y)).
+
+let SumF [F1, F2 : * -> * -> *] := λ R : *. ∀ X : *. F1 X R -> F2 X R -> X.
+
+let antiSum [F1, F2 : * -> * -> *]
+            (anti1 : ∀ X : *. Anti (F1 X))
+            (anti2 : ∀ X : *. Anti (F2 X))
+            : Mono (λ R : *. ∀ X : *. F1 X R -> F2 X R -> X) :=
+  Λ X, Y : *. λ c : Cast X Y. intrCast
+    ?(∀ Z : *. F1 Z X -> F2 Z X -> Z)
+    ?(∀ Z : *. F1 Z Y -> F2 Z Y -> Z)
+    ?(λ x : ∀ Z : *. F1 Z X -> F2 Z X -> Z.
+      Λ Z : *. λ f1 : F1 Z Y. λ f2 : F2 Z Y.
+        x ?Z (elimCast ?(F1 Z Y) ?(F1 Z X) ?(anti1 ?Z ?X ?Y c) f1)
+             (elimCast ?(F2 Z Y) ?(F2 Z X) ?(anti2 ?Z ?X ?Y c) f2))
+    ?(beta ?(∀ Z : *. F1 Z X -> F2 Z X -> Z)).
+
+let ArrF (F1, F2 : * -> * -> *) : * -> * := λ R : *. ∀ X : *. F1 X R -> F2 X R.
+
+let antiSum' [F1, F2 : * -> * -> *] (anti1 : ∀ X : *. Anti (F1 X)) (mono2 : ∀ X : *. Mono (F2 X))
+  : Mono (ArrF F1 F2) := Λ X, Y : *. λ c : Cast X Y.
+  intrCast ?(ArrF F1 F2 X) ?(ArrF F1 F2 Y)
+    ?(λ x : ArrF F1 F2 X. Λ Z : *. λ f1 : F1 Z Y.
+        elimCast ?(F2 Z X) ?(F2 Z Y) ?(mono2 ?Z ?X ?Y c)
+          (x ?Z (elimCast ?(F1 Z Y) ?(F1 Z X) ?(anti1 ?Z ?X ?Y c) f1)))
+    ?(beta ?(ArrF F1 F2 X)).
+
+let ArrF1 (F1, F2 : * -> * -> *) : * -> * -> * := λ X, R : *. F1 X R -> F2 X R.
+
+let ForallF (F : * -> * -> *) : * -> * := λ R : *. ∀ X : *. F X R.
+
+let ConvMono (F : * -> * -> *) (mono : ∀ X : *. Mono (F X)) : Mono (ForallF F) :=
+  Λ X, Y : *. λ c : Cast X Y.
+  intrCast ?(ForallF F X) ?(ForallF F Y)
+    ?(λ x : ForallF F X. Λ Z : *. elimCast ?(F Z X) ?(F Z Y) ?(mono ?Z ?X ?Y c) (x ?Z))
+    ?(beta ?(ForallF F X)).
+
+let antiSum1 [F1, F2 : * -> * -> *] [Z : *] (anti1 : Anti (F1 Z)) (mono2 : Mono (F2 Z))
+  : Mono (ArrF1 F1 F2 Z) := Λ X, Y : *. λ c : Cast X Y.
+  intrCast ?(ArrF1 F1 F2 Z X) ?(ArrF1 F1 F2 Z Y)
+    ?(λ x : ArrF1 F1 F2 Z X. λ f1 : F1 Z Y.
+        elimCast ?(F2 Z X) ?(F2 Z Y) ?(mono2 ?X ?Y c)
+          (x (elimCast ?(F1 Z Y) ?(F1 Z X) ?(anti1 ?X ?Y c) f1)))
+    ?(beta ?(ArrF1 F1 F2 Z X)).
+
+-- let antiSumD [F1, F2 : * -> * -> *] [Z : *]
+--              (anti1 : Anti (F1 Z))
+--              (anti2 : Anti (F2 Z))
+--              [FP1 : Π X : *. F1 X -> X]
+--              [FP2 : Π X : *. F2 X -> X]
+--              (antiD1 : ∀ X : * . AntiD (F1 X) FP1 anti1)
+--              (antiD2 : ∀ X : * . AntiD F2 FP2 anti2)
+--              : Mono (λ R : *. λ x : SumF F1 F2. ∀ P : F R -> *. FP1 X R -> FP2 X R -> X) :=
+--   Λ X, Y : *. λ c : Cast X Y. intrCast
+--     ?(∀ Z : *. F1 Z X -> F2 Z X -> Z)
+--     ?(∀ Z : *. F1 Z Y -> F2 Z Y -> Z)
+--     ?(λ x : ∀ Z : *. F1 Z X -> F2 Z X -> Z.
+--       Λ Z : *. λ f1 : F1 Z Y. λ f2 : F2 Z Y.
+--         x ?Z (elimCast ?(F1 Z Y) ?(F1 Z X) ?(anti1 ?Z ?X ?Y c) f1)
+--              (elimCast ?(F2 Z Y) ?(F2 Z X) ?(anti2 ?Z ?X ?Y c) f2))
+--     ?(beta ?(∀ Z : *. F1 Z X -> F2 Z X -> Z)).
+
+endModule.
