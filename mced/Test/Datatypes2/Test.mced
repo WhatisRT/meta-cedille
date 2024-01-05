@@ -17,19 +17,18 @@ let monoList : Mono List := Λ X, Y : *. λ c : Cast X Y.
 elet indHelperList/conv [AP, A : *] [c : Cast AP A] : List AP -> List A :=
   elimCast ?_ ?_ ?(monoList ?AP ?A c).
 
-elet indHelperList [AP, A : *] [P : A -> *] [P' : List A -> *]
-  (pn : P' [A|]) (pc : Π t : A. P t -> Π ts : List A. P' ts -> P' (cons ?A t ts))
-  (convP1 : Cast AP A) (convP2 : Π t : AP. P (elimCast ?AP ?A ?convP1 t))
-  : Π l : List AP. P' (indHelperList/conv ?AP ?A ?convP1 l) :=
-  ψ convN = usubst ?(List A) ?(indHelperList/conv ?AP ?A ?convP1 [AP|]) ?[A|]
-      ?(beta ?(List A) [A|]) ?P' : P' [A|] -> P' (indHelperList/conv ?AP ?A ?convP1 [AP|]).
-  indList ?AP ?(λ l : List AP. P' (indHelperList/conv ?AP ?A ?convP1 l))
+elet indHelperList [AP, A : *] [c : Cast AP A] [P : A -> *] (Pc : Π t : AP. P (elimCast ?AP ?A ?c t))
+  [P' : List A -> *] (pn : P' [A|]) (pc : Π t : A. P t -> Π ts : List A. P' ts -> P' (cons ?A t ts))
+  : Π l : List AP. P' (indHelperList/conv ?AP ?A ?c l) :=
+  ψ convN = usubst ?(List A) ?(indHelperList/conv ?AP ?A ?c [AP|]) ?[A|]
+      ?(beta ?(List A) [A|]) ?P' : P' [A|] -> P' (indHelperList/conv ?AP ?A ?c [AP|]).
+  indList ?AP ?(λ l : List AP. P' (indHelperList/conv ?AP ?A ?c l))
     (convN pn)
-    (λ t : AP. λ ts : List AP. λ p' : P' (indHelperList/conv ?AP ?A ?convP1 ts).
-     usubst ?(List A) ?(indHelperList/conv ?AP ?A ?convP1 (cons ?AP t ts))
-       ?(cons ?A (elimCast ?AP ?A ?convP1 t) (indHelperList/conv ?AP ?A ?convP1 ts))
-       ?(beta ?(List A) (indHelperList/conv ?AP ?A ?convP1 $ cons ?AP t ts)) ?P' $
-       pc (elimCast ?AP ?A ?convP1 t) (convP2 t) (indHelperList/conv ?AP ?A ?convP1 ts) p').
+    (λ t : AP. λ ts : List AP. λ p' : P' (indHelperList/conv ?AP ?A ?c ts).
+     usubst ?(List A) ?(indHelperList/conv ?AP ?A ?c (cons ?AP t ts))
+       ?(cons ?A (elimCast ?AP ?A ?c t) (indHelperList/conv ?AP ?A ?c ts))
+       ?(beta ?(List A) (indHelperList/conv ?AP ?A ?c $ cons ?AP t ts)) ?P' $
+       pc (elimCast ?AP ?A ?c t) (Pc t) (indHelperList/conv ?AP ?A ?c ts) p').
 
 --------------------------------------------------------------------------------
 -- Tests

@@ -343,8 +343,9 @@ elet DescToIndPf/genApp (d : Desc) (P : Term) (recApp, recApp', extraHs : List A
   ψ iota = θ{Iota γ{genIotaArgs1} γ{genIotaArgs2}} : Term.
   ψ cIota = θ{castIota ?γ{genIotaArgs1} ?γ{genIotaArgs2}} : Term.
   ψ convApp = θ{indHelperList/conv ?γ{iota} ?γ{TyTerm d} ?γ{cIota} γ{var n}} : Term.
-  ψ convPf = θ{γ{appLTerm θ{indHelperList ?γ{iota} ?γ{TyTerm d} ?γ{P} ?PList} extraHs}
-    γ{cIota} γ{lambdaTerm "xi" iota $ convRec "xi"} γ{var n}} : Term.
+  ψ convPf = θ{γ{appLTerm θ{indHelperList ?γ{iota} ?γ{TyTerm d} ?γ{cIota} ?γ{P}
+                              γ{lambdaTerm "xi" iota $ convRec "xi"} ?PList} extraHs}
+    γ{var n}} : Term.
   recursionTripleSum ?_ ?_ ?_ ?_
     (λ t : Term. [App|mkAppU $ var n])
     (λ _ : Unit. [App| mkAppU $ genPr θ{iPr1} [App|mkAppU $ var n]
