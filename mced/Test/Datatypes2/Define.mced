@@ -411,12 +411,6 @@ elet DefineIndScheme (pn, xn : Name) (d : Desc) : LetInfo :=
       app ?App pfApp pfApp)
     (just ?_ $ θ{γ{var pn} γ{var xn}}).
 
--- elet DefineRecScheme (xn, yn : Name) (d : Desc) : Eval Unit :=
---   letInfoToNewStmt $ mkLetInfoWithTel φ"rec${DescName}"
---     ((true, xn, θ{*}) ∷ ..)
---     (genIndScheme d (lambdaTerm "" (TyTerm d) (var xn)) (mkAppU (var yn) ∷ ..))
---     (just ?_ $ var xn).
-
 --------------------------------------------------------------------------------
 -- Define All
 

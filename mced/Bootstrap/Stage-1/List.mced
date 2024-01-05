@@ -1,36 +1,107 @@
-let List := λ A : * ∀ X : *
-  Π _ : X
-  Π _ : (Π _ : A Π _ : X X)
-    X.
+import Bootstrap/Compiled/ListC.
 
-let nil := Λ A : * Λ X : *
-  λ n : X
-  λ c : (Π _ : A Π _ : X X)
-    n
-  : ∀ A : * [List A].
+let List := ListC : Π _ : * *.
 
-let cons := Λ A : * λ x : A λ xs : [List A] Λ X : *
-  λ n : X
-  λ c : (Π _ : A Π _ : X X)
-    [[c x] [[<xs X> n] c]]
-  : ∀ A : * Π _ : A Π _ : [List A] [List A].
+let nil  := φ (β nilC  nilC)  nilC                   λ n : * λ c : * n
+  : ∀ A : * [ListC A].
+let cons := φ (β consC consC) consC λ x : * λ xs : * λ n : * λ c : * [[c x] xs]
+  : ∀ A : * Π _ : A Π _ : [ListC A] [ListC A].
 
-let recursionList := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : [List A] Π _ : X X λ l : [List A]
-  [<<pr2 [List A]> X>
-    [[<l [[Product [List A]] X]>
-      [[<<prodPair [List A]> X> <nil A>] rn]]
-      λ a : A λ p : [[Product [List A]] X]
-        [[<<prodPair [List A]> X>
-          [[<cons A> a] [<<pr1 [List A]> X> p]]]
-          [[[rc a] [<<pr1 [List A]> X> p]] [<<pr2 [List A]> X> p]]]]].
+let matchList' := φ (β matchList matchList) matchList λ n : * λ c : * λ l : * [[l n] c]
+  : ∀ A : * ∀ X : * Π _ : X Π _ : Π _ : A Π _ : [List A] X Π _ : [List A] X.
+
+--------------------------------------------------------------------------------
+-- Recursion using the y-combinator
+
+let yRecList' := Λ A : * Λ X : * λ n : X λ c : (Π _ : A Π _ : [List A] Π _ : X X) λ l : [List A]
+  β idTop
+    [[ycomb λ rec : Π _ : [List A] X
+        λ l : [List A] [[l n] λ a : A λ as : [List A] [[[c a] as] [rec as]]]]
+      l]
+  : ∀ A : * ∀ X : * Π _ : X Π _ : Π _ : A Π _ : [List A] Π _ : X X Π _ : [List A] Top.
+
+let yRecListBeta := Λ A : * Λ X : * λ n : X λ c : (Π _ : A Π _ : [List A] Π _ : X X)
+  [[<<indList A> λ l : [List A] (= [[[<<yRecList' A> X> n] c] l] [[[<<recList A> X> n] c] l])>
+    β n idTop]
+    λ a : A λ as : [List A] λ h : (= [[[<<yRecList' A> X> n] c] as] [[[<<recList A> X> n] c] as])
+      ρ h x. (= [[[c a] as] x] [[[c a] as] [[[<<recList A> X> n] c] as]])
+        β [[[c a] as] [[[<<recList A> X> n] c] as]] idTop]
+  : ∀ A : * ∀ X : * Π n : X Π c : (Π _ : A Π _ : [List A] Π _ : X X) Π l : [List A]
+    (= [[[<<yRecList' A> X> n] c] l] [[[<<recList A> X> n] c] l]).
+
+let yRecList := Λ A : * Λ X : * λ n : X λ c : (Π _ : A Π _ : [List A] Π _ : X X) λ l : [List A]
+  φ σ [[[<<yRecListBeta A> X> n] c] l] [[[<<recList A> X> n] c] l] [[[<<yRecList' A> X> n] c] l]
+  : ∀ A : * ∀ X : * Π _ : X Π _ : Π _ : A Π _ : [List A] Π _ : X X Π _ : [List A] X.
+
+--------------------------------------------------------------------------------
+-- Recursion using the builtin fixpoint operator
+
+-- let fixRecList' := Λ A : * Λ X : * λ n : X λ c : (Π _ : A Π _ : [List A] Π _ : X X) λ l : [List A]
+--   β idTop
+--     [[<fix Π _ : [List A] X>
+--       λ rec : Π _ : [List A] X [[<<matchList' A> X> n] λ a : A λ as : [List A] [[[c a] as] [rec as]]]]
+--       l]
+--   : ∀ A : * ∀ X : * Π _ : X Π _ : Π _ : A Π _ : [List A] Π _ : X X Π _ : [List A] Top.
+
+-- let fixRecListBeta := Λ A : * Λ X : * λ n : X λ c : (Π _ : A Π _ : [List A] Π _ : X X)
+--   [[<<indList A> λ l : [List A] (= [[[<<fixRecList' A> X> n] c] l] [[[<<recList A> X> n] c] l])>
+--     β n idTop]
+--     λ a : A λ as : [List A] λ h : (= [[[<<fixRecList' A> X> n] c] as] [[[<<recList A> X> n] c] as])
+--       ρ h x. (= [[[c a] as] x] [[[c a] as] [[[<<recList A> X> n] c] as]])
+--         β [[[c a] as] [[[<<recList A> X> n] c] as]] idTop]
+--   : ∀ A : * ∀ X : * Π n : X Π c : (Π _ : A Π _ : [List A] Π _ : X X) Π l : [List A]
+--     (= [[[<<fixRecList' A> X> n] c] l] [[[<<recList A> X> n] c] l]).
+
+-- let fixRecList := Λ A : * Λ X : * λ n : X λ c : (Π _ : A Π _ : [List A] Π _ : X X) λ l : [List A]
+--   φ σ [[[<<fixRecListBeta A> X> n] c] l] [[[<<recList A> X> n] c] l] [[[<<fixRecList' A> X> n] c] l]
+--   : ∀ A : * ∀ X : * Π _ : X Π _ : Π _ : A Π _ : [List A] Π _ : X X Π _ : [List A] X.
+
+--------------------------------------------------------------------------------
+-- Recursion
+
+let recursionList := yRecList
+  : ∀ A : * ∀ X : * Π _ : X Π _ : Π _ : A Π _ : [List A] Π _ : X X Π _ : [List A] X.
 
 let recursionList' := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : X X λ l : [List A]
-  [[<l X> rn] rc]
+  [[[<<recursionList A> X> rn] λ a : A λ _ : [List A] [rc a]] l]
   : ∀ A : * ∀ X : * Π rn : X Π rc : Π _ : A Π _ : X X Π l : [List A] X.
 
-let matchList' := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : [List A] X
-  [[<<recursionList A> X> rn] λ a : A λ as : [List A] λ _ : X [[rc a] as]]
-  : ∀ A : * ∀ X : * Π _ : X Π _ : Π _ : A Π _ : [List A] X Π _ : [List A] X.
+--------------------------------------------------------------------------------
+-- Church lists
+
+-- let List := λ A : * ∀ X : *
+--   Π _ : X
+--   Π _ : (Π _ : A Π _ : X X)
+--     X.
+
+-- let nil := Λ A : * Λ X : *
+--   λ n : X
+--   λ c : (Π _ : A Π _ : X X)
+--     n
+--   : ∀ A : * [List A].
+
+-- let cons := Λ A : * λ x : A λ xs : [List A] Λ X : *
+--   λ n : X
+--   λ c : (Π _ : A Π _ : X X)
+--     [[c x] [[<xs X> n] c]]
+--   : ∀ A : * Π _ : A Π _ : [List A] [List A].
+
+-- let recursionList := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : [List A] Π _ : X X λ l : [List A]
+--   [<<pr2 [List A]> X>
+--     [[<l [[Product [List A]] X]>
+--       [[<<prodPair [List A]> X> <nil A>] rn]]
+--       λ a : A λ p : [[Product [List A]] X]
+--         [[<<prodPair [List A]> X>
+--           [[<cons A> a] [<<pr1 [List A]> X> p]]]
+--           [[[rc a] [<<pr1 [List A]> X> p]] [<<pr2 [List A]> X> p]]]]].
+
+-- let recursionList' := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : X X λ l : [List A]
+--   [[<l X> rn] rc]
+--   : ∀ A : * ∀ X : * Π rn : X Π rc : Π _ : A Π _ : X X Π l : [List A] X.
+
+-- let matchList' := Λ A : * Λ X : * λ rn : X λ rc : Π _ : A Π _ : [List A] X
+--   [[<<recursionList A> X> rn] λ a : A λ as : [List A] λ _ : X [[rc a] as]]
+--   : ∀ A : * ∀ X : * Π _ : X Π _ : Π _ : A Π _ : [List A] X Π _ : [List A] X.
 
 --------------------------------------------------------------------------------
 

@@ -1,8 +1,15 @@
 import Bootstrap.
 import Base.
-
 set PWD "Test/".
 import BootstrapTest.
+
+import Datatypes2/Mono.
+import Datatypes2/Helpers.
+import Datatypes2/Desc.
+import Datatypes2/Define.
+
+import Datatypes2/Test.
+
 
 import BootstrapCompiler.
 import Bootstrap.

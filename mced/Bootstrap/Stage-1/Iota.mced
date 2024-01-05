@@ -20,3 +20,6 @@ let iotaMono := λ F : Π _ : * * λ FP : Π X : * Π _ : [F X] *
     λ y : [[Iota [F Y1]] [FP Y1]] β y y>.
 
 let UEq := Λ X : * Λ Y : * λ x : X λ y : Y (= x y).
+
+let usym := Λ X : * Λ x : X Λ y : X λ eq : (= x y) σ eq.
+let usubst := Λ A : * Λ p : A Λ q : A Λ eq : (= p q) Λ P : Π _ : A * λ pf : [P q] ρ eq x. [P x] pf.
