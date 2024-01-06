@@ -1,10 +1,15 @@
+let Name := String.
+
+elet var (n : Name) : Term := sVarTerm n.
+
 let castIota [A : *] [P : A -> *] : Cast (Iota A P) A :=
   intrCast ?(Iota A P) ?A ?(iPr1 ?A ?P) ?(beta ?(Iota A P)).
 
-let Name := String.
-
 elet mkNames (n : Name) (k : Nat) : List Name :=
   map ?_ ?_ (λ i : Nat. φ"${n}${showNatDecimal i}") (upTo k).
+
+elet appNames (erased : Bool) (ns : List Name) : List App :=
+  map ?_ ?_ (λ n : Name. erased, var n) ns.
 
 elet appNsU (t : Term) (ns : List Name) :=
   appLTerm t $ map ?_ ?_ (λ n : Name. mkAppU $ sVarTerm n) ns.
@@ -21,10 +26,11 @@ elet applyTelescope (t : Term) (tel : Telescope) : Term :=
 elet telNames : Telescope -> List Name := map ?_ ?_ paramName.
 elet telTypes : Telescope -> List Term := map ?_ ?_ paramType.
 
+elet typesTel (erased : Bool) (ns : List Name) : Telescope :=
+  map ?_ ?_ (λ n : Name. (erased, n, θ{*})) ns.
+
 elet naryFun (l : List Term) (t : Term) : Term :=
   recursionList' ?_ ?_ t (λ t' : Term. λ acc : Term. θ{γ{t'} -> γ{acc}}) l.
-
-elet var (n : Name) : Term := sVarTerm n.
 
 elet mkIPair (A, P, a, p : Term) : Term :=
   θ{iPair ?γ{A} ?γ{P} γ{a} γ{p} (beta ?γ{A} γ{a})}.
