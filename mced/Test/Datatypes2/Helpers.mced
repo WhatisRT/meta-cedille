@@ -39,3 +39,39 @@ infix "⊎" := Sum.
 
 elet recursionTripleSum [A, B, C, D : *] (a : A -> D) (b : B -> D) (c : C -> D) (x : A ⊎ B ⊎ C) : D :=
   recursionSum ?_ ?_ ?_ a (recursionSum ?_ ?_ ?_ b c) x.
+
+elet genFreshPrefix (ns : List Name) : Name -> Name :=
+  recursionNat ?(List Name -> Name -> Name)
+    (λ _ : List Name. λ n : Name. n)
+    (λ _ : Nat. λ rec : List Name -> Name -> Name. λ ns' : List Name. λ n : Name.
+      ψ n' = stringApp n "'" : Name. ψ n0 = stringApp n "0" : Name.
+      ifthenelse ?_ (isNil ?_ ns') n
+        (ifthenelse ?Name (natLt (length ?_ (filter ?_ (isPrefix n') ns')) (length ?_ ns'))
+          (rec (filter ?_ (isPrefix n') ns') n')
+          (rec (filter ?_ (isPrefix n0) ns') n0)))
+    (length ?_ ns) ns.
+
+-- FIXME: this is slower than it needs to be
+let remDup [A : *] (eq : A -> A -> Bool) : List A -> List A :=
+  recursionList' ?A ?(List A) [A|]
+    (λ a : A. λ rec : List A. cons ?A a $ filter ?A (λ a' : A. not $ eq a a') rec).
+
+elet varName (v : Var) : Maybe Name :=
+  v ?(Maybe Name) (λ n : Name. just ?_ n) (λ _ : DBIndex. nothing ?Name).
+
+elet termNonFreshNames (t : Term) : List Name :=
+  remDup ?_ stringEq $ recursionTerm ?_
+    (λ v : Var. maybeToList ?_ $ varName v)
+    (λ _ : Sort. [Name|])
+    (λ _ : Binder. λ n : Name. λ _, _ : Term. λ rect, recT : List Name. n ∷ app ?_ rect recT)
+    (λ _ : Term. λ _ : List App. λ rect : List Name. λ recapp : List (Bool × List Name).
+      app ?_ rect (concat ?_ (map ?_ ?_ (pr2 ?Bool ?(List Name)) recapp)))
+    (λ _ : Char. [Name|])
+    [Name|]
+    (λ _ : Term. λ _ : List Name. [Name|])
+    t.
+
+elet telNonFreshNames (t : Telescope) : List Name :=
+  remDup ?_ stringEq $ concat ?_ $ map ?_ ?_
+    (λ p : Param. paramName p ∷ termNonFreshNames (paramType p))
+    t.

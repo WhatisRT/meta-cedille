@@ -426,7 +426,7 @@ elet DefineIndScheme (pn, xn : Name) (d : Desc) : LetInfo :=
 --------------------------------------------------------------------------------
 -- Define All
 
-elet DefineTy (an, bn, cn, pn, qn, rn, rn', xn, yn, zn : Name) (d : Desc) : Eval Unit :=
+elet DefineTy' (an, bn, cn, pn, qn, rn, rn', xn, yn, zn : Name) (d : Desc) : Eval Unit :=
   defineMulti $ concat ?_ [List LetInfo
     | [LetInfo| DescToF qn rn d ]
     ; DescToFCtors qn rn d
@@ -442,8 +442,20 @@ elet DefineTy (an, bn, cn, pn, qn, rn, rn', xn, yn, zn : Name) (d : Desc) : Eval
     ; [LetInfo| RollLR xn d ; ToLRLI d ; RecLRLI pn xn d ]
     ].
 
-elet DefineInd (hn, pn, xn : Name) (d : Desc) : Eval Unit :=
+elet DefineInd' (hn, pn, xn : Name) (d : Desc) : Eval Unit :=
   defineMulti $ concat ?_ [List LetInfo
   | DescToIndPfs hn pn xn d
   ; [LetInfo| DefineIndScheme pn xn d ]
   ].
+
+let DefineTy (d : Desc) : Eval Unit :=
+  ψ ns = genFreshD/ns d : List Name.
+  DefineTy' (genFreshPrefix ns "A") (genFreshPrefix ns "B") (genFreshPrefix ns "c")
+            (genFreshPrefix ns "Q") (genFreshPrefix ns "P") (genFreshPrefix ns "R")
+            (genFreshPrefix ns "r")
+            (genFreshPrefix ns "x") (genFreshPrefix ns "y") (genFreshPrefix ns "z")
+            d.
+
+let DefineInd (d : Desc) : Eval Unit :=
+  ψ ns = genFreshD/ns d : List Name.
+  DefineInd' (genFreshPrefix ns "h") (genFreshPrefix ns "P") (genFreshPrefix ns "x") d.

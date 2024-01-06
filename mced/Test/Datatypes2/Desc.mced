@@ -2,8 +2,6 @@
 -- Descriptions of inductive datatypes
 --------------------------------------------------------------------------------
 
--- FIXME: prevent name clashes!
-
 -- Currently missing:
 -- - Indices
 -- - PIs in constructors
@@ -89,6 +87,21 @@ let Desc := Name
 elet DescName (d : Desc) : Name := pr1 ?_ ?(Telescope × List CDesc) d.
 elet DescTel (d : Desc) : Telescope := pr1 ?Telescope ?(List CDesc) $ pr2 ?_ ?(Telescope × List CDesc) d.
 elet DescCs (d : Desc) : List CDesc := pr2 ?Telescope ?(List CDesc) $ pr2 ?_ ?(Telescope × List CDesc) d.
+
+--------------------------------------------------------------------------------
+-- genFreshD: generate a name which doesn't appear as a prefix in a Desc
+
+elet genFreshD/adNs : ADesc -> List Name := recursionTripleSum ?_ ?_ ?_ ?_
+  termNonFreshNames
+  (λ _ : Unit. [Name|])
+  (recursionProduct ?_ ?_ ?_ (λ t, t' : Term. app ?_ (termNonFreshNames t) (termNonFreshNames t'))).
+
+elet genFreshD/ns (d : Desc) : List Name :=
+  remDup ?_ stringEq $ DescName d ∷ app ?_ (telNonFreshNames (DescTel d)) $ concat ?_ $
+    map ?_ ?_ (λ c : CDesc. CDescName c ∷ concat ?_ $ map ?_ ?_ genFreshD/adNs (CDescAs c)) (DescCs d).
+
+elet genFreshD (d : Desc) : Name -> Name :=
+  genFreshPrefix (genFreshD/ns d).
 
 --------------------------------------------------------------------------------
 -- castCtor: convert a term of type F1 R -> ... -> Fn R -> X to F1 S -> ... -> Fn S -> X
