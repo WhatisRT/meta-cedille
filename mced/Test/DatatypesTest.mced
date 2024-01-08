@@ -10,6 +10,6 @@ importModule DatatypesTest:Maybe.
 importModule DatatypesTest:Nat.
 importModule DatatypesTest:NatConversions.
 importModule DatatypesTest:List.
-importModule DatatypesTest:Category.
+-- importModule DatatypesTest:Category.
 
 endModule.

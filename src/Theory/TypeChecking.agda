@@ -166,16 +166,8 @@ module StringErr ⦃ _ : Monad M ⦄ ⦃ _ : MonadExcept M String ⦄ where
         compareHnfs t@(Ev m x) t'@(Ev m' x') with m ≟ m'
         ... | yes refl = void $ primMetaArgsSequence $ primMetaArgsZipWith (checkβηPure' n) x x'
         ... | no  _    = hnfError t t'
-        -- compareHnfs (Lam-P _ _ t) t₁ = checkβηPure' n t (weakenBy 1 t₁ ⟪$⟫ BoundVar 0)
-        -- compareHnfs t (Lam-P _ _ t₁) = checkβηPure' n (weakenBy 1 t ⟪$⟫ BoundVar 0) t₁
-        compareHnfs (Lam-P _ _ t) t₁ = case N.normalize Γ t of λ where
-          t''@(App _ t' (Var (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
-            then (compareHnfs (strengthen t') t₁) else hnfError t'' t₁
-          t'' → hnfError t'' t₁
-        compareHnfs t (Lam-P _ _ t₁) = case N.normalize Γ t₁ of λ where
-          t''@(App _ t' (Var (Bound i))) → if i ≣ 0 ∧ validInContext t' Γ
-            then (compareHnfs t (strengthen t')) else hnfError t t''
-          t'' → hnfError t t''
+        compareHnfs (Lam-P _ _ t) t₁ = checkβηPure' n t (weakenBy 1 t₁ ⟪$⟫ BoundVar 0)
+        compareHnfs t (Lam-P _ _ t₁) = checkβηPure' n (weakenBy 1 t ⟪$⟫ BoundVar 0) t₁
         {-# CATCHALL #-}
         compareHnfs t t' = hnfError t t'
 
