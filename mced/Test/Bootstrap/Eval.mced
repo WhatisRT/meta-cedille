@@ -1,7 +1,7 @@
 module Bootstrap:Eval.
 
 Given M returnMeta bindMeta mapMeta.
-Given primLet primAnnLet primSetEval primShellCmd primCheckTerm primParse primHeadNormalize primNormalize primInferType primGetEval primPrint primWriteFile primCommandLine primSetDebug primImport catchErr.
+Given primLet primAnnLet primSetEval primShellCmd primCheckTerm primParse primHeadNormalize primNormalize primInferType primGetEval primPrint primWriteFile primCommandLine primSetDebug primImport primGetDef catchErr.
 
 importModule Bootstrap:Builtins.
 importModule Bootstrap:Bool.
@@ -283,8 +283,8 @@ let printLineEval (s : String) : Eval Unit := printEval φ"${s}\n".
 
 let printConcatEval (s : List String) : Eval Unit := printEval (stringConcat s).
 
--- NOTE: this doesn't currently return the actual definition, just something equivalent
-let getDef (n : String) : Eval Term := headNormalize (sVarTerm n).
+let getDef (n : String) : Eval Term :=
+  liftMtoEval ?Term (mapMeta ?iTerm ?Term initTermToTerm (primGetDef n)).
 
 --------------------------------------------------------------------------------
 -- Statements are just special Eval computations that don't produce a result

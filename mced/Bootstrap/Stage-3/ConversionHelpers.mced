@@ -14,7 +14,7 @@ b-let cedilleTerm1 (s : String) (t : Term) := appSingle (sVarTerm s) t.
 b-let cedilleTerm2 (s : String) (t, t' : Term) := appDouble (sVarTerm s) t t'.
 b-let cedilleTerm3 (s : String) (t, t', t'' : Term) := appSingle (appDouble (sVarTerm s) t t') t''.
 
-b-let initTermToTerm (t : iTerm) := t ?Term
+b-let initTermToTerm (t : iTerm) : Term := t ?Term
   varTerm sortTerm
     (λ c : Const. c ?Term (sVarTerm "Char") charTerm (sVarTerm "charEq")
       (sVarTerm "M") (sVarTerm "bindM") (sVarTerm "pureM") (sVarTerm "catchErr") (sVarTerm "fix"))
@@ -30,7 +30,7 @@ b-let initTermToTerm (t : iTerm) := t ?Term
     -- Zetas
     nothingTerm2 nothingTerm3 nothingTerm3 nothingTerm2 nothingTerm2
     nothingTerm3 nothingTerm1 nothingTerm1 nothingTerm1 nothingTerm1
-    nothingTerm nothingTerm1 nothingTerm2 nothingTerm nothingTerm1.
+    nothingTerm nothingTerm1 nothingTerm2 nothingTerm nothingTerm1 nothingTerm1.
 
 -- assuming no unknowns in f and no recursive unknowns in app, infer
 -- unknowns in app and return the applied term

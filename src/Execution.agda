@@ -153,6 +153,7 @@ module _ {M : Set → Set} {{_ : Monad M}}
   showPrimMetaSˢ {WriteFile} (t , t₁) = "WriteFile (" + show t <+> "," <+> show t₁ + ")"
   showPrimMetaSˢ {CommandLine} _ = "CommandLine (" + "" + ")"
   showPrimMetaSˢ {SetDebug} _ = "SetDebug (" + "" + ")"
+  showPrimMetaSˢ {GetDef} t = "GetDef (" + show t + ")"
 
   convertPrimArgs : (m : PrimMeta) → primMetaArgs PureTerm m → M (primMetaSˢ m)
   convertPrimArgs Let (t , t₁) = do
@@ -203,6 +204,9 @@ module _ {M : Set → Set} {{_ : Monad M}}
   convertPrimArgs CommandLine _ = return _
   convertPrimArgs SetDebug t = do
     t ← (M (List String) ∋ unquoteFromTerm t)
+    return t
+  convertPrimArgs GetDef t = do
+    t ← (M String ∋ unquoteFromTerm t)
     return t
 
 module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
@@ -328,6 +332,13 @@ module ExecutionDefs {M : Set → Set} {{_ : Monad M}}
   executePrimitive SetDebug opts = do
     menv ← getMeta
     returnQuoted =<< setMeta record menv { doDebug = opts }
+
+  executePrimitive GetDef n = do
+    Γ ← getContext
+    case (lookupInContext (Free n) Γ) of λ where
+      nothing → throwError (n <+> "is not a defined name!")
+      (just record { def = nothing }) → throwError (n <+> "is a postulate!")
+      (just record { def = (just t) }) → returnQuoted t
 
   executeBootstrapStmt (Let n t T) = do
     T ← case T of λ where

@@ -1,6 +1,6 @@
 let genEscapeCode := λ s : String [[stringCons κ] [[stringCons κ[] [[stringApp s] [[stringCons κm] stringNil]]]] : Π s : String String.
-let resetCode := Λ X : * λ sc : Π _ : Char Π _ : X X λ sn : X [[sc κ] [[<[[stringCons κ[] [[stringApp [[stringCons κ0] stringNil]] [[stringCons κm] stringNil]]] X> sc] sn]] : String.
-let backspaceCode := Λ X : * λ sc : Π _ : Char Π _ : X X λ sn : X [[sc κ] [[<stringNil X> sc] sn]] : String.
+let resetCode := [genEscapeCode [[stringCons κ0] stringNil]] : String.
+let backspaceCode := [[stringCons κ] stringNil] : String.
 let undoPrint := λ s : String [stringConcat [[<replicate String> backspaceCode] [stringLength s]]] : Π s : String String.
 let evalWithProgress := Λ T : * λ progress : String λ done : String λ x : [Eval T] [[<<seqEval Unit> T> [printEval progress]] [[<<bindEval T> T> x] λ x' : T [[<<seqEval Unit> T> [[<<seqEval Unit> Unit> [printEval [undoPrint progress]]] [printEval done]]] [<pureEval T> x']]]] : ∀ T : * Π progress : String Π done : String Π x : [Eval T] [Eval T].
 let ANSI8Color := ∀ X : * Π _ : X Π _ : X Π _ : X Π _ : X Π _ : X Π _ : X Π _ : X Π _ : X X : *.
@@ -26,7 +26,7 @@ let LogTypeDebug := Λ X : * λ debug : X λ info : X λ warn : X λ error : X d
 let LogTypeInfo := Λ X : * λ debug : X λ info : X λ warn : X λ error : X info : ∀ X : * Π debug : X Π info : X Π warn : X Π error : X X.
 let LogTypeWarn := Λ X : * λ debug : X λ info : X λ warn : X λ error : X warn : ∀ X : * Π debug : X Π info : X Π warn : X Π error : X X.
 let LogTypeError := Λ X : * λ debug : X λ info : X λ warn : X λ error : X error : ∀ X : * Π debug : X Π info : X Π warn : X Π error : X X.
-let currentLogType := λ e : EvalEnv λ s : EvalState [<returnMeta [[Product ∀ X : * Π debug : X Π info : X Π warn : X Π error : X X] EvalState]> [[<<prodPair ∀ X : * Π debug : X Π info : X Π warn : X Π error : X X> EvalState> LogTypeDebug] s]] : [Eval LogType].
+let currentLogType := [<pureEval ∀ X : * Π debug : X Π info : X Π warn : X Π error : X X> LogTypeDebug] : [Eval LogType].
 let doPrintLogType := λ t : LogType [[[[<t [Eval Bool]> [<pureEval Bool> true]] [[<<mapEval EvalState> Bool> λ s : EvalState [getPrintInfo [getEvalOpts s]]] getEval]] [<pureEval Bool> true]] [<pureEval Bool> true]] : Π t : LogType [Eval Bool].
 let debugPrint := λ t : LogType λ level : Nat λ m : String [[<<bindEval Bool> Unit> [doPrintLogType t]] λ b : Bool [[[<ifthenelse [Eval Unit]> b] [printLineEval m]] [<pureEval Unit> tt]]] : Π t : LogType Π level : Nat Π m : String [Eval Unit].
 let showLetInfo := λ i : LetInfo [[stringApp [letInfoName i]] [[stringCons κ ] [[stringCons κ:] [[stringCons κ=] [[stringCons κ ] [[stringApp [showTerm [letInfoTerm i]]] [[stringApp [[[<<maybe Term> String> stringNil] λ T : Term [[stringCons κ ] [[stringCons κ:] [[stringCons κ ] [[stringApp [showTerm T]] stringNil]]]]] [letInfoType i]]] [[stringCons κ

@@ -267,8 +267,8 @@ b-let printLineEval (s : String) : Eval Unit := printEval φ"${s}\n".
 
 b-let printConcatEval (s : List String) : Eval Unit := printEval (stringConcat s).
 
--- NOTE: this doesn't currently return the actual definition, just something equivalent
-b-let getDef (n : String) : Eval Term := headNormalize (sVarTerm n).
+b-let getDef (n : String) : Eval Term :=
+  liftMtoEval ?Term (mapMeta ?iTerm ?Term initTermToTerm (primGetDef n)).
 
 --------------------------------------------------------------------------------
 -- Statements are just special Eval computations that don't produce a result

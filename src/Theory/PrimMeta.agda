@@ -33,6 +33,7 @@ data PrimMeta : Set where
   WriteFile     : PrimMeta
   CommandLine   : PrimMeta
   SetDebug      : PrimMeta
+  GetDef        : PrimMeta
 
 private
   variable
@@ -41,7 +42,7 @@ private
 instance
   PrimMeta-Listable : Listable PrimMeta
   PrimMeta-Listable = record
-    { listing = Let ∷ AnnLet ∷ SetEval ∷ ShellCmd ∷ CheckTerm ∷ Parse ∷ Normalize ∷ HeadNormalize ∷ InferType ∷ Import ∷ GetEval ∷ Print ∷ WriteFile ∷ CommandLine ∷ SetDebug ∷ []
+    { listing = Let ∷ AnnLet ∷ SetEval ∷ ShellCmd ∷ CheckTerm ∷ Parse ∷ Normalize ∷ HeadNormalize ∷ InferType ∷ Import ∷ GetEval ∷ Print ∷ WriteFile ∷ CommandLine ∷ SetDebug ∷ GetDef ∷ []
     ; complete = λ where
         Let           → pf 0 (here refl)
         AnnLet        → pf 1 (here refl)
@@ -58,6 +59,7 @@ instance
         WriteFile     → pf 12 (here refl)
         CommandLine   → pf 13 (here refl)
         SetDebug      → pf 14 (here refl)
+        GetDef        → pf 15 (here refl)
     }
     where pf = listable-pf-helper
 
@@ -83,6 +85,7 @@ instance
   PrimMeta-Show .show WriteFile     = "WriteFile"
   PrimMeta-Show .show CommandLine   = "CommandLine"
   PrimMeta-Show .show SetDebug      = "SetDebug"
+  PrimMeta-Show .show GetDef        = "GetDef"
 
 primMetaArityF : PrimMeta → Fin 5
 primMetaArityF Let           = 2F
@@ -100,6 +103,7 @@ primMetaArityF Print         = 1F
 primMetaArityF WriteFile     = 2F
 primMetaArityF CommandLine   = 0F
 primMetaArityF SetDebug      = 1F
+primMetaArityF GetDef        = 1F
 
 primMetaArity : PrimMeta → ℕ
 primMetaArity m = toℕ $ primMetaArityF m
@@ -170,6 +174,7 @@ module Types {T} (FreeVar : String → T) (⋆ : T) (appT : T → T → T) where
   primMetaSᵘ WriteFile     = (uString , uString)
   primMetaSᵘ CommandLine   = _
   primMetaSᵘ SetDebug      = uStringList
+  primMetaSᵘ GetDef        = uString
 
   primMetaS : (m : PrimMeta) → primMetaArgs T m
   primMetaS m = mapPrimMetaArgs ⟦_⟧ᵗ (primMetaSᵘ m)
@@ -190,3 +195,4 @@ module Types {T} (FreeVar : String → T) (⋆ : T) (appT : T → T → T) where
   primMetaT WriteFile _       = tUnit
   primMetaT CommandLine _     = tStringList
   primMetaT SetDebug _        = tUnit
+  primMetaT GetDef _          = tTerm
