@@ -46,11 +46,12 @@ b-let telescopeFromType : Term -> Product Telescope Term :=
     (λ v : Var. telescopeFromTypeHelper (varTerm v))
     (λ s : Sort. telescopeFromTypeHelper (sortTerm s))
     (λ b : Binder. λ n : String. λ t, t' : Term. λ rect, rect' : Product Telescope Term.
-      b ?(Product Telescope Term)
+      matchBinder ?(Product Telescope Term)
         (telescopeFromTypeHelper (lambdaTerm n t t'))
         (telescopeFromTypeHelper (LambdaTerm n t t'))
         (productMap1 ?Telescope ?Term ?Telescope (telCons n t) rect')
-        (productMap1 ?Telescope ?Term ?Telescope (telConsE n t) rect'))
+        (productMap1 ?Telescope ?Term ?Telescope (telConsE n t) rect')
+        b)
     (λ t : Term. λ app : List App.
      λ _ : Product Telescope Term. λ _ : List (Product Bool (Product Telescope Term)).
        telescopeFromTypeHelper (appLTerm t app))

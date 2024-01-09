@@ -26,21 +26,21 @@ b-let showIndex (i : DBIndex) : String :=
 b-let showVar (con : List String) (v : Var) : String :=
   v ?String (λ s : String. s) (λ i : init$index. lookupDefault ?String (indexToNat i) (showIndex i) con).
 b-let showSort (s : Sort) : String := s ?String "*" "□".
-b-let showBinder (b : Binder) : String := b ?String "λ" "Λ" "Π" "∀".
+b-let showBinder (b : Binder) : String := matchBinder ?String "λ" "Λ" "Π" "∀" b.
 
 b-let emptyName (n : String) : Bool := or (stringEq n "") (stringEq n "_").
-b-let isArrow (b : Binder) : Bool := b ?Bool false false true true.
-b-let showBinderArrow (b : Binder) : String := b ?String "λ is not an arrow!" "Λ is not an arrow!" "->" "=>".
+b-let isArrow (b : Binder) : Bool := matchBinder ?Bool false false true true b.
+b-let showBinderArrow (b : Binder) : String := matchBinder ?String "λ is not an arrow!" "Λ is not an arrow!" "->" "=>" b.
 
-b-let needsParens (t : Term) : Bool :=
-  t ?Bool
+b-let needsParens : Term -> Bool :=
+  matchTerm ?Bool
     (λ _ : Var. false)
     (λ _ : Sort. false)
-    (λ _ : Binder. λ _ : String. λ _, _ : Bool. true)
-    (λ _ : Bool. λ _ : List (Product Bool Bool). true)
+    (λ _ : Binder. λ _ : String. λ _, _ : Term. true)
+    (λ _ : Term. λ _ : List (Product Bool Term). true)
     (λ _ : Char. false)
     false
-    (λ _ : Bool. false).
+    (λ _ : Term. false).
 
 b-let wrapWithParens (s : String) : String := φ"(${s})".
 

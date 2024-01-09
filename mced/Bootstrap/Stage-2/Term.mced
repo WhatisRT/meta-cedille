@@ -5,90 +5,20 @@
 -- Others: use *, □, "...", (...), {Π ∀ λ Λ} x1, ..., xn : T. t,
 --------------------------------------------------------------------------------
 
-let Binder := ∀ X : * Π _ : X Π _ : X Π _ : X Π _ : X X.
-let lambdaBinder := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X lambda.
-let LambdaBinder := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X Lambda.
-let piBinder := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X pi.
-let forallBinder := Λ X : * λ lambda : X λ Lambda : X λ pi : X λ forall : X forall.
+import Bootstrap/Compiled/TermC.
 
-let Term := ∀ X : *
-  Π _ : (Π _ : Var X)
-  Π _ : (Π _ : Sort X)
-  Π _ : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
-  Π _ : (Π _ : X Π _ : [List [[Product Bool] X]] X)
-  Π _ : (Π _ : Char X)
-  Π _ : X
-  Π _ : (Π _ : X X) X.
+let App := [[Product Bool] Term].
+let mkApp := <<prodPair Bool> Term>.
+let mkAppU := [<<prodPair Bool> Term> false].
+let mkAppE := [<<prodPair Bool> Term> true].
+let appErased := <<pr1 Bool> Term>.
+let appTerm := <<pr2 Bool> Term>.
 
-let varTerm := λ var : Var Λ X : *
-  λ v : (Π _ : Var X)
-  λ _ : (Π _ : Sort X)
-  λ _ : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
-  λ _ : (Π _ : X Π _ : [List [[Product Bool] X]] X)
-  λ _ : (Π _ : Char X)
-  λ _ : X
-  λ _ : (Π _ : X X) [v var] : Π _ : Var Term.
+let matchBinder := Λ X : * <indBinder λ _ : Binder X>.
 
-let sortTerm := λ sort : Sort Λ X : *
-  λ _ : (Π _ : Var X)
-  λ s : (Π _ : Sort X)
-  λ _ : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
-  λ _ : (Π _ : X Π _ : [List [[Product Bool] X]] X)
-  λ _ : (Π _ : Char X)
-  λ _ : X
-  λ _ : (Π _ : X X) [s sort] : Π _ : Sort Term.
-
-let binderTerm := λ binder : Binder λ name : String λ T : Term λ t : Term Λ X : *
-  λ v : (Π _ : Var X)
-  λ s : (Π _ : Sort X)
-  λ b : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
-  λ a : (Π _ : X Π _ : [List [[Product Bool] X]] X)
-  λ k : (Π _ : Char X)
-  λ x : X
-  λ u : (Π _ : X X) [[[[b binder] name] [[[[[[[<T X> v] s] b] a] k] x] u]] [[[[[[[<t X> v] s] b] a] k] x] u]]
-    : Π _ : Binder Π _ : String Π _ : Term Π _ : Term Term.
-
-let appLTerm := λ t : Term λ l : [List [[Product Bool] Term]] Λ X : *
-  λ v : (Π _ : Var X)
-  λ s : (Π _ : Sort X)
-  λ b : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
-  λ a : (Π _ : X Π _ : [List [[Product Bool] X]] X)
-  λ k : (Π _ : Char X)
-  λ x : X
-  λ u : (Π _ : X X)
-    [[a [[[[[[[<t X> v] s] b] a] k] x] u]]
-        [[<<map [[Product Bool] Term]> [[Product Bool] X]>
-          [<<<recursionProduct Bool> Term> [[Product Bool] X]>
-            λ b' : Bool λ t : Term [[<<prodPair Bool> X> b'] [[[[[[[<t X> v] s] b] a] k] x] u]]]]
-          l]]
-      : Π _ : Term Π _ : [List [[Product Bool] Term]] Term.
-
-let charTerm := λ c : Char Λ X : *
-  λ _ : (Π _ : Var X)
-  λ _ : (Π _ : Sort X)
-  λ _ : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
-  λ _ : (Π _ : X Π _ : [List [[Product Bool] X]] X)
-  λ k : (Π _ : Char X)
-  λ _ : X
-  λ _ : (Π _ : X X) [k c] : Π _ : Char Term.
-
-let unknownTerm := Λ X : *
-  λ v : (Π _ : Var X)
-  λ s : (Π _ : Sort X)
-  λ b : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
-  λ a : (Π _ : X Π _ : [List [[Product Bool] X]] X)
-  λ k : (Π _ : Char X)
-  λ x : X
-  λ u : (Π _ : X X) x : Term.
-
-let unquoteTerm := λ t : Term Λ X : *
-  λ v : (Π _ : Var X)
-  λ s : (Π _ : Sort X)
-  λ b : (Π _ : Binder Π _ : String Π _ : X Π _ : X X)
-  λ a : (Π _ : X Π _ : [List [[Product Bool] X]] X)
-  λ k : (Π _ : Char X)
-  λ x : X
-  λ u : (Π _ : X X) [u [[[[[[[<t X> v] s] b] a] k] x] u]] : Π _ : Term Term.
+let appLTerm := λ t : Term λ app : [List App]
+  [[appLTerm' t] [[<<map App> Term> λ a : App [[argTerm [appErased a]] [appTerm a]]] app]]
+  : Π t : Term Π app : [List App] Term.
 
 let sVarTerm := λ s : String [varTerm [init$var$_string_ s]].
 let iVarTerm := λ i : init$index [varTerm [init$var$_index_ i]].
@@ -111,28 +41,21 @@ let appToQuotedApp := λ t : iTerm [<<<recursionProduct Bool> iTerm> iTerm>
 
 let foldWithApp := [<<foldl App'> iTerm> appToQuotedApp] : Π _ : [List App'] Π _ : iTerm iTerm.
 
-let TermToInitTerm := λ t : Term
-  [[[[[[[<t iTerm>
+let TermToInitTerm :=
+  [[[[[[[<foldTerm iTerm>
     λ v : Var [init$term$_var_ v]]
     λ s : Sort [init$term$_sort_ s]]
     λ b : Binder λ n : String λ T : iTerm λ t : iTerm
-      [[[[[[[<b Π _ : String Π _ : iTerm Π _ : iTerm iTerm>
+      [[[[[[[[<matchBinder Π _ : String Π _ : iTerm Π _ : iTerm iTerm>
         quote$lambda]
         quote$Lambda]
         quote$Pi]
-        quote$forall] n] T] t]]
+        quote$forall] b] n] T] t]]
     λ t : iTerm λ l : [List App'] [[foldWithApp [<reverse App'> l]] t]]
     λ c : Char [quote$kappa c]]
     quote$sq]
     λ u : iTerm quote$sq]
   : Π _ : Term iTerm.
-
-let App := [[Product Bool] Term].
-let mkApp := <<prodPair Bool> Term>.
-let mkAppU := [<<prodPair Bool> Term> false].
-let mkAppE := [<<prodPair Bool> Term> true].
-let appErased := <<pr1 Bool> Term>.
-let appTerm := <<pr2 Bool> Term>.
 
 let appSingle := λ t : Term λ t' : Term [[appLTerm t] [<pureList App> [mkAppU t']]].
 let appSingleE := λ t : Term λ t' : Term [[appLTerm t] [<pureList App> [mkAppE t']]].

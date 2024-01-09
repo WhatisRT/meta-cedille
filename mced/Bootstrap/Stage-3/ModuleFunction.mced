@@ -3,8 +3,8 @@ b-let renameVar (boundNames : List String) (f : String -> String) (v : Var) : Va
     (λ s : String. init$var$_string_ (ifthenelse ?String (isMember ?String stringEq boundNames s) s (f s)))
     init$var$_index_.
 
-b-let renameNamesInTermHelper (f : String -> String) (t : Term) : List String -> Term :=
-  t ?(List String -> Term)
+b-let renameNamesInTermHelper (f : String -> String) : Term -> List String -> Term :=
+  foldTerm ?(List String -> Term)
     (λ v : Var. λ boundNames : List String. varTerm (renameVar boundNames f v))
     (λ s : Sort. λ _ : List String. sortTerm s)
     (λ b : Binder. λ n : String. λ T, t : List String -> Term. λ boundNames : List String.

@@ -59,16 +59,6 @@ b-let countToZeroExc (n : Nat) :=
     (λ m : Nat. λ rec : List Nat. cons ?Nat m rec)
     n.
 
-b-let zipWith [A, B, C : *] (f : A -> B -> C) (l : List A) (l' : List B) : List C :=
-  recursionList' ?A ?(List B -> List C)
-    (λ _ : List B. [C|])
-    (λ a : A. λ rec : List B -> List C.
-      matchList' ?B ?(List C) [C|] (λ b : B. λ bs : List B. cons ?C (f a b) (rec bs)))
-    l l'.
-
-b-let zip [A, B : *] (l : List A) (l' : List B) : List (Product A B) :=
-  zipWith ?A ?B ?(Product A B) (prodPair ?A ?B) l l'.
-
 b-let zipWith3 [A, B, C, D : *] (f : A -> B -> C -> D) (l : List A) (l' : List B) (l'' : List C) : List D :=
   zipWith ?A ?(Product B C) ?D (λ a : A. λ bc : Product B C. f a (pr1 ?B ?C bc) (pr2 ?B ?C bc)) l (zip ?B ?C l' l'').
 

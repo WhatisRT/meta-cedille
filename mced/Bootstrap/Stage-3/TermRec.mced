@@ -23,52 +23,12 @@ b-let distList [X, Y, Z : *]
                      (cons ?(Product X Y) (prodPair ?X ?Y x y) l)
                      (cons ?(Product X Z) (prodPair ?X ?Z x z) r)).
 
-b-let recursionTerm [X : *]
-  (fvar  : Var -> X)
-  (fsort : Sort -> X)
-  (fbind : Binder -> String -> Term -> Term -> X -> X -> X)
-  (fapp  : Term -> List App -> X -> List (Product Bool X) -> X)
-  (fchar : Char -> X)
-  (funk  : X)
-  (funq  : Term -> X -> X)
-  (term  : Term) : X :=
-  pr1 ?X ?Term (term ?(Product X Term)
-    (λ v : Var. prodPair ?X ?Term (fvar v) (varTerm v))
-    (λ s : Sort. prodPair ?X ?Term (fsort s) (sortTerm s))
-    (λ b : Binder. λ n : String. recursionProduct ?X ?Term ?(Product X Term -> Product X Term)
-      λ T1 : X. λ T2 : Term. recursionProduct ?X ?Term ?(Product X Term)
-      λ t1 : X. λ t2 : Term. prodPair ?X ?Term (fbind b n T2 t2 T1 t1) (binderTerm b n T2 t2))
-    (recursionProduct ?X ?Term ?(List (Product Bool (Product X Term)) -> Product X Term)
-      λ t1 : X. λ t2 : Term. λ l : List (Product Bool (Product X Term)).
-      recursionProduct ?(List (Product Bool X)) ?(List (Product Bool Term)) ?(Product X Term)
-        (λ l1 : List (Product Bool X). λ l2 : List (Product Bool Term).
-          prodPair ?X ?Term (fapp t2 l2 t1 l1) (appLTerm t2 l2)) (distList ?Bool ?X ?Term l))
-    (λ c : Char. prodPair ?X ?Term (fchar c) (charTerm c))
-    (prodPair ?X ?Term funk unknownTerm)
-    (recursionProduct ?X ?Term ?(Product X Term) λ u1 : X. λ u2 : Term.
-      prodPair ?X ?Term (funq u2 u1) (unquoteTerm u2))).
-
-b-let matchTerm [X : *]
-  (fvar  : Var -> X)
-  (fsort : Sort -> X)
-  (fbind : Binder -> String -> Term -> Term -> X)
-  (fapp  : Term -> List App -> X)
-  (fchar : Char -> X)
-  (funk  : X)
-  (funq  : Term -> X) : Term -> X :=
-  recursionTerm ?X
-    fvar fsort
-    (λ b : Binder. λ n : String. λ T, t : Term. λ _, _ : X. fbind b n T t)
-    (λ t : Term. λ app : List App. λ _ : X. λ _ : List (Product Bool X). fapp t app)
-    fchar funk
-    (λ t : Term. λ _ : X. funq t).
-
 b-let stripLambda : Term -> Maybe Term :=
   matchTerm ?(Maybe Term)
     (λ _ : Var. nothing ?Term)
     (λ _ : Sort. nothing ?Term)
     (λ b : Binder. λ _ : String. λ T, t : Term.
-      b ?(Maybe Term) (just ?Term t) (just ?Term t) (nothing ?Term) (nothing ?Term))
+      matchBinder ?(Maybe Term) (just ?Term t) (just ?Term t) (nothing ?Term) (nothing ?Term) b)
     (λ _ : Term. λ _ : List App. nothing ?Term)
     (λ _ : Char. nothing ?Term)
     (nothing ?Term)
@@ -84,7 +44,7 @@ b-let stripPi : Term -> Maybe Term :=
     (λ _ : Var. nothing ?Term)
     (λ _ : Sort. nothing ?Term)
     (λ b : Binder. λ _ : String. λ T, t : Term.
-      b ?(Maybe Term) (nothing ?Term) (nothing ?Term) (just ?Term t) (nothing ?Term))
+      matchBinder ?(Maybe Term) (nothing ?Term) (nothing ?Term) (just ?Term t) (nothing ?Term) b)
     (λ _ : Term. λ _ : List App. nothing ?Term)
     (λ _ : Char. nothing ?Term)
     (nothing ?Term)

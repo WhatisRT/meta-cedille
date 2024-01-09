@@ -1,16 +1,6 @@
 let usubstC [A : *] [p, q : A] [eq : UEq ?A ?A p q] [P : A -> *] : Cast (P p) (P q) :=
   intrCast ?(P p) ?(P q) ?(usubst ?A ?q ?p ?(usym ?A ?p ?q eq) ?P) ?(beta ?(P p)).
 
-let monoConst [Z : *] : Mono (λ _ : *. Z) := Λ X, Y : *. λ c : Cast X Y.
-  intrCast ?Z ?Z ?(λ z : Z. z) ?(beta ?Z).
-
-let monoId : Mono (λ Z : *. Z) := Λ X, Y : *. λ c : Cast X Y.
-  intrCast ?X ?Y ?(λ x : X. elimCast ?X ?Y ?c x) ?(beta ?X).
-
-let MonoD (F : * -> *) (FP : Π X : *. F X -> *) (monoF : Mono F) :=
-  ∀ Y1, Y2 : *. Π c : Cast Y1 Y2. Π y : F Y1.
-    Cast (FP Y1 y) (FP Y2 (elimCast ?(F Y1) ?(F Y2) ?(monoF ?Y1 ?Y2 c) y)).
-
 let iotaMono' (F : * -> *) (FP : Π X : *. F X -> *) (monoF : Mono F) (monoFP : MonoD F FP monoF)
   : Mono (λ X : *. Iota (F X) (FP X))
   := iotaMono F FP monoF monoFP.

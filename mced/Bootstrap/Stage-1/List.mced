@@ -163,3 +163,11 @@ let intersperse :=
   Λ X : * λ x : X λ l : [List X] [[[<<recursionList X> [List X]> <nil X>]
     λ x' : X λ l' : [List X] λ rec : [List X]
       [[[<ifthenelse [List X]> [<isNil X> l']] [<pureList X> x']] [[<cons X> x'] [[<cons X> x] rec]]]] l].
+
+let zipWith := Λ A : * Λ B : * Λ C : * λ f : Π _ : A Π _ : B C λ l : [List A] λ l' : [List B]
+  [[[[<<recursionList' A> Π _ : [List B] [List C]> λ _ : [List B]
+    <nil C>] λ a : A λ rec : Π _ : [List B] [List C]
+    [[<<recursionList B> [List C]> <nil C>] λ b : B λ bs : [List B] λ _ : [List C] [[<cons C> [[f a] b]] [rec bs]]]] l] l']
+  : ∀ A : * ∀ B : * ∀ C : * Π f : Π _ : A Π _ : B C Π l : [List A] Π l' : [List B] [List C].
+
+let zip := Λ A : * Λ B : * [<<<zipWith A> B> [[Product A] B]> <<prodPair A> B>] : ∀ A : * ∀ B : * Π _ : [List A] Π _ : [List B] [List [[Product A] B]].

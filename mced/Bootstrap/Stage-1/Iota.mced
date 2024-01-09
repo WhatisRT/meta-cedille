@@ -6,6 +6,10 @@ let iPair := Λ X : * Λ P : Π _ : X * λ x : X λ p : [P x] λ eq : (= p x)
 let iPr1 := Λ X : * Λ P : Π _ : X * λ x : [[Iota X] P] π x.
 let iPr2 := Λ X : * Λ P : Π _ : X * λ x : [[Iota X] P] ψ x.
 
+let castIota := Λ A : * Λ P : Π _ : A *
+  <<<<intrCast [[Iota A] P]> A> <<iPr1 A> P>> <beta [[Iota A] P]>>
+  : ∀ A : * ∀ P : Π _ : A * [[Cast [[Iota A] P]] A].
+
 let iotaMono := λ F : Π _ : * * λ FP : Π X : * Π _ : [F X] *
   λ monoF : [Mono F]
   λ monoFP : ∀ Y1 : * ∀ Y2 : * Π c : [[Cast Y1] Y2] Π y : [F Y1]

@@ -61,3 +61,15 @@ let castTrans := Λ S : * Λ T : * Λ U : * Λ c1 : [[Cast S] T] Λ c2 : [[Cast 
 
 let Mono := λ F : (Π _ : * *) ∀ X : * ∀ Y : * Π _ : [[Cast X] Y] [[Cast [F X]] [F Y]]
   : Π F : (Π _ : * *) *.
+
+let monoConst := Λ Z : * Λ X : * Λ Y : * λ c : [[Cast X] Y]
+  <<<<intrCast Z> Z> λ z : Z z> <beta Z>>
+  : ∀ Z : * [Mono λ _ : * Z].
+
+let monoId := Λ X : * Λ Y : * λ c : [[Cast X] Y]
+  <<<<intrCast X> Y> λ x : X [<<<elimCast X> Y> c> x]> <beta X>>
+   : [Mono λ Z : * Z].
+
+let MonoD := λ F : Π _ : * * λ FP : Π X : * Π _ : [F X] * λ monoF : [Mono F]
+  ∀ Y1 : * ∀ Y2 : * Π c : [[Cast Y1] Y2] Π y : [F Y1]
+    [[Cast [[FP Y1] y]] [[FP Y2] [<<<elimCast [F Y1]> [F Y2]> [<<monoF Y1> Y2> c]> y]]].

@@ -49,7 +49,8 @@ b-let quoteCharTerm (c : Char) : Term :=
     (quoteChar c).
 
 b-let quoteBinder (b : Binder) : Term :=
-  b ?Term (sVarTerm "lambdaBinder") (sVarTerm "LambdaBinder") (sVarTerm "piBinder") (sVarTerm "forallBinder").
+  matchBinder ?Term (sVarTerm "lambdaBinder") (sVarTerm "LambdaBinder")
+                    (sVarTerm "piBinder") (sVarTerm "forallBinder") b.
 
 b-let quoteBool (b : Bool) : Term := ifthenelse ?Term b (sVarTerm "true") (sVarTerm "false").
 

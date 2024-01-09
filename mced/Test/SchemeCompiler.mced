@@ -29,9 +29,9 @@ let showTermWithContextScheme (t : Term) : List String -> String := recursionTer
   (λ v : Var. λ con : List String. sanitizeNameScheme $ showVar con v)
   (λ s : Sort. λ _ : List String. "'SORT")
   (λ b : Binder. λ n : String. λ _, _ : Term. λ T, t : List String -> String. λ con : List String.
-    b ?String (φ"(lambda (${sanitizeNameScheme n}) ${t $ cons ?String n con})")
-              (φ"(lambda (${sanitizeNameScheme n}) ${t $ cons ?String n con})")
-              "'PI" "'FORALL")
+    matchBinder ?String (φ"(lambda (${sanitizeNameScheme n}) ${t $ cons ?String n con})")
+                        (φ"(lambda (${sanitizeNameScheme n}) ${t $ cons ?String n con})")
+                        "'PI" "'FORALL" b)
   (λ _ : Term. λ la : List App. λ t : List String -> String.
    λ l : List (Bool × (List String -> String)). λ con : List String.
      φ"(${t con}${stringConcat $

@@ -1,0 +1,130 @@
+module Bootstrap:TermC.
+
+Given Desc CDesc ADesc Param nil cons prodPair adNonRec adRecNN adRecN stringNil stringCons.
+Given appLTerm quoteAst sVarTerm App false.
+Given Cast intrCast elimCast monoConst beta beta' Mono MonoD monoId.
+Given Iota iotaMono iPair iPr1 iPr2 castIota.
+Given Rec roll unroll UEq recLB usubst.
+Given Var Sort Char String List Bool.
+Given View elimView selfView extCast indList nilC consC.
+
+let monoList : Mono List := Λ X, Y : *. λ c : Cast X Y.
+  extCast ?(List X) ?(List Y) ?(indList ?X ?(λ l : List X. View (List Y) (beta' ?(List X) l))
+    (selfView ?(List Y) (nilC ?Y))
+    (λ x : X. λ xs : List X. λ pxs : View (List Y) (beta' ?(List X) xs).
+      selfView ?(List Y)
+        (consC ?Y (elimCast ?X ?Y ?c x) (elimView ?(List Y) (beta' ?(List X) xs) ?pxs)))).
+
+elet indHelperList/conv [AP, A : *] [c : Cast AP A] : List AP -> List A :=
+  elimCast ?_ ?_ ?(monoList ?AP ?A c).
+
+elet indHelperList [AP, A : *] [c : Cast AP A] [P : A -> *] (Pc : Π t : AP. P (elimCast ?AP ?A ?c t))
+  [P' : List A -> *] (pn : P' [A|]) (pc : Π t : A. P t -> Π ts : List A. P' ts -> P' (cons ?A t ts))
+  : Π l : List AP. P' (indHelperList/conv ?AP ?A ?c l) :=
+  ψ convN = usubst ?(List A) ?(indHelperList/conv ?AP ?A ?c [AP|]) ?[A|]
+      ?(beta ?(List A) [A|]) ?P' : P' [A|] -> P' (indHelperList/conv ?AP ?A ?c [AP|]).
+  indList ?AP ?(λ l : List AP. P' (indHelperList/conv ?AP ?A ?c l))
+    (convN pn)
+    (λ t : AP. λ ts : List AP. λ p' : P' (indHelperList/conv ?AP ?A ?c ts).
+     usubst ?(List A) ?(indHelperList/conv ?AP ?A ?c (cons ?AP t ts))
+       ?(cons ?A (elimCast ?AP ?A ?c t) (indHelperList/conv ?AP ?A ?c ts))
+       ?(beta ?(List A) (indHelperList/conv ?AP ?A ?c $ cons ?AP t ts)) ?P' $
+       pc (elimCast ?AP ?A ?c t) (Pc t) (indHelperList/conv ?AP ?A ?c ts) p').
+
+elet BinderDesc : Desc := "Binder", [Param|],
+  [CDesc|"lambdaBinder", [ADesc|]
+        ;"LambdaBinder", [ADesc|]
+        ;"piBinder",     [ADesc|]
+        ;"forallBinder", [ADesc|]].
+data2Test BinderDesc.
+
+elet TermDesc : Desc := "Term", [Param|],
+  [CDesc|"varTerm",     [ADesc|adNonRec θ{Var}]
+        ;"sortTerm",    [ADesc|adNonRec θ{Sort}]
+        ;"binderTerm",  [ADesc|adNonRec θ{Binder}; adNonRec θ{String}; adRecNN; adRecNN]
+        ;"appLTerm'",   [ADesc|adRecNN; adRecN (θ{List}, θ{monoList})]
+        ;"charTerm",    [ADesc|adNonRec θ{Char}]
+        ;"unknownTerm", [ADesc|]
+        ;"unquoteTerm", [ADesc|adRecNN]
+        ;"argTerm",     [ADesc|adNonRec θ{Bool}; adRecNN]].
+data2Test TermDesc.
+
+Given Product map zip.
+
+let getErased (t : Term) : Bool :=
+  (iPr1 ?(TermF Term) ?(WkIndTermF Term) (unrollTerm t)) ?Bool
+    (λ _ : Var. false)
+    (λ _ : Sort. false)
+    (λ _ : Binder. λ _ : String. λ _, _ : Term. false)
+    (λ _ : Term. λ _ : List Term. false)
+    (λ _ : Char. false)
+    false
+    (λ _ : Term. false)
+    (λ b : Bool. λ _ : Term. b).
+
+let unApp (t : Term) : Term :=
+  (iPr1 ?(TermF Term) ?(WkIndTermF Term) (unrollTerm t)) ?Term
+    (λ _ : Var. unknownTerm)
+    (λ _ : Sort. unknownTerm)
+    (λ _ : Binder. λ _ : String. λ _, _ : Term. unknownTerm)
+    (λ _ : Term. λ _ : List Term. unknownTerm)
+    (λ _ : Char. unknownTerm)
+    unknownTerm
+    (λ _ : Term. unknownTerm)
+    (λ _ : Bool. λ t' : Term. t').
+
+let matchTerm [X : *]
+  (fvar  : Var -> X)
+  (fsort : Sort -> X)
+  (fbind : Binder -> String -> Term -> Term -> X)
+  (fapp  : Term -> List (Bool × Term) -> X)
+  (fchar : Char -> X)
+  (funk  : X)
+  (funq  : Term -> X)
+  (t : Term) : X :=
+  (iPr1 ?(TermF Term) ?(WkIndTermF Term) (unrollTerm t)) ?X
+    fvar fsort fbind
+    (λ t' : Term. λ ts : List Term.
+      ψ erased = map ?Term ?Bool getErased ts : List Bool.
+      fapp t' (zip ?Bool ?Term erased (map ?Term ?Term unApp ts)))
+    fchar funk funq
+    (λ _ : Bool. λ _ : Term. funk).
+
+let recursionTerm [X : *]
+  (fvar  : Var -> X)
+  (fsort : Sort -> X)
+  (fbind : Binder -> String -> Term -> Term -> X -> X -> X)
+  (fapp  : Term -> List (Bool × Term) -> X -> List (Bool × X) -> X)
+  (fchar : Char -> X)
+  (funk  : X)
+  (funq  : Term -> X -> X)
+  : Term -> X :=
+  indTerm ?(λ _ : Term. X) ?(λ _ : List Term. List X) fvar fsort
+    (λ b : Binder. λ s : String. λ t : Term. λ rect : X. λ T : Term. λ recT : X. fbind b s t T rect recT)
+    (λ t : Term. λ rect : X. λ a : List Term. λ reca : List X.
+      ψ erased = map ?Term ?Bool getErased a : List Bool.
+      fapp t    (zip ?Bool ?Term erased (map ?Term ?Term unApp a))
+           rect (zip ?Bool ?X    erased reca))
+    [X|]
+    (λ _ : Term. λ x : X. λ _ : List Term. cons ?X x)
+    fchar funk funq
+    (λ b : Bool. λ t : Term. λ rect : X. rect).
+
+let foldTerm [X : *]
+  (fvar  : Var -> X)
+  (fsort : Sort -> X)
+  (fbind : Binder -> String -> X -> X -> X)
+  (fapp  : X -> List (Bool × X) -> X)
+  (fchar : Char -> X)
+  (funk  : X)
+  (funq  : X -> X)
+  : Term -> X :=
+  recursionTerm ?X fvar fsort
+    (λ b : Binder. λ s : String. λ _, _ : Term. λ t, T : X. fbind b s t T)
+    (λ _ : Term. λ _ : List (Bool × Term). λ t : X. λ a : List (Bool × X). fapp t a)
+    fchar funk
+    (λ _ : Term. funq).
+
+endModule.
+
+runMeta compileBootstrapModules [String|"TermC"].

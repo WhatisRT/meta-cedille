@@ -41,14 +41,15 @@ let genInferenceInfo (T : Term) (app : List (App × Maybe Term)) : List Inferenc
   pairWithApp (pr1 ?Telescope ?Term $ telescopeFromType T) app.
 
 let isUnknown (t : Term) : Bool :=
-  t ?Bool
+  matchTerm ?Bool
     (λ _ : Var. false)
     (λ _ : Sort. false)
-    (λ _ : Binder. λ _ : String. λ _ : Bool. λ _ : Bool. false)
-    (λ _ : Bool. λ _ : List (Bool × Bool). false)
+    (λ _ : Binder. λ _ : String. λ _,_ : Term. false)
+    (λ _ : Term. λ _ : List (Bool × Term). false)
     (λ _ : Char. false)
     true
-    (λ _ : Bool. false).
+    (λ _ : Term. false)
+    t.
 
 let isSolved (l : List App) : Bool :=
   isNil ?App (filter ?App (λ a : App. isUnknown $ appTerm a) l).
@@ -60,8 +61,8 @@ let sequenceRecApp (recapp : List (Bool × Eval Term)) : Eval (List App) :=
     recapp.
 
 -- apply f to all applications in a term
-let applyToApp (f : Term -> List App -> Eval Term) (t : Term) : Eval Term :=
-  t ?(Eval Term)
+let applyToApp (f : Term -> List App -> Eval Term) : Term -> Eval Term :=
+  foldTerm ?(Eval Term)
     (λ v : Var. pureEval ?Term $ varTerm v)
     (λ s : Sort. pureEval ?Term $ sortTerm s)
     (λ b : Binder. λ n : String. λ recT, rect : Eval Term.
@@ -151,18 +152,19 @@ let SEqn : * := Nat × Term.
 -- if LHS is an index, return that index together with the appropriate RHS
 let solveEqn (ctx : Nat) : UnsEqn -> Maybe SEqn :=
   recursionTripleProduct ?Nat ?Term ?Term ?(Maybe SEqn) λ eqnC : Nat. λ eqnL, eqnR : Term.
-  eqnL ?(Maybe SEqn)
+  matchTerm ?(Maybe SEqn)
     (λ v : Var. v ?(Maybe SEqn)
       (λ _ : String. nothing ?SEqn)
       (λ i : init$index. just ?SEqn $
         prodPair ?Nat ?Term (sub (add ctx eqnC) (suc $ indexToNat i))
           (strengthenBy eqnC eqnR)))
     (λ _ : Sort. nothing ?SEqn)
-    (λ _ : Binder. λ _ : String. λ _, _ : Maybe SEqn. nothing ?SEqn)
-    (λ _ : Maybe SEqn. λ _ : List (Bool × (Maybe SEqn)). nothing ?SEqn)
+    (λ _ : Binder. λ _ : String. λ _, _ : Term. nothing ?SEqn)
+    (λ _ : Term. λ _ : List (Bool × Term). nothing ?SEqn)
     (λ _ : Char. nothing ?SEqn)
     (nothing ?SEqn)
-    (λ _ : Maybe SEqn. nothing ?SEqn).
+    (λ _ : Term. nothing ?SEqn)
+    eqnL.
 
 let tryHNFEqn : UnsEqn -> Eval UnsEqn :=
   recursionTripleProduct ?Nat ?Term ?Term ?(Eval UnsEqn) λ eqnC : Nat. λ eqnL, eqnR : Term.
