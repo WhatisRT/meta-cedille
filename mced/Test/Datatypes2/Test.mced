@@ -36,30 +36,46 @@ elet indHelperList [AP, A : *] [c : Cast AP A] [P : A -> *] (Pc : Π t : AP. P (
 --------------------------------------------------------------------------------
 -- Tests
 
-elet TNatDesc : Desc := "TNat", [Param|], [CDesc|"tZero", [ADesc|]; "tSuc", [ADesc|adRecNN]].
+elet TNatDesc : Desc := "TNat", [Param|],
+  [CDesc| "tZero", [ADesc|]
+        ; "tSuc",  [ADesc|adUnnamed tdRecNN]].
 data2Test TNatDesc.
 
-elet TNatListDesc : Desc := "TNatList", [Param|], [CDesc|"tNatNil", [ADesc|]; "tNatCons", [ADesc|adNonRec θ{Nat}; adRecNN]].
+elet TNatListDesc : Desc := "TNatList", [Param|],
+  [CDesc| "tNatNil", [ADesc|]
+        ; "tNatCons", [ADesc|adUnnamed (tdNonRec θ{Nat}); adUnnamed tdRecNN]].
 data2Test TNatListDesc.
 
 elet TProdDesc : Desc := "TProd", [Param|(false, "F1", θ{*}); (false, "F2", θ{*})],
-  [CDesc|"tPair", [ADesc|adNonRec θ{F1}; adNonRec θ{F2}]].
+  [CDesc|"tPair", [ADesc|adUnnamed (tdNonRec θ{F1}); adUnnamed (tdNonRec θ{F2})]].
 data2Test TProdDesc.
 
-elet TListDesc : Desc := "TList", [Param|(false, "F", θ{*})], [CDesc|"tNil", [ADesc|]; "tCons" , [ADesc|adNonRec θ{F}; adRecNN]].
+elet TDSumDesc : Desc := "TDSum", [Param|(false, "F1", θ{*}); (false, "F2", θ{F1 -> *})],
+  [CDesc|"tDPair", [ADesc| "f1", tdNonRec θ{F1}; "f2", tdNonRec θ{F2 f1}]].
+data2Test TDSumDesc.
+
+elet TListDesc : Desc := "TList", [Param|(false, "F", θ{*})],
+  [CDesc| "tNil", [ADesc|]
+        ; "tCons" , [ADesc|adUnnamed $ tdNonRec θ{F}; adUnnamed tdRecNN]].
 data2Test TListDesc.
 
-elet T1Desc : Desc := "T1", [Param|], [CDesc|"t11", [ADesc|]; "t12", [ADesc|adRecNN; adRecNN]].
+elet T1Desc : Desc := "T1", [Param|],
+  [CDesc| "t11", [ADesc|]
+        ; "t12", [ADesc|adUnnamed tdRecNN; adUnnamed tdRecNN]].
 data2Test T1Desc.
 
 -- golden test
 elet indT1Test : ∀ P : T1 -> *. P t11 -> (Π a0 : T1. P a0 -> Π a1 : T1. P a1 -> P (t12 a0 a1))
               -> Π x : T1. P x := indT1.
 
-elet T2Desc : Desc := "T2", [Param|], [CDesc|"t21", [ADesc|adNonRec θ{Nat}]; "t22", [ADesc|adRecNN; adRecNN]].
+elet T2Desc : Desc := "T2", [Param|],
+  [CDesc| "t21", [ADesc|adUnnamed (tdNonRec θ{Nat})]
+        ; "t22", [ADesc|adUnnamed tdRecNN; adUnnamed tdRecNN]].
 data2Test T2Desc.
 
-elet T3Desc : Desc := "T3", [Param|], [CDesc|"t31", [ADesc|]; "t32", [ADesc|adRecN (θ{List}, θ{monoList})]].
+elet T3Desc : Desc := "T3", [Param|],
+  [CDesc| "t31", [ADesc|]
+        ; "t32", [ADesc|adUnnamed (tdRecN (θ{List}, θ{monoList}))]].
 data2Test T3Desc.
 
 -- Non-strictly positive type
@@ -75,5 +91,5 @@ elet monoT4Ty : Mono T4Ty :=
       y)
     ?(beta ?(T4Ty X)).
 
-elet T4Desc : Desc := "T4", [Param|], [CDesc|"t4", [ADesc|adRecN (θ{T4Ty}, θ{monoT4Ty})]].
+elet T4Desc : Desc := "T4", [Param|], [CDesc|"t4", [ADesc|adUnnamed (tdRecN (θ{T4Ty}, θ{monoT4Ty}))]].
 runMeta DefineTy T4Desc.

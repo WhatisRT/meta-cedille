@@ -4,32 +4,31 @@
 
 -- Currently missing:
 -- - Indices
--- - PIs in constructors
 -- - Function arguments to constructors
 -- - Recursion schemes
 -- - Match schemes
 -- - Nested types (other than List)
 
---------------------------------------------------------------------------------
--- Argument description
-
-let ADesc := Term         -- non-recursive
-           ⊎ Unit         -- recursive, not nested
-           ⊎ Term × Term. -- recursive, nested
-
-let adNonRec (t : Term)       : ADesc := inl ?Term ?(Unit ⊎ Term × Term) t.
-let adRecNN                   : ADesc := inr ?Term ?(Unit ⊎ Term × Term) (inl ?Unit ?(Term × Term) tt).
-let adRecN (ts : Term × Term) : ADesc := inr ?Term ?(Unit ⊎ Term × Term) (inr ?Unit ?(Term × Term) ts).
-
 elet TyConst (T : *) : * -> * := λ _ : *. T.
 elet TyId : * -> * := λ R : *. R.
 
-elet ADescTy : ADesc -> Term := recursionTripleSum ?_ ?_ ?_ ?_
+--------------------------------------------------------------------------------
+-- Argument description
+
+let TDesc := Term         -- non-recursive
+           ⊎ Unit         -- recursive, not nested
+           ⊎ Term × Term. -- recursive, nested
+
+let tdNonRec (t : Term)       : TDesc := inl ?Term ?(Unit ⊎ Term × Term) t.
+let tdRecNN                   : TDesc := inr ?Term ?(Unit ⊎ Term × Term) (inl ?Unit ?(Term × Term) tt).
+let tdRecN (ts : Term × Term) : TDesc := inr ?Term ?(Unit ⊎ Term × Term) (inr ?Unit ?(Term × Term) ts).
+
+elet TDescTy : TDesc -> Term := recursionTripleSum ?_ ?_ ?_ ?_
   (λ t : Term. θ{TyConst γ{t}})
   (λ _ : Unit. θ{TyId})
   (pr1 ?Term ?Term).
 
-elet ADescF (a : ADesc) (t : Term) : Term := recursionTripleSum ?_ ?_ ?_ ?_
+elet TDescF (a : TDesc) (t : Term) : Term := recursionTripleSum ?_ ?_ ?_ ?_
   (λ t' : Term. t')
   (λ _  : Unit. t)
   (λ ts : Term × Term. θ{γ{pr1 ?Term ?Term ts} γ{t}})
@@ -37,17 +36,24 @@ elet ADescF (a : ADesc) (t : Term) : Term := recursionTripleSum ?_ ?_ ?_ ?_
 
 -- TODO: P' should come from ADesc
 -- Variations of Π n : T. (P n) -> ...
-elet ADescP (a : ADesc) (n : Name) (t, P, P', r : Term) : Term :=
-  piTerm n (ADescF a t) $ recursionTripleSum ?_ ?_ ?_ ?_
+elet TDescP (a : TDesc) (n : Name) (t, P, P', r : Term) : Term :=
+  piTerm n (TDescF a t) $ recursionTripleSum ?_ ?_ ?_ ?_
     (λ _  : Term. r)
     (λ _  : Unit. θ{γ{P} γ{var n} -> γ{r}})
     (λ ts : Term × Term. θ{γ{P'} γ{var n} -> γ{r}})
     a.
 
-elet ADescMono : ADesc -> Term := recursionTripleSum ?_ ?_ ?_ ?_
+elet TDescMono : TDesc -> Term := recursionTripleSum ?_ ?_ ?_ ?_
   (λ t : Term. θ{monoConst ?γ{t}})
   (λ _ : Unit. θ{monoId})
   (pr2 ?Term ?Term).
+
+let ADesc := Name × TDesc.
+
+elet adUnnamed (a : TDesc) : ADesc := "_", a.
+
+let adName : ADesc -> Name := pr1 ?Name ?TDesc.
+let adTDesc : ADesc -> TDesc := pr2 ?Name ?TDesc.
 
 --------------------------------------------------------------------------------
 -- Constructor description
@@ -57,13 +63,23 @@ let CDesc := Name × List ADesc.
 elet CDescName (d : CDesc) : Name := pr1 ?_ ?(List ADesc) d.
 elet CDescAs (d : CDesc) : List ADesc := pr2 ?_ ?(List ADesc) d.
 
+elet preprocessCDesc (d : CDesc) : CDesc :=
+  CDescName d, zipWithIndex ?_ ?_
+    (λ k : Nat. λ ad : ADesc. ifthenelse ?_ (emptyName (adName ad))
+      (φ"ctor${showNatDecimal k}", adTDesc ad)
+      ad)
+    (CDescAs d).
+
 --------------------------------------------------------------------------------
 -- cArgTel variants: the telescope of arguments to a constructor
 
 elet cArgTelTerm (t : Term) (as : List ADesc) : Telescope :=
-  zipWithIndex ?_ ?_
-    (λ k : Nat. λ ad : ADesc. false, φ"a${showNatDecimal k}", ADescF ad t)
+  zipWithIndex ?_ ?_ (λ k : Nat. λ ad : ADesc.
+    false, adName ad, TDescF (adTDesc ad) t)
     as.
+
+elet cArgApp (c : CDesc) : List App :=
+  telescopeToApp (cArgTelTerm θ{□} (CDescAs c)).
 
 elet cArgTelName (rn : Name) (as : List ADesc) : Telescope :=
   cArgTelTerm (sVarTerm rn) as.
@@ -88,13 +104,17 @@ elet DescName (d : Desc) : Name := pr1 ?_ ?(Telescope × List CDesc) d.
 elet DescTel (d : Desc) : Telescope := pr1 ?Telescope ?(List CDesc) $ pr2 ?_ ?(Telescope × List CDesc) d.
 elet DescCs (d : Desc) : List CDesc := pr2 ?Telescope ?(List CDesc) $ pr2 ?_ ?(Telescope × List CDesc) d.
 
+elet preprocessDesc (d : Desc) : Desc :=
+  DescName d, DescTel d, map ?_ ?_ preprocessCDesc (DescCs d).
+
 --------------------------------------------------------------------------------
 -- genFreshD: generate a name which doesn't appear as a prefix in a Desc
 
-elet genFreshD/adNs : ADesc -> List Name := recursionTripleSum ?_ ?_ ?_ ?_
+elet genFreshD/adNs (ad : ADesc) : List Name := recursionTripleSum ?_ ?_ ?_ ?_
   termNonFreshNames
   (λ _ : Unit. [Name|])
-  (recursionProduct ?_ ?_ ?_ (λ t, t' : Term. app ?_ (termNonFreshNames t) (termNonFreshNames t'))).
+  (recursionProduct ?_ ?_ ?_ (λ t, t' : Term. app ?_ (termNonFreshNames t) (termNonFreshNames t')))
+  (adTDesc ad).
 
 elet genFreshD/ns (d : Desc) : List Name :=
   remDup ?_ stringEq $ DescName d ∷ app ?_ (telNonFreshNames (DescTel d)) $ concat ?_ $
@@ -112,10 +132,10 @@ elet genElimMono (S, T, cast : Term) (f : Term -> Term) (monoT : Term) (t : Term
 
 elet CDescToCastApp (S, T, cast : Term) (c : CDesc) : List App :=
   zipWith ?_ ?_ ?_
-    (λ p : Param. λ ad : ADesc.
-      mkAppU $ genElimMono S T cast (ADescF ad) (ADescMono ad) (sVarTerm $ paramName p))
+    (λ p : Param. λ td : TDesc.
+      mkAppU $ genElimMono S T cast (TDescF td) (TDescMono td) (sVarTerm $ paramName p))
     (cArgTelTerm S (CDescAs c))
-    (CDescAs c).
+    (map ?_ ?_ adTDesc (CDescAs c)).
 
 elet castCtorApp (S, T, cast : Term) (t : Term) (c : CDesc) : Term :=
   appLTerm t $ CDescToCastApp S T cast c.
