@@ -36,44 +36,37 @@ updateEval.
 --------------------------------------------------------------------------------
 -- Tests
 
-elet TNatDesc : Desc := "TNat", [Param|],
-  [CDesc| "tZero", [ADesc|]
-        ; "tSuc",  [ADesc|adUnnamed tdRecNN]].
-data2Test TNatDesc.
+data2 TNat where
+| tZero : TNat
+| tSuc : TNat -> TNat.
 
-elet TNatListDesc : Desc := "TNatList", [Param|],
-  [CDesc| "tNatNil", [ADesc|]
-        ; "tNatCons", [ADesc|adUnnamed (tdNonRec θ{Nat}); adUnnamed tdRecNN]].
-data2Test TNatListDesc.
+data2 TNatList where
+| tNatNil : TNatList
+| tNatCons : Nat -> TNatList -> TNatList.
 
-elet TProdDesc : Desc := "TProd", [Param|(false, "F1", θ{*}); (false, "F2", θ{*})],
-  [CDesc|"tPair", [ADesc|adUnnamed (tdNonRec θ{F1}); adUnnamed (tdNonRec θ{F2})]].
-data2Test TProdDesc.
-runMeta DefineProjLIs TProdDesc.
+record2 TProd (A, B : *) where
+| tPr1 : A
+| tPr2 : B.
 
-elet TDSumDesc : Desc := "TDSum", [Param|(false, "F1", θ{*}); (false, "F2", θ{F1 -> *})],
-  [CDesc|"tDPair", [ADesc| "f1", tdNonRec θ{F1}; "f2", tdNonRec θ{F2 f1}]].
-data2Test TDSumDesc.
-runMeta DefineProjLIs TDSumDesc.
+record2 TDSum' (A : *) (B : A -> *) where
+| tDPr1 : A
+| tDPr2 : B tDPr1.
 
-elet TListDesc : Desc := "TList", [Param|(false, "F", θ{*})],
-  [CDesc| "tNil", [ADesc|]
-        ; "tCons" , [ADesc|adUnnamed $ tdNonRec θ{F}; adUnnamed tdRecNN]].
-data2Test TListDesc.
+data2 TList (A : *) where
+| tNil : TList
+| tCons : A -> TList -> TList.
 
-elet T1Desc : Desc := "T1", [Param|],
-  [CDesc| "t11", [ADesc|]
-        ; "t12", [ADesc|adUnnamed tdRecNN; adUnnamed tdRecNN]].
-data2Test T1Desc.
+data2 T1 where
+| t11 : T1
+| t12 : T1 -> T1 -> T1.
 
 -- golden test
 elet indT1Test : ∀ P : T1 -> *. P t11 -> (Π a0 : T1. P a0 -> Π a1 : T1. P a1 -> P (t12 a0 a1))
               -> Π x : T1. P x := indT1.
 
-elet T2Desc : Desc := "T2", [Param|],
-  [CDesc| "t21", [ADesc|adUnnamed (tdNonRec θ{Nat})]
-        ; "t22", [ADesc|adUnnamed tdRecNN; adUnnamed tdRecNN]].
-data2Test T2Desc.
+data2 T2 where
+| t21 : Nat -> T2
+| t22 : T2 -> T2 -> T2.
 
 elet T3Desc : Desc := "T3", [Param|],
   [CDesc| "t31", [ADesc|]

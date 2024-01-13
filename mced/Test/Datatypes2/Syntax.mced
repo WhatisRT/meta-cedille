@@ -1,0 +1,85 @@
+--------------------------------------------------------------------------------
+-- Parsing datatype declarations
+--------------------------------------------------------------------------------
+
+-- If the argument is a term applied to the empty list, return that term
+let reduceTerm : Term -> Term :=
+  foldTerm ?Term varTerm sortTerm binderTerm
+    (λ t : Term. λ l : List App. ifthenelse ?Term (isNil ?App l) t $ appLTerm t l)
+    charTerm unknownTerm unquoteTerm.
+
+-- The telescope of arguments and the rest
+let PreCDesc := Telescope × Term.
+
+elet noArgPreCDesc (t : Term) : PreCDesc := [Param|], t.
+elet consArgPreCDesc (p : Param) (d : PreCDesc) : PreCDesc := (p ∷ pr1 ?_ ?Term d), pr2 ?_ ?Term d.
+
+let ConstrDataTelescope := pr1 ?Telescope ?Term.
+let ConstrDataTerm := pr2 ?Telescope ?Term.
+
+let toPreCDesc (t : Term) : PreCDesc :=
+  recursionTerm ?PreCDesc
+    (λ v : Var.  noArgPreCDesc $ varTerm v)
+    (λ s : Sort. noArgPreCDesc $ sortTerm s)
+    (λ b : Binder. λ n : String. λ T, t : Term. λ recT, rect : PreCDesc.
+      matchBinder ?PreCDesc
+        (noArgPreCDesc $ binderTerm b n T t) (noArgPreCDesc $ binderTerm b n T t)
+        (consArgPreCDesc (mkParam false $ mkPreParam n T) rect)
+        (consArgPreCDesc (mkParam true  $ mkPreParam n T) rect)
+        b)
+    (λ t : Term. λ l : List App. λ _ : PreCDesc. λ _ : List (Bool × PreCDesc).
+      noArgPreCDesc $ appLTerm t l)
+    (λ c : Char. noArgPreCDesc $ charTerm c)
+    (noArgPreCDesc unknownTerm)
+    (λ u : Term. λ recu : PreCDesc. recu)
+    (reduceTerm t).
+
+elet toTDesc (tyName : Name) (t : Term) : TDesc :=
+  ifthenelse ?_ (termEq t (var tyName))
+    (tdRecNN)
+    (tdNonRec t).
+
+elet toADesc (tyName : Name) (p : Param) : ADesc :=
+  paramName p, toTDesc tyName (paramType p).
+
+elet toCDesc (tyName, cName : Name) (t : Term) : Maybe CDesc :=
+  ψ pc = toPreCDesc t : PreCDesc.
+  ifthenelse ?_ (termEq (pr2 ?_ ?Term pc) (var tyName))
+    (just ?_ (cName, map ?_ ?_ (toADesc tyName) (pr1 ?_ ?Term pc)))
+    (nothing ?CDesc).
+
+--------------------------------------------------------------------------------
+-- Syntax
+
+elet init$entry$_string_^space^=colon=^space^_multiTerm_
+  (name : String) (type : Term) := name, type.
+
+let init$entries$ := nil ?(Name × Term).
+let init$entries$=pipe=^space^_entry__entries_ := cons ?(Name × Term).
+
+let init$data2$_string_^space^_telescope_where^space^_entries_
+  (name : String) (t : Telescope) (cs : List (Name × Term)) : Bool -> Maybe Desc :=
+  ψ cs' = traverseMaybeList ?(Name × Term) ?CDesc
+      (recursionProduct ?Name ?Term ?(Maybe CDesc) (toCDesc name))
+      cs : Maybe (List CDesc).
+  λ genRecord : Bool.
+  ifthenelse ?(Maybe Desc) genRecord
+    (just ?Desc $ mkTripleProduct ?String ?Telescope ?(List CDesc) name t [CDesc|
+      prodPair ?Name ?(List ADesc)
+        φ"mk${name}" $
+        map ?(Name × Term) ?ADesc (recursionProduct ?Name ?Term ?ADesc
+          (λ n : Name. λ t : Term. prodPair ?Name ?TDesc n (tdNonRec t)))
+          cs])
+    (mapMaybe ?(List CDesc) ?Desc (mkTripleProduct ?String ?Telescope ?(List CDesc) name t) cs').
+
+elet init$newStmt'$data2^space^_data2_=dot= (genD : Bool -> Maybe Desc) : Eval Unit :=
+  maybe ?_ ?_ (throwEval ?Unit "Error: not a valid datatype!")
+    (λ d : Desc. seqEval ?_ ?_ (DefineTy d) (DefineInd d))
+    (genD false).
+
+elet init$newStmt'$record2^space^_data2_=dot= (genD : Bool -> Maybe Desc) : Eval Unit :=
+  maybe ?_ ?_ (throwEval ?Unit "Error: not a valid record!")
+    (λ r : Desc. seqEval ?_ ?_ (seqEval ?_ ?_ (DefineTy r) (DefineInd r)) (DefineProjLIs r))
+    (genD true).
+
+updateEval.
