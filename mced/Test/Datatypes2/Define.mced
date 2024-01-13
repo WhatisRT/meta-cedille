@@ -395,6 +395,9 @@ elet DefineIndPfs (hn, pn, xn : Name) (d : Desc) : Eval Unit :=
 elet RecLRName (d : Desc) : Name := φ"rec${DescName d}LR".
 elet RecLRTerm (d : Desc) : Term := genTerm d RecLRName.
 
+elet IndName (d : Desc) : Name := φ"ind${DescName d}".
+elet IndTerm (d : Desc) : Term := genTerm d IndName.
+
 elet RecLRLI (pn, xn : Name) (d : Desc) : LetInfo :=
   ψ tel = zipWithIndex ?_ ?_ (λ i : Nat. λ t : Term. (false, φ"a${showNatDecimal i}", θ{γ{t} γ{var pn}}))
     (ctorFTerms pn d) : Telescope.
@@ -419,7 +422,7 @@ elet DefineIndScheme (pn, xn : Name) (d : Desc) : LetInfo :=
   ψ pTel = (true, pn, TyTermP d) ∷ concat ?_ (map ?_ ?_ (mkPTel' d) (DescCs d)) : Telescope.
   ψ hTel = concat ?_ $ map ?_ ?_ (mkHTel pn d) (DescCs d) : Telescope.
   ψ pfApp = map ?_ ?_ (λ c : CDesc. mkAppU $ DefineIndScheme/genPfApp pn d c) (DescCs d) : List App.
-  mkTyLI d φ"ind${DescName d}"
+  mkTyLI d (IndName d)
     (app ?Param (app ?Param pTel hTel) [Param|(false, xn, TyTerm d)])
     θ{γ{var pn} γ{var xn}}
     (appLTerm (RecLRTerm d) $
@@ -463,3 +466,36 @@ let DefineInd (d : Desc) : Eval Unit :=
   ψ ns = genFreshD/ns d : List Name.
   DefineInd' (genFreshPrefix ns "h") (genFreshPrefix ns "P") (genFreshPrefix ns "x")
              (preprocessDesc d).
+
+--------------------------------------------------------------------------------
+-- Define record projections
+
+elet ProjLI (xn, yn : Name) (d : Desc) (c : CDesc) (a : ADesc) (prev : List ADesc) : LetInfo :=
+  ψ appProj = λ n : Name. λ ad : ADesc. mkAppU θ{γ{appDescTel d (var φ"${adName ad}")} γ{var n}}
+    : Name -> ADesc -> App.
+  ψ goalTy = λ n : Name.
+    appLTerm (foldWithLambdas (cArgTelTerm (TyTerm d) prev) $ TDescF (adTDesc a) (TyTerm d))
+             (map ?_ ?_ (appProj n) prev)
+    : Name -> Term.
+  mkTyLI d φ"${adName a}"
+    [Param|]
+    (piTerm xn (TyTerm d) (goalTy xn))
+    θ{γ{IndTerm d} ?γ{lambdaTerm yn (TyTerm d) (goalTy yn)}
+        γ{foldWithLambdas (cArgTelTerm (TyTerm d) (CDescAs c)) (var φ"${adName a}")}}.
+
+elet ProjLIs (xn, yn : Name) (d : Desc) (c : CDesc) : List LetInfo :=
+  reverse ?_ $ recursionList ?_ ?_
+    [LetInfo|]
+    (λ a : ADesc. λ as : List ADesc. λ acc : List LetInfo. ProjLI xn yn d c a as ∷ acc)
+    (reverse ?_ $ CDescAs c).
+
+elet DefineProjLIs' (xn, yn : Name) (d : Desc) : Eval Unit :=
+  matchList ?_ ?_ (throwEval ?Unit "BUG: DefineProj: not a record!")
+    (λ c : CDesc. λ _ : List CDesc. defineMulti $ ProjLIs xn xn d c)
+    (DescCs d).
+
+elet DefineProjLIs (d : Desc) : Eval Unit :=
+  ψ ns = genFreshD/ns d : List Name.
+  ifthenelse ?_ (not $ natEq 1 (length ?_ $ DescCs d))
+    (throwEval ?Unit "DefineProjLIs: not a record!")
+    (DefineProjLIs' (genFreshPrefix ns "x") (genFreshPrefix ns "y") (preprocessDesc d)).

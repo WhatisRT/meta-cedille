@@ -10,28 +10,28 @@ updateEval.
 --------------------------------------------------------------------------------
 -- List helpers
 
-let monoList : Mono List := Λ X, Y : *. λ c : Cast X Y.
-  extCast ?(List X) ?(List Y) ?(indList ?X ?(λ l : List X. View (List Y) (beta' ?(List X) l))
-    (selfView ?(List Y) (nilC ?Y))
-    (λ x : X. λ xs : List X. λ pxs : View (List Y) (beta' ?(List X) xs).
-      selfView ?(List Y)
-        (consC ?Y (elimCast ?X ?Y ?c x) (elimView ?(List Y) (beta' ?(List X) xs) ?pxs)))).
+-- let monoList : Mono List := Λ X, Y : *. λ c : Cast X Y.
+--   extCast ?(List X) ?(List Y) ?(indList ?X ?(λ l : List X. View (List Y) (beta' ?(List X) l))
+--     (selfView ?(List Y) (nilC ?Y))
+--     (λ x : X. λ xs : List X. λ pxs : View (List Y) (beta' ?(List X) xs).
+--       selfView ?(List Y)
+--         (consC ?Y (elimCast ?X ?Y ?c x) (elimView ?(List Y) (beta' ?(List X) xs) ?pxs)))).
 
-elet indHelperList/conv [AP, A : *] [c : Cast AP A] : List AP -> List A :=
-  elimCast ?_ ?_ ?(monoList ?AP ?A c).
+-- elet indHelperList/conv [AP, A : *] [c : Cast AP A] : List AP -> List A :=
+--   elimCast ?_ ?_ ?(monoList ?AP ?A c).
 
-elet indHelperList [AP, A : *] [c : Cast AP A] [P : A -> *] (Pc : Π t : AP. P (elimCast ?AP ?A ?c t))
-  [P' : List A -> *] (pn : P' [A|]) (pc : Π t : A. P t -> Π ts : List A. P' ts -> P' (cons ?A t ts))
-  : Π l : List AP. P' (indHelperList/conv ?AP ?A ?c l) :=
-  ψ convN = usubst ?(List A) ?(indHelperList/conv ?AP ?A ?c [AP|]) ?[A|]
-      ?(beta ?(List A) [A|]) ?P' : P' [A|] -> P' (indHelperList/conv ?AP ?A ?c [AP|]).
-  indList ?AP ?(λ l : List AP. P' (indHelperList/conv ?AP ?A ?c l))
-    (convN pn)
-    (λ t : AP. λ ts : List AP. λ p' : P' (indHelperList/conv ?AP ?A ?c ts).
-     usubst ?(List A) ?(indHelperList/conv ?AP ?A ?c (cons ?AP t ts))
-       ?(cons ?A (elimCast ?AP ?A ?c t) (indHelperList/conv ?AP ?A ?c ts))
-       ?(beta ?(List A) (indHelperList/conv ?AP ?A ?c $ cons ?AP t ts)) ?P' $
-       pc (elimCast ?AP ?A ?c t) (Pc t) (indHelperList/conv ?AP ?A ?c ts) p').
+-- elet indHelperList [AP, A : *] [c : Cast AP A] [P : A -> *] (Pc : Π t : AP. P (elimCast ?AP ?A ?c t))
+--   [P' : List A -> *] (pn : P' [A|]) (pc : Π t : A. P t -> Π ts : List A. P' ts -> P' (cons ?A t ts))
+--   : Π l : List AP. P' (indHelperList/conv ?AP ?A ?c l) :=
+--   ψ convN = usubst ?(List A) ?(indHelperList/conv ?AP ?A ?c [AP|]) ?[A|]
+--       ?(beta ?(List A) [A|]) ?P' : P' [A|] -> P' (indHelperList/conv ?AP ?A ?c [AP|]).
+--   indList ?AP ?(λ l : List AP. P' (indHelperList/conv ?AP ?A ?c l))
+--     (convN pn)
+--     (λ t : AP. λ ts : List AP. λ p' : P' (indHelperList/conv ?AP ?A ?c ts).
+--      usubst ?(List A) ?(indHelperList/conv ?AP ?A ?c (cons ?AP t ts))
+--        ?(cons ?A (elimCast ?AP ?A ?c t) (indHelperList/conv ?AP ?A ?c ts))
+--        ?(beta ?(List A) (indHelperList/conv ?AP ?A ?c $ cons ?AP t ts)) ?P' $
+--        pc (elimCast ?AP ?A ?c t) (Pc t) (indHelperList/conv ?AP ?A ?c ts) p').
 
 --------------------------------------------------------------------------------
 -- Tests
@@ -49,10 +49,12 @@ data2Test TNatListDesc.
 elet TProdDesc : Desc := "TProd", [Param|(false, "F1", θ{*}); (false, "F2", θ{*})],
   [CDesc|"tPair", [ADesc|adUnnamed (tdNonRec θ{F1}); adUnnamed (tdNonRec θ{F2})]].
 data2Test TProdDesc.
+runMeta DefineProjLIs TProdDesc.
 
 elet TDSumDesc : Desc := "TDSum", [Param|(false, "F1", θ{*}); (false, "F2", θ{F1 -> *})],
   [CDesc|"tDPair", [ADesc| "f1", tdNonRec θ{F1}; "f2", tdNonRec θ{F2 f1}]].
 data2Test TDSumDesc.
+runMeta DefineProjLIs TDSumDesc.
 
 elet TListDesc : Desc := "TList", [Param|(false, "F", θ{*})],
   [CDesc| "tNil", [ADesc|]
