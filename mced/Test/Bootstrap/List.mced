@@ -34,7 +34,7 @@ elet pureList [X : *] (x : X) : List X := [X|x].
 elet app [X : *] (l1, l2 : List X) : List X :=
   l1 ?(List X) l2 (λ x : X. λ rec : List X. x ∷ rec).
 
-elet snoc [X : *] (x : X) (xs : List X) : List X := app ?_ xs (pureList ?_ x).
+elet snoc [X : *] (xs : List X) (x : X) : List X := app ?_ xs (pureList ?_ x).
 
 elet filter [X : *] (f : X -> Bool) (l : List X) : List X :=
   l ?(List X) [X|]

@@ -1,0 +1,164 @@
+elet genCast (X, Y : Term) (cn : Name) (ct : Term) : Term :=
+  θ{intrCast ?γ{X} ?γ{Y} ?γ{lambdaTerm cn X ct} ?(beta ?γ{X})}.
+
+--------------------------------------------------------------------------------
+-- Indexed Cast
+
+elet ICastName (d : Desc) : Name := φ"${DescName d}/ICast".
+elet ICastType (d : Desc) : Term := var $ ICastName d.
+
+elet ICastLI (sn, tn : Name) (d : Desc) : LetInfo :=
+  mkLetInfoWithTel (ICastName d)
+    [Param|(false, sn, genDescTy d); (false, tn, genDescTy d)]
+    (foldWithPi (ixTel d)
+      θ{Cast γ{applyTelescope (var sn) (ixTel d)} γ{applyTelescope (var tn) (ixTel d)}})
+    (just ?_ θ{*}).
+
+--------------------------------------------------------------------------------
+-- Indexed Mono
+
+elet IMonoName (d : Desc) : Name := φ"${DescName d}/IMono".
+elet IMonoType (d : Desc) : Term := var $ IMonoName d.
+
+elet IMonoLI (fn, xn, yn : Name) (d : Desc) : LetInfo :=
+  ψ genCast = λ t, t' : Term. θ{γ{ICastType d} γ{t} γ{t'}} : Term -> Term -> Term.
+  mkLetInfoWithTel (IMonoName d)
+    [Param|(false, fn, θ{γ{genDescTy d} -> γ{genDescTy d}})]
+    (forallTerm xn (genDescTy d) $ forallTerm yn (genDescTy d)
+      θ{γ{genCast (var xn) (var yn)} -> γ{genCast (appSingle (var fn) (var xn)) (appSingle (var fn) (var yn))}})
+    (just ?_ θ{*}).
+
+--------------------------------------------------------------------------------
+-- Indexed MonoD
+
+--------------------------------------------------------------------------------
+-- Indexed Rec
+
+elet IRecName (d : Desc) : Name := φ"${DescName d}/Rec".
+elet IRecType (d : Desc) : Term := var $ IRecName d.
+
+elet IRecLI (fn, xn : Name) (d : Desc) : LetInfo :=
+  mkLetInfoWithTel (IRecName d)
+    ((false, fn, θ{γ{genDescTy d} -> γ{genDescTy d}}) ∷ ixTel d)
+    (forallTerm xn (genDescTy d) $
+     forallTerm "" θ{γ{ICastType d} (γ{var fn} γ{var xn}) γ{var xn}} $
+     applyTelescope (var xn) (ixTel d))
+    (just ?_ θ{*}).
+
+elet IRecLBName (d : Desc) : Name := φ"${DescName d}/recLB".
+elet IRecLBType (d : Desc) : Term := var $ IRecLBName d.
+
+elet IRecLBLI (cn, fn, xn, yn : Name) (d : Desc) : LetInfo :=
+  mkLetInfoWithTel (IRecLBName d)
+    [Param| (false, fn, θ{γ{genDescTy d} -> γ{genDescTy d}})
+          ; (true, xn, (genDescTy d))
+          ; (true, cn, θ{γ{ICastType d} (γ{var fn} γ{var xn}) γ{var xn}})]
+    (foldWithLambdas (ixTel d) $
+      genCast (applyTelescope θ{γ{IRecType d} γ{var fn}} (ixTel d))
+              (applyTelescope (var xn) (ixTel d)) yn θ{γ{var yn} ?γ{var xn} ?γ{(var cn)}})
+    (just ?_ θ{γ{ICastType d} (γ{IRecType d} γ{var fn}) γ{var xn}}).
+
+elet IRecGLBName (d : Desc) : Name := φ"${DescName d}/recGLB".
+elet IRecGLBType (d : Desc) : Term := var $ IRecGLBName d.
+
+elet IRecGLBLI (cn, cn', fn, xn, yn, zn : Name) (d : Desc) : LetInfo :=
+  mkLetInfoWithTel (IRecGLBName d)
+    [Param| (false, fn, θ{γ{genDescTy d} -> γ{genDescTy d}})
+          ; (true, xn, (genDescTy d))
+          ; (true, cn, (forallTerm yn (genDescTy d) $
+              forallTerm "" θ{γ{ICastType d} (γ{var fn} γ{var yn}) γ{var yn}} $
+              θ{γ{ICastType d} γ{var xn} γ{var yn}}))]
+    (foldWithLambdas (ixTel d) $
+      genCast (applyTelescope (var xn) (ixTel d))
+              (applyTelescope θ{γ{IRecType d} γ{var fn}} (ixTel d))
+              zn $
+        LambdaTerm yn (genDescTy d) $ LambdaTerm cn' θ{γ{ICastType d} (γ{var fn} γ{var yn}) γ{var yn}} $
+          θ{elimCast ?γ{applyTelescope (var xn) (ixTel d)} ?γ{applyTelescope (var yn) (ixTel d)}
+              ?γ{applyTelescope θ{γ{var cn} ?γ{var yn} ?γ{var cn'}} (ixTel d)} γ{var zn}})
+    (just ?_ θ{γ{ICastType d} γ{var xn} (γ{IRecType d} γ{var fn})}).
+
+--------------------------------------------------------------------------------
+-- roll & unroll
+
+elet IRecRollName (d : Desc) : Name := φ"${DescName d}/recRoll".
+elet IRecRollType (d : Desc) : Term := var $ IRecRollName d.
+
+elet IRecRollLI (cn, fn, mn, xn : Name) (d : Desc) : LetInfo :=
+  ψ appIxTel = λ t : Term. applyTelescope t (ixTel d) : Term -> Term.
+  mkLetInfoWithTel (IRecRollName d)
+    [Param| (false, fn, θ{γ{genDescTy d} -> γ{genDescTy d}})
+          ; (true, mn, θ{γ{IMonoType d} γ{var fn}})]
+    θ{γ{IRecGLBType d} γ{var fn} ?(γ{var fn} (γ{IRecType d} γ{var fn})) ?γ{
+      LambdaTerm xn (genDescTy d) $ LambdaTerm cn θ{γ{ICastType d} (γ{var fn} γ{var xn}) γ{var xn}} $
+        foldWithLambdas (ixTel d) $ θ{castTrans
+          ?γ{appIxTel θ{γ{var fn} (γ{IRecType d} γ{var fn})}}
+          ?γ{appIxTel θ{γ{var fn} γ{var xn}}}
+          ?γ{appIxTel (var xn)}
+          ?γ{appIxTel θ{γ{var mn} ?(γ{IRecType d} γ{var fn}) ?γ{var xn}
+               (γ{IRecLBType d} γ{var fn} ?γ{var xn} ?γ{var cn})}}
+          ?γ{appIxTel (var cn)}}}}
+    (just ?_ θ{γ{ICastType d} (γ{var fn} (γ{IRecType d} γ{var fn})) (γ{IRecType d} γ{var fn})}).
+
+elet IRollName (d : Desc) : Name := φ"${DescName d}/roll".
+elet IRollType (d : Desc) : Term := var $ IRollName d.
+
+elet elimRollLI (fn, mn, n : Name) (S, T, c : Term) (d : Desc) : LetInfo :=
+  ψ appIxTel = λ t : Term. applyTelescope t (ixTel d) : Term -> Term.
+  mkLetInfoWithTel n
+    ((false, fn, θ{γ{genDescTy d} -> γ{genDescTy d}})
+     ∷ (true, mn, θ{γ{IMonoType d} γ{var fn}})
+     ∷ ixTel d)
+    θ{elimCast ?γ{appIxTel S} ?γ{appIxTel T} ?γ{appIxTel c}}
+    (just ?_ θ{γ{appIxTel S} -> γ{appIxTel T}}).
+
+elet IRollLI (fn, mn : Name) (d : Desc) : LetInfo :=
+  elimRollLI fn mn (IRollName d)
+    θ{γ{var fn} (γ{IRecType d} γ{var fn})}
+    θ{γ{IRecType d} γ{var fn}}
+    θ{γ{IRecRollType d} γ{var fn} ?γ{var mn}}
+    d.
+
+elet IRecUnrollName (d : Desc) : Name := φ"${DescName d}/recUnroll".
+elet IRecUnrollType (d : Desc) : Term := var $ IRecUnrollName d.
+
+elet IRecUnrollLI (fn, mn : Name) (d : Desc) : LetInfo :=
+  mkLetInfoWithTel (IRecUnrollName d)
+    [Param| (false, fn, θ{γ{genDescTy d} -> γ{genDescTy d}})
+          ; (true, mn, θ{γ{IMonoType d} γ{var fn}})]
+    θ{γ{IRecLBType d} γ{var fn} ?(γ{var fn} (γ{IRecType d} γ{var fn}))
+       ?(γ{var mn} ?(γ{var fn} (γ{IRecType d} γ{var fn})) ?(γ{IRecType d} γ{var fn})
+       (γ{IRecRollType d} γ{var fn} ?γ{var mn}))}
+    (just ?_ θ{γ{ICastType d} (γ{IRecType d} γ{var fn}) (γ{var fn} (γ{IRecType d} γ{var fn}))}).
+
+elet IUnrollName (d : Desc) : Name := φ"${DescName d}/unroll".
+elet IUnrollType (d : Desc) : Term := var $ IUnrollName d.
+
+elet IUnrollLI (fn, mn : Name) (d : Desc) : LetInfo :=
+  elimRollLI fn mn (IUnrollName d)
+    θ{γ{IRecType d} γ{var fn}}
+    θ{γ{var fn} (γ{IRecType d} γ{var fn})}
+    θ{γ{IRecUnrollType d} γ{var fn} ?γ{var mn}}
+    d.
+
+--------------------------------------------------------------------------------
+-- Defining everything
+
+elet DefineHelpers' (cn, cn', fn, mn, sn, tn, xn, yn, zn : Name) (d : Desc) : Eval Unit :=
+  defineMulti [LetInfo
+    | ICastLI sn tn d
+    ; IMonoLI fn xn yn d
+    ; IRecLI fn xn d
+    ; IRecLBLI cn fn xn yn d
+    ; IRecGLBLI cn cn' fn xn yn zn d
+    ; IRecRollLI cn fn mn xn d
+    ; IRollLI fn mn d
+    ; IRecUnrollLI fn mn d
+    ; IUnrollLI fn mn d
+    ].
+
+let DefineHelpers (d : Desc) : Eval Unit :=
+  ψ ns = genFreshD/ns d : List Name.
+  DefineHelpers' (genFreshPrefix ns "c") (genFreshPrefix ns "c'") (genFreshPrefix ns "F")
+                 (genFreshPrefix ns "m") (genFreshPrefix ns "S") (genFreshPrefix ns "T")
+                 (genFreshPrefix ns "X") (genFreshPrefix ns "Y") (genFreshPrefix ns "Z")
+                 (preprocessDesc d).

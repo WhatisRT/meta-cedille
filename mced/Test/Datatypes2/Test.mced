@@ -3,7 +3,7 @@
 
 elet init$newStmt'$data2Test^space^_multiTerm_=dot= (t : Term) : Eval Unit :=
   (modifyTermMod t >>= checkTerm Desc) >>= λ d : Desc.
-  seqEval ?_ ?_ (DefineTy d) (DefineInd d).
+  DefineHelpers d >> DefineTy d >> DefineInd d.
 
 updateEval.
 
@@ -35,6 +35,22 @@ updateEval.
 
 --------------------------------------------------------------------------------
 -- Tests
+
+elet T5Desc : Desc := preprocessDesc ("TVec", [Param|false, "A", θ{*}], [Term|θ{Nat}],
+  [CDesc| "tVecNil",  [ADesc|], [Term|θ{0}]
+        ; "tVecCons", [ADesc|"k", tdNonRec θ{Nat}; adUnnamed (tdNonRec θ{A}); adUnnamed (tdRecNN [Term|θ{k}])], [Term|θ{suc k}]]).
+
+elet TEvenDesc : Desc := preprocessDesc ("TEven", [Param|], [Term|θ{Nat}],
+  [CDesc| "tEvenZ",  [ADesc|], [Term|θ{0}]
+        ; "tEvenSS", [ADesc|"k", tdNonRec θ{Nat}; adUnnamed (tdRecNN [Term|θ{k}])], [Term|θ{suc (suc k)}]]).
+
+elet TLeqDesc : Desc := preprocessDesc ("TLeq", [Param|], [Term|θ{Nat}; θ{Nat}],
+  [CDesc| "zlek", [ADesc|"k", tdNonRec θ{Nat}], [Term|θ{0}; θ{k}]
+        ; "sles", [ADesc|"k", tdNonRec θ{Nat}; "l", tdNonRec θ{Nat}; adUnnamed (tdRecNN [Term|θ{k}; θ{l}])], [Term|θ{suc k}; θ{suc l}]]).
+
+data2Test T5Desc.
+data2Test TEvenDesc.
+data2Test TLeqDesc.
 
 data2 TNat where
 | tZero : TNat
@@ -68,12 +84,12 @@ data2 T2 where
 | t21 : Nat -> T2
 | t22 : T2 -> T2 -> T2.
 
-elet T3Desc : Desc := "T3", [Param|],
-  [CDesc| "t31", [ADesc|]
-        ; "t32", [ADesc|adUnnamed (tdRecN (θ{List}, θ{monoList}))]].
+elet T3Desc : Desc := "T3", [Param|], [Term|],
+  [CDesc| "t31", [ADesc|], [Term|]
+        ; "t32", [ADesc|adUnnamed (tdRecN (θ{List}, θ{monoList}))], [Term|]].
 data2Test T3Desc.
 
--- Non-strictly positive type
+-- -- Non-strictly positive type
 
 let T4Ty (X : *) : * := (X -> Bool) -> Bool.
 
@@ -86,5 +102,7 @@ elet monoT4Ty : Mono T4Ty :=
       y)
     ?(beta ?(T4Ty X)).
 
-elet T4Desc : Desc := "T4", [Param|], [CDesc|"t4", [ADesc|adUnnamed (tdRecN (θ{T4Ty}, θ{monoT4Ty}))]].
+elet T4Desc : Desc := "T4", [Param|], [Term|],
+  [CDesc|"t4", [ADesc|adUnnamed (tdRecN (θ{T4Ty}, θ{monoT4Ty}))], [Term|]].
+runMeta DefineHelpers T4Desc.
 runMeta DefineTy T4Desc.

@@ -36,7 +36,7 @@ let toPreCDesc (t : Term) : PreCDesc :=
 
 elet toTDesc (tyName : Name) (t : Term) : TDesc :=
   ifthenelse ?_ (termEq t (var tyName))
-    (tdRecNN)
+    (tdRecNN [Term|])
     (tdNonRec t).
 
 elet toADesc (tyName : Name) (p : Param) : ADesc :=
@@ -45,7 +45,7 @@ elet toADesc (tyName : Name) (p : Param) : ADesc :=
 elet toCDesc (tyName, cName : Name) (t : Term) : Maybe CDesc :=
   ψ pc = toPreCDesc t : PreCDesc.
   ifthenelse ?_ (termEq (pr2 ?_ ?Term pc) (var tyName))
-    (just ?_ (cName, map ?_ ?_ (toADesc tyName) (pr1 ?_ ?Term pc)))
+    (just ?_ (cName, map ?_ ?_ (toADesc tyName) (pr1 ?_ ?Term pc), [Term|]))
     (nothing ?CDesc).
 
 --------------------------------------------------------------------------------
@@ -64,22 +64,23 @@ let init$data2$_string_^space^_telescope_where^space^_entries_
       cs : Maybe (List CDesc).
   λ genRecord : Bool.
   ifthenelse ?(Maybe Desc) genRecord
-    (just ?Desc $ mkTripleProduct ?String ?Telescope ?(List CDesc) name t [CDesc|
-      prodPair ?Name ?(List ADesc)
-        φ"mk${name}" $
-        map ?(Name × Term) ?ADesc (recursionProduct ?Name ?Term ?ADesc
+    (just ?Desc $ mkDesc name t [Term|] [CDesc|
+      mkTripleProduct ?Name ?(List ADesc) ?(List Term)
+        φ"mk${name}"
+        (map ?(Name × Term) ?ADesc (recursionProduct ?Name ?Term ?ADesc
           (λ n : Name. λ t : Term. prodPair ?Name ?TDesc n (tdNonRec t)))
-          cs])
-    (mapMaybe ?(List CDesc) ?Desc (mkTripleProduct ?String ?Telescope ?(List CDesc) name t) cs').
+          cs)
+        [Term|]])
+    (mapMaybe ?(List CDesc) ?Desc (mkDesc name t [Term|]) cs').
 
 elet init$newStmt'$data2^space^_data2_=dot= (genD : Bool -> Maybe Desc) : Eval Unit :=
   maybe ?_ ?_ (throwEval ?Unit "Error: not a valid datatype!")
-    (λ d : Desc. seqEval ?_ ?_ (DefineTy d) (DefineInd d))
+    (λ d : Desc. DefineHelpers d >> DefineTy d >> DefineInd d)
     (genD false).
 
 elet init$newStmt'$record2^space^_data2_=dot= (genD : Bool -> Maybe Desc) : Eval Unit :=
   maybe ?_ ?_ (throwEval ?Unit "Error: not a valid record!")
-    (λ r : Desc. seqEval ?_ ?_ (seqEval ?_ ?_ (DefineTy r) (DefineInd r)) (DefineProjLIs r))
+    (λ r : Desc. DefineHelpers r >> DefineTy r >> DefineInd r >> DefineProjLIs r)
     (genD true).
 
 updateEval.

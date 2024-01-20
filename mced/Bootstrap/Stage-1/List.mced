@@ -127,8 +127,8 @@ let app := Λ X : * λ l1 : [List X] λ l2 : [List X]
   [[[<<recursionList' X> [List X]> l2] λ x : X λ rec : [List X] [[<cons X> x] rec]] l1]
   : ∀ X : * Π _ : [List X] Π _ : [List X] [List X].
 
-let snoc := Λ X : * λ x : X λ xs : [List X] [[<app X> xs] [<pureList X> x]]
-  : ∀ X : * Π _ : X Π _ : [List X] [List X].
+let snoc := Λ X : * λ xs : [List X] λ x : X [[<app X> xs] [<pureList X> x]]
+  : ∀ X : * Π _ : [List X] Π _ : X [List X].
 
 let filter := Λ X : * λ f : Π _ : X Bool
   [[<<recursionList' X> [List X]> <nil X>]
